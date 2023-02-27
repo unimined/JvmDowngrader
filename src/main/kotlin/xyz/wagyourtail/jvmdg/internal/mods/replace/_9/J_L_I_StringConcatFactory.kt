@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.internal.mods.replace._16.lang.invoke
+package xyz.wagyourtail.jvmdg.internal.mods.replace._9
 
 import org.gradle.api.JavaVersion
 import org.objectweb.asm.Opcodes
@@ -6,7 +6,7 @@ import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
 import xyz.wagyourtail.jvmdg.internal.mods.replace.Replace
 
-object StringConcatFactory {
+object J_L_I_StringConcatFactory {
 
     @Replace(
         value = JavaVersion.VERSION_1_9,

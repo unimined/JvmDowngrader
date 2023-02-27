@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdowngrader.test
+package xyz.wagyourtail.jvmdg.test
 
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.gradle.api.JavaVersion

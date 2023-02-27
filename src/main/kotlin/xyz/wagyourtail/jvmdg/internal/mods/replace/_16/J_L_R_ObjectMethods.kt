@@ -43,7 +43,7 @@ object J_L_R_ObjectMethods {
     }
 
     private fun makeEquals(classNode: ClassNode, mname: String, desc: String, recordClass: Type, getters: List<Handle>) {
-        classNode.visitMethod(Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC or (if (Constants.DEBUG) 0 else Opcodes.ACC_SYNTHETIC), mname, desc, null, null).apply {
+        classNode.visitMethod(Constants.synthetic(Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC), mname, desc, null, null).apply {
             visitCode()
             visitVarInsn(Opcodes.ALOAD, 0)
             visitVarInsn(Opcodes.ALOAD, 1)
@@ -106,7 +106,7 @@ object J_L_R_ObjectMethods {
     }
 
     private fun makeHashCode(classNode: ClassNode, mname: String, desc: String, recordClass: Type, getters: List<Handle>) {
-        classNode.visitMethod(Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC or (if (Constants.DEBUG) 0 else Opcodes.ACC_SYNTHETIC), mname, desc, null, null).apply {
+        classNode.visitMethod(Constants.synthetic(Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC), mname, desc, null, null).apply {
             visitCode()
             // create array for Objects.hashCode()
             visitLdcInsn(getters.size)
@@ -160,17 +160,15 @@ object J_L_R_ObjectMethods {
 
     private fun makeToString(classNode: ClassNode, mname: String, desc: String, recordClass: Type, fieldNames: String, getters: List<Handle>) {
         val fields = fieldNames.split(";")
-        classNode.visitMethod(Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC or (if (Constants.DEBUG) 0 else Opcodes.ACC_SYNTHETIC), mname, desc, null, null).apply {
+        classNode.visitMethod(Constants.synthetic(Opcodes.ACC_PRIVATE or Opcodes.ACC_STATIC), mname, desc, null, null).apply {
             visitCode()
             // create StringBuilder
             visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder")
             visitInsn(Opcodes.DUP)
             visitLdcInsn("${recordClass.internalName.split("/").last()}[")
             visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false)
-            visitVarInsn(Opcodes.ASTORE, 1)
             // append each field
             getters.forEachIndexed { i, getter ->
-                visitVarInsn(Opcodes.ALOAD, 1)
                 visitLdcInsn("${fields[i]}=")
                 visitMethodInsn(
                     Opcodes.INVOKEVIRTUAL,
@@ -285,7 +283,6 @@ object J_L_R_ObjectMethods {
                 }
             }
             // append ']'
-            visitVarInsn(Opcodes.ALOAD, 1)
             visitLdcInsn("]")
             visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
@@ -295,7 +292,6 @@ object J_L_R_ObjectMethods {
                 false
             )
             // call StringBuilder.toString()
-            visitVarInsn(Opcodes.ALOAD, 1)
             visitMethodInsn(
                 Opcodes.INVOKEVIRTUAL,
                 "java/lang/StringBuilder",

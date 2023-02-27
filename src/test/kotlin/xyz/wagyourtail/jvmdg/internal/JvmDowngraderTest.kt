@@ -1,10 +1,11 @@
-package xyz.wagyourtail.jvmdowngrader.internal
+package xyz.wagyourtail.jvmdg.internal
 
 import org.gradle.api.JavaVersion
-import xyz.wagyourtail.jvmdowngrader.test.JavaRunner
+import xyz.wagyourtail.jvmdg.test.JavaRunner
 import java.nio.file.Path
 import kotlin.io.path.nameWithoutExtension
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 
 class JvmDowngraderTest {
@@ -13,20 +14,35 @@ class JvmDowngraderTest {
 
     val downgraded by lazy {
         original.parent.resolve(original.nameWithoutExtension + "-downgraded-8.jar").apply {
-            val downgrader = JvmDowngrader(original, "xyz.wagyourtail", JavaVersion.VERSION_1_8)
+            val downgrader = JvmDowngrader(original, "xyz/wagyourtail", JavaVersion.VERSION_1_8)
             downgrader.downgrade(this)
         }
     }
 
-    @Test
-    fun testDowngradeRecord() {
+    fun testDowngrade(mainClass: String) {
+        println()
+        println("Original: ")
+
+        val originalLog = StringBuilder()
+        val ret2 = JavaRunner.runJarInSubprocess(
+            original,
+            mainClass = mainClass,
+            javaVersion = JavaVersion.current(),
+            output = {
+                originalLog.append(it).append("\n")
+                println(it)
+            }
+        )
+        if (ret2 != 0) {
+            throw Exception("Original jar did not return 0")
+        }
         println()
         println("Downgraded: ")
 
         val downgradedLog = StringBuilder()
         val ret = JavaRunner.runJarInSubprocess(
             downgraded,
-            mainClass = "xyz.wagyourtail.downgradetest.TestRecord",
+            mainClass = mainClass,
             javaVersion = JavaVersion.VERSION_1_8,
             output = {
                 downgradedLog.append(it).append("\n")
@@ -37,64 +53,32 @@ class JvmDowngraderTest {
             throw Exception("Downgraded jar did not return 0")
         }
 
-        println()
-        println("Original: ")
 
-        val originalLog = StringBuilder()
-        val ret2 = JavaRunner.runJarInSubprocess(
-            original,
-            mainClass = "xyz.wagyourtail.downgradetest.TestRecord",
-            javaVersion = JavaVersion.current(),
-            output = {
-                originalLog.append(it).append("\n")
-                println(it)
-            }
-        )
-        if (ret2 != 0) {
-            throw Exception("Original jar did not return 0")
-        }
-        if (downgradedLog.toString() != originalLog.toString()) {
-            throw Exception("Downgraded jar did not return the same output as the original")
-        }
+        assertEquals(originalLog.toString(), downgradedLog.toString())
+    }
+
+    @Test
+    fun testDowngradeRecord() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestRecord")
     }
 
     @Test
     fun testDowngradeString() {
-        println()
-        println("Downgraded: ")
+        testDowngrade("xyz.wagyourtail.downgradetest.TestString")
+    }
 
-        val downgradedLog = StringBuilder()
-        val ret = JavaRunner.runJarInSubprocess(
-            downgraded,
-            mainClass = "xyz.wagyourtail.downgradetest.TestString",
-            javaVersion = JavaVersion.VERSION_1_8,
-            output = {
-                downgradedLog.append(it).append("\n")
-                println(it)
-            }
-        )
-        if (ret != 0) {
-            throw Exception("Downgraded jar did not return 0")
-        }
+    @Test
+    fun testDowngradeInterface() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestInterface")
+    }
 
-        println()
-        println("Original: ")
+    @Test
+    fun testSeal() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestSeal")
+    }
 
-        val originalLog = StringBuilder()
-        val ret2 = JavaRunner.runJarInSubprocess(
-            original,
-            mainClass = "xyz.wagyourtail.downgradetest.TestString",
-            javaVersion = JavaVersion.current(),
-            output = {
-                originalLog.append(it).append("\n")
-                println(it)
-            }
-        )
-        if (ret2 != 0) {
-            throw Exception("Original jar did not return 0")
-        }
-        if (downgradedLog.toString() != originalLog.toString()) {
-            throw Exception("Downgraded jar did not return the same output as the original")
-        }
+    @Test
+    fun testFilter() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestFilter")
     }
 }

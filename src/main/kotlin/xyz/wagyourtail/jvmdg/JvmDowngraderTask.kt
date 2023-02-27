@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdowngrader
+package xyz.wagyourtail.jvmdg
 
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
@@ -8,7 +8,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.tasks.Jar
-import xyz.wagyourtail.jvmdowngrader.internal.JvmDowngrader
+import xyz.wagyourtail.jvmdg.internal.JvmDowngrader
 
 @Suppress("LeakingThis")
 abstract class JvmDowngraderTask : Jar() {
@@ -34,14 +34,9 @@ abstract class JvmDowngraderTask : Jar() {
     fun run() {
         val input = inputFile.get().asFile
         val output = archiveFile.get().asFile
-
         output.parentFile.mkdirs()
 
-        val target = targetVersion.get()
-
-        val jar = JvmDowngrader(input.toPath(), stubPkg.get() ?: project.group.toString(), target)
-
-        jar.downgrade(output.toPath())
+        JvmDowngrader(input.toPath(), (stubPkg.get() ?: project.group.toString()).replace('.', '/'), targetVersion.get()).downgrade(output.toPath())
     }
 
 

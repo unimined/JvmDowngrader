@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdowngrader
+package xyz.wagyourtail.jvmdg
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project

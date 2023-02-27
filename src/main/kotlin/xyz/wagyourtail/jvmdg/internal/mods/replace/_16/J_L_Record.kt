@@ -6,7 +6,7 @@ import org.objectweb.asm.tree.MethodInsnNode
 import org.objectweb.asm.tree.MethodNode
 import xyz.wagyourtail.jvmdg.internal.mods.replace.Replace
 
-object RecordStub {
+object J_L_Record {
     @Replace(value = JavaVersion.VERSION_16, desc = "Ljava/lang/Record;<init>()V")
     @JvmStatic
     fun init(cnode: ClassNode?, mnode: MethodNode, insn: Int) {

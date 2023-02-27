@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.internal.downgraders.replace;
+package xyz.wagyourtail.jvmdg.internal.mods.replace;
 
 import org.gradle.api.JavaVersion;
 

@@ -3,10 +3,19 @@
   <component name="StacktraceSettings">
     <option name="folders">
       <set>
+        <option value="$PROJECT_DIR$/downgradetest/src/main/java" />
+        <option value="$PROJECT_DIR$/src/main/java" />
         <option value="$PROJECT_DIR$/src/main/kotlin" />
         <option value="$PROJECT_DIR$/src/main/resources" />
         <option value="$PROJECT_DIR$/src/test/kotlin" />
         <option value="$PROJECT_DIR$/src/test/resources" />
+      </set>
+    </option>
+    <option name="packages">
+      <set>
+        <option value="xyz.wagyourtail.downgradetest" />
+        <option value="xyz.wagyourtail.jvmdg" />
+        <option value="xyz.wagyourtail.jvmdowngrader" />
       </set>
     </option>
   </component>
