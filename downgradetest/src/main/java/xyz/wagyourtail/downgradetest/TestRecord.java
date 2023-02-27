@@ -1,7 +1,6 @@
 package xyz.wagyourtail.downgradetest;
 
 import java.lang.reflect.RecordComponent;
-import java.util.Arrays;
 import java.util.function.Consumer;
 
 record TestRecord2(int a, String b, char c) {

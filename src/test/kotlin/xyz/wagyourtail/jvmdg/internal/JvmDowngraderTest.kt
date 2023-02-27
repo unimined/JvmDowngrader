@@ -81,4 +81,14 @@ class JvmDowngraderTest {
     fun testFilter() {
         testDowngrade("xyz.wagyourtail.downgradetest.TestFilter")
     }
+
+    @Test
+    fun testException() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestException")
+    }
+
+    @Test
+    fun testStream() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestStream")
+    }
 }

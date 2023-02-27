@@ -54,7 +54,7 @@ class MethodReplacer(target: JavaVersion) {
             val stub = `class`.getAnnotation(Stub::class.java)
             if (stub != null) {
                 // send to classreplacer instead
-                ClassReplacer.registerReplace(stub.value, Class.forName(stub.desc.replace('/', '.').replace('$', '.').let { it.substring(1, it.length - 1) }), `class`, true)
+                ClassReplacer.registerReplace(stub.value, Class.forName(stub.desc.replace('/', '.').let { it.substring(1, it.length - 1) }), `class`, true)
                 return
             }
             val node = classToNode(`class`)
