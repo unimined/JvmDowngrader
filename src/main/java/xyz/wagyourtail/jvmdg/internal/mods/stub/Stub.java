@@ -13,4 +13,8 @@ public @interface Stub {
     JavaVersion value();
     String desc() default "";
     Class<?>[] include() default {};
+
+    Class<?>[] populateDecendants() default {};
+
+    boolean returnDecendant() default false;
 }

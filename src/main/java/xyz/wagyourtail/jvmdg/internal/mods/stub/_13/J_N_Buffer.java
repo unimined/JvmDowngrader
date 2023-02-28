@@ -3,12 +3,13 @@ package xyz.wagyourtail.jvmdg.internal.mods.stub._13;
 import org.gradle.api.JavaVersion;
 import xyz.wagyourtail.jvmdg.internal.mods.stub.Stub;
 
-import java.nio.Buffer;
+import java.nio.*;
 
 public class J_N_Buffer {
 
 
-    @Stub(JavaVersion.VERSION_13)
+    @Stub(value = JavaVersion.VERSION_13, populateDecendants = {ByteBuffer.class, CharBuffer.class, IntBuffer.class,
+        DoubleBuffer.class, FloatBuffer.class, LongBuffer.class, ShortBuffer.class}, returnDecendant = true)
     public static Buffer slice(Buffer buffer, int index, int length) {
         int pos = buffer.position();
         buffer.position(index);
@@ -16,6 +17,4 @@ public class J_N_Buffer {
         buffer.position(pos);
         return sub;
     }
-
-    //TODO: buffer subclasses
 }

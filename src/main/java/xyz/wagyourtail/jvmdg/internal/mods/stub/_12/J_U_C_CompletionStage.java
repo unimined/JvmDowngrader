@@ -3,33 +3,34 @@ package xyz.wagyourtail.jvmdg.internal.mods.stub._12;
 import org.gradle.api.JavaVersion;
 import xyz.wagyourtail.jvmdg.internal.mods.stub.Stub;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 public class J_U_C_CompletionStage {
 
-    @Stub(value = JavaVersion.VERSION_12, include = ExceptionallyAsync.class)
+    @Stub(value = JavaVersion.VERSION_12, include = ExceptionallyAsync.class, populateDecendants = {CompletableFuture.class}, returnDecendant = true)
     public static <T> CompletionStage<T> exceptionallyAsync(CompletionStage<T> stage, Function<Throwable, ? extends T> fn) {
         return stage.handle(new ExceptionallyAsync<>(stage, fn)::handleAsync).thenCompose(Function.identity());
     }
 
-    @Stub(value = JavaVersion.VERSION_12, include = ExceptionallyAsync.class)
+    @Stub(value = JavaVersion.VERSION_12, include = ExceptionallyAsync.class, populateDecendants = {CompletableFuture.class}, returnDecendant = true)
     public static <T> CompletionStage<T> exceptionallyAsync(CompletionStage<T> stage, Function<Throwable, ? extends T> fn, Executor executor) {
         return stage.handle(new ExceptionallyAsync<>(stage, fn, executor)::handleAsync).thenCompose(Function.identity());
     }
 
-    @Stub(value = JavaVersion.VERSION_12, include = ExceptionallyComposeAsync.class)
+    @Stub(value = JavaVersion.VERSION_12, include = ExceptionallyComposeAsync.class, populateDecendants = {CompletableFuture.class}, returnDecendant = true)
     public static <T> CompletionStage<T> exceptionallyCompose(CompletionStage<T> stage, Function<Throwable, ? extends CompletionStage<T>> fn) {
         return stage.handle(new ExceptionallyComposeAsync<>(stage, fn)::handle).thenCompose(Function.identity());
     }
 
-    @Stub(value = JavaVersion.VERSION_12, include = ExceptionallyComposeAsync.class)
+    @Stub(value = JavaVersion.VERSION_12, include = ExceptionallyComposeAsync.class, populateDecendants = {CompletableFuture.class}, returnDecendant = true)
     public static <T> CompletionStage<T> exceptionallyComposeAsync(CompletionStage<T> stage, Function<Throwable, ? extends CompletionStage<T>> fn) {
         return stage.handle(new ExceptionallyComposeAsync<>(stage, fn)::handleAsync).thenCompose(Function.identity());
     }
 
-    @Stub(value = JavaVersion.VERSION_12, include = ExceptionallyComposeAsync.class)
+    @Stub(value = JavaVersion.VERSION_12, include = ExceptionallyComposeAsync.class, populateDecendants = {CompletableFuture.class}, returnDecendant = true)
     public static <T> CompletionStage<T> exceptionallyComposeAsync(CompletionStage<T> stage, Function<Throwable, ? extends CompletionStage<T>> fn, Executor executor) {
         return stage.handle(new ExceptionallyComposeAsync<>(stage, fn, executor)::handleAsync).thenCompose(Function.identity());
     }

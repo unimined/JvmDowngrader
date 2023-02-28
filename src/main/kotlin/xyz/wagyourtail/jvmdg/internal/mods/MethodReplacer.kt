@@ -69,6 +69,15 @@ class MethodReplacer(target: JavaVersion) {
                             Type.getReturnType(mnode.desc),
                             *Type.getArgumentTypes(mnode.desc).drop(1).toTypedArray()
                         )
+
+                        for (c in stub.populateDecendants) {
+                            val cdesc = "L" + resolveClassPath(c.java).substringBefore(".class") + ";"
+                            val ddesc = Type.getMethodDescriptor(
+                                Type.getType(cdesc),
+                                *Type.getArgumentTypes(mnode.desc).drop(1).toTypedArray()
+                            )
+                            availableStubs.getOrPut(stub.value) { mutableMapOf() }[cdesc + mnode.name + ddesc] = mnode to incl
+                        }
                         availableStubs.getOrPut(stub.value) { mutableMapOf() }["L" + arg.internalName + ";" + mnode.name + desc] = mnode to incl
                     } else if (stub.desc.contains('(')) {
                         availableStubs.getOrPut(stub.value) { mutableMapOf() }[stub.desc] = mnode to incl
@@ -144,7 +153,11 @@ class MethodReplacer(target: JavaVersion) {
                             if (j < 0) throw IllegalStateException("Could not find new for stubbed constructor ${insn.owner}.${insn.name}${insn.desc}")
                             i -= 2
                         }
-                        //TODO: check cast args, idk if needed, but if there's issues...
+                        // check if return type of stub is different, if so we need to insert a checkcast
+                        if (Type.getReturnType(stub.first.desc) != Type.getReturnType(insn.desc)) {
+                            method.instructions.insert(insn, TypeInsnNode(Opcodes.CHECKCAST, Type.getReturnType(insn.desc).internalName))
+                            i++
+                        }
                         insn.owner = "$shadePkg/${insn.owner}"
                         insn.name = stub.first.name
                         insn.desc = stub.first.desc
