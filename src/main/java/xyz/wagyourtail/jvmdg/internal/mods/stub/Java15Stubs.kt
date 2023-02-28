@@ -8,7 +8,7 @@ object Java15Stubs {
         MethodReplacer.apply {
             // -- java.base --
             // Boolean
-            // Character$UnicodeBlock
+            // Character$UnicodeBlock (more unicode spaces)
             // CharSequence
             // Class
             addClass(J_L_Math::class.java)
