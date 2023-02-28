@@ -9,7 +9,6 @@ import org.objectweb.asm.tree.InvokeDynamicInsnNode
 import org.objectweb.asm.tree.MethodInsnNode
 import org.objectweb.asm.tree.MultiANewArrayInsnNode
 import org.objectweb.asm.tree.TypeInsnNode
-import xyz.wagyourtail.jvmdg.internal.mods.MethodReplacer.Companion.availableReplace
 
 class ClassReplacer(val target: JavaVersion) {
     companion object {

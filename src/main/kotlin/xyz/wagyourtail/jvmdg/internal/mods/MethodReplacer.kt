@@ -5,17 +5,12 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Handle
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
-import org.objectweb.asm.tree.ClassNode
-import org.objectweb.asm.tree.InvokeDynamicInsnNode
-import org.objectweb.asm.tree.MethodInsnNode
-import org.objectweb.asm.tree.MethodNode
+import org.objectweb.asm.tree.*
 import xyz.wagyourtail.jvmdg.internal.mods.replace.Replace
 import xyz.wagyourtail.jvmdg.internal.mods.replace._16.J_L_R_ObjectMethods
 import xyz.wagyourtail.jvmdg.internal.mods.replace._16.J_L_Record
 import xyz.wagyourtail.jvmdg.internal.mods.replace._9.J_L_I_StringConcatFactory
-import xyz.wagyourtail.jvmdg.internal.mods.stub.Java16Stubs
-import xyz.wagyourtail.jvmdg.internal.mods.stub.Java17Stubs
-import xyz.wagyourtail.jvmdg.internal.mods.stub.Stub
+import xyz.wagyourtail.jvmdg.internal.mods.stub.*
 
 class MethodReplacer(target: JavaVersion) {
     companion object {
@@ -100,6 +95,8 @@ class MethodReplacer(target: JavaVersion) {
 
             Java17Stubs.apply()
             Java16Stubs.apply()
+            Java15Stubs.apply()
+            Java11Stubs.apply()
         }
 
     }
@@ -111,11 +108,39 @@ class MethodReplacer(target: JavaVersion) {
         val stubbed = mutableMapOf<String, Pair<MethodNode, Set<Class<*>>>>()
         for (method in classNode.methods.toList()) {
             if (method.instructions == null) continue
-            for (i in 0 until method.instructions.size()) {
+            var i = -1
+            while (i < method.instructions.size() - 1) {
+                i++
                 val insn = method.instructions.get(i)
                 if (insn is MethodInsnNode) {
                     val stub = stubs["L" + insn.owner + ";" + insn.name + insn.desc]
                     if (stub != null) {
+                        if (insn.name == "<init>") {
+                            // remove new and dup
+                            // search backwards for new
+                            var j = i - 1
+                            var skip = 0
+                            while (j >= 0) {
+                                val prev = method.instructions.get(j)
+                                if (prev is TypeInsnNode && prev.opcode == Opcodes.NEW && prev.desc == insn.owner && skip-- == 0) {
+                                    method.instructions.remove(prev)
+                                    // ensure and remove dup
+                                    val dup = method.instructions.get(j)
+                                    if (dup is InsnNode && dup.opcode == Opcodes.DUP) {
+                                        method.instructions.remove(dup)
+                                    } else {
+                                        throw IllegalStateException("Could not find dup for stubbed constructor ${insn.owner}.${insn.name}${insn.desc}")
+                                    }
+                                    break
+                                } else if (prev is MethodInsnNode && prev.opcode == Opcodes.INVOKESPECIAL && prev.owner == insn.owner && prev.name == "<init>") {
+                                    skip++
+                                }
+                                assert(skip > -1)
+                                j--
+                            }
+                            if (j < 0) throw IllegalStateException("Could not find new for stubbed constructor ${insn.owner}.${insn.name}${insn.desc}")
+                            i -= 2
+                        }
                         //TODO: check cast args, idk if needed, but if there's issues...
                         insn.owner = "$shadePkg/${insn.owner}"
                         insn.name = stub.first.name

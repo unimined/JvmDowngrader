@@ -121,7 +121,7 @@ object JavaRunner {
                     }
                     line = if (b == '\n'.code) {
                         output(line!!)
-                        null
+                        ""
                     } else {
                         (line ?: "") + b.toChar()
                     }
@@ -140,7 +140,7 @@ object JavaRunner {
                     }
                     line = if (b == '\n'.code) {
                         error(line!!)
-                        null
+                        ""
                     } else {
                         (line ?: "") + b.toChar()
                     }
