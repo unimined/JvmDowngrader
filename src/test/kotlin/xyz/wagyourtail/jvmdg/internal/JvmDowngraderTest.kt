@@ -91,4 +91,9 @@ class JvmDowngraderTest {
     fun testStream() {
         testDowngrade("xyz.wagyourtail.downgradetest.TestStream")
     }
+
+    @Test
+    fun testClass() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestClass")
+    }
 }

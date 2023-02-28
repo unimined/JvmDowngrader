@@ -97,6 +97,8 @@ class MethodReplacer(target: JavaVersion) {
             Java16Stubs.apply()
             Java15Stubs.apply()
             Java14Stubs.apply()
+            Java13Stubs.apply()
+            Java12Stubs.apply()
             Java11Stubs.apply()
         }
 
