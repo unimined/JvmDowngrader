@@ -61,7 +61,7 @@ class JvmDowngrader(val inputFile: Path, val stubPkg: String, val versionTarget:
             run {
                 val classes = mutableMapOf<String, ClassNode>()
                 while (true) {
-                    for (className in neededReplaceClasses.toList()) {
+                    for (className in neededReplaceClasses.map { it.substring(1, it.length - 1) }) {
                         if (classes.contains(className)) continue
                         val node = classes.computeIfAbsent(className) {
                             MethodReplacer.classToNode(
@@ -122,6 +122,7 @@ class JvmDowngrader(val inputFile: Path, val stubPkg: String, val versionTarget:
                     val parsedStubs = mutableSetOf<String>()
                     parsedStubs.addAll(neededStubs.keys)
                     for (node in classes.values) {
+                        if (prevClasses.contains(node.name)) continue
                         downgradeClass(node)
                     }
                     // get new stubs

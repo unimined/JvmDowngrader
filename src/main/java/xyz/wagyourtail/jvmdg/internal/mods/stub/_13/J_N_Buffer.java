@@ -8,8 +8,7 @@ import java.nio.*;
 public class J_N_Buffer {
 
 
-    @Stub(value = JavaVersion.VERSION_13, populateDecendants = {ByteBuffer.class, CharBuffer.class, IntBuffer.class,
-        DoubleBuffer.class, FloatBuffer.class, LongBuffer.class, ShortBuffer.class}, returnDecendant = true)
+    @Stub(value = JavaVersion.VERSION_13, subtypes = true, returnDecendant = true)
     public static Buffer slice(Buffer buffer, int index, int length) {
         int pos = buffer.position();
         buffer.position(index);

@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.internal.mods
 
+import io.github.classgraph.ClassGraph
 import org.gradle.api.JavaVersion
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Handle
@@ -11,6 +12,7 @@ import xyz.wagyourtail.jvmdg.internal.mods.replace._16.J_L_R_ObjectMethods
 import xyz.wagyourtail.jvmdg.internal.mods.replace._16.J_L_Record
 import xyz.wagyourtail.jvmdg.internal.mods.replace._9.J_L_I_StringConcatFactory
 import xyz.wagyourtail.jvmdg.internal.mods.stub.*
+import java.io.File
 
 class MethodReplacer(target: JavaVersion) {
     companion object {
@@ -44,6 +46,29 @@ class MethodReplacer(target: JavaVersion) {
             }
         }
 
+        val classgraph by lazy {
+            val classpath = System.getProperty("java.class.path")
+            // split to paths
+            val classPaths = classpath.split(File.pathSeparator).map { File(it).toURI() }.toMutableList()
+            // add java base into classpath
+            if (JavaVersion.current().isJava9Compatible()) {
+                // add all in java home / lib
+                File(System.getProperty("java.home"), "jmods").listFiles()?.filter { it.extension == "jmod" }?.map { it.toURI() }?.let { classPaths.addAll(it) }
+            } else {
+                // add rt.jar
+                classPaths.add(File(System.getProperty("java.home"), "lib/rt.jar").toURI())
+            }
+            val graphInfo = ClassGraph()
+                .enableClassInfo()
+                .rejectPackages(
+                    "net.java", "com.sun", "com.jcraft", "com.intellij", "jdk", "akka", "ibxm", "scala", "*.jetty.*"
+                )
+                .overrideClasspath(classPaths)
+                .disableModuleScanning()
+//            graphInfo.overrideClasspath()
+              graphInfo.scan()
+        }
+
         fun addClass(`class`: Class<*>) {
             // check if stub is on class itself
             val stub = `class`.getAnnotation(Stub::class.java)
@@ -69,14 +94,15 @@ class MethodReplacer(target: JavaVersion) {
                             Type.getReturnType(mnode.desc),
                             *Type.getArgumentTypes(mnode.desc).drop(1).toTypedArray()
                         )
-
-                        for (c in stub.populateDecendants) {
-                            val cdesc = "L" + resolveClassPath(c.java).substringBefore(".class") + ";"
-                            val ddesc = Type.getMethodDescriptor(
-                                Type.getType(cdesc),
-                                *Type.getArgumentTypes(mnode.desc).drop(1).toTypedArray()
-                            )
-                            availableStubs.getOrPut(stub.value) { mutableMapOf() }[cdesc + mnode.name + ddesc] = mnode to incl
+                        if (stub.subtypes) {
+                            for (c in classgraph.allClasses.filter { it.superclasses.any { it.name.replace('.', '/') == arg.internalName } || it.interfaces.any { it.name.replace('.', '/') == arg.internalName } }) {
+                                val cdesc = "L" + c.name.replace('.', '/') + ";"
+                                val ddesc = Type.getMethodDescriptor(
+                                    Type.getType(cdesc),
+                                    *Type.getArgumentTypes(mnode.desc).drop(1).toTypedArray()
+                                )
+                                availableStubs.getOrPut(stub.value) { mutableMapOf() }[cdesc + mnode.name + ddesc] = mnode to incl
+                            }
                         }
                         availableStubs.getOrPut(stub.value) { mutableMapOf() }["L" + arg.internalName + ";" + mnode.name + desc] = mnode to incl
                     } else if (stub.desc.contains('(')) {
@@ -125,7 +151,12 @@ class MethodReplacer(target: JavaVersion) {
                 i++
                 val insn = method.instructions.get(i)
                 if (insn is MethodInsnNode) {
-                    val stub = stubs["L" + insn.owner + ";" + insn.name + insn.desc]
+                    val desc = if (insn.name == "<init>") {
+                        insn.desc.replace(")V", ")L${insn.owner};")
+                    } else {
+                        insn.desc
+                    }
+                    val stub = stubs["L" + insn.owner + ";" + insn.name + desc]
                     if (stub != null) {
                         if (insn.name == "<init>") {
                             // remove new and dup
@@ -154,7 +185,7 @@ class MethodReplacer(target: JavaVersion) {
                             i -= 2
                         }
                         // check if return type of stub is different, if so we need to insert a checkcast
-                        if (Type.getReturnType(stub.first.desc) != Type.getReturnType(insn.desc)) {
+                        if (insn.name != "<init>" && Type.getReturnType(stub.first.desc) != Type.getReturnType(insn.desc)) {
                             method.instructions.insert(insn, TypeInsnNode(Opcodes.CHECKCAST, Type.getReturnType(insn.desc).internalName))
                             i++
                         }

@@ -12,14 +12,14 @@ import org.objectweb.asm.tree.TypeInsnNode
 
 class ClassReplacer(val target: JavaVersion) {
     companion object {
-        private val availableReplace = mutableMapOf<JavaVersion, MutableMap<String, Pair<String, Boolean>>>()
+        private val availableReplace = mutableMapOf<JavaVersion, MutableMap<String, Pair<String, Set<String>>>>()
 
-        fun registerReplace(version: JavaVersion, desc: String, replace: String, newIsStub: Boolean = false) {
-            availableReplace.getOrPut(version) { mutableMapOf() }[desc] = replace to newIsStub
+        fun registerReplace(version: JavaVersion, desc: String, replace: String, newIsStub: Boolean = false, otherIncludes: Set<String> = emptySet()) {
+            availableReplace.getOrPut(version) { mutableMapOf() }[desc] = replace to if (newIsStub) { setOf(replace) + otherIncludes } else { otherIncludes }
         }
 
-        fun registerReplace(version: JavaVersion, class1: Class<*>, class2: Class<*>, newIsStub: Boolean = false) {
-            registerReplace(version, "L" + MethodReplacer.resolveClassPath(class1).substringBefore(".class")+ ";", "L" + MethodReplacer.resolveClassPath(class2).substringBefore(".class") + ";", newIsStub)
+        fun registerReplace(version: JavaVersion, class1: Class<*>, class2: Class<*>, newIsStub: Boolean = false, otherIncludes: Set<String> = emptySet()) {
+            registerReplace(version, "L" + MethodReplacer.resolveClassPath(class1).substringBefore(".class")+ ";", "L" + MethodReplacer.resolveClassPath(class2).substringBefore(".class") + ";", newIsStub, otherIncludes)
         }
 
         init {
@@ -33,17 +33,13 @@ class ClassReplacer(val target: JavaVersion) {
     fun apply(classNode: ClassNode): Set<String> {
         val newClasses = mutableSetOf<String>()
         if ("L${classNode.superName};" in replaces) {
-            if (replaces["L${classNode.superName};"]!!.second) {
-                newClasses.add(classNode.superName)
-            }
+            newClasses.addAll(replaces["L${classNode.superName};"]!!.second)
             classNode.superName = replaces["L${classNode.superName};"]!!.first.let { it.substring(1, it.length-1) }
         }
         if (classNode.interfaces != null) {
             for (i in classNode.interfaces.indices) {
                 if ("L${classNode.interfaces[i]}" in replaces) {
-                    if (replaces["L${classNode.interfaces[i]}"]!!.second) {
-                        newClasses.add(classNode.interfaces[i])
-                    }
+                    newClasses.addAll(replaces["L${classNode.interfaces[i]}"]!!.second)
                     classNode.interfaces[i] = replaces["L${classNode.interfaces[i]}"]!!.first.let { it.substring(1, it.length-1) }
                 }
             }
@@ -58,9 +54,7 @@ class ClassReplacer(val target: JavaVersion) {
                     val arr = args[i].dimensions - if (args[i].descriptor.startsWith("[") ) 0 else 1
                     val desc = args[i].descriptor.substring(arr)
                     if (desc in replaces) {
-                        if (replaces[desc]!!.second) {
-                            newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                        }
+                        newClasses.addAll(replaces[desc]!!.second)
                         args[i] = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                         changed = true
                     }
@@ -68,9 +62,7 @@ class ClassReplacer(val target: JavaVersion) {
                 val arr = returnType.dimensions - if (returnType.descriptor.startsWith("[") ) 0 else 1
                 val desc = returnType.descriptor.substring(arr)
                 if (desc in replaces) {
-                    if (replaces[desc]!!.second) {
-                        newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                    }
+                    newClasses.addAll(replaces[desc]!!.second)
                     returnType = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                     changed = true
                 }
@@ -93,9 +85,7 @@ class ClassReplacer(val target: JavaVersion) {
                                     val arr = args[i].dimensions - if (args[i].descriptor.startsWith("[") ) 0 else 1
                                     val desc = args[i].descriptor.substring(arr)
                                     if (desc in replaces) {
-                                        if (replaces[desc]!!.second) {
-                                            newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                                        }
+                                        newClasses.addAll(replaces[desc]!!.second)
                                         args[i] = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                                         changed = true
                                     }
@@ -104,14 +94,7 @@ class ClassReplacer(val target: JavaVersion) {
                                     val arr = returnType.dimensions - if (returnType.descriptor.startsWith("[")) 0 else 1
                                     val desc = returnType.descriptor.substring(arr)
                                     if (desc in replaces) {
-                                        if (replaces[desc]!!.second) {
-                                            newClasses.add(replaces[desc]!!.first.let {
-                                                it.substring(
-                                                    1,
-                                                    it.length - 1
-                                                )
-                                            })
-                                        }
+                                        newClasses.addAll(replaces[desc]!!.second)
                                         returnType = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                                         changed = true
                                     }
@@ -124,9 +107,7 @@ class ClassReplacer(val target: JavaVersion) {
                                 val arr = type.dimensions - if (type.descriptor.startsWith("[") ) 0 else 1
                                 val desc = type.descriptor.substring(arr)
                                 if (desc in replaces) {
-                                    if (replaces[desc]!!.second) {
-                                        newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                                    }
+                                    newClasses.addAll(replaces[desc]!!.second)
                                     insn.bsmArgs[i] = Handle(arg.tag, arg.owner, arg.name, "[".repeat(arr) + replaces[desc]!!.first, arg.isInterface)
                                 }
                             }
@@ -136,9 +117,7 @@ class ClassReplacer(val target: JavaVersion) {
                                     val arr = arg.dimensions - if (arg.descriptor.startsWith("[") ) 0 else 1
                                     val desc = arg.descriptor.substring(arr)
                                     if (desc in replaces) {
-                                        if (replaces[desc]!!.second) {
-                                            newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                                        }
+                                        newClasses.addAll(replaces[desc]!!.second)
                                         insn.bsmArgs[i] = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                                     }
                                 }
@@ -151,9 +130,7 @@ class ClassReplacer(val target: JavaVersion) {
                                         val arr = args[i].dimensions - if (args[i].descriptor.startsWith("[") ) 0 else 1
                                         val desc = args[i].descriptor.substring(arr)
                                         if (desc in replaces) {
-                                            if (replaces[desc]!!.second) {
-                                                newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                                            }
+                                            newClasses.addAll(replaces[desc]!!.second)
                                             args[i] = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                                             changed = true
                                         }
@@ -162,14 +139,7 @@ class ClassReplacer(val target: JavaVersion) {
                                         val arr = returnType.dimensions - if (returnType.descriptor.startsWith("[")) 0 else 1
                                         val desc = returnType.descriptor.substring(arr)
                                         if (desc in replaces) {
-                                            if (replaces[desc]!!.second) {
-                                                newClasses.add(replaces[desc]!!.first.let {
-                                                    it.substring(
-                                                        1,
-                                                        it.length - 1
-                                                    )
-                                                })
-                                            }
+                                            newClasses.addAll(replaces[desc]!!.second)
                                             returnType = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                                             changed = true
                                         }
@@ -189,9 +159,7 @@ class ClassReplacer(val target: JavaVersion) {
                         val arr = args[i].dimensions - if (args[i].descriptor.startsWith("[") ) 0 else 1
                         val desc = args[i].descriptor.substring(arr)
                         if (desc in replaces) {
-                            if (replaces[desc]!!.second) {
-                                newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                            }
+                            newClasses.addAll(replaces[desc]!!.second)
                             args[i] = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                             changed = true
                         }
@@ -199,9 +167,7 @@ class ClassReplacer(val target: JavaVersion) {
                     val arr = returnType.dimensions - if (returnType.descriptor.startsWith("[") ) 0 else 1
                     val desc = returnType.descriptor.substring(arr)
                     if (desc in replaces) {
-                        if (replaces[desc]!!.second) {
-                            newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                        }
+                        newClasses.addAll(replaces[desc]!!.second)
                         returnType = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                         changed = true
                     }
@@ -212,16 +178,12 @@ class ClassReplacer(val target: JavaVersion) {
                     val type = Type.getType("L" + insn.desc + ";")
                     val desc = type.descriptor
                     if (desc in replaces) {
-                        if (replaces[desc]!!.second) {
-                            newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                        }
+                        newClasses.addAll(replaces[desc]!!.second)
                         insn.desc = replaces[desc]!!.first.let { it.substring(1, it.length-1) }
                     }
                 } else if (insn is MethodInsnNode) {
                     if ("L" + insn.owner + ";" in replaces) {
-                        if (replaces["L" + insn.owner + ";"]!!.second) {
-                            newClasses.add(replaces["L" + insn.owner + ";"]!!.first.let { it.substring(1, it.length-1) })
-                        }
+                        newClasses.addAll(replaces["L" + insn.owner + ";"]!!.second)
                         insn.owner = replaces["L" + insn.owner + ";"]!!.first.let { it.substring(1, it.length-1) }
                     }
                     // split up desc
@@ -233,9 +195,7 @@ class ClassReplacer(val target: JavaVersion) {
                         val arr = args[i].dimensions - if (args[i].descriptor.startsWith("[") ) 0 else 1
                         val desc = args[i].descriptor.substring(arr)
                         if (desc in replaces) {
-                            if (replaces[desc]!!.second) {
-                                newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                            }
+                            newClasses.addAll(replaces[desc]!!.second)
                             args[i] = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                             changed = true
                         }
@@ -244,9 +204,7 @@ class ClassReplacer(val target: JavaVersion) {
                         val arr = returnType.dimensions - if (returnType.descriptor.startsWith("[")) 0 else 1
                         val desc = returnType.descriptor.substring(arr)
                         if (desc in replaces) {
-                            if (replaces[desc]!!.second) {
-                                newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length - 1) })
-                            }
+                            newClasses.addAll(replaces[desc]!!.second)
                             returnType = Type.getType("[".repeat(arr) + replaces[desc]!!.first)
                             changed = true
                         }
@@ -259,9 +217,7 @@ class ClassReplacer(val target: JavaVersion) {
                     val arr = type.dimensions - if (type.descriptor.startsWith("[") ) 0 else 1
                     val desc = type.descriptor.substring(arr)
                     if (desc in replaces) {
-                        if (replaces[desc]!!.second) {
-                            newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                        }
+                        newClasses.addAll(replaces[desc]!!.second)
                         insn.desc = "[".repeat(arr) + replaces[desc]!!.first
                     }
                 }
@@ -275,9 +231,7 @@ class ClassReplacer(val target: JavaVersion) {
                 val arr = type.dimensions - if (type.descriptor.startsWith("[") ) 0 else 1
                 val desc = type.descriptor.substring(arr)
                 if (desc in replaces) {
-                    if (replaces[desc]!!.second) {
-                        newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                    }
+                    newClasses.addAll(replaces[desc]!!.second)
                     lv.desc = "[".repeat(arr) + replaces[desc]!!.first
                 }
                 // fix sig as well
@@ -292,9 +246,7 @@ class ClassReplacer(val target: JavaVersion) {
                             val arr = type.dimensions - if (type.descriptor.startsWith("[")) 0 else 1
                             val desc = type.descriptor.substring(arr)
                             if (desc in replaces) {
-                                if (replaces[desc]!!.second) {
-                                    newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length - 1) })
-                                }
+                                newClasses.addAll(replaces[desc]!!.second)
                                 newSig += "[".repeat(arr) + replaces[desc]!!.first.let{ it.substring(0, it.length - 1) } + end
                             } else {
                                 newSig += type.descriptor.let{ it.substring(0, it.length - 1) } + end
@@ -314,9 +266,7 @@ class ClassReplacer(val target: JavaVersion) {
             val arr = type.dimensions - if (type.descriptor.startsWith("[") ) 0 else 1
             val desc = type.descriptor.substring(arr)
             if (desc in replaces) {
-                if (replaces[desc]!!.second) {
-                    newClasses.add(replaces[desc]!!.first.let { it.substring(1, it.length-1) })
-                }
+                newClasses.addAll(replaces[desc]!!.second)
                 field.desc = "[".repeat(arr) + replaces[desc]!!.first
             }
         }

@@ -19,5 +19,8 @@ public class TestString {
 
         System.out.println("this is a \\t test \\\" \\n ".translateEscapes());
         System.out.println("test %s".formatted("test2"));
+
+        System.out.println("was".compareTo("wasd"));
+        System.out.println(new StringBuffer("wasd").compareTo(new StringBuffer("was")));
     }
 }

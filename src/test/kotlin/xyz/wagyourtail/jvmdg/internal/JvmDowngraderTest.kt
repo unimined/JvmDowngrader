@@ -3,7 +3,10 @@ package xyz.wagyourtail.jvmdg.internal
 import org.gradle.api.JavaVersion
 import xyz.wagyourtail.jvmdg.test.JavaRunner
 import java.nio.file.Path
+import kotlin.io.path.exists
 import kotlin.io.path.nameWithoutExtension
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -13,9 +16,18 @@ class JvmDowngraderTest {
     val original = Path.of("./downgradetest/build/libs/downgradetest-1.0.0.jar")
 
     val downgraded by lazy {
-        original.parent.resolve(original.nameWithoutExtension + "-downgraded-8.jar").apply {
-            val downgrader = JvmDowngrader(original, "xyz/wagyourtail", JavaVersion.VERSION_1_8)
-            downgrader.downgrade(this)
+        if (!original.parent.resolve(original.nameWithoutExtension + "-downgraded-8.jar").exists()) {
+            original.parent.resolve(original.nameWithoutExtension + "-downgraded-8.jar").apply {
+                val downgrader = JvmDowngrader(original, "xyz/wagyourtail", JavaVersion.VERSION_1_8)
+                downgrader.downgrade(this)
+            }
+        }
+        original.parent.resolve(original.nameWithoutExtension + "-downgraded-8.jar")
+    }
+
+    fun cleanup() {
+        if (downgraded.exists()) {
+            downgraded.toFile().delete()
         }
     }
 
@@ -33,9 +45,7 @@ class JvmDowngraderTest {
                 println(it)
             }
         )
-        if (ret2 != 0) {
-            throw Exception("Original jar did not return 0")
-        }
+
         println()
         println("Downgraded: ")
 
@@ -49,6 +59,10 @@ class JvmDowngraderTest {
                 println(it)
             }
         )
+
+        if (ret2 != 0) {
+            throw Exception("Original jar did not return 0")
+        }
         if (ret != 0) {
             throw Exception("Downgraded jar did not return 0")
         }
@@ -100,5 +114,15 @@ class JvmDowngraderTest {
     @Test
     fun testFuture() {
         testDowngrade("xyz.wagyourtail.downgradetest.TestFuture")
+    }
+
+    @Test
+    fun testFile() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestFile")
+    }
+
+    @Test
+    fun testTime() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestTime")
     }
 }

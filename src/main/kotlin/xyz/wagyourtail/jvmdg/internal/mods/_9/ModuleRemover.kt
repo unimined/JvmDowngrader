@@ -4,6 +4,7 @@ import org.gradle.api.JavaVersion
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
 import org.objectweb.asm.tree.*
+import java.lang.RuntimeException
 
 object ModuleRemover {
 
@@ -156,6 +157,8 @@ object ModuleRemover {
                 }
             }
         }
-        check(stage == 6) { "Failed to find injection: $stage" }
+        if (stage != 6) {
+            throw RuntimeException("Failed to find injection: $stage on ${classNode.name}")
+        }
     }
 }

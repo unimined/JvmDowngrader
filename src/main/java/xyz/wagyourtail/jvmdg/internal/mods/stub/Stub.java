@@ -14,7 +14,7 @@ public @interface Stub {
     String desc() default "";
     Class<?>[] include() default {};
 
-    Class<?>[] populateDecendants() default {};
+    boolean subtypes() default false;
 
     boolean returnDecendant() default false;
 }

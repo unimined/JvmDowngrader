@@ -56,6 +56,9 @@ dependencies {
     implementation("org.ow2.asm:asm-util:9.4")
     implementation("org.ow2.asm:asm-analysis:9.4")
 
+    // reflections
+    implementation("io.github.classgraph:classgraph:4.8.155")
+
 }
 
 tasks.jar {
