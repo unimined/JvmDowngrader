@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.internal.mods.stub
 
 import xyz.wagyourtail.jvmdg.internal.mods.MethodReplacer
 import xyz.wagyourtail.jvmdg.internal.mods.stub._11.*
+import xyz.wagyourtail.jvmdg.internal.mods.stub._11.httpclient.J_N_H_HttpClient
 import xyz.wagyourtail.jvmdg.internal.mods.stub._12.J_N_F_Files
 
 object Java11Stubs {
@@ -58,7 +59,8 @@ object Java11Stubs {
             // SwingUtilities2
 
             // -- java.net.http --
-            // TODO: HttpClient
+            //TODO:
+            // addClass(J_N_H_HttpClient::class.java)
             // HttpConnectTimeoutException
             // HttpRequest
             // HttpResponse

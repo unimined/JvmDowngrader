@@ -8,7 +8,7 @@ object Java16Stubs {
         MethodReplacer.apply {
             // -- java.base --
             addClass(J_L_Class::class.java)
-            addClass(J_L_IndexOutOfBoindsException::class.java)
+            addClass(J_L_IndexOutOfBoundsException::class.java)
             // Record
             // ElementType
             // MethodHandles
@@ -16,6 +16,7 @@ object Java16Stubs {
             // Reference
             // InvocationHandler
             addClass(J_L_R_RecordComponent::class.java)
+            addClass(J_N_ByteBuffer::class.java)
             // ObjectMethods (see replacers)
             // StandardProtocolFamily
             // UnixDomainSocketAddress

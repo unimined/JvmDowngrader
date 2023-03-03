@@ -40,7 +40,7 @@ public class J_L_Class {
     }
 
     @Stub(JavaVersion.VERSION_12)
-    public static Class<?> componentType(Class<?> clazz) throws ClassNotFoundException {
+    public static Class<?> componentType(Class<?> clazz) {
         return clazz.getComponentType();
     }
 
