@@ -125,4 +125,19 @@ class JvmDowngraderTest {
     fun testTime() {
         testDowngrade("xyz.wagyourtail.downgradetest.TestTime")
     }
+
+    @Test
+    fun testCollection() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestCollection")
+    }
+
+    @Test
+    fun testBuffer() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestBuffer")
+    }
+
+    @Test
+    fun testMatch() {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestMatch")
+    }
 }

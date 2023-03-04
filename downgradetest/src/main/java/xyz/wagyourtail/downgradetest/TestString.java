@@ -22,5 +22,10 @@ public class TestString {
 
         System.out.println("was".compareTo("wasd"));
         System.out.println(new StringBuffer("wasd").compareTo(new StringBuffer("was")));
+        var chars = "wasd".chars();
+        for (var i : chars.toArray()) {
+            System.out.print(Character.toChars(i));
+        }
+        System.out.println();
     }
 }

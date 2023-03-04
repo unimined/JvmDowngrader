@@ -127,10 +127,348 @@ object Java9Stubs {
             // ForkJoinTask
             // SubmissionPublisher
             addClass(J_U_C_TimeUnit::class.java)
+            // AtomicBoolean
+            // AtomicInteger
+            // AtomicIntegerArray
+            // AtomicLong
+            // AtomicLongArray
+            // AtomicReference
+            // AtomicReferenceArray
+            // JarFile
+            addClass(J_U_R_Matcher::class.java)
+            // AbstractResourceBundleProvider
+            // ResourceBundleProvider
+            // ToolProvider
+            addClass(J_U_S_Collectors::class.java)
+            addClass(J_U_S_DoubleStream::class.java)
+            addClass(J_U_S_IntStream::class.java)
+            addClass(J_U_S_LongStream::class.java)
+            addClass(J_U_S_Stream::class.java)
+            // WhileOps
+            addClass(J_U_Z_Checksum::class.java)
+            // CRC32C
+            // ZipEntry
+            // ExtendedSSLSession
+            // SSLEngine
+            // SSLParameters
+            // SSLSocket
+            // ClassLoaderValue
+            // Preconditions
+            // InvalidJarIndexError
+            // ReservedStackAccess
+            // EntropySource
+            // ResponderId
+            // KeyStoreDelegator
+            // JavaTimeDateTimePatternProvider
 
+            // -- java.compiler --
+            // Generated
+            // RoundEnvironment
+            // SourceVersion
+            // ElementKind
+            // ElementVisitor
+            // ModuleElement
+            // UnknownDirectiveException
+            // TypeKind
+            // AbstractAnnotationValueVisitor9
+            // AbstractElementVisitor6
+            // AbstractElementVisitor9
+            // ElementFilter
+            // ElementKindVisitor9
+            // SimpleAnnotationValueVisitor9
+            // SimpleElementVisitor9
+            // SimpleTypeVisitor9
+            // TypeKindVisitor9
+            // DocumentationTool
+            // ForwardingJavaFileManager
+            // JavaCompiler
+            // JavaFileManager
+            // StandardJavaFileManager
+            // StandardLocation
+            // Tool
 
+            // -- java.datatransfer --
+            // DataFlavorUtil
+            // DesktopDatatransferService
+            // Component
+            // Desktop
+            // Font
+            // RenderingHints
+            // Robot
+            // Taskbar
+            // AboutEvent
+            // AboutHandler
+            // AppEvent
+            // AppForegroundEvent
+            // AppForegroundListener
+            // AppHiddenEvent
+            // AppHiddenListener
+            // AppReopenedEvent
+            // AppReopenedListener
+            // FilesEvent
+            // OpenFilesEvent
+            // OpenFilesHandler
+            // OpenURIEvent
+            // OpenURIHandler
+            // PreferencesEvent
+            // PreferencesHandler
+            // PrintFilesEvent
+            // PrintFilesHandler
+            // QuitEvent
+            // QuitHandler
+            // QuitResponse
+            // QuitStrategy
+            // ScreenSleepEvent
+            // ScreenSleepListener
+            // SystemEventListener
+            // UserSessionEvent
+            // UserSessionListener
+            // FocusEvent
+            // NumericShaper
+            // AbstractMultiResolutionImage
+            // BaseMultiResolutionImage
+            // MultiResolutionImage
+            // BeanProperty
+            // IndexedPropertyDescriptor
+            // JavaBean
+            // PropertyDescriptor
+            // AccessibilityProvider
+            // BaselineTIFFTagSet
+            // ExifGPSTagSet
+            // ExifInteroperabilityTagSet
+            // ExifParentTIFFTagSet
+            // FaxTIFFTagSet
+            // GeoTIFFTagSet
+            // TIFFDirectory
+            // TIFFField
+            // TIFFImageReadParam
+            // TIFFTag
+            // TIFFTagSet
+            // InputVerifier
+            // JComponent
+            // JList
+            // JToggleButton
+            // SwingContainer
+            // UIClientPropertyKey
+            // UIDefaults
+            // UIManager
+            // FileSystemView
+            // TextUI
+            // BasicGraphicsUtils
+            // AbstractDocument
+            // JTextComponent
+            // PasswordView
+            // PlainView
+            // Utilities
+            // WrappedPlainView
+            // ComponentFactory
+            // LightweightFrame
+            // DesktopDatatransferServiceImpl
+            // LightweightContent
+            // UndoableEditLockSupport
 
-            addClass(J_L_CharSequence::class.java)
+            // -- java.instrument --
+            // Instrumentation
+            // UnmodifiableModuleException
+
+            // -- java.logging --
+            // FileHandler
+            // Logger
+            // LogManager
+            // LogRecord
+
+            // -- java.management --
+            // ThreadInfo
+            // ConstructorParameters
+
+            // -- java.net.http --
+            // Decoder
+            // DecodingCallback
+            // Encoder
+            // Huffman
+            // NaiveHuffman
+            // RawChannel
+
+            // -- java.rmi --
+            // UnicastRemoteObject
+            // RegistryImpl
+
+            // -- java.security --
+            // EncryptionKey
+            // KerberosCredMessage
+
+            // -- java.sql --
+            // Connection
+            // ConnectionBuilder
+            // DatabaseMetaData
+            // DriverManager
+            // ShardingKey
+            // ShardingKeyBuilder
+            // Statement
+            // CommonDataSource
+            // ConnectionPoolDataSource
+            // DataSource
+            // PooledConnectionBuilder
+            // XAConnectionBuilder
+            // XADataSource
+
+            // -- java.xml --
+            // XMLConstants
+            // AltCatalog
+            // BaseEntry
+            // Catalog
+            // CatalogEntry
+            // CatalogException
+            // CatalogFeatures
+            // CatalogImpl
+            // CatalogManager
+            // CatalogMessages
+            // CatalogReader
+            // CatalogResolver
+            // CatalogResolverImpl
+            // DelegatePublic
+            // DelegateSystem
+            // DelegateUri
+            // GroupEntry
+            // NextCatalog
+            // Normalizer
+            // PublicEntry
+            // RewriteSystem
+            // RewriteUri
+            // SystemEntry
+            // SystemSuffix
+            // UriEntry
+            // UriSuffix
+            // Util
+            // DatatypeFactory
+            // DocumentBuilderFactory
+            // SAParserFactory
+            // XMLEventFactory
+            // XMLInputFactory
+            // XMLOutputFactory
+            // TransformerFactory
+            // SchemaFactory
+            // XPath
+            // XPathEvaluationResult
+            // XPathExpression
+            // XPathFactory
+            // XPathNodes
+            // ElementTraversal
+            // DocumentRange
+            // Range
+            // RangeException
+            // DocumentTraversal
+            // NodeFilter
+            // NodeIterator
+            // TreeWalker
+
+            // -- jdk.attach --
+            // AttachOperationFailedException
+
+            // -- jdk.compiler --
+            // DocComponentTree
+            // DocTreeVisitor
+            // HiddenTree
+            // IndexTree
+            // ProvidesTree
+            // UsesTree
+            // CompilationUnitTree
+            // ExportsTree
+            // ModuleTree
+            // OpensTree
+            // PackageTree
+            // ProvidesTree
+            // RequiresTree
+            // Tree
+            // UsesTree
+            // DocTreeFactory
+            // DocTrees
+            // SimpleDocTreeVisitor
+            // TaskEvent
+            // JavacToolProvider
+
+            // -- jdk.jartoool --
+            // JarSigner
+            // JarSignerException
+
+            // -- jdk.javadoc --
+            // Doclet
+            // DocletEnvironment
+            // Reporter
+            // Taglet
+            // JavadocToolProvider
+            // ReferenceType
+            // VirtualMachine
+
+            // -- jdk.jfr --
+            // AnnotationElement
+            // BooleanFlag
+            // Category
+            // Configuration
+            // ContentType
+            // DataAmount
+            // Description
+            // Enabled
+            // Event
+            // EventFactory
+            // EventSettings
+            // EventType
+            // Experimental
+            // FlightRecorder
+            // FlightRecorderListener
+            // FlightRecorderPermission
+            // Frequency
+            // Label
+            // MemoryAddress
+            // MetadataDefinition
+            // Name
+            // Percentage
+            // Period
+            // Recording
+            // RecordingState
+            // Registered
+            // Relational
+            // SettingControl
+            // SettingDefinition
+            // SettingDescriptor
+            // StackTrace
+            // Threshold
+            // Timespan
+            // Timestamp
+            // TransitionFrom
+            // TransitionTo
+            // Unsigned
+            // ValueDescriptor
+            // RecordedClass
+            // RecordedClassLoader
+            // RecordedEvent
+            // RecordedFrame
+            // RecordedMethod
+            // RecordedObject
+            // RecordedStackTrace
+            // RecordedThread
+            // RecordedGroup
+            // RecordingFile
+            // Cutoff
+
+            // -- jdk.jshell --
+            // *
+
+            // -- jdk.management.jfr --
+            // ConfigurationInfo
+            // EventTypeInfo
+            // FlightRecorderMXBean
+            // RecordingInfo
+            // SettingDescriptorInfo
+
+            // -- jdk.management --
+            // VMOption
+
+            // -- jdk.security.jgss --
+            // InquireType
+
+            // -- jdk.unsupported --
+            // Unsafe
         }
     }
 }

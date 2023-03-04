@@ -51,7 +51,7 @@ class ClassReplacer(val target: JavaVersion) {
                 var changed = false
                 for (i in args.indices) {
                     if (!args[i].descriptor.contains("L")) continue
-                    val arr = args[i].dimensions - if (args[i].descriptor.startsWith("[") ) 0 else 1
+                    val arr = if (args[i].descriptor.startsWith("[")) args[i].dimensions else 0
                     val desc = args[i].descriptor.substring(arr)
                     if (desc in replaces) {
                         newClasses.addAll(replaces[desc]!!.second)
@@ -59,7 +59,7 @@ class ClassReplacer(val target: JavaVersion) {
                         changed = true
                     }
                 }
-                val arr = returnType.dimensions - if (returnType.descriptor.startsWith("[") ) 0 else 1
+                val arr = if (returnType.descriptor.startsWith("[")) returnType.dimensions else 0
                 val desc = returnType.descriptor.substring(arr)
                 if (desc in replaces) {
                     newClasses.addAll(replaces[desc]!!.second)
@@ -82,7 +82,7 @@ class ClassReplacer(val target: JavaVersion) {
                                 var changed = false
                                 for (i in args.indices) {
                                     if (!args[i].descriptor.contains("L")) continue
-                                    val arr = args[i].dimensions - if (args[i].descriptor.startsWith("[") ) 0 else 1
+                                    val arr = if (args[i].descriptor.startsWith("[")) args[i].dimensions else 0
                                     val desc = args[i].descriptor.substring(arr)
                                     if (desc in replaces) {
                                         newClasses.addAll(replaces[desc]!!.second)
@@ -91,7 +91,7 @@ class ClassReplacer(val target: JavaVersion) {
                                     }
                                 }
                                 if (returnType.descriptor.contains("L")) {
-                                    val arr = returnType.dimensions - if (returnType.descriptor.startsWith("[")) 0 else 1
+                                    val arr = if (returnType.descriptor.startsWith("[")) returnType.dimensions else 0
                                     val desc = returnType.descriptor.substring(arr)
                                     if (desc in replaces) {
                                         newClasses.addAll(replaces[desc]!!.second)
@@ -104,7 +104,7 @@ class ClassReplacer(val target: JavaVersion) {
                                 }
                             } else {
                                 val type = Type.getType(arg.desc)
-                                val arr = type.dimensions - if (type.descriptor.startsWith("[") ) 0 else 1
+                                val arr = if (type.descriptor.startsWith("[")) type.dimensions else 0
                                 val desc = type.descriptor.substring(arr)
                                 if (desc in replaces) {
                                     newClasses.addAll(replaces[desc]!!.second)
@@ -114,7 +114,7 @@ class ClassReplacer(val target: JavaVersion) {
                         } else if (arg is Type) {
                             when (arg.sort) {
                                 Type.OBJECT, Type.ARRAY -> {
-                                    val arr = arg.dimensions - if (arg.descriptor.startsWith("[") ) 0 else 1
+                                    val arr = if (arg.descriptor.startsWith("[")) arg.dimensions else 0
                                     val desc = arg.descriptor.substring(arr)
                                     if (desc in replaces) {
                                         newClasses.addAll(replaces[desc]!!.second)
@@ -127,7 +127,7 @@ class ClassReplacer(val target: JavaVersion) {
                                     var changed = false
                                     for (i in args.indices) {
                                         if (!args[i].descriptor.contains("L")) continue
-                                        val arr = args[i].dimensions - if (args[i].descriptor.startsWith("[") ) 0 else 1
+                                        val arr = if (args[i].descriptor.startsWith("[")) args[i].dimensions else 0
                                         val desc = args[i].descriptor.substring(arr)
                                         if (desc in replaces) {
                                             newClasses.addAll(replaces[desc]!!.second)
@@ -136,7 +136,7 @@ class ClassReplacer(val target: JavaVersion) {
                                         }
                                     }
                                     if (returnType.descriptor.contains("L")) {
-                                        val arr = returnType.dimensions - if (returnType.descriptor.startsWith("[")) 0 else 1
+                                        val arr = if (returnType.descriptor.startsWith("[")) returnType.dimensions else 0
                                         val desc = returnType.descriptor.substring(arr)
                                         if (desc in replaces) {
                                             newClasses.addAll(replaces[desc]!!.second)
@@ -156,7 +156,7 @@ class ClassReplacer(val target: JavaVersion) {
                     var returnType = Type.getReturnType(insn.desc)
                     var changed = false
                     for (i in args.indices) {
-                        val arr = args[i].dimensions - if (args[i].descriptor.startsWith("[") ) 0 else 1
+                        val arr = if (args[i].descriptor.startsWith("[")) args[i].dimensions else 0
                         val desc = args[i].descriptor.substring(arr)
                         if (desc in replaces) {
                             newClasses.addAll(replaces[desc]!!.second)
@@ -164,7 +164,7 @@ class ClassReplacer(val target: JavaVersion) {
                             changed = true
                         }
                     }
-                    val arr = returnType.dimensions - if (returnType.descriptor.startsWith("[") ) 0 else 1
+                    val arr = if (returnType.descriptor.startsWith("[")) returnType.dimensions else 0
                     val desc = returnType.descriptor.substring(arr)
                     if (desc in replaces) {
                         newClasses.addAll(replaces[desc]!!.second)
@@ -192,7 +192,7 @@ class ClassReplacer(val target: JavaVersion) {
                     var changed = false
                     for (i in args.indices) {
                         if (!args[i].descriptor.contains("L")) continue
-                        val arr = args[i].dimensions - if (args[i].descriptor.startsWith("[") ) 0 else 1
+                        val arr = if (args[i].descriptor.startsWith("[")) args[i].dimensions else 0
                         val desc = args[i].descriptor.substring(arr)
                         if (desc in replaces) {
                             newClasses.addAll(replaces[desc]!!.second)
@@ -201,7 +201,7 @@ class ClassReplacer(val target: JavaVersion) {
                         }
                     }
                     if (returnType.descriptor.contains("L")) {
-                        val arr = returnType.dimensions - if (returnType.descriptor.startsWith("[")) 0 else 1
+                        val arr = if (returnType.descriptor.startsWith("[")) returnType.dimensions else 0
                         val desc = returnType.descriptor.substring(arr)
                         if (desc in replaces) {
                             newClasses.addAll(replaces[desc]!!.second)
@@ -214,7 +214,7 @@ class ClassReplacer(val target: JavaVersion) {
                     }
                 } else if (insn is MultiANewArrayInsnNode) {
                     val type = Type.getType(insn.desc)
-                    val arr = type.dimensions - if (type.descriptor.startsWith("[") ) 0 else 1
+                    val arr = if (type.descriptor.startsWith("[")) type.dimensions else 0
                     val desc = type.descriptor.substring(arr)
                     if (desc in replaces) {
                         newClasses.addAll(replaces[desc]!!.second)
@@ -228,7 +228,7 @@ class ClassReplacer(val target: JavaVersion) {
             for (lv in method.localVariables) {
                 val type = Type.getType(lv.desc)
                 if (!type.descriptor.contains("L")) continue
-                val arr = type.dimensions - if (type.descriptor.startsWith("[") ) 0 else 1
+                val arr = if (type.descriptor.startsWith("[")) type.dimensions else 0
                 val desc = type.descriptor.substring(arr)
                 if (desc in replaces) {
                     newClasses.addAll(replaces[desc]!!.second)
@@ -243,7 +243,7 @@ class ClassReplacer(val target: JavaVersion) {
                             val end = sig.first { it == ';' || it == '<' }
                             val type = Type.getType(sig.substringBefore(end) + ";")
                             sig = sig.substringAfter(end)
-                            val arr = type.dimensions - if (type.descriptor.startsWith("[")) 0 else 1
+                            val arr = if (type.descriptor.startsWith("[")) type.dimensions else 0
                             val desc = type.descriptor.substring(arr)
                             if (desc in replaces) {
                                 newClasses.addAll(replaces[desc]!!.second)
@@ -263,7 +263,7 @@ class ClassReplacer(val target: JavaVersion) {
         }
         for (field in classNode.fields.toList()) {
             val type = Type.getType(field.desc)
-            val arr = type.dimensions - if (type.descriptor.startsWith("[") ) 0 else 1
+            val arr = if (type.descriptor.startsWith("[")) type.dimensions else 0
             val desc = type.descriptor.substring(arr)
             if (desc in replaces) {
                 newClasses.addAll(replaces[desc]!!.second)

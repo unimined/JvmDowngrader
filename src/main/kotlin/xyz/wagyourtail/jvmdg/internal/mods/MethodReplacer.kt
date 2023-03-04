@@ -94,8 +94,8 @@ class MethodReplacer(target: JavaVersion) {
                             Type.getReturnType(mnode.desc),
                             *Type.getArgumentTypes(mnode.desc).drop(1).toTypedArray()
                         )
-                        if (stub.subtypes) {
-                            for (c in classgraph.allClasses.filter { it.superclasses.any { it.name.replace('.', '/') == arg.internalName } || it.interfaces.any { it.name.replace('.', '/') == arg.internalName } }) {
+                        if (stub.subtypes || stub.subtypesOnly) {
+                            for (c in classgraph.allClasses.filter { cl -> cl.superclasses.any { it.name.replace('.', '/') == arg.internalName } || cl.interfaces.any { it.name.replace('.', '/') == arg.internalName } }) {
                                 val cdesc = "L" + c.name.replace('.', '/') + ";"
                                 val ddesc = Type.getMethodDescriptor(
                                     Type.getType(cdesc),
@@ -104,7 +104,9 @@ class MethodReplacer(target: JavaVersion) {
                                 availableStubs.getOrPut(stub.value) { mutableMapOf() }[cdesc + mnode.name + ddesc] = mnode to incl
                             }
                         }
-                        availableStubs.getOrPut(stub.value) { mutableMapOf() }["L" + arg.internalName + ";" + mnode.name + desc] = mnode to incl
+                        if (!stub.subtypesOnly) {
+                            availableStubs.getOrPut(stub.value) { mutableMapOf() }["L" + arg.internalName + ";" + mnode.name + desc] = mnode to incl
+                        }
                     } else if (stub.desc.contains('(')) {
                         availableStubs.getOrPut(stub.value) { mutableMapOf() }[stub.desc] = mnode to incl
                     } else {
@@ -135,6 +137,8 @@ class MethodReplacer(target: JavaVersion) {
             Java13Stubs.apply()
             Java12Stubs.apply()
             Java11Stubs.apply()
+            Java10Stubs.apply()
+            Java9Stubs.apply()
         }
 
     }
@@ -186,8 +190,15 @@ class MethodReplacer(target: JavaVersion) {
                         }
                         // check if return type of stub is different, if so we need to insert a checkcast
                         if (insn.name != "<init>" && Type.getReturnType(stub.first.desc) != Type.getReturnType(insn.desc)) {
-                            method.instructions.insert(insn, TypeInsnNode(Opcodes.CHECKCAST, Type.getReturnType(insn.desc).internalName))
-                            i++
+                            // check if next insn is a pop, if so we don't need to
+                            val next = method.instructions.get(i + 1)
+                            if (next !is InsnNode || next.opcode != Opcodes.POP) {
+                                method.instructions.insert(
+                                    insn,
+                                    TypeInsnNode(Opcodes.CHECKCAST, Type.getReturnType(insn.desc).internalName)
+                                )
+                                i++
+                            }
                         }
                         insn.owner = "$shadePkg/${insn.owner}"
                         insn.name = stub.first.name

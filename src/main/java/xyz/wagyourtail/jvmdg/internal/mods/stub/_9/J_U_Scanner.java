@@ -1,43 +1,42 @@
 package xyz.wagyourtail.jvmdg.internal.mods.stub._9;
 
 import org.gradle.api.JavaVersion;
+import xyz.wagyourtail.jvmdg.internal.mods.stub.IteratorSupport;
 import xyz.wagyourtail.jvmdg.internal.mods.stub.Stub;
 
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.Scanner;
-import java.util.Spliterators;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class J_U_Scanner {
 
-    @Stub(value = JavaVersion.VERSION_1_9, include = ScannerStream.class)
+    @Stub(value = JavaVersion.VERSION_1_9, include = {ScannerStream.class, IteratorSupport.class})
     public static Stream<String> tokens(Scanner scanner) {
-        return new ScannerStream(scanner).tokens();
+        return new ScannerStream(scanner, null).tokens();
     }
 
-    @Stub(value = JavaVersion.VERSION_1_9, include = ScannerStream.class)
+    @Stub(value = JavaVersion.VERSION_1_9, include = {ScannerStream.class, IteratorSupport.class})
     public static Stream<MatchResult> findAll(Scanner scanner, Pattern pattern) {
-        return new ScannerStream(scanner).findAll(pattern);
+        return new ScannerStream(scanner, pattern).findAll();
     }
 
-    @Stub(value = JavaVersion.VERSION_1_9, include = ScannerStream.class)
+    @Stub(value = JavaVersion.VERSION_1_9, include = {ScannerStream.class, IteratorSupport.class})
     public static Stream<MatchResult> findAll(Scanner scanner, String patternString) {
-        return new ScannerStream(scanner).findAll(patternString);
+        return new ScannerStream(scanner, Pattern.compile(patternString)).findAll();
     }
 
     public static class ScannerStream {
         private final Scanner scanner;
+        private final Pattern pattern;
 
-        public ScannerStream(Scanner scanner) {
+        public ScannerStream(Scanner scanner, Pattern pattern) {
             this.scanner = scanner;
+            this.pattern = pattern;
         }
 
-        public boolean hasNextToken(String useless) {
+        public boolean hasNextToken() {
             return scanner.hasNext();
         }
 
@@ -45,26 +44,21 @@ public class J_U_Scanner {
             return scanner.next();
         }
 
-        public boolean hasNextMatch(Pattern pattern) {
+        public boolean hasNextMatch() {
             return scanner.findWithinHorizon(pattern, 0) != null;
         }
 
-        public MatchResult nextMatch(Pattern pattern) {
+        public MatchResult nextMatch() {
             return scanner.match();
         }
 
         public Stream<String> tokens() {
-            return Stream.generate(this::nextToken).takeWhile(this::hasNextToken).onClose(scanner::close);
+            return new IteratorSupport<>(this::hasNextToken, this::nextToken).stream();
         }
 
-        public Stream<MatchResult> findAll(Pattern pattern) {
+        public Stream<MatchResult> findAll() {
             Objects.requireNonNull(pattern);
-            return Stream.iterate(pattern, UnaryOperator.identity()).takeWhile(this::hasNextMatch).map(this::nextMatch).onClose(scanner::close);
-        }
-
-        public Stream<MatchResult> findAll(String patternString) {
-            Objects.requireNonNull(patternString);
-            return this.findAll(Pattern.compile(patternString));
+            return new IteratorSupport<>(this::hasNextMatch, this::nextMatch).stream();
         }
 
     }

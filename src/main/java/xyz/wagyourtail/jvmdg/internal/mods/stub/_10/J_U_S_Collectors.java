@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 public class J_U_S_Collectors {
 
-    @Stub(JavaVersion.VERSION_1_10)
+    @Stub(value = JavaVersion.VERSION_1_10, desc = "Ljava/util/stream/Collectors;")
     public static <T> Collector<T, ?, List<T>> toUnmodifiableList() {
         Collector<T, List<T>, List<T>> listCollector = (Collector) Collectors.toList();
         return Collector.of(
@@ -25,7 +25,7 @@ public class J_U_S_Collectors {
         );
     }
 
-    @Stub(JavaVersion.VERSION_1_10)
+    @Stub(value = JavaVersion.VERSION_1_10, desc = "Ljava/util/stream/Collectors;")
     public static <T> Collector<T, ?, Set<T>> toUnmodifiableSet() {
         Collector<T, Set<T>, Set<T>> setCollector = (Collector) Collectors.toSet();
         return Collector.of(
@@ -37,7 +37,7 @@ public class J_U_S_Collectors {
         );
     }
 
-    @Stub(JavaVersion.VERSION_1_10)
+    @Stub(value = JavaVersion.VERSION_1_10, desc = "Ljava/util/stream/Collectors;")
     public static <T, K, U> Collector<T, ?, Map<K,U>> toUnmodifiableMap(Function<? super T, ? extends K> keyMapper,
         Function<? super T, ? extends U> valueMapper) {
         Collector<T, Map<K, U>, Map<K, U>> mapCollector = (Collector) Collectors.toMap(keyMapper, valueMapper);
@@ -50,7 +50,7 @@ public class J_U_S_Collectors {
         );
     }
 
-    @Stub(JavaVersion.VERSION_1_10)
+    @Stub(value = JavaVersion.VERSION_1_10, desc = "Ljava/util/stream/Collectors;")
     public static <T, K, U>
     Collector<T, ?, Map<K,U>> toUnmodifiableMap(Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends U> valueMapper, BinaryOperator<U> mergeFunction) {
         Collector<T, Map<K, U>, Map<K, U>> mapCollector = (Collector) Collectors.toMap(keyMapper, valueMapper, mergeFunction);
