@@ -367,7 +367,7 @@ public abstract class VersionProvider {
                             TypeInsnNode tin = (TypeInsnNode) insn;
                             pair = replaceType(Type.getObjectType(tin.desc));
                             if (pair.getFirst()) {
-                                tin.desc = pair.getSecond().getDescriptor();
+                                tin.desc = pair.getSecond().getInternalName();
                             }
                         } else if (insn instanceof MultiANewArrayInsnNode) {
                             MultiANewArrayInsnNode manain = (MultiANewArrayInsnNode) insn;
