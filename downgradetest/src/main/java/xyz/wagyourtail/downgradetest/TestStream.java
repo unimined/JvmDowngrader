@@ -51,4 +51,5 @@ public class TestStream {
             .forEach(System.out::print);
         System.out.println();
     }
+
 }

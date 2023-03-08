@@ -19,4 +19,5 @@ public class TestMatch {
         Matcher m2 = Pattern.compile("\\^").matcher(a);
         System.out.println(m2.replaceFirst("^^"));
     }
+
 }

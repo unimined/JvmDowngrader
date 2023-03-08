@@ -6,10 +6,14 @@ public class TestString {
 
     public static void main(String[] args) {
         String a = "1";
-        float b = 2.000001f;
+        double b = 2.000001d;
         String c = null;
         String withConstants = a + b + c + "wasd" + Arrays.asList(args);
         System.out.println(withConstants);
+
+        System.out.println("aaa" + b + "bbb" + Arrays.asList(args) + a);
+
+        System.out.println(a + b + "ccc");
 
         System.out.println("""
                 This is a test
@@ -28,4 +32,5 @@ public class TestString {
         }
         System.out.println();
     }
+
 }

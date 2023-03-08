@@ -2,16 +2,17 @@ package xyz.wagyourtail.downgradetest;
 
 public interface TestInterface {
 
-    private void test() {
-        System.out.println("test");
+    static void main(String[] args) {
+        new TestInterface() {
+        }.test2();
     }
 
     default void test2() {
         test();
     }
 
-    static void main(String[] args) {
-        new TestInterface() {
-        }.test2();
+    private void test() {
+        System.out.println("test");
     }
+
 }

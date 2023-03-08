@@ -2,10 +2,6 @@ package xyz.wagyourtail.downgradetest;
 
 public sealed class TestSeal permits TestSeal.TestSeal2, TestSeal.TestSeal3 {
 
-    public void test() {
-        System.out.println("test");
-    }
-
     public static void main(String[] args) {
         TestSeal testSeal = new TestSeal2();
         testSeal.test();
@@ -19,6 +15,10 @@ public sealed class TestSeal permits TestSeal.TestSeal2, TestSeal.TestSeal3 {
         System.out.println(TestSeal2.class.isSealed());
     }
 
+    public void test() {
+        System.out.println("test");
+    }
+
     public static final class TestSeal2 extends TestSeal {
 
     }
@@ -30,4 +30,5 @@ public sealed class TestSeal permits TestSeal.TestSeal2, TestSeal.TestSeal3 {
         }
 
     }
+
 }

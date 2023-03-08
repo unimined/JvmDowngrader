@@ -12,6 +12,8 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/downgradetest" />
+            <option value="$PROJECT_DIR$/gradle-plugin" />
+            <option value="$PROJECT_DIR$/standalone" />
           </set>
         </option>
       </GradleProjectSettings>

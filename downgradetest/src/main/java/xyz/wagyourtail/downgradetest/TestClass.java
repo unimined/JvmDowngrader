@@ -8,4 +8,5 @@ public class TestClass {
         System.out.println(Object[][][].class.componentType());
         System.out.println(Object[].class.arrayType());
     }
+
 }

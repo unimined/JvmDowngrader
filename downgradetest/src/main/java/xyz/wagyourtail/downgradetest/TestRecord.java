@@ -20,4 +20,5 @@ public record TestRecord(int a, String b, char c, Consumer<Integer> d) {
         System.out.println(components[3].getGenericType());
         System.out.println(components[0].toString());
     }
+
 }

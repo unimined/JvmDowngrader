@@ -11,4 +11,5 @@ public class TestCollection {
         System.out.println(Set.of(3));
         System.out.println(Map.ofEntries(Map.entry("a", 1)));
     }
+
 }
