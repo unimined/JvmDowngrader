@@ -3,9 +3,12 @@ package xyz.wagyourtail.jvmdg.j9.stub;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.Ref;
 import xyz.wagyourtail.jvmdg.replace.Replace;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.*;
 
 public class J_L_I_StringConcatFactory {
@@ -18,7 +21,8 @@ public class J_L_I_StringConcatFactory {
         for (int j = 0; j < args.length; j++) {
             chars[j] = '\u0001';
         }
-        InsnList list = makeConcatInternal2(new String(chars), new LinkedList<>(Arrays.asList(args)));
+//        InsnList list = makeConcatInternal2(new String(chars), new LinkedList<>(Arrays.asList(args)));
+        InsnList list = makeConcatInternal3(cnode, new String(chars), new LinkedList<>(Arrays.asList(args)));
         mnode.instructions.insertBefore(indy, list);
         mnode.instructions.remove(indy);
     }
@@ -28,7 +32,8 @@ public class J_L_I_StringConcatFactory {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         Type[] args = Type.getArgumentTypes(indy.desc);
         String chars = (String) indy.bsmArgs[0];
-        InsnList list = makeConcatInternal2(chars, new LinkedList<>(Arrays.asList(args)));
+//        InsnList list = makeConcatInternal2(chars, new LinkedList<>(Arrays.asList(args)));
+        InsnList list = makeConcatInternal3(cnode, chars, new LinkedList<>(Arrays.asList(args)));
         mnode.instructions.insertBefore(indy, list);
         mnode.instructions.remove(indy);
     }
@@ -435,5 +440,193 @@ public class J_L_I_StringConcatFactory {
             false
         ));
         return list;
+    }
+
+    public static InsnList makeConcatInternal3(ClassNode node, String args, Deque<Type> types) {
+        if (!args.contains("\u0001")) {
+            // no args
+            InsnList list = new InsnList();
+            list.add(new LdcInsnNode(args));
+            if (!types.isEmpty()) {
+                throw new IllegalStateException("Types not empty!");
+            }
+        }
+        // find if already exits
+        int count = 0;
+        String desc = Type.getMethodDescriptor(Type.getType(String.class), types.toArray(new Type[0]));
+        for (MethodNode method : node.methods) {
+            if (method.desc.equals(desc) && method instanceof StringConcatMethodNode) {
+                StringConcatMethodNode concatMethod = (StringConcatMethodNode) method;
+                if (concatMethod.args.equals(args)) {
+                    InsnList list = new InsnList();
+                    list.add(new MethodInsnNode(
+                        Opcodes.INVOKESTATIC,
+                        node.name,
+                        concatMethod.name,
+                        concatMethod.desc,
+                        false
+                    ));
+                    return list;
+                }
+                if (concatMethod.name.startsWith("concat$jvmdowngrader")) {
+                    count++;
+                }
+            }
+        }
+        // create new
+        StringConcatMethodNode method = new StringConcatMethodNode(args, types, count);
+        node.methods.add(method);
+        InsnList list = new InsnList();
+        list.add(new MethodInsnNode(
+            Opcodes.INVOKESTATIC,
+            node.name,
+            method.name,
+            method.desc,
+            false
+        ));
+        return list;
+    }
+
+    public static class StringConcatMethodNode extends MethodNode {
+
+        public final String args;
+
+        public StringConcatMethodNode(String args, Deque<Type> types, int index) {
+            super(Opcodes.ASM9);
+            this.args = args;
+            this.name = "concat$jvmdowngrader";
+            if (index > 0) {
+                this.name += index;
+            }
+            this.access = Constants.synthetic(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC);
+            this.desc = Type.getMethodDescriptor(Type.getType(String.class), types.toArray(new Type[0]));
+            init(args, types);
+        }
+
+        private void init(String args, Deque<Type> types) {
+            visitCode();
+            int index = 0;
+            int typesIndex = 0;
+            if (args.isEmpty()) {
+                throw new IllegalArgumentException("args is empty");
+            }
+            visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
+            visitInsn(Opcodes.DUP);
+//            int firstTypeSize = 0;
+            if (args.charAt(index) == '\u0001') {
+                Type first = types.removeFirst();
+                String type = first.getDescriptor();
+                switch (first.getSort()) {
+                    case Type.OBJECT:
+                    case Type.ARRAY:
+                        if (type.equals("Ljava/lang/String;")) {
+                            // stack = [StringBuilder, StringBuilder]
+                            visitVarInsn(Opcodes.ALOAD, typesIndex);
+                            // stack = [StringBuilder, StringBuilder, String]
+                            visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false);
+                        } else {
+                            // stack = [StringBuilder, StringBuilder]
+                            visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
+                            // stack = [StringBuilder]
+                            visitVarInsn(Opcodes.ALOAD, typesIndex);
+                            // stack = [StringBuilder, Object]
+                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;", false);
+                        }
+                        break;
+                    default:
+                        // stack = [StringBuilder, StringBuilder]
+                        visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
+                        // stack = [StringBuilder]
+                        visitVarInsn(Opcodes.ALOAD, 0);
+                        // stack = [StringBuilder, type]
+                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + type + ")Ljava/lang/StringBuilder;", false);
+                }
+                typesIndex += first.getSize();
+                index++;
+            } else {
+                // first is literal
+                int first = args.indexOf('\u0001');
+                if (first == -1) {
+                    throw new IllegalArgumentException("args is invalid");
+                }
+                String literal = args.substring(0, first);
+                // stack = [StringBuilder, StringBuilder]
+                visitLdcInsn(literal);
+                // stack = [StringBuilder, String]
+                visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false);
+                index = first;
+            }
+            while (index < args.length()) {
+                if (args.charAt(index) == '\u0001') {
+                    Type type = types.removeFirst();
+                    String desc = type.getDescriptor();
+                    switch (type.getSort()) {
+                        case Type.OBJECT:
+                        case Type.ARRAY:
+                            if (desc.equals("Ljava/lang/String;")) {
+                                // stack = [StringBuilder]
+                                visitVarInsn(Opcodes.ALOAD, typesIndex);
+                                // stack = [StringBuilder, String]
+                                visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+                            } else {
+                                // stack = [StringBuilder]
+                                visitVarInsn(Opcodes.ALOAD, typesIndex);
+                                // stack = [StringBuilder, Object]
+                                visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;", false);
+                            }
+                            break;
+                        default:
+                            // stack = [StringBuilder]
+                            visitVarInsn(type.getOpcode(Opcodes.ILOAD), typesIndex);
+                            // stack = [StringBuilder, int]
+                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + desc + ")Ljava/lang/StringBuilder;", false);
+                            break;
+//                        case Type.LONG:
+//                            // stack = [StringBuilder]
+//                            visitVarInsn(type.getOpcode(Opcodes.LLOAD), typesIndex);
+//                            // stack = [StringBuilder, long]
+//                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + desc + ")Ljava/lang/StringBuilder;", false);
+//                            break;
+//                        case Type.FLOAT:
+//                            // stack = [StringBuilder]
+//                            visitVarInsn(type.getOpcode(Opcodes.FLOAD), typesIndex);
+//                            // stack = [StringBuilder, float]
+//                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + desc + ")Ljava/lang/StringBuilder;", false);
+//                            break;
+//                        case Type.DOUBLE:
+//                            // stack = [StringBuilder]
+//                            visitVarInsn(type.getOpcode(Opcodes.DLOAD), typesIndex);
+//                            // stack = [StringBuilder, double]
+//                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + desc + ")Ljava/lang/StringBuilder;", false);
+//                            break;
+//                        default:
+//                            throw new IllegalStateException("Unknown type: " + type);
+                    }
+                    typesIndex += type.getSize();
+                    index++;
+                } else {
+                    int next = args.indexOf('\u0001', index);
+                    if (next == -1) {
+                        next = args.length();
+                    }
+                    String literal = args.substring(index, next);
+                    // stack = [StringBuilder]
+                    visitLdcInsn(literal);
+                    // stack = [StringBuilder, String]
+                    visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+                    index = next;
+                }
+            }
+            if (!types.isEmpty()) {
+                throw new IllegalStateException("Types not empty!");
+            }
+            // stack = [StringBuilder]
+            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;", false);
+            // stack = [String]
+            visitInsn(Opcodes.ARETURN);
+            visitMaxs(0, 0);
+            visitEnd();
+        }
+
     }
 }

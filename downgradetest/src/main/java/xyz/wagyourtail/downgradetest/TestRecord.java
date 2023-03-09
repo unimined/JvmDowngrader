@@ -13,6 +13,7 @@ public record TestRecord(int a, String b, char c, Consumer<Integer> d) {
         TestRecord2 or = new TestRecord2(1, "2,=", '3');
         System.out.println(or);
         // get record components
+//        System.out.println(Record.class);
         RecordComponent[] components = TestRecord.class.getRecordComponents();
         System.out.println(components[0].getName());
         System.out.println(components[1].getGenericSignature());

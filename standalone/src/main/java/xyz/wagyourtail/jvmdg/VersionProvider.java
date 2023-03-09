@@ -375,6 +375,46 @@ public abstract class VersionProvider {
                             if (pair.getFirst()) {
                                 manain.desc = pair.getSecond().getDescriptor();
                             }
+                        } else if (insn instanceof LdcInsnNode) {
+                            LdcInsnNode ldc = (LdcInsnNode) insn;
+                            if (ldc.cst instanceof Type) {
+                                type = (Type) ldc.cst;
+                                pair = replaceType(type);
+                                if (pair.getFirst()) {
+                                    switch (type.getSort()) {
+                                        case Type.ARRAY:
+                                        case Type.OBJECT:
+                                            ldc.cst = pair.getSecond();
+                                            break;
+                                        case Type.METHOD:
+                                            ldc.cst = Type.getMethodType(pair.getSecond());
+                                            break;
+                                    }
+                                }
+                            } else if (ldc.cst instanceof Handle) {
+                                Handle handle = (Handle) ldc.cst;
+                                Type handleOwner = Type.getObjectType(handle.getOwner());
+                                if (classStubs.containsKey(handleOwner)) {
+                                    ldc.cst = new Handle(
+                                            handle.getTag(),
+                                            classStubs.get(handleOwner).getFirst().getInternalName(),
+                                            handle.getName(),
+                                            handle.getDesc(),
+                                            handle.isInterface()
+                                    );
+                                }
+                                handle = (Handle) ldc.cst;
+                                pair = replaceType(Type.getType(handle.getDesc()));
+                                if (pair.getFirst()) {
+                                    ldc.cst = new Handle(
+                                            handle.getTag(),
+                                            handle.getOwner(),
+                                            handle.getName(),
+                                            pair.getSecond().getDescriptor(),
+                                            handle.isInterface()
+                                    );
+                                }
+                            }
                         }
                     }
                 }
@@ -580,5 +620,4 @@ public abstract class VersionProvider {
             }
         }
     }
-
 }
