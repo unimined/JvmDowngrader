@@ -1,0 +1,63 @@
+plugins {
+    id 'com.github.johnrengelman.shadow'
+}
+
+configurations {
+    jij
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    testImplementation "org.apache.commons:commons-compress:1.21"
+
+    implementation project(":")
+    shadow project(":"), { transitive = false }
+    jij project(":java-api"), { transitive = false }
+}
+
+test {
+    useJUnitPlatform()
+    dependsOn(
+        project(":downgradetest").tasks.build,
+        project(":java-api").tasks.build
+    )
+    jvmArgs("-Djvmdg.debug=true")
+}
+
+jar {
+    archiveClassifier.set("slim")
+}
+
+shadowJar {
+    dependsOn(tasks.jar)
+    archiveClassifier.set(null)
+    configurations = [project.configurations.shadow]
+}
+
+tasks.register('jarInJar', Jar) {
+    dependsOn(tasks.shadowJar)
+    archiveClassifier.set("jij")
+
+    // Copy the shadow jar contents into the jij jar
+    from(zipTree(tasks.shadowJar.outputs.files.singleFile))
+
+    from(configurations.jij) {
+        into("META-INF/lib")
+        rename {
+            "java-api.jar"
+        }
+    }
+}
+
+build {
+    dependsOn(tasks.jarInJar)
+}
+
+compileJava {
+    sourceCompatibility = JavaVersion.VERSION_1_7
+    targetCompatibility = JavaVersion.VERSION_1_7
+
+    options.encoding = "UTF-8"
+    options.release = 8
+}

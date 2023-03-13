@@ -1,0 +1,37 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+apply plugin: 'maven-publish'
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
+
+    version = project.hasProperty('version_snapshot') ? project.property("version") + '-SNAPSHOT' : project.property("version")
+    group = project.maven_group
+
+    archivesBaseName = project.archives_base_name + project.path.replace(':', '-')
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        implementation 'org.ow2.asm:asm:9.4'
+        implementation 'org.ow2.asm:asm-commons:9.4'
+        implementation 'org.ow2.asm:asm-tree:9.4'
+        implementation 'org.ow2.asm:asm-util:9.4'
+        implementation 'org.ow2.asm:asm-analysis:9.4'
+        implementation 'io.github.classgraph:classgraph:4.8.156'
+    }
+}
+
+tasks.compileJava {
+    sourceCompatibility = JavaVersion.VERSION_1_7.toString()
+    targetCompatibility = JavaVersion.VERSION_1_7.toString()
+
+    options.encoding = 'UTF-8'
+    options.release.set(8)
+}

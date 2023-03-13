@@ -5,18 +5,18 @@
       <set>
         <option value="$PROJECT_DIR$/downgradetest/src/main/java" />
         <option value="$PROJECT_DIR$/gradle-plugin/src/main/kotlin" />
-        <option value="$PROJECT_DIR$/standalone/src/java10/java" />
-        <option value="$PROJECT_DIR$/standalone/src/java11/java" />
-        <option value="$PROJECT_DIR$/standalone/src/java12/java" />
-        <option value="$PROJECT_DIR$/standalone/src/java13/java" />
-        <option value="$PROJECT_DIR$/standalone/src/java14/java" />
-        <option value="$PROJECT_DIR$/standalone/src/java15/java" />
-        <option value="$PROJECT_DIR$/standalone/src/java16/java" />
-        <option value="$PROJECT_DIR$/standalone/src/java17/java" />
-        <option value="$PROJECT_DIR$/standalone/src/java9/java" />
+        <option value="$PROJECT_DIR$/java-api/src/java10/java" />
+        <option value="$PROJECT_DIR$/java-api/src/java11/java" />
+        <option value="$PROJECT_DIR$/java-api/src/java12/java" />
+        <option value="$PROJECT_DIR$/java-api/src/java13/java" />
+        <option value="$PROJECT_DIR$/java-api/src/java14/java" />
+        <option value="$PROJECT_DIR$/java-api/src/java15/java" />
+        <option value="$PROJECT_DIR$/java-api/src/java16/java" />
+        <option value="$PROJECT_DIR$/java-api/src/java17/java" />
+        <option value="$PROJECT_DIR$/java-api/src/java9/java" />
+        <option value="$PROJECT_DIR$/src/main/java" />
         <option value="$PROJECT_DIR$/standalone/src/main/java" />
-        <option value="$PROJECT_DIR$/standalone/src/standalone/java" />
-        <option value="$PROJECT_DIR$/standalone/src/test/kotlin" />
+        <option value="$PROJECT_DIR$/standalone/src/test/java" />
         <option value="$PROJECT_DIR$/standalone/src/test/resources" />
       </set>
     </option>
