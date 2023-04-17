@@ -1,6 +1,6 @@
 # JvmDowngrader
 
-downgrades modern java bytecode to older versions. compile and runtime.
+downgrades modern java bytecode to older versions. at either compile and/or runtime (requires runtime for certain things to work such as `MethodHandles$Lookup#defineClass`).
 
 ## initial relesase TODO:
 - [ ] finish downgrade task for gradle plugin
