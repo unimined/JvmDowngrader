@@ -1,6 +1,11 @@
 package xyz.wagyourtail.jvmdg.test;
 
+import com.google.gson.JsonParser;
+import nonapi.io.github.classgraph.json.JSONDeserializer;
+import nonapi.io.github.classgraph.json.JSONSerializer;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 
 import java.io.*;
 import java.net.URI;
@@ -11,6 +16,7 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 
 public class JavaRunner {
 
@@ -41,37 +47,68 @@ public class JavaRunner {
         }
     }
 
+    private static InputStream downloadJavaFromAdopt(JavaVersion vers) throws IOException {
+        //                         https://api.adoptium.net/v3/binary/latest/8                             /ga/linux          /x64              /jdk/hotspot/normal/eclipse
+        URI download = URI.create("https://api.adoptium.net/v3/binary/latest/" + vers.getMajorVersion() + "/ga/" + getOS() + "/" + getArch() + "/jre/hotspot/normal/eclipse");
+        System.out.println("Attempting to download adoptium from " + download);
+        return download.toURL().openStream();
+    }
+
+    private static InputStream downloadJavaFromAzul(JavaVersion vers) throws IOException {
+        //                         https://api.azul.com/metadata/v1/zulu/packages/?java_version=7&os=windows&arch=x64&archive_type=zip&latest=true&distro_version=7&release_status=ga&availability_types=CA&certifications=tck&page=1&page_size=100
+        URI download = URI.create("https://api.azul.com/metadata/v1/zulu/packages/?java_version=" + vers.getMajorVersion() + "&os=" + getOS() + "&arch=" + getArch() + "&archive_type=" + (getOS().equals("windows") ? "zip" : "tar.gz") + "&latest=true&distro_version=" + vers.getMajorVersion() + "&release_status=ga&availability_types=CA&certifications=tck&page=1&page_size=100");
+        // parse json for url
+        System.out.println("getting download list from " + download);
+        try (InputStream stream = download.toURL().openStream()) {
+            String url = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonArray().get(0).getAsJsonObject().get("download_url").getAsString();
+            URI uri = URI.create(url);
+            System.out.println("Downloading from " + uri);
+            return uri.toURL().openStream();
+        }
+    }
+
+    private static void extractToJVMDir(InputStream stream, Path jvmdir) throws IOException {
+        try (ArchiveInputStream archiver = getOS().equals("windows") ? new ZipArchiveInputStream(stream) : new TarArchiveInputStream(new GZIPInputStream(stream))) {
+            var entry = archiver.getNextEntry();
+            while (entry != null) {
+                // remove first directory
+                String[] nameParts = entry.getName().split("/");
+                List<String> filteredNameParts = new ArrayList<>();
+                for (String namePart : nameParts) {
+                    if (!namePart.isEmpty()) {
+                        filteredNameParts.add(namePart);
+                    }
+                }
+                if (filteredNameParts.get(0).startsWith("jdk")) {
+                    filteredNameParts.remove(0);
+                }
+                if (filteredNameParts.get(0).startsWith("zulu")) {
+                    filteredNameParts.remove(0);
+                }
+                String name = String.join("/", filteredNameParts);
+                if (entry.isDirectory()) {
+                    Files.createDirectories(jvmdir.resolve(name));
+                } else {
+                    Files.copy(archiver, jvmdir.resolve(name));
+                }
+                entry = archiver.getNextEntry();
+            }
+        }
+    }
+
     private static Path getJavaHome(JavaVersion vers) throws IOException {
         Path jvmdir = Paths.get("./build/test/jvm/" + vers.getMajorVersion());
         try {
             if (!Files.exists(jvmdir)) {
                 Files.createDirectories(jvmdir);
-                //                         https://api.adoptium.net/v3/binary/latest/8                             /ga/linux          /x64              /jdk/hotspot/normal/eclipse
-                URI download = URI.create("https://api.adoptium.net/v3/binary/latest/" + vers.getMajorVersion() + "/ga/" + getOS() + "/" + getArch() + "/jre/hotspot/normal/eclipse");
-                // download to jvmdir
-                try (TarArchiveInputStream archiver = new TarArchiveInputStream(new GZIPInputStream(download.toURL().openStream()))) {
-                    var entry = archiver.getNextTarEntry();
-                    while (entry != null) {
-                        // remove first directory
-                        String[] nameParts = entry.getName().split("/");
-                        List<String> filteredNameParts = new ArrayList<>();
-                        for (String namePart : nameParts) {
-                            if (!namePart.isEmpty()) {
-                                filteredNameParts.add(namePart);
-                            }
-                        }
-                        if (filteredNameParts.get(0).startsWith("jdk")) {
-                            filteredNameParts.remove(0);
-                        }
-                        String name = String.join("/", filteredNameParts);
-                        if (entry.isDirectory()) {
-                            Files.createDirectories(jvmdir.resolve(name));
-                        } else {
-                            Files.copy(archiver, jvmdir.resolve(name));
-                        }
-                        entry = archiver.getNextTarEntry();
-                    }
+                InputStream stream;
+                try {
+                    stream = downloadJavaFromAdopt(vers);
+                    extractToJVMDir(stream, jvmdir);
+                } catch (IOException e) {
+                    stream = downloadJavaFromAzul(vers);
                 }
+                extractToJVMDir(stream, jvmdir);
             }
         } catch (Throwable t) {
             try {

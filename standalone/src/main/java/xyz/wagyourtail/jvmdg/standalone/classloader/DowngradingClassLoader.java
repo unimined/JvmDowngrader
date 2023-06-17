@@ -7,10 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 
 public class DowngradingClassLoader extends ClassLoader {
     private final List<ClassLoader> delegates = new ArrayList<>();
@@ -52,7 +49,13 @@ public class DowngradingClassLoader extends ClassLoader {
         byte[] bytes;
         try {
             bytes = readAllBytes(url.openStream());
-            bytes = downgrader.downgrade(name, bytes);
+            Map<String, byte[]> extra = new HashMap<>();
+            bytes = downgrader.downgrade(name, bytes, extra);
+            for (Map.Entry<String, byte[]> entry : extra.entrySet()) {
+                String extraName = entry.getKey();
+                byte[] extraBytes = entry.getValue();
+                defineClass(extraName, extraBytes, 0, extraBytes.length);
+            }
         } catch (Exception e) {
             throw new ClassNotFoundException(name, e);
         }

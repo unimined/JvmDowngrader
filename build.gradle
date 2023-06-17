@@ -33,5 +33,9 @@ tasks.compileJava {
     targetCompatibility = JavaVersion.VERSION_1_7.toString()
 
     options.encoding = 'UTF-8'
-    options.release.set(8)
+
+    var version = 7
+    if (JavaVersion.current().isJava9Compatible()) {
+        options.release.set(version)
+    }
 }

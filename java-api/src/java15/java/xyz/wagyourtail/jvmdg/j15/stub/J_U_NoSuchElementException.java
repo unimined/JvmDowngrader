@@ -13,28 +13,14 @@ public class J_U_NoSuchElementException {
     @Stub(javaVersion = Opcodes.V15, ref = @Ref(value = "Ljava/util/NoSuchElementException", member = "<init>"))
     public static NoSuchElementException create(String s, Throwable cause) throws NoSuchMethodException {
         var nse = new NoSuchElementException(s);
-        // call setCause
-        Method setCause = Throwable.class.getDeclaredMethod("setCause", Throwable.class);
-        setCause.setAccessible(true);
-        try {
-            setCause.invoke(nse, cause);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        nse.initCause(cause);
         return nse;
     }
 
     @Stub(javaVersion = Opcodes.V15, ref = @Ref(value = "Ljava/util/NoSuchElementException", member = "<init>"))
     public static NoSuchElementException create(Throwable cause) throws NoSuchMethodException {
         var nse = new NoSuchElementException(cause == null ? null : cause.toString());
-        // call setCause
-        Method setCause = Throwable.class.getDeclaredMethod("setCause", Throwable.class);
-        setCause.setAccessible(true);
-        try {
-            setCause.invoke(nse, cause);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        nse.initCause(cause);
         return nse;
     }
 

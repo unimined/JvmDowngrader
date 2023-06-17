@@ -12,6 +12,8 @@ dependencies {
 tasks.jar {
 //    from(sourceSets["api"].output, sourceSets["main"].output)
 
+    archiveClassifier.set("gradle")
+
     manifest {
         attributes.putAll(
             mapOf(

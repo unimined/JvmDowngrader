@@ -14,25 +14,23 @@ import java.util.*;
 public class J_L_I_StringConcatFactory {
 
     @Replace(javaVersion = Opcodes.V9, ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcat", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"), idBSM = true)
-    public static void makeConcat(ClassNode cnode, MethodNode mnode, int i) {
+    public static void makeConcat(MethodNode mnode, int i, ClassNode cnode) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         Type[] args = Type.getArgumentTypes(indy.desc);
         char[] chars = new char[args.length];
         for (int j = 0; j < args.length; j++) {
             chars[j] = '\u0001';
         }
-//        InsnList list = makeConcatInternal2(new String(chars), new LinkedList<>(Arrays.asList(args)));
         InsnList list = makeConcatInternal3(cnode, new String(chars), new LinkedList<>(Arrays.asList(args)));
         mnode.instructions.insertBefore(indy, list);
         mnode.instructions.remove(indy);
     }
 
     @Replace(javaVersion = Opcodes.V9, ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcatWithConstants", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"), idBSM = true)
-    public static void makeConcatWithConstants(ClassNode cnode, MethodNode mnode, int i) {
+    public static void makeConcatWithConstants(MethodNode mnode, int i, ClassNode cnode) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         Type[] args = Type.getArgumentTypes(indy.desc);
         String chars = (String) indy.bsmArgs[0];
-//        InsnList list = makeConcatInternal2(chars, new LinkedList<>(Arrays.asList(args)));
         InsnList list = makeConcatInternal3(cnode, chars, new LinkedList<>(Arrays.asList(args)));
         mnode.instructions.insertBefore(indy, list);
         mnode.instructions.remove(indy);

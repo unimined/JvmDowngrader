@@ -30,9 +30,9 @@ public class JvmDowngraderTest {
 
     private final Path original = Path.of("../downgradetest/build/libs/downgradetest-1.0.0.jar");
 
-    private final Path downgraded = getDowngradedPath(original, "-downgraded-8.jar");
+    private final Path downgraded = getDowngradedPath(original, "-downgraded-7.jar");
 
-    private final Path downgradedJavaApi = getDowngradedPath(javaApi, "-downgraded-8.jar");
+    private final Path downgradedJavaApi = getDowngradedPath(javaApi, "-downgraded-7.jar");
 
     public JvmDowngraderTest() throws Exception {
     }
@@ -54,7 +54,7 @@ public class JvmDowngraderTest {
     private Path getDowngradedPath(Path originalPath, String suffix) throws Exception {
         Path path = originalPath.getParent().resolve(originalPath.getFileName().toString().replace(".jar", suffix));
         if (!Files.exists(path)) {
-            ClassDowngrader downgrader = new ClassDowngrader(Opcodes.V1_8);
+            ClassDowngrader downgrader = new ClassDowngrader(Opcodes.V1_7);
             downgrader.downgradeZip(originalPath.toFile(), path.toFile());
         }
         return path;
@@ -99,7 +99,7 @@ public class JvmDowngraderTest {
             Map.of(),
             true,
             List.of(),
-            Opcodes.V1_8,
+            Opcodes.V1_7,
             (String it) -> {
                 downgradedLog.append(it).append("\n");
                 System.out.println(it);
@@ -125,7 +125,7 @@ public class JvmDowngraderTest {
             Map.of(),
             true,
             List.of(/*"-Djvmdg.debug=true", */"-Djvmdg.java-api=" + javaApi),
-            Opcodes.V1_8,
+            Opcodes.V1_7,
             (String it) -> {
                 runtimeDowngradeLog.append(it).append("\n");
                 System.out.println(it);
@@ -137,7 +137,7 @@ public class JvmDowngraderTest {
         );
 
         if (ret2 != 0) {
-            throw new Exception("Origina jar did not return 0");
+            throw new Exception("Original jar did not return 0");
         }
         if (ret != 0) {
             throw new Exception("Downgraded jar did not return 0");
@@ -193,5 +193,15 @@ public class JvmDowngraderTest {
     @Test
     public void testFuture() throws Exception {
         testDowngrade("xyz.wagyourtail.downgradetest.TestFuture");
+    }
+
+    @Test
+    public void testLambda() throws Exception {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestLambda");
+    }
+
+    @Test
+    public void testNests() throws Exception {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestNests");
     }
 }

@@ -23,7 +23,7 @@ public class Java11Downgrader extends VersionProvider {
             // AbstractStringBuilder
             // Character (more unicode spaces);
             stub(J_L_CharSequence.class);
-            // Class (nest stuff)
+            // TODO: Class (nest stuff) (generate accessors for private fields)
             stub(J_L_String.class);
             stub(J_L_StringBuilder.class);
             stub(J_L_StringBuffer.class);

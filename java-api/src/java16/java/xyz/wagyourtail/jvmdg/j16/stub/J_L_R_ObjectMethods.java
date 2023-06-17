@@ -15,7 +15,7 @@ import java.util.List;
 public class J_L_R_ObjectMethods {
 
     @Replace(javaVersion = Opcodes.V16, ref = @Ref(value = "java/lang/runtime/ObjectMethods", member = "bootstrap", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"), idBSM = true)
-    public static void bootstrap(ClassNode cnode, MethodNode mnode, int i) {
+    public static void bootstrap(MethodNode mnode, int i, ClassNode cnode) {
         var indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         var recordClass = (Type) indy.bsmArgs[0];
         var fieldNames = (String) indy.bsmArgs[1];

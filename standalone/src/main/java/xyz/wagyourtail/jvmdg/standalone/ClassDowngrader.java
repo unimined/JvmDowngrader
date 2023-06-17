@@ -4,7 +4,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InnerClassNode;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.VersionProvider;
 import xyz.wagyourtail.jvmdg.standalone.classloader.DowngradingClassLoader;
@@ -13,11 +12,10 @@ import java.io.*;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -27,6 +25,7 @@ public class ClassDowngrader {
     public static final DowngradingClassLoader classLoader;
 
     static {
+        versionDowngraders.put(Opcodes.V1_8, "xyz.wagyourtail.jvmdg.j8.Java8Downgrader");
         versionDowngraders.put(Opcodes.V9, "xyz.wagyourtail.jvmdg.j9.Java9Downgrader");
         versionDowngraders.put(Opcodes.V10, "xyz.wagyourtail.jvmdg.j10.Java10Downgrader");
         versionDowngraders.put(Opcodes.V11, "xyz.wagyourtail.jvmdg.j11.Java11Downgrader");
@@ -84,19 +83,16 @@ public class ClassDowngrader {
                     if (entry.getName().endsWith(".class")) {
                         ClassNode clazz = new ClassNode();
                         new ClassReader(zis).accept(clazz, 0);
-                        downgrade(clazz);
-                        ZipEntry newEntry = new ZipEntry(entry.getName());
-                        newEntry.setTime(entry.getTime());
-                        zos.putNextEntry(newEntry);
-                        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-                        try {
-                            clazz.accept(writer);
-                        } catch (Throwable t) {
-                            System.err.println("Error while writing class " + clazz.name);
-                            throw t;
+                        Set<ClassNode> extra = new HashSet<>();
+                        downgrade(clazz, extra);
+                        extra.add(clazz);
+                        for (ClassNode node : extra) {
+                            ZipEntry newEntry = new ZipEntry(node.name + ".class");
+                            newEntry.setTime(entry.getTime());
+                            zos.putNextEntry(newEntry);
+                            zos.write(classNodeToBytes(node));
+                            zos.closeEntry();
                         }
-                        zos.write(writer.toByteArray());
-                        zos.closeEntry();
                     } else {
                         zos.putNextEntry(entry);
                         byte[] buffer = new byte[1024];
@@ -115,7 +111,9 @@ public class ClassDowngrader {
         }
     }
 
-    public void downgrade(ClassNode clazz) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException {
+    public void downgrade(ClassNode clazz, Set<ClassNode> extra) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException {
+        Set<ClassNode> classes = new HashSet<>();
+        classes.add(clazz);
         while (clazz.version > target) {
             int i = clazz.version;
             if (!downgraders.containsKey(i)) {
@@ -129,11 +127,17 @@ public class ClassDowngrader {
                     }
                 }
             }
-            downgraders.get(i).downgrade(clazz);
+            Set<ClassNode> newClasses = new HashSet<>();
+            VersionProvider downgrader = downgraders.get(i);
+            for (ClassNode c : classes) {
+                downgrader.downgrade(c, newClasses);
+            }
+            downgrade(clazz, newClasses);
+            classes.addAll(newClasses);
         }
     }
 
-    public byte[] downgrade(String name, byte[] bytes) throws IllegalClassFormatException {
+    public byte[] downgrade(String name, byte[] bytes, Map<String, byte[]> extraClasses) throws IllegalClassFormatException {
         // check magic
         if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
             bytes[3] != (byte) 0xBE) {
@@ -154,22 +158,31 @@ public class ClassDowngrader {
         // apply the downgrade
         try {
             if (Constants.DEBUG) System.out.println("Transforming " + name);
-            downgrade(node);
+            Set<ClassNode> extra = new HashSet<>();
+            downgrade(node, extra);
+            for (ClassNode c : extra) {
+                extraClasses.put(c.name, classNodeToBytes(c));
+            }
         } catch (InvocationTargetException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException |
                  InstantiationException e) {
             throw new RuntimeException(e);
         }
-
-        // write the class back out
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-        node.accept(cw);
-        // define the class
-        bytes = cw.toByteArray();
+        bytes = classNodeToBytes(node);
         if (Constants.DEBUG) {
+            for (Map.Entry<String, byte[]> entry : extraClasses.entrySet()) {
+                System.out.println("Downgraded " + entry.getKey() + " from unknown to " + target);
+                writeBytesToDebug(entry.getKey(), entry.getValue());
+            }
             System.out.println("Downgraded " + name + " from " + version + " to " + target);
             writeBytesToDebug(name, bytes);
         }
         return bytes;
+    }
+
+    public byte[] classNodeToBytes(ClassNode node) {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        node.accept(cw);
+        return cw.toByteArray();
     }
 
     public void writeBytesToDebug(String name, byte[] bytes) {

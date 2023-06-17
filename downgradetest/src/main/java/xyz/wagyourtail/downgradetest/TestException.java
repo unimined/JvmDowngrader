@@ -9,6 +9,21 @@ public class TestException {
         } catch (IndexOutOfBoundsException e) {
             System.out.println(e);
         }
+
+        new VirtualMachineError("test", new IndexOutOfBoundsException(1L)) {};
+        try {
+            throw new VirtualMachineError("test", new IndexOutOfBoundsException(1L)) {};
+        } catch (VirtualMachineError e) {
+            System.out.println(e);
+        }
+
+        new InternalError("test", new IndexOutOfBoundsException(1L));
+        try {
+            throw new InternalError("test", new IndexOutOfBoundsException(1L));
+        } catch (InternalError e) {
+            System.out.println(e);
+        }
+
     }
 
 }

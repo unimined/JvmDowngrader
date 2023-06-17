@@ -22,6 +22,7 @@ public class Java9Downgrader extends VersionProvider {
 
     @Override
     public void init() {
+        // -- java.base --
         stub(J_I_InputStream.class);
         // ObjectInputFilter
         // ObjectInputStream
@@ -67,6 +68,7 @@ public class Java9Downgrader extends VersionProvider {
         // ElementType
         // MethodHandle
         // MethodHandles
+        // MethodHandles$Lookup
         // StringConcatException
         stub(J_L_I_StringConcatFactory.class);
         // VarHandle

@@ -26,7 +26,7 @@ public abstract class VersionProvider {
     private final Map<String, Pair<Method, Stub>> methodStubs = new HashMap<>();
     private final Map<String, Pair<Method, Replace>> methodReplaces = new HashMap<>();
     private final int targetVersion;
-    private ScanResult allClasses;
+    private final ScanResult allClasses;
 
 
 
@@ -143,9 +143,12 @@ public abstract class VersionProvider {
                 methodStub(m);
             }
         }
+        for (Class<?> c : clazz.getClasses()) {
+            stub(c);
+        }
     }
 
-    private static Class<?>[] replaceSig = new Class<?>[] { ClassNode.class, MethodNode.class, int.class };
+    private static final Class<?>[] replaceSig = new Class<?>[] { MethodNode.class, int.class, ClassNode.class, Set.class };
 
     public void methodStub(Method m) {
         Stub methodStub = m.getAnnotation(Stub.class);
@@ -201,7 +204,9 @@ public abstract class VersionProvider {
                             throw new IllegalArgumentException("Return type must be the same as the owner to return a decendant");
                         }
                         Type ret2 = Type.getObjectType(ci.getName().replace('.', '/'));
-                        methodStubs.put(ci.getName().replace('.', '/') + ";" + name + Type.getMethodDescriptor(ret2, args), new Pair<>(m, methodStub));
+                        String target = ci.getName().replace('.', '/') + ";" + name + Type.getMethodDescriptor(ret2, args);
+                        // prioritize non-subtype stubs
+                        if (!methodStubs.containsKey(target)) methodStubs.put(target, new Pair<>(m, methodStub));
                     }
                 }
             }
@@ -210,13 +215,14 @@ public abstract class VersionProvider {
         if (methodReplace != null) {
             // assert that the method desc matches expected
             Class<?>[] paramTypes = m.getParameterTypes();
-            if (paramTypes.length != replaceSig.length) {
-                throw new IllegalArgumentException("Method must have the following signature: " + Arrays.toString(replaceSig));
-            }
-            for (int i = 0; i < paramTypes.length; i++) {
-                if (paramTypes[i] != replaceSig[i]) {
-                    throw new IllegalArgumentException("Method must have the following signature: " + Arrays.toString(replaceSig));
+            if (paramTypes.length <= replaceSig.length) {
+                for (int i = 0; i < paramTypes.length; i++) {
+                    if (paramTypes[i] != replaceSig[i]) {
+                        throw new IllegalArgumentException("Method must have the following signature: " + Arrays.toString(replaceSig));
+                    }
                 }
+            }  else {
+                throw new IllegalArgumentException("Method must have the following signature: " + Arrays.toString(replaceSig));
             }
             String name = methodReplace.ref().value();
             if (name.startsWith("L")) {
@@ -226,10 +232,10 @@ public abstract class VersionProvider {
         }
     }
 
-    public void downgrade(ClassNode clazz) throws InvocationTargetException, IllegalAccessException {
+    public void downgrade(ClassNode clazz, Set<ClassNode> extra) throws InvocationTargetException, IllegalAccessException {
         if (clazz.version != targetVersion) throw new IllegalArgumentException("Class " + clazz.name + " is not version " + targetVersion);
         stubClasses(clazz);
-        stubMethods(clazz);
+        stubMethods(clazz, extra);
         otherTransforms(clazz);
         clazz.version = targetVersion - 1;
     }
@@ -538,7 +544,7 @@ public abstract class VersionProvider {
         return new Pair<>(changed, sb.toString());
     }
 
-    public void stubMethods(ClassNode clazz) throws InvocationTargetException, IllegalAccessException {
+    public void stubMethods(ClassNode clazz, Set<ClassNode> extra) throws InvocationTargetException, IllegalAccessException {
         if (clazz.methods == null) {
             return;
         }
@@ -603,7 +609,14 @@ public abstract class VersionProvider {
                     }
                     if (methodReplaces.containsKey(stubDesc)) {
                         Pair<Method, Replace> replace = methodReplaces.get(stubDesc);
-                        replace.getFirst().invoke(null, clazz, method, i);
+                        Method first = replace.getFirst();
+                        List<?> args = Arrays.asList(
+                            method,
+                            i,
+                            clazz,
+                            extra
+                        );
+                        first.invoke(null, args.subList(0, first.getParameterCount()).toArray());
                     }
                 } else if (insn instanceof InvokeDynamicInsnNode) {
                     InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
@@ -615,7 +628,14 @@ public abstract class VersionProvider {
                     }
                     if (methodReplaces.containsKey(stubDesc)) {
                         Pair<Method, Replace> replace = methodReplaces.get(stubDesc);
-                        replace.getFirst().invoke(null, clazz, method, i);
+                        Method first = replace.getFirst();
+                        List<?> args = Arrays.asList(
+                                method,
+                                i,
+                                clazz,
+                                extra
+                        );
+                        first.invoke(null, args.subList(0, first.getParameterCount()).toArray());
                         continue;
                     }
                     /// bsm args
