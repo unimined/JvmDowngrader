@@ -9,12 +9,12 @@ import java.lang.reflect.Field;
 
 public class J_L_Thread {
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/Thread;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Thread;"))
     public static void onSpinWait() {
         Thread.yield();
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref(value = "Ljava/lang/Thread", member = "<init>"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref(value = "Ljava/lang/Thread", member = "<init>"))
     public static Thread init(ThreadGroup group, Runnable target, String name, long stackSize, boolean inheritThreadLocals) throws IllegalAccessException, NoSuchFieldException {
         if (inheritThreadLocals) {
             return new Thread(group, target, name, stackSize);

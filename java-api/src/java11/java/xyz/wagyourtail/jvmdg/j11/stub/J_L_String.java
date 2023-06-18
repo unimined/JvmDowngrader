@@ -10,7 +10,7 @@ import java.util.stream.Stream;
 
 public class J_L_String {
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static String strip(String str) {
         if (str.isEmpty()) {
             return "";
@@ -28,7 +28,7 @@ public class J_L_String {
         return ((st > 0) || (ed < len)) ? new String(val, st, ed - st) : str;
     }
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static String stripLeading(String str) {
         if (str.isEmpty()) {
             return "";
@@ -42,7 +42,7 @@ public class J_L_String {
         return (st > 0) ? new String(val, st, len - st) : str;
     }
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static String stripTrailing(String str) {
         if (str.isEmpty()) {
             return "";
@@ -56,7 +56,7 @@ public class J_L_String {
         return (ed < len) ? new String(val, 0, ed) : str;
     }
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static boolean isBlank(String str) {
         int len = str.length();
         if (len == 0) {
@@ -70,12 +70,12 @@ public class J_L_String {
         return true;
     }
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static Stream<String> lines(String str) {
         return new BufferedReader(new StringReader(str)).lines();
     }
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static String repeat(String str, int count) {
         if (count < 0) {
             throw new IllegalArgumentException("count is negative: " + count);

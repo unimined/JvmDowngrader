@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 public class J_U_C_TimeUnit {
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static ChronoUnit toChronoUnit(TimeUnit tu) {
         switch (tu) {
             case NANOSECONDS:
@@ -32,7 +32,7 @@ public class J_U_C_TimeUnit {
         }
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/TimeUnit;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/TimeUnit;"))
     public static TimeUnit of(ChronoUnit unit) {
         switch (unit) {
             case NANOS:

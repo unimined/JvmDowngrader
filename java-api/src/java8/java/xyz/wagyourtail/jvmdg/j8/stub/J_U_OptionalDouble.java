@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.stub.Stub;
 import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
-@Stub(javaVersion = 8, ref = @Ref("java/util/OptionalDouble"))
+@Stub(opcVers = 8, ref = @Ref("java/util/OptionalDouble"))
 public class J_U_OptionalDouble {
 
     private static final J_U_OptionalDouble EMPTY = new J_U_OptionalDouble();

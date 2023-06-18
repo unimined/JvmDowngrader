@@ -10,7 +10,7 @@ import xyz.wagyourtail.jvmdg.stub.Stub;
 
 import java.util.Objects;
 
-@Stub(javaVersion = Opcodes.V1_8, ref = @Ref("Ljava/util/Optional;"))
+@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/Optional;"))
 public class J_U_Optional<T> {
 
     private static final J_U_Optional EMPTY = new J_U_Optional(null);

@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.stub.Stub;
 
 @J_L_FunctionalInterface
-@Stub(javaVersion = Opcodes.V1_8, ref = @Ref("Ljava/util/function/ObjIntConsumer"))
+@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/ObjIntConsumer"))
 public interface J_U_F_ObjIntConsumer<T> {
 
     void accept(T t, int value);

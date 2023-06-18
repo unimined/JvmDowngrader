@@ -14,22 +14,22 @@ import java.nio.file.Path;
 
 public class J_N_F_Files {
 
-    @Stub(javaVersion = Opcodes.V11, ref = @Ref("Ljava/nio/file/Files;"))
+    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/nio/file/Files;"))
     public static String readString(Path path) throws IOException {
         return readString(path, StandardCharsets.UTF_8);
     }
 
-    @Stub(javaVersion = Opcodes.V11, ref = @Ref("Ljava/nio/file/Files;"))
+    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/nio/file/Files;"))
     public static String readString(Path path, Charset cs) throws IOException {
         return new String(Files.readAllBytes(path), cs);
     }
 
-    @Stub(javaVersion = Opcodes.V11, ref = @Ref("Ljava/nio/file/Files;"))
+    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/nio/file/Files;"))
     public static void writeString(Path path, CharSequence cs, OpenOption... options) throws IOException {
         writeString(path, cs, StandardCharsets.UTF_8, options);
     }
 
-    @Stub(javaVersion = Opcodes.V11, ref = @Ref("Ljava/nio/file/Files;"))
+    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/nio/file/Files;"))
     public static void writeString(Path path, CharSequence cs, Charset cs2, OpenOption... options) throws IOException {
         Files.write(path, cs.toString().getBytes(cs2), options);
     }

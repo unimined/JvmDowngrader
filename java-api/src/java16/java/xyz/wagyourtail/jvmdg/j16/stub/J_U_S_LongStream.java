@@ -5,13 +5,12 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.Ref;
 import xyz.wagyourtail.jvmdg.stub.Stub;
 
-import java.util.Objects;
 import java.util.function.LongConsumer;
 import java.util.stream.LongStream;
 
 public class J_U_S_LongStream {
 
-    @Stub(javaVersion = Opcodes.V16)
+    @Stub(opcVers = Opcodes.V16)
     public static LongStream mapMulti(LongStream stream, LongMapMultiConsumer mapper) {
         if (mapper == null) {
             throw new NullPointerException();
@@ -20,7 +19,7 @@ public class J_U_S_LongStream {
     }
 
     @FunctionalInterface
-    @Stub(javaVersion = Opcodes.V16, ref = @Ref("Ljava/util/stream/LongStream$LongMapMultiConsumer;"))
+    @Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/util/stream/LongStream$LongMapMultiConsumer;"))
     public interface LongMapMultiConsumer {
 
         default LongStream of(long d) {

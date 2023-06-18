@@ -14,7 +14,7 @@ import java.util.stream.Collector;
 
 public class J_U_S_Collectors {
 
-    @Stub(javaVersion = Opcodes.V12,
+    @Stub(opcVers = Opcodes.V12,
         ref = @Ref("Ljava/util/stream/Collectors;"),
         include = {Teeing.class, Teeing.PairBox.class})
     public static <T, R1, R2, R> Collector<? super T, ?, R> teeing(Collector<? super T, ?, R1> downstream1, Collector<? super T, ?, R2> downstream2, BiFunction<? super R1, ? super R2, R> merger) {

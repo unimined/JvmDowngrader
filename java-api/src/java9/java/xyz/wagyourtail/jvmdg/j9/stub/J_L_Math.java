@@ -9,17 +9,17 @@ import java.math.BigDecimal;
 
 public class J_L_Math {
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
     public static long multiplyExact(long x, int y) {
         return Math.multiplyExact(x, (long) y);
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
     public static long multiplyFull(int x, int y) {
         return (long) x * (long) y;
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
     public static long multiplyHigh(long x, long y) {
         if (x < 0 || y < 0) {
             // Use technique from section 8-2 of Henry S. Warren, Jr.,
@@ -48,17 +48,17 @@ public class J_L_Math {
         }
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
     public static long floorDiv(long x, int y) {
         return Math.floorDiv(x, (long) y);
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
     public static int floorMod(long x, int y) {
         return (int) Math.floorMod(x, (long) y);
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
     public static float fma(float a, float b, float c) {
         if (Float.isFinite(a) && Float.isFinite(b) && Float.isFinite(c)) {
             if (a == 0.0 || b == 0.0) {
@@ -76,7 +76,7 @@ public class J_L_Math {
         }
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Math;"))
     public static double fma(double a, double b, double c) {
         if (Double.isNaN(a) || Double.isNaN(b) || Double.isNaN(c)) {
             return Double.NaN;

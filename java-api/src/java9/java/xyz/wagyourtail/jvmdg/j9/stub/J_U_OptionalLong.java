@@ -10,7 +10,7 @@ import java.util.stream.LongStream;
 
 public class J_U_OptionalLong {
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static void ifPresentOrElse(OptionalLong optional, LongConsumer action, Runnable emptyAction) {
         if (optional.isPresent()) {
             action.accept(optional.getAsLong());
@@ -19,7 +19,7 @@ public class J_U_OptionalLong {
         }
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static LongStream stream(OptionalLong optional) {
         return optional.isPresent() ? LongStream.of(optional.getAsLong()) : LongStream.empty();
     }

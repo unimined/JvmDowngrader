@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.stub.Stub;
 
 public class J_U_Objects {
 
-    @Stub(javaVersion = Opcodes.V16, ref = @Ref(value = "Ljava/util/Objects", member = "checkIndex"))
+    @Stub(opcVers = Opcodes.V16, ref = @Ref(value = "Ljava/util/Objects", member = "checkIndex"))
     public static long checkIndex(long index, long length) {
         if (index < 0 || index >= length) {
             throw new IndexOutOfBoundsException("Index out of range: " + index);
@@ -15,7 +15,7 @@ public class J_U_Objects {
         return index;
     }
 
-    @Stub(javaVersion = Opcodes.V16, ref = @Ref(value = "Ljava/util/Objects", member = "checkFromToIndex"))
+    @Stub(opcVers = Opcodes.V16, ref = @Ref(value = "Ljava/util/Objects", member = "checkFromToIndex"))
     public static long checkFromToIndex(long fromIndex, long toIndex, long length) {
         if (fromIndex < 0 || fromIndex > toIndex || toIndex > length) {
             throw new IndexOutOfBoundsException(
@@ -24,7 +24,7 @@ public class J_U_Objects {
         return fromIndex;
     }
 
-    @Stub(javaVersion = Opcodes.V16, ref = @Ref(value = "Ljava/util/Objects", member = "checkFromIndexSize"))
+    @Stub(opcVers = Opcodes.V16, ref = @Ref(value = "Ljava/util/Objects", member = "checkFromIndexSize"))
     public static long checkFromIndexSize(long fromIndex, long size, long length) {
         if (fromIndex < 0 || size < 0 || fromIndex > length - size) {
             throw new IndexOutOfBoundsException(

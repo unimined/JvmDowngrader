@@ -12,13 +12,13 @@ import java.util.stream.Stream;
 
 public class J_T_LocalDate {
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/time/LocalDate;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/time/LocalDate;"))
     public static LocalDate ofInstant(Instant instant, ZoneId zone) {
         ZonedDateTime zdt = instant.atZone(zone);
         return zdt.toLocalDate();
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static Stream<LocalDate> datesUntil(LocalDate start, LocalDate endExclusive) {
         long startEpochDay = start.toEpochDay();
         long endEpochDay = endExclusive.toEpochDay();
@@ -28,12 +28,12 @@ public class J_T_LocalDate {
         return LongStream.range(startEpochDay, endEpochDay).mapToObj(LocalDate::ofEpochDay);
     }
 
-    @Stub(javaVersion = Opcodes.V9, include = DatesUntil.class)
+    @Stub(opcVers = Opcodes.V9, include = DatesUntil.class)
     public static Stream<LocalDate> datesUntil(LocalDate self, LocalDate endExclusive, Period step) {
         return new DatesUntil(self, endExclusive, step).dateStream();
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static long toEpochSecond(LocalDate date, LocalTime time, ZoneOffset off) {
         Objects.requireNonNull(time, "time");
         Objects.requireNonNull(off, "off");

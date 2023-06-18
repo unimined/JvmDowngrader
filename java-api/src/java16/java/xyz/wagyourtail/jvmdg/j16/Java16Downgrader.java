@@ -63,7 +63,8 @@ public class Java16Downgrader extends VersionProvider {
             stub(J_U_L_LogRecord.class);
 
             // -- java.net.http --
-            stub(J_N_H_HttpRequest.class);
+            // TODO:
+//            stub(J_N_H_HttpRequest.class);
 
             // -- jdk.compiler --
             // ReturnTree
@@ -90,8 +91,9 @@ public class Java16Downgrader extends VersionProvider {
     }
 
     @Override
-    public void otherTransforms(ClassNode clazz) {
+    public ClassNode otherTransforms(ClassNode clazz) {
         recordRemover(clazz);
+        return clazz;
     }
 
     public void recordRemover(ClassNode node) {
@@ -105,7 +107,7 @@ public class Java16Downgrader extends VersionProvider {
             value.deleteCharAt(value.length() - 1);
             node.recordComponents = null;
             node.visitField(
-                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC),
+                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
                 "recordComponents$jvmdowngrader",
                 "Ljava/lang/String;",
                 null,

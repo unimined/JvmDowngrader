@@ -11,7 +11,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
-@Stub(javaVersion = Opcodes.V16, ref = @Ref("Ljava/lang/reflect/RecordComponent;"))
+@Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/lang/reflect/RecordComponent;"))
 public class J_L_R_RecordComponent {
 
     private final Class<?> declaring;

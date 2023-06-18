@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.stub.Stub;
 
 public class J_L_String {
 
-    @Stub(javaVersion = Opcodes.V15)
+    @Stub(opcVers = Opcodes.V15)
     public static String stripIndent(String str) {
         int len = str.length();
         if (len == 0) {
@@ -48,7 +48,7 @@ public class J_L_String {
         return sb.toString();
     }
 
-    @Stub(javaVersion = Opcodes.V15)
+    @Stub(opcVers = Opcodes.V15)
     public static String translateEscapes(String str) {
         if (str.isEmpty()) {
             return str;
@@ -95,7 +95,7 @@ public class J_L_String {
         return new String(chars, 0, j);
     }
 
-    @Stub(javaVersion = Opcodes.V15)
+    @Stub(opcVers = Opcodes.V15)
     public static String formatted(String str, Object... args) {
         return String.format(str, args);
     }

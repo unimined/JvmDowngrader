@@ -9,7 +9,7 @@ import java.util.Objects;
 
 public class J_L_CharSequence {
 
-    @Stub(javaVersion = Opcodes.V11, ref = @Ref("Ljava/lang/CharSequence;"))
+    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/lang/CharSequence;"))
     public static int compare(CharSequence cs1, CharSequence cs2) {
         if (Objects.requireNonNull(cs1) == Objects.requireNonNull(cs2)) {
             return 0;

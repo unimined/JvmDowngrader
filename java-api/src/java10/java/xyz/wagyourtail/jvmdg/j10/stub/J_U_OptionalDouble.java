@@ -9,7 +9,7 @@ import java.util.OptionalDouble;
 
 public class J_U_OptionalDouble {
 
-    @Stub(javaVersion = Opcodes.V10)
+    @Stub(opcVers = Opcodes.V10)
     public static double orElseThrow(OptionalDouble optional) {
         if (optional.isPresent()) {
             return optional.getAsDouble();

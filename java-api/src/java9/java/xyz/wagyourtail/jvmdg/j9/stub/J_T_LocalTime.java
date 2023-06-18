@@ -10,13 +10,13 @@ import java.util.Objects;
 
 public class J_T_LocalTime {
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/time/LocalTime;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/time/LocalTime;"))
     public static LocalTime ofInstant(Instant instant, ZoneId zone) {
         ZonedDateTime zdt = instant.atZone(zone);
         return zdt.toLocalTime();
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static long toEpochSecond(LocalTime time, LocalDate date, ZoneOffset offset) {
         Objects.requireNonNull(date, "date");
         Objects.requireNonNull(offset, "offset");

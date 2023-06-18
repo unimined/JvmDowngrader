@@ -5,6 +5,7 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.Function;
 import xyz.wagyourtail.jvmdg.VersionProvider;
 import xyz.wagyourtail.jvmdg.standalone.classloader.DowngradingClassLoader;
 
@@ -12,6 +13,8 @@ import java.io.*;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -25,7 +28,7 @@ public class ClassDowngrader {
     public static final DowngradingClassLoader classLoader;
 
     static {
-        versionDowngraders.put(Opcodes.V1_8, "xyz.wagyourtail.jvmdg.j8.Java8Downgrader");
+//        versionDowngraders.put(Opcodes.V1_8, "xyz.wagyourtail.jvmdg.j8.Java8Downgrader");
         versionDowngraders.put(Opcodes.V9, "xyz.wagyourtail.jvmdg.j9.Java9Downgrader");
         versionDowngraders.put(Opcodes.V10, "xyz.wagyourtail.jvmdg.j10.Java10Downgrader");
         versionDowngraders.put(Opcodes.V11, "xyz.wagyourtail.jvmdg.j11.Java11Downgrader");
@@ -40,7 +43,7 @@ public class ClassDowngrader {
 
     private static final Map<Integer, VersionProvider> downgraders = new HashMap<>();
 
-    private int target;
+    private final int target;
 
     public ClassDowngrader(int versionTarget) {
         this.target = versionTarget;
@@ -76,42 +79,83 @@ public class ClassDowngrader {
 
     @SuppressWarnings("IOStreamConstructor")
     public void downgradeZip(File zip, File output) throws IOException {
-        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zip))) {
+        try (final FileSystem zipfs = ZipUtil.openZipFileSystem(zip.toPath(), new HashMap<String, Object>())) {
             try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(output))) {
-                ZipEntry entry;
-                while ((entry = zis.getNextEntry()) != null) {
-                    if (entry.getName().endsWith(".class")) {
-                        ClassNode clazz = new ClassNode();
-                        new ClassReader(zis).accept(clazz, 0);
-                        Set<ClassNode> extra = new HashSet<>();
-                        downgrade(clazz, extra);
-                        extra.add(clazz);
-                        for (ClassNode node : extra) {
-                            ZipEntry newEntry = new ZipEntry(node.name + ".class");
-                            newEntry.setTime(entry.getTime());
+                Files.walkFileTree(zipfs.getPath("/"), new FileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                        if (dir.startsWith("META-INF"))
+                            return FileVisitResult.SKIP_SUBTREE;
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        if (file.getFileName().toString().endsWith(".class")) {
+                            ClassNode clazz = new ClassNode();
+                            try (InputStream is = Files.newInputStream(file)) {
+                                new ClassReader(is).accept(clazz, 0);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            try {
+                                Set<ClassNode> outputs = downgrade(clazz, new Function<String, ClassNode>() {
+                                    @Override
+                                    public ClassNode apply(String s) {
+                                        try {
+                                            Path path = zipfs.getPath(s + ".class");
+                                            if (Files.exists(path)) {
+                                                ClassNode node = new ClassNode();
+                                                try (InputStream is = Files.newInputStream(path)) {
+                                                    new ClassReader(is).accept(node, 0);
+                                                } catch (IOException e) {
+                                                    throw new RuntimeException(e);
+                                                }
+                                                return node;
+                                            }
+                                            return null;
+                                        } catch (Exception e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                                });
+                                for (ClassNode node : outputs) {
+                                    ZipEntry newEntry = new ZipEntry(node.name + ".class");
+                                    newEntry.setTime(attrs.lastModifiedTime().toMillis());
+                                    zos.putNextEntry(newEntry);
+                                    zos.write(classNodeToBytes(node));
+                                    zos.closeEntry();
+                                }
+                            } catch (InvocationTargetException | IllegalAccessException | ClassNotFoundException |
+                                     NoSuchMethodException | InstantiationException e) {
+                                throw new IOException("Failed to downgrade class", e);
+                            }
+                        } else {
+                            ZipEntry newEntry = new ZipEntry(file.toString());
+                            newEntry.setTime(attrs.lastModifiedTime().toMillis());
                             zos.putNextEntry(newEntry);
-                            zos.write(classNodeToBytes(node));
+                            Files.copy(file, zos);
+                            zos.flush();
                             zos.closeEntry();
                         }
-                    } else {
-                        zos.putNextEntry(entry);
-                        byte[] buffer = new byte[1024];
-                        int len;
-                        while ((len = zis.read(buffer)) > 0) {
-                            zos.write(buffer, 0, len);
-                        }
-                        zos.closeEntry();
+                        return FileVisitResult.CONTINUE;
                     }
-                }
-            } catch (InvocationTargetException | IllegalAccessException | ClassNotFoundException |
-                     NoSuchMethodException | InstantiationException e) {
-                output.delete();
-                throw new RuntimeException(e);
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                        throw new IOException("Failed to visit file", exc);
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
             }
         }
     }
 
-    public void downgrade(ClassNode clazz, Set<ClassNode> extra) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException {
+    public Set<ClassNode> downgrade(ClassNode clazz, Function<String, ClassNode> getReadOnly) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException {
         Set<ClassNode> classes = new HashSet<>();
         classes.add(clazz);
         while (clazz.version > target) {
@@ -130,14 +174,14 @@ public class ClassDowngrader {
             Set<ClassNode> newClasses = new HashSet<>();
             VersionProvider downgrader = downgraders.get(i);
             for (ClassNode c : classes) {
-                downgrader.downgrade(c, newClasses);
+                newClasses.add(downgrader.downgrade(c, newClasses, getReadOnly));
             }
-            downgrade(clazz, newClasses);
-            classes.addAll(newClasses);
+            classes = newClasses;
         }
+        return classes;
     }
 
-    public byte[] downgrade(String name, byte[] bytes, Map<String, byte[]> extraClasses) throws IllegalClassFormatException {
+    public Map<String, byte[]> downgrade(String name, byte[] bytes, final Function<String, byte[]> getExtraRead) throws IllegalClassFormatException {
         // check magic
         if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
             bytes[3] != (byte) 0xBE) {
@@ -148,41 +192,58 @@ public class ClassDowngrader {
         int version = ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF);
         if (version <= target) {
             // already at or below the target version
-            return bytes;
+            return null;
         }
-        // read into a ClassReader
-        ClassReader cr = new ClassReader(bytes);
-        // convert to class node
-        ClassNode node = new ClassNode();
-        cr.accept(node, 0);
-        // apply the downgrade
+        // transform
+        ClassNode node = bytesToClassNode(bytes);
+        Map<String, byte[]> outputs = new HashMap<>();
         try {
             if (Constants.DEBUG) System.out.println("Transforming " + name);
-            Set<ClassNode> extra = new HashSet<>();
-            downgrade(node, extra);
+            Set<ClassNode> extra = downgrade(node, new Function<String, ClassNode>() {
+
+                @Override
+                public ClassNode apply(String s) {
+                    try {
+                        byte[] out = getExtraRead.apply(s);
+                        if (out == null) {
+                            return null;
+                        }
+                        return bytesToClassNode(out);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
             for (ClassNode c : extra) {
-                extraClasses.put(c.name, classNodeToBytes(c));
+                outputs.put(c.name, classNodeToBytes(c));
             }
         } catch (InvocationTargetException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException |
                  InstantiationException e) {
             throw new RuntimeException(e);
         }
-        bytes = classNodeToBytes(node);
         if (Constants.DEBUG) {
-            for (Map.Entry<String, byte[]> entry : extraClasses.entrySet()) {
-                System.out.println("Downgraded " + entry.getKey() + " from unknown to " + target);
+            for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
+                if (entry.getKey().equals(name)) {
+                    System.out.println("Downgraded " + entry.getKey() + " from unknown to " + target);
+                } else {
+                    System.out.println("Downgraded " + entry.getKey() + " from " + version + " to " + target);
+                }
                 writeBytesToDebug(entry.getKey(), entry.getValue());
             }
-            System.out.println("Downgraded " + name + " from " + version + " to " + target);
-            writeBytesToDebug(name, bytes);
         }
-        return bytes;
+        return outputs;
     }
 
     public byte[] classNodeToBytes(ClassNode node) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         node.accept(cw);
         return cw.toByteArray();
+    }
+
+    public ClassNode bytesToClassNode(byte[] bytes) {
+        ClassNode node = new ClassNode();
+        new ClassReader(bytes).accept(node, 0);
+        return node;
     }
 
     public void writeBytesToDebug(String name, byte[] bytes) {

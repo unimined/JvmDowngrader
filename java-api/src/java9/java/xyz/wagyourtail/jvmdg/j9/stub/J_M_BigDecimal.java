@@ -13,7 +13,7 @@ import static java.math.BigDecimal.ZERO;
 
 public class J_M_BigDecimal {
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static BigDecimal sqrt(BigDecimal x, MathContext mc) {
         int signum = x.signum();
         if (signum == 1) {

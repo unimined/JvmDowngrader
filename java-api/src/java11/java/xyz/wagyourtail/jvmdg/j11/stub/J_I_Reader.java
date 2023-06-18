@@ -13,7 +13,7 @@ import java.util.Objects;
 
 public class J_I_Reader {
 
-    @Stub(javaVersion = Opcodes.V11, ref = @Ref("Ljava/io/Reader;"), include = NullReader.class)
+    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/io/Reader;"), include = NullReader.class)
     public static Reader nullReader() {
         return new NullReader();
     }

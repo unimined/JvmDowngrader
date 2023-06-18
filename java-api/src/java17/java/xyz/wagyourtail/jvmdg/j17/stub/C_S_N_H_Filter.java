@@ -13,14 +13,14 @@ import java.util.function.Consumer;
 
 public class C_S_N_H_Filter {
 
-    @Stub(javaVersion = Opcodes.V17, ref = @Ref("Lcom/sun/net/httpserver/Filter;"), include = BeforeHandler.class)
+    @Stub(opcVers = Opcodes.V17, ref = @Ref("Lcom/sun/net/httpserver/Filter;"), include = BeforeHandler.class)
     public static Filter beforeHandler(String description, Consumer<HttpExchange> operation) {
         Objects.requireNonNull(description);
         Objects.requireNonNull(operation);
         return new BeforeHandler(description, operation);
     }
 
-    @Stub(javaVersion = Opcodes.V17, ref = @Ref("Lcom/sun/net/httpserver/Filter;"), include = AfterHandler.class)
+    @Stub(opcVers = Opcodes.V17, ref = @Ref("Lcom/sun/net/httpserver/Filter;"), include = AfterHandler.class)
     public static Filter afterHandler(String description, Consumer<HttpExchange> operation) {
         Objects.requireNonNull(description);
         Objects.requireNonNull(operation);

@@ -9,6 +9,6 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/FunctionalInterface"))
+@Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/FunctionalInterface"))
 public @interface J_L_FunctionalInterface {
 }

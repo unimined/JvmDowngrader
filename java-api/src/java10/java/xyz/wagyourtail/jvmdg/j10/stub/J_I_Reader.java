@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public class J_I_Reader {
 
-    @Stub(javaVersion = Opcodes.V10, subtypes = true)
+    @Stub(opcVers = Opcodes.V10, subtypes = true)
     public static long transferTo(Reader reader, Writer writer) throws IOException {
         Objects.requireNonNull(writer, "target");
         long transferred = 0L;

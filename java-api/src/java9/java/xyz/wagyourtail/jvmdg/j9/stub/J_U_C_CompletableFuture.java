@@ -11,27 +11,27 @@ import java.util.function.Supplier;
 
 public class J_U_C_CompletableFuture {
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static <U> CompletableFuture<U> newIncompleteFuture(CompletableFuture<U> future) {
         return new CompletableFuture<>();
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static Executor defaultExecutor(CompletableFuture<?> future) {
         return ForkJoinPool.commonPool();
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static <T> CompletableFuture<T> copy(CompletableFuture<T> future) {
         return future.thenApply(Function.identity());
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static <T> CompletionStage<T> minimalCompletionStage(CompletableFuture<T> future) {
         return future.thenApply(Function.identity());
     }
 
-    @Stub(javaVersion = Opcodes.V9, include = Completer.class)
+    @Stub(opcVers = Opcodes.V9, include = Completer.class)
     public static <T> CompletableFuture<T> completeAsync(CompletableFuture<T> future, Supplier<? extends T> supplier, Executor executor) {
         if (supplier == null || executor == null) {
             throw new NullPointerException();
@@ -40,7 +40,7 @@ public class J_U_C_CompletableFuture {
         return future;
     }
 
-    @Stub(javaVersion = Opcodes.V9, include = Completer.class)
+    @Stub(opcVers = Opcodes.V9, include = Completer.class)
     public static <T> CompletableFuture<T> completeAsync(CompletableFuture<T> future, Supplier<? extends T> supplier) {
         if (supplier == null) {
             throw new NullPointerException();
@@ -49,7 +49,7 @@ public class J_U_C_CompletableFuture {
         return future;
     }
 
-    @Stub(javaVersion = Opcodes.V9, include = Completer.class)
+    @Stub(opcVers = Opcodes.V9, include = Completer.class)
     public static <T> CompletableFuture<T> orTimeout(CompletableFuture<T> future, long timeout, TimeUnit unit) {
         if (unit == null) {
             throw new NullPointerException();
@@ -61,7 +61,7 @@ public class J_U_C_CompletableFuture {
         return future;
     }
 
-    @Stub(javaVersion = Opcodes.V9, include = Completer.class)
+    @Stub(opcVers = Opcodes.V9, include = Completer.class)
     public static <T> CompletableFuture<T> completeOnTimeout(CompletableFuture<T> future, T value, long timeout, TimeUnit unit) {
         if (unit == null) {
             throw new NullPointerException();
@@ -73,22 +73,22 @@ public class J_U_C_CompletableFuture {
         return future;
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/CompletableFuture;"), include = DelayedExecutor.class)
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/CompletableFuture;"), include = DelayedExecutor.class)
     public static Executor delayedExecutor(long delay, TimeUnit unit, Executor executor) {
         return new DelayedExecutor(executor, delay, unit);
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/CompletableFuture;"), include = DelayedExecutor.class)
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/CompletableFuture;"), include = DelayedExecutor.class)
     public static Executor delayedExecutor(long delay, TimeUnit unit) {
         return new DelayedExecutor(ForkJoinPool.commonPool(), delay, unit);
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/CompletableFuture;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/CompletableFuture;"))
     public static <U> CompletionStage<U> completedStage(U value) {
         return CompletableFuture.completedFuture(value);
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/CompletableFuture;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/CompletableFuture;"))
     public static <U> CompletableFuture<U> failedFuture(Throwable ex) {
         if (ex == null) {
             throw new NullPointerException();
@@ -98,7 +98,7 @@ public class J_U_C_CompletableFuture {
         return future;
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/CompletableFuture;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/concurrent/CompletableFuture;"))
     public static <U> CompletionStage<U> failedStage(Throwable ex) {
         if (ex == null) {
             throw new NullPointerException();

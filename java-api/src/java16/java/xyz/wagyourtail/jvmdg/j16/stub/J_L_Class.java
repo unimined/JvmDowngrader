@@ -9,7 +9,7 @@ import java.lang.reflect.Field;
 public class J_L_Class {
 
 
-    @Stub(javaVersion = Opcodes.V16)
+    @Stub(opcVers = Opcodes.V16)
     public static J_L_R_RecordComponent[] getRecordComponents(Class<?> clazz) {
         // check if the field exists
         try {
@@ -29,7 +29,7 @@ public class J_L_Class {
         }
     }
 
-    @Stub(javaVersion = Opcodes.V16)
+    @Stub(opcVers = Opcodes.V16)
     public static boolean isRecord(Class<?> clazz) {
         return J_L_Record.class.isAssignableFrom(clazz);
     }

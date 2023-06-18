@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 public class J_U_S_Collectors {
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/stream/Collectors;"), include = FlatMappingCollector.class)
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/stream/Collectors;"), include = FlatMappingCollector.class)
     public static <T, U, A, R> Collector<T, ?, R> flatMapping(
         Function<? super T, ? extends Stream<? extends U>> mapper,
         Collector<? super U, A, R> downstream
@@ -22,7 +22,7 @@ public class J_U_S_Collectors {
         return (Collector<T, ?, R>) new FlatMappingCollector<>(mapper, downstream).get();
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/stream/Collectors;"), include = FilteringCollector.class)
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/stream/Collectors;"), include = FilteringCollector.class)
     public static <T, A, R> Collector<T, ?, R> filtering(Predicate<? super T> predicate, Collector<? super T, A, R> downstream) {
         return (Collector<T, ?, R>) new FilteringCollector<>(predicate, downstream).get();
     }

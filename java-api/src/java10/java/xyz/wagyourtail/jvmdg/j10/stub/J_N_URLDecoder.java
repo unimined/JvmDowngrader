@@ -11,7 +11,7 @@ import java.nio.charset.Charset;
 
 public class J_N_URLDecoder {
 
-    @Stub(javaVersion = Opcodes.V10, ref = @Ref("Ljava/net/URLDecoder;"))
+    @Stub(opcVers = Opcodes.V10, ref = @Ref("Ljava/net/URLDecoder;"))
     public static String decode(String s, Charset charset) throws UnsupportedEncodingException {
         return URLDecoder.decode(s, charset.name());
     }

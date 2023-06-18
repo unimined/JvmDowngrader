@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.stub.Stub;
 import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
-@Stub(javaVersion = 8, ref = @Ref("java/util/Optionalint"))
+@Stub(opcVers = 8, ref = @Ref("java/util/Optionalint"))
 public class J_U_OptionalInt {
 
     private static final J_U_OptionalInt EMPTY = new J_U_OptionalInt();

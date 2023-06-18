@@ -17,17 +17,17 @@ import java.util.ServiceLoader;
 
 public class J_N_F_FileSystems {
 
-    @Stub(javaVersion = Opcodes.V13, ref = @Ref("Ljava/nio/file/FileSystems;"))
+    @Stub(opcVers = Opcodes.V13, ref = @Ref("Ljava/nio/file/FileSystems;"))
     public static FileSystem newFileSystem(Path p) throws IOException {
         return FileSystems.newFileSystem(p, (ClassLoader) null);
     }
 
-    @Stub(javaVersion = Opcodes.V13, ref = @Ref("Ljava/nio/file/FileSystems;"))
+    @Stub(opcVers = Opcodes.V13, ref = @Ref("Ljava/nio/file/FileSystems;"))
     public static FileSystem newFileSystem(Path p, Map<String, ?> env) throws IOException {
         return newFileSystem(p, env, null);
     }
 
-    @Stub(javaVersion = Opcodes.V13, ref = @Ref("Ljava/nio/file/FileSystems;"))
+    @Stub(opcVers = Opcodes.V13, ref = @Ref("Ljava/nio/file/FileSystems;"))
     public static FileSystem newFileSystem(Path p, Map<String, ?> env, ClassLoader loader) throws IOException {
         Objects.requireNonNull(p, "path");
 

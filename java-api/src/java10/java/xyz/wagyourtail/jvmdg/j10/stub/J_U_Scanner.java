@@ -11,7 +11,7 @@ import java.util.Scanner;
 
 public class J_U_Scanner {
 
-    @Stub(javaVersion = Opcodes.V10, ref = @Ref(value = "Ljava/util/Scanner", member = "<init>"))
+    @Stub(opcVers = Opcodes.V10, ref = @Ref(value = "Ljava/util/Scanner", member = "<init>"))
     public static Scanner init(ReadableByteChannel source, Charset charset) {
         return new Scanner(source, charset.name());
     }

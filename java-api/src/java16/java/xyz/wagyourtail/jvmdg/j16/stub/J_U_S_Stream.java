@@ -13,27 +13,27 @@ import java.util.stream.*;
 
 public class J_U_S_Stream {
 
-    @Stub(javaVersion = Opcodes.V16, include = MapMultiConsumer.class)
+    @Stub(opcVers = Opcodes.V16, include = MapMultiConsumer.class)
     public static <T, R> Stream<R> mapMulti(Stream<T> stream, BiConsumer<? super T, ? super Consumer<R>> mapper) {
         return stream.flatMap(new MapMultiConsumer<>(mapper));
     }
 
-    @Stub(javaVersion = Opcodes.V16, include = MapMultiIntConsumer.class)
+    @Stub(opcVers = Opcodes.V16, include = MapMultiIntConsumer.class)
     public static <T> IntStream mapMultiToInt(Stream<T> stream, BiConsumer<? super T, ? super IntConsumer> mapper) {
         return stream.flatMapToInt(new MapMultiIntConsumer<>(mapper));
     }
 
-    @Stub(javaVersion = Opcodes.V16, include = MapMultiLongConsumer.class)
+    @Stub(opcVers = Opcodes.V16, include = MapMultiLongConsumer.class)
     public static <T> LongStream mapMultiToLong(Stream<T> stream, BiConsumer<? super T, ? super LongConsumer> mapper) {
         return stream.flatMapToLong(new MapMultiLongConsumer<>(mapper));
     }
 
-    @Stub(javaVersion = Opcodes.V16, include = MapMultiDoubleConsumer.class)
+    @Stub(opcVers = Opcodes.V16, include = MapMultiDoubleConsumer.class)
     public static <T> DoubleStream mapMultiToDouble(Stream<T> stream, BiConsumer<? super T, ? super DoubleConsumer> mapper) {
         return stream.flatMapToDouble(new MapMultiDoubleConsumer<>(mapper));
     }
 
-    @Stub(javaVersion = Opcodes.V16)
+    @Stub(opcVers = Opcodes.V16)
     public static <T> List<T> toList(Stream<T> stream) {
         return (List<T>) Collections.unmodifiableList(new ArrayList<>(Arrays.asList(stream.toArray())));
     }

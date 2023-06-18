@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 public class J_T_Duration {
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static long dividedBy(Duration self, Duration divisor) {
         Objects.requireNonNull(divisor, "divisor");
         BigDecimal num = BigDecimal.valueOf(self.getSeconds()).add(BigDecimal.valueOf(self.getNano(), 9));
@@ -22,24 +22,24 @@ public class J_T_Duration {
         return num.divideToIntegralValue(div).longValueExact();
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static long toSeconds(Duration self) {
         return self.getSeconds();
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static long toMillis(Duration self) {
         long time = TimeUnit.SECONDS.toMillis(self.getSeconds());
         time += TimeUnit.NANOSECONDS.toMillis(self.getNano());
         return time;
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static long toDaysPart(Duration self) {
         return self.toDays();
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static int toHoursPart(Duration self) {
         return (int) (self.toHours() % 24);
     }
@@ -48,22 +48,22 @@ public class J_T_Duration {
         return (int) (self.toMinutes() % 60);
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static int toSecondsPart(Duration self) {
         return (int) (self.getSeconds() % 60);
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static int toMillisPart(Duration self) {
         return (int) (TimeUnit.NANOSECONDS.toMillis(self.getNano()) % 1000);
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static int toNanosPart(Duration self) {
         return self.getNano();
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static Duration truncateTo(Duration self, TemporalUnit unit) {
         if (unit == ChronoUnit.SECONDS && (self.getSeconds() >= 0 || self.getNano() == 0)) {
             return Duration.of(self.getSeconds(), ChronoUnit.SECONDS);

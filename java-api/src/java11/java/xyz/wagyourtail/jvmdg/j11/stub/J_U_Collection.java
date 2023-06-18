@@ -9,7 +9,7 @@ import java.util.function.IntFunction;
 
 public class J_U_Collection {
 
-    @Stub(javaVersion = Opcodes.V11, subtypes = true)
+    @Stub(opcVers = Opcodes.V11, subtypes = true)
     public static <T> T[] toArray(Collection<T> collection, IntFunction<T[]> generator) {
         return collection.toArray(generator.apply(0));
     }

@@ -4,7 +4,7 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.Ref;
 import xyz.wagyourtail.jvmdg.stub.Stub;
 
-@Stub(javaVersion = Opcodes.V1_8, ref = @Ref("Ljava/lang/invoke/LambdaConversionException;"))
+@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/lang/invoke/LambdaConversionException;"))
 public class J_L_I_LambdaConversionException extends Exception {
 
     public J_L_I_LambdaConversionException() {

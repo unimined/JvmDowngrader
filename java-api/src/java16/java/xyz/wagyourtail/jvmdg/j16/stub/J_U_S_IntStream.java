@@ -5,13 +5,12 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.Ref;
 import xyz.wagyourtail.jvmdg.stub.Stub;
 
-import java.util.Objects;
 import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 
 public class J_U_S_IntStream {
 
-    @Stub(javaVersion = Opcodes.V16)
+    @Stub(opcVers = Opcodes.V16)
     public static IntStream mapMulti(IntStream stream, IntMapMultiConsumer mapper) {
         if (mapper == null)
             throw new NullPointerException();
@@ -19,7 +18,7 @@ public class J_U_S_IntStream {
     }
 
     @FunctionalInterface
-    @Stub(javaVersion = Opcodes.V16, ref = @Ref("Ljava/util/stream/IntStream$IntMapMultiConsumer;"))
+    @Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/util/stream/IntStream$IntMapMultiConsumer;"))
     public interface IntMapMultiConsumer {
 
         default IntStream of(int d) {

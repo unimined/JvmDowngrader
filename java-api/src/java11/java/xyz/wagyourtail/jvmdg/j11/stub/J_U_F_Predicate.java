@@ -9,7 +9,7 @@ import java.util.function.Predicate;
 
 public class J_U_F_Predicate {
 
-    @Stub(javaVersion = Opcodes.V11, ref = @Ref("Ljava/util/function/Predicate;"))
+    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/util/function/Predicate;"))
     public static <T> Predicate<T> not(Predicate<T> predicate) {
         return predicate.negate();
     }

@@ -12,7 +12,7 @@ import java.util.Objects;
 
 public class J_T_C_Chronology {
 
-    @Stub(javaVersion = Opcodes.V9, subtypes = true)
+    @Stub(opcVers = Opcodes.V9, subtypes = true)
     public static long epochSecond(Chronology self, int prolepticYear, int month, int dayOfMonth, int hour, int minute, int second, ZoneOffset zoneOffset) {
         Objects.requireNonNull(zoneOffset, "zoneOffset");
         ChronoField.HOUR_OF_DAY.checkValidValue(hour);
@@ -23,7 +23,7 @@ public class J_T_C_Chronology {
         return Math.addExact(daysInSec, timeInSec - zoneOffset.getTotalSeconds());
     }
 
-    @Stub(javaVersion = Opcodes.V9, subtypes = true)
+    @Stub(opcVers = Opcodes.V9, subtypes = true)
     public static long epochSecond(Chronology self, Era era, int yearOfEra, int month, int dayOfMonth, int hour, int minute, int second, ZoneOffset zoneOffset) {
         Objects.requireNonNull(era, "era");
         Objects.requireNonNull(zoneOffset, "zoneOffset");

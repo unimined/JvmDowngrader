@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 public class J_U_R_Matcher {
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static Matcher appendReplacement(Matcher m, StringBuilder sb, String replacement) {
         StringBuffer buffer = new StringBuffer();
         m.appendReplacement(buffer, replacement);
@@ -21,7 +21,7 @@ public class J_U_R_Matcher {
         return m;
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static StringBuilder appendTail(Matcher m, StringBuilder sb) {
         StringBuffer buffer = new StringBuffer();
         m.appendTail(buffer);
@@ -29,7 +29,7 @@ public class J_U_R_Matcher {
         return sb;
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static String replaceAll(Matcher m, Function<MatchResult, String> replacer) {
         StringBuffer buffer = new StringBuffer();
         while (m.find()) {
@@ -44,12 +44,12 @@ public class J_U_R_Matcher {
         return buffer.toString();
     }
 
-    @Stub(javaVersion = Opcodes.V9, include = IteratorSupport.class)
+    @Stub(opcVers = Opcodes.V9, include = IteratorSupport.class)
     public static Stream<MatchResult> results(Matcher m) {
         return new IteratorSupport<>(m::find, m::toMatchResult).stream();
     }
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static String replaceFirst(Matcher m, Function<MatchResult, String> replacer) {
         StringBuffer buffer = new StringBuffer();
         if (m.find()) {

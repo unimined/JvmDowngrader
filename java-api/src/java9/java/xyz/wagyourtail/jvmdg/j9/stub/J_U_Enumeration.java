@@ -9,7 +9,7 @@ import java.util.Iterator;
 
 public class J_U_Enumeration {
 
-    @Stub(javaVersion = Opcodes.V9, subtypes = true, include = EnumerationIterator.class)
+    @Stub(opcVers = Opcodes.V9, subtypes = true, include = EnumerationIterator.class)
     public static <E> Iterator<E> asIterator(Enumeration<E> self) {
         return new EnumerationIterator<>(self);
     }

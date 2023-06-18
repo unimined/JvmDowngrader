@@ -9,7 +9,7 @@ import java.util.*;
 
 public class J_U_List {
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/util/List"), subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/List"), subtypes = true)
     public static <T> void replaceAll(List<T> self, J_U_F_UnaryOperator<T> operator) {
         Objects.requireNonNull(operator);
         final ListIterator<?> li = self.listIterator();
@@ -18,7 +18,7 @@ public class J_U_List {
         }
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/util/List"), subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/List"), subtypes = true)
     public static <T> void sort(List<T> self, Comparator<T> c) {
         Object[] a = self.toArray();
         Arrays.sort(a, (Comparator) c);

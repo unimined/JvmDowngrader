@@ -4,18 +4,16 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.Ref;
 import xyz.wagyourtail.jvmdg.stub.Stub;
 
-import java.lang.reflect.Method;
-
 public class J_L_InternalError {
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref(value = "java/lang/InternalError", member = "<init>"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref(value = "java/lang/InternalError", member = "<init>"))
     public static InternalError init(String message, Throwable cause) {
         InternalError ie = new InternalError(message);
         ie.initCause(cause);
         return ie;
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref(value = "java/lang/InternalError", member = "<init>"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref(value = "java/lang/InternalError", member = "<init>"))
     public static InternalError init(Throwable cause) {
         InternalError ie = new InternalError();
         ie.initCause(cause);

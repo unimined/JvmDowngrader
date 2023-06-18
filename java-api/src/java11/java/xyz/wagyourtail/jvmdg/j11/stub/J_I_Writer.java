@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public class J_I_Writer {
 
-    @Stub(javaVersion = Opcodes.V11, ref = @Ref("Ljava/io/Writer;"), include = NullWriter.class)
+    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/io/Writer;"), include = NullWriter.class)
     public static Writer nullWriter() {
         return new NullWriter();
     }

@@ -5,7 +5,7 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.Ref;
 import xyz.wagyourtail.jvmdg.stub.Stub;
 
-@Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/Module;"))
+@Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Module;"))
 public class J_L_Module {
 
     private final ClassLoader classLoader;

@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.j8.longl.spliterator;
+package xyz.wagyourtail.jvmdg.j8.intl.spliterator;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_Spliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
@@ -35,13 +35,23 @@ public class LongArraySpliterator implements J_U_Spliterator.OfLong {
     }
 
     @Override
-    public boolean tryAdvance(J_U_F_Consumer<? super Long> action) {
-        return tryAdvance((J_U_F_LongConsumer) action::accept);
+    public boolean tryAdvance(final J_U_F_Consumer<? super Long> action) {
+        return tryAdvance(new J_U_F_LongConsumer() {
+            @Override
+            public void accept(long value) {
+                action.accept(value);
+            }
+        });
     }
 
     @Override
-    public void forEachRemaining(J_U_F_Consumer<? super Long> action) {
-        forEachRemaining((J_U_F_LongConsumer) action::accept);
+    public void forEachRemaining(final J_U_F_Consumer<? super Long> action) {
+        forEachRemaining(new J_U_F_LongConsumer() {
+            @Override
+            public void accept(long value) {
+                action.accept(value);
+            }
+        });
     }
 
     @Override

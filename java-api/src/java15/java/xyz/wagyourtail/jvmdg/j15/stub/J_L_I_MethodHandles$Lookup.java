@@ -23,7 +23,7 @@ public class J_L_I_MethodHandles$Lookup {
         }
     }
 
-    @Stub(javaVersion = Opcodes.V15)
+    @Stub(opcVers = Opcodes.V15)
     public static Class<?> ensureInitialized(Class<?> c) {
         if (c.isPrimitive()) {
             throw new IllegalArgumentException(c + " is a primitive class");
@@ -36,7 +36,7 @@ public class J_L_I_MethodHandles$Lookup {
         return c;
     }
 
-    @Stub(javaVersion = Opcodes.V15)
+    @Stub(opcVers = Opcodes.V15)
     public static Class<?> defineHiddenClass(MethodHandles.Lookup lookup, byte[] bytes, boolean initialize, J_L_I_MethodHandles$Lookup$ClassOption... options) {
         Objects.requireNonNull(bytes);
         Objects.requireNonNull(options);

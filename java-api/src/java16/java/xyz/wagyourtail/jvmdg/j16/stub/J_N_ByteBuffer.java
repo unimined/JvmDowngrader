@@ -9,7 +9,7 @@ import java.util.Objects;
 
 public class J_N_ByteBuffer {
 
-    @Stub(javaVersion = Opcodes.V16)
+    @Stub(opcVers = Opcodes.V16)
     public static ByteBuffer put(ByteBuffer self, int index, ByteBuffer src, int offset, int length) {
         Objects.checkFromIndexSize(index, length, self.limit());
         Objects.checkFromIndexSize(offset, length, src.limit());

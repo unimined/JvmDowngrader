@@ -28,8 +28,6 @@ public abstract class VersionProvider {
     private final int targetVersion;
     private final ScanResult allClasses;
 
-
-
     protected VersionProvider(int targetVersion) {
         this.targetVersion = targetVersion;
         allClasses = defaultClasspath;
@@ -128,23 +126,30 @@ public abstract class VersionProvider {
     }
 
     public void stub(Class<?> clazz) {
-        Stub classStub = clazz.getAnnotation(Stub.class);
-        if (classStub != null) {
-            String name = classStub.ref().value();
-            Type type;
-            if (name.startsWith("L")) {
-                type = Type.getType(name);
+        try {
+            Stub classStub = clazz.getAnnotation(Stub.class);
+            if (classStub != null) {
+                if (classStub.opcVers() != targetVersion) {
+                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Stub must have opcVers=" + targetVersion + " but was " + classStub.opcVers());
+                }
+                String name = classStub.ref().value();
+                Type type;
+                if (name.startsWith("L")) {
+                    type = Type.getType(name);
+                } else {
+                    type = Type.getObjectType(name);
+                }
+                classStubs.put(type, new Pair<>(Type.getType(clazz), classStub));
             } else {
-                type = Type.getObjectType(name);
+                for (Method m : clazz.getDeclaredMethods()) {
+                    methodStub(m);
+                }
             }
-            classStubs.put(type, new Pair<>(Type.getType(clazz), classStub));
-        } else {
-            for (Method m : clazz.getDeclaredMethods()) {
-                methodStub(m);
+            for (Class<?> c : clazz.getClasses()) {
+                stub(c);
             }
-        }
-        for (Class<?> c : clazz.getClasses()) {
-            stub(c);
+        } catch (Throwable t) {
+            throw new RuntimeException("Failed to stub class " + clazz.getName(), t);
         }
     }
 
@@ -154,11 +159,11 @@ public abstract class VersionProvider {
         Stub methodStub = m.getAnnotation(Stub.class);
         int modifiers = m.getModifiers();
         if (methodStub != null) {
-            if ((modifiers & Opcodes.ACC_STATIC) == 0) {
-                throw new IllegalArgumentException("Method " + Type.getType(m.getDeclaringClass()).getInternalName() + "." + m.getName() + " must be static");
+            if (methodStub.opcVers() != targetVersion) {
+                throw new IllegalArgumentException("Method L" + Type.getType(m.getDeclaringClass()).getInternalName() + ";" + m.getName()  + Type.getMethodDescriptor(m) + ", @Stub must have opcVers=" + targetVersion + " but was " + methodStub.opcVers());
             }
-            if ((modifiers & Opcodes.ACC_PUBLIC) == 0) {
-                throw new IllegalArgumentException("Method must be public");
+            if ((modifiers & (Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC)) != (Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC)) {
+                throw new IllegalArgumentException("Method L" + Type.getType(m.getDeclaringClass()).getInternalName() + ";" + m.getName()  + Type.getMethodDescriptor(m) + " must be public static");
             }
             Type method = Type.getType(m);
             Type[] args = method.getArgumentTypes();
@@ -226,23 +231,39 @@ public abstract class VersionProvider {
             }
             String name = methodReplace.ref().value();
             if (name.startsWith("L")) {
-                name = name.substring(1, name.length() - 1);
+                name = name.substring(1);
+            }
+            if (name.endsWith(";")) {
+                name = name.substring(0, name.length() - 1);
             }
             methodReplaces.put(name + ";" + methodReplace.ref().member() + methodReplace.ref().desc(), new Pair<>(m, methodReplace));
         }
     }
 
-    public void downgrade(ClassNode clazz, Set<ClassNode> extra) throws InvocationTargetException, IllegalAccessException {
+    public ClassNode downgrade(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) throws InvocationTargetException, IllegalAccessException {
         if (clazz.version != targetVersion) throw new IllegalArgumentException("Class " + clazz.name + " is not version " + targetVersion);
-        stubClasses(clazz);
-        stubMethods(clazz, extra);
-        otherTransforms(clazz);
+        clazz = stubClasses(clazz);
+        clazz = stubMethods(clazz, extra);
+        clazz = otherTransforms(clazz, extra, getReadOnly);
         clazz.version = targetVersion - 1;
+        return clazz;
     }
 
-    public void otherTransforms(ClassNode clazz) {}
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
+        clazz = otherTransforms(clazz, extra);
+        return clazz;
+    }
 
-    public void stubClasses(ClassNode clazz) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra) {
+        clazz = otherTransforms(clazz);
+        return clazz;
+    }
+
+    public ClassNode otherTransforms(ClassNode clazz) {
+        return clazz;
+    }
+
+    public ClassNode stubClasses(ClassNode clazz) {
         // super
         Type type = Type.getObjectType(clazz.superName);
         if (classStubs.containsKey(type)) {
@@ -472,6 +493,7 @@ public abstract class VersionProvider {
 
         // TODO: annotations
 
+        return clazz;
     }
 
     public Pair<Boolean, Type> replaceType(Type type) {
@@ -544,9 +566,9 @@ public abstract class VersionProvider {
         return new Pair<>(changed, sb.toString());
     }
 
-    public void stubMethods(ClassNode clazz, Set<ClassNode> extra) throws InvocationTargetException, IllegalAccessException {
+    public ClassNode stubMethods(ClassNode clazz, Set<ClassNode> extra) throws InvocationTargetException, IllegalAccessException {
         if (clazz.methods == null) {
-            return;
+            return clazz;
         }
 
         for (MethodNode method : new ArrayList<>(clazz.methods)) {
@@ -616,7 +638,7 @@ public abstract class VersionProvider {
                             clazz,
                             extra
                         );
-                        first.invoke(null, args.subList(0, first.getParameterCount()).toArray());
+                        first.invoke(null, args.subList(0, first.getParameterTypes().length).toArray());
                     }
                 } else if (insn instanceof InvokeDynamicInsnNode) {
                     InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
@@ -635,7 +657,7 @@ public abstract class VersionProvider {
                                 clazz,
                                 extra
                         );
-                        first.invoke(null, args.subList(0, first.getParameterCount()).toArray());
+                        first.invoke(null, args.subList(0, first.getParameterTypes().length).toArray());
                         continue;
                     }
                     /// bsm args
@@ -657,5 +679,8 @@ public abstract class VersionProvider {
                 }
             }
         }
+
+        return clazz;
     }
+
 }

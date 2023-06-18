@@ -10,7 +10,7 @@ import xyz.wagyourtail.jvmdg.stub.Stub;
 
 import java.util.Comparator;
 
-@Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/util/Spliterator"))
+@Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Spliterator"))
 public interface J_U_Spliterator<T> {
 
     int ORDERED = 0x00000010;
@@ -53,7 +53,7 @@ public interface J_U_Spliterator<T> {
 
 
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/util/Spliterator$OfInt"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Spliterator$OfInt"))
     interface OfInt extends OfPrimitive<Integer, J_U_F_IntConsumer, OfInt> {
 
         @Override
@@ -73,7 +73,7 @@ public interface J_U_Spliterator<T> {
 
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/util/Spliterator$OfLong"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Spliterator$OfLong"))
     interface OfLong extends OfPrimitive<Long, J_U_F_LongConsumer, OfLong> {
 
         @Override
@@ -93,7 +93,7 @@ public interface J_U_Spliterator<T> {
 
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/util/Spliterator$OfDouble"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Spliterator$OfDouble"))
     interface OfDouble extends OfPrimitive<Double, J_U_F_DoubleConsumer, OfDouble> {
 
         @Override

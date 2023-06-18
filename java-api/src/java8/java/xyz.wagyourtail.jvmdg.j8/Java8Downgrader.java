@@ -199,6 +199,19 @@ public class Java8Downgrader extends VersionProvider {
         // SortedSet
         stub(J_U_Spliterator.class);
         stub(J_U_Spliterators.class);
+        stub(J_U_Spliterators$AbstractDoubleSpliterator.class);
+        stub(J_U_Spliterators$AbstractIntSpliterator.class);
+        stub(J_U_Spliterators$AbstractLongSpliterator.class);
+        stub(J_U_Spliterators$AbstractSpliterator.class);
+        // SplittableRandom
+        stub(J_U_StringJoiner.class);
+        // TimeZone
+        // TimSort
+        // TreeSet -- handled by Collection.spliterator
+        // Tripwire
+        // Vector -- handled by Collection.spliterator
+        // ArrayBlockingQueue
+        stub(J_U_C_CompletableFuture.class);
 
 
 

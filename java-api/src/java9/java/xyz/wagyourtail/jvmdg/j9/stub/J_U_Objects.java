@@ -11,18 +11,18 @@ import java.util.function.Supplier;
 public class J_U_Objects {
 
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/Objects;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Objects;"))
     public static <T> T requireNonNullElse(T obj, T defaultObj) {
         return (obj != null) ? obj : Objects.requireNonNull(defaultObj, "defaultObj");
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/Objects;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Objects;"))
     public static <T> T requireNonNullElseGet(T obj, Supplier<? extends T> defaultObjSupplier) {
         return (obj != null) ? obj : Objects.requireNonNull(Objects.requireNonNull(defaultObjSupplier, "supplier")
             .get(), "supplier.get()");
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/Objects;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Objects;"))
     public static int checkIndex(int index, int length) {
         if (index < 0 || index >= length) {
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for length " + length);
@@ -30,7 +30,7 @@ public class J_U_Objects {
         return index;
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/Objects;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Objects;"))
     public static int checkFromToIndex(int fromIndex, int toIndex, int length) {
         if (fromIndex < 0 || toIndex > length || fromIndex > toIndex) {
             throw new IndexOutOfBoundsException(
@@ -39,7 +39,7 @@ public class J_U_Objects {
         return fromIndex;
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/util/Objects;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Objects;"))
     public static int checkFromIndexSize(int fromIndex, int size, int length) {
         if (fromIndex < 0 || size < 0 || fromIndex > length - size) {
             throw new IndexOutOfBoundsException(

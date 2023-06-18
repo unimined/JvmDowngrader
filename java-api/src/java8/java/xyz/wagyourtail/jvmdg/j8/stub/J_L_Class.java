@@ -4,18 +4,15 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.stub.Stub;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class J_L_Class {
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static String toGenericString(Class<?> clazz) {
         if (clazz.isPrimitive()) {
             return clazz.toString();
@@ -89,7 +86,7 @@ public class J_L_Class {
         }
     }
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static String getTypeName(Class clazz) {
         if (clazz.isArray()) {
             try {
@@ -109,7 +106,7 @@ public class J_L_Class {
         return clazz.getName();
     }
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <A extends Annotation> A[] getAnnotationsByType(Class<?> self, Class<A> clazz) {
         List<A> annotations = new ArrayList<>();
         for (Annotation a : self.getAnnotations()) {
@@ -120,7 +117,7 @@ public class J_L_Class {
         return annotations.toArray((A[]) new Annotation[0]);
     }
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <A extends Annotation> A getDeclaredAnnotation(Class<?> self, Class<A> clazz) {
         for (Annotation a : self.getDeclaredAnnotations()) {
             if (clazz.isInstance(a)) {
@@ -130,7 +127,7 @@ public class J_L_Class {
         return null;
     }
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<?> self, Class<A> clazz) {
         List<A> annotations = new ArrayList<>();
         for (Annotation a : self.getDeclaredAnnotations()) {

@@ -81,8 +81,7 @@ public class JavaRunner {
                 }
                 if (filteredNameParts.get(0).startsWith("jdk")) {
                     filteredNameParts.remove(0);
-                }
-                if (filteredNameParts.get(0).startsWith("zulu")) {
+                } else if (filteredNameParts.get(0).startsWith("zulu")) {
                     filteredNameParts.remove(0);
                 }
                 String name = String.join("/", filteredNameParts);
@@ -107,8 +106,8 @@ public class JavaRunner {
                     extractToJVMDir(stream, jvmdir);
                 } catch (IOException e) {
                     stream = downloadJavaFromAzul(vers);
+                    extractToJVMDir(stream, jvmdir);
                 }
-                extractToJVMDir(stream, jvmdir);
             }
         } catch (Throwable t) {
             try {
@@ -246,6 +245,10 @@ public class JavaRunner {
 
         public static JavaVersion fromClassVers(int vers) {
             return JavaVersion.values()[vers - 45];
+        }
+
+        public int toOpcode() {
+            return this.ordinal() + 45;
         }
     }
     }

@@ -522,9 +522,10 @@ public class Java9Downgrader extends VersionProvider {
     }
 
     @Override
-    public void otherTransforms(ClassNode clazz) {
+    public ClassNode otherTransforms(ClassNode clazz) {
         removeModuleInfo(clazz);
         fixPrivateMethodsInInterfaces(clazz);
+        return clazz;
     }
 
     private void assertMethod(String owner, String name, String desc, AbstractInsnNode node) {

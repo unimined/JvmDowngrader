@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.stub.Stub;
 import java.io.IOException;
 import java.util.Objects;
 
-@Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/io/UncheckedIOException"))
+@Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/io/UncheckedIOException"))
 public class J_I_UncheckedIOException extends RuntimeException {
 
     public J_I_UncheckedIOException(String message, IOException cause) {

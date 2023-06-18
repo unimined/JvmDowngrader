@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.stub.Stub;
 import java.util.Objects;
 
 @J_L_FunctionalInterface
-@Stub(javaVersion = Opcodes.V1_8, ref = @Ref("Ljava/util/function/BiConsumer"))
+@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/BiConsumer"))
 public interface J_U_F_BiConsumer<T, U> {
 
     void accept(T t, U u);

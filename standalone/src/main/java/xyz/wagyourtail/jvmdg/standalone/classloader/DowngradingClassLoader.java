@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.standalone.classloader;
 
+import xyz.wagyourtail.jvmdg.Function;
 import xyz.wagyourtail.jvmdg.VersionProvider;
 import xyz.wagyourtail.jvmdg.standalone.ClassDowngrader;
 
@@ -41,7 +42,8 @@ public class DowngradingClassLoader extends ClassLoader {
 
     @Override
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        String path = name.replace('.', '/') + ".class";
+        String internalName = name.replace('.', '/');
+        String path = internalName + ".class";
         URL url = findResource(path);
         if (url == null) {
             throw new ClassNotFoundException(name);
@@ -49,21 +51,42 @@ public class DowngradingClassLoader extends ClassLoader {
         byte[] bytes;
         try {
             bytes = readAllBytes(url.openStream());
-            Map<String, byte[]> extra = new HashMap<>();
-            bytes = downgrader.downgrade(name, bytes, extra);
-            for (Map.Entry<String, byte[]> entry : extra.entrySet()) {
-                String extraName = entry.getKey();
+            Map<String, byte[]> outputs = downgrader.downgrade(name, bytes, new Function<String, byte[]>() {
+                @Override
+                public byte[] apply(String s) {
+                    try {
+                        URL url = findResource(s + ".class");
+                        if (url == null) return null;
+                        return readAllBytes(url.openStream());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+            if (outputs == null) {
+                // doesn't need downgrading
+                return defineClass(name, bytes, 0, bytes.length);
+            }
+            for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
+                if (entry.getKey().equals(internalName)) continue; // skip the main class (load later and returned)
+                String extraName = entry.getKey().replace('/', '.');
                 byte[] extraBytes = entry.getValue();
-                defineClass(extraName, extraBytes, 0, extraBytes.length);
+                try {
+                    defineClass(extraName, extraBytes, 0, extraBytes.length);
+                } catch (ClassFormatError e) {
+                    downgrader.writeBytesToDebug(extraName, bytes);
+                    throw e;
+                }
+            }
+            try {
+                bytes = outputs.get(internalName);
+                return defineClass(name,bytes , 0, bytes.length);
+            } catch (ClassFormatError e) {
+                downgrader.writeBytesToDebug(name, bytes);
+                throw e;
             }
         } catch (Exception e) {
             throw new ClassNotFoundException(name, e);
-        }
-        try {
-            return defineClass(name, bytes, 0, bytes.length, null);
-        } catch (ClassFormatError e) {
-            downgrader.writeBytesToDebug(name, bytes);
-            throw e;
         }
     }
 

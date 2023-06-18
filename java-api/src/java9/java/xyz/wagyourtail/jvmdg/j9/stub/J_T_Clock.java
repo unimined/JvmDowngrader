@@ -9,7 +9,7 @@ import java.time.ZoneId;
 
 public class J_T_Clock {
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static Clock tickMillis(ZoneId zone) {
         return Clock.tick(Clock.system(zone), java.time.Duration.ofMillis(1));
     }

@@ -7,7 +7,7 @@ import java.util.concurrent.TimeUnit;
 
 public class J_L_Process {
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static boolean waitFor(Process self, long timeout, TimeUnit unit) throws InterruptedException {
         long remainingNanos = unit.toNanos(timeout); // throw NPE before other conditions
         if (hasExited(self))
@@ -35,13 +35,13 @@ public class J_L_Process {
         }
     }
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static Process destroyForcibly(Process self) {
         self.destroy();
         return self;
     }
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static boolean isAlive(Process self) {
         try {
             self.exitValue();

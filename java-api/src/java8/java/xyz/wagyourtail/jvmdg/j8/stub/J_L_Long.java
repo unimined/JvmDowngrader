@@ -8,10 +8,10 @@ import java.math.BigInteger;
 
 public class J_L_Long {
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static final int BYTES = Long.SIZE / Byte.SIZE;
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static String toUnsignedString(long i, int radix) {
         if (i >= 0) {
             return Long.toString(i, radix);
@@ -62,12 +62,12 @@ public class J_L_Long {
         return new String(buf, charPos, (64 / bits) - charPos);
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static String toUnsignedString(long i) {
         return toUnsignedString(i, 10);
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static long parseUnsignedLong(String s, int radix) throws NumberFormatException {
         if (s == null) {
             throw new NumberFormatException("Cannot parse null string");
@@ -94,22 +94,22 @@ public class J_L_Long {
         }
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static long parseUnsignedLong(String s) throws NumberFormatException {
         return parseUnsignedLong(s, 10);
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static int hashCode(long value) {
         return (int)(value ^ (value >>> 32));
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static int compareUnsigned(long x, long y) {
         return Long.compare(x + Long.MIN_VALUE, y + Long.MIN_VALUE);
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static long divideUnsigned(long dividend, long divisor) {
         if (divisor >= 0) {
             final long q = (dividend >>> 1) / divisor << 1;
@@ -119,7 +119,7 @@ public class J_L_Long {
         return (dividend & ~(dividend - divisor)) >>> (Long.SIZE - 1);
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static long remainderUnsigned(long dividend, long divisor) {
         if (divisor >= 0) {
             final long q = (dividend >>> 1) / divisor << 1;
@@ -129,17 +129,17 @@ public class J_L_Long {
         return dividend - (((dividend & ~(dividend - divisor)) >> (Long.SIZE - 1)) & divisor);
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static long sum(long a, long b) {
         return a + b;
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static long max(long a, long b) {
         return Math.max(a, b);
     }
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Long"))
     public static long min(long a, long b) {
         return Math.min(a, b);
     }

@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class J_U_Map$Entry {
 
-    @Stub(javaVersion = Opcodes.V17)
+    @Stub(opcVers = Opcodes.V17)
     public static <K, V> Map.Entry<K, V> copyOf(K key, V value) {
         return new AbstractMap.SimpleImmutableEntry<>(key, value);
     }

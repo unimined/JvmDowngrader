@@ -11,17 +11,17 @@ import java.util.zip.Inflater;
 
 public class J_U_Z_Inflater {
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static int inflate(Inflater inf, ByteBuffer buf) throws DataFormatException {
         return inf.inflate(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
     }
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static void setDictionary(Inflater inf, ByteBuffer buf) {
         inf.setDictionary(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
     }
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static void setInput(Deflater def, ByteBuffer buf) {
         throw new UnsupportedOperationException(
             "JVMDowngrader, setInput(ByteBuffer) is not supported because it's impure.");

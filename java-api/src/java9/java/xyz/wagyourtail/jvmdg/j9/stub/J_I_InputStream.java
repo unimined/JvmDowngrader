@@ -7,12 +7,11 @@ import xyz.wagyourtail.jvmdg.stub.Stub;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.Objects;
 
 public class J_I_InputStream {
 
-    @Stub(javaVersion = Opcodes.V9, subtypes = true)
+    @Stub(opcVers = Opcodes.V9, subtypes = true)
     public static byte[] readAllBytes(InputStream in) throws IOException {
         int readBytes = 0;
         byte[] bytes = new byte[8192];
@@ -32,7 +31,7 @@ public class J_I_InputStream {
         return trimmed;
     }
 
-    @Stub(javaVersion = Opcodes.V9, subtypes = true)
+    @Stub(opcVers = Opcodes.V9, subtypes = true)
     public static int readNBytes(InputStream in, byte[] b, int off, int len) throws IOException {
         J_U_Objects.checkFromIndexSize(off, len, b.length);
 
@@ -47,7 +46,7 @@ public class J_I_InputStream {
         return total;
     }
 
-    @Stub(javaVersion = Opcodes.V9, subtypes = true)
+    @Stub(opcVers = Opcodes.V9, subtypes = true)
     public static long transferTo(InputStream in, OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
         long transferred = 0L;

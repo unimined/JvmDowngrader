@@ -17,7 +17,7 @@ import java.util.function.BiPredicate;
 
 public class J_N_H_HttpRequest {
 
-    @Stub(javaVersion = Opcodes.V16, ref = @Ref("Ljava/net/http/HttpRequest;"))
+    @Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/net/http/HttpRequest;"))
     public static HttpRequest.Builder builder(HttpRequest request, BiPredicate<String, String> filter) {
         Objects.requireNonNull(request);
         Objects.requireNonNull(filter);
@@ -50,7 +50,7 @@ public class J_N_H_HttpRequest {
         return builder;
     }
 
-    @Stub(javaVersion = Opcodes.V16, ref = @Ref("Ljava/net/http/HttpRequest;"), include = {AggregatePublisher.class})
+    @Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/net/http/HttpRequest;"), include = {AggregatePublisher.class})
     public static HttpRequest.BodyPublisher concat(HttpRequest.BodyPublisher... publishers) {
         if (publishers.length == 0) {
             return HttpRequest.BodyPublishers.noBody();

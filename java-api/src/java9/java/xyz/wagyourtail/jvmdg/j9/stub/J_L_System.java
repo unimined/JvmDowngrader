@@ -10,12 +10,12 @@ import java.util.logging.Logger;
 
 public class J_L_System {
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/System;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/System;"))
     public static Logger getLogger(String name) {
         return Logger.getLogger(name);
     }
 
-    @Stub(javaVersion = Opcodes.V9, ref = @Ref("Ljava/lang/System;"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/System;"))
     public static Logger getLogger(String name, ResourceBundle bundle) {
         Logger logger = Logger.getLogger(name);
         logger.setResourceBundle(bundle);

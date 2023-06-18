@@ -5,12 +5,13 @@ import xyz.wagyourtail.jvmdg.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
 import xyz.wagyourtail.jvmdg.stub.Stub;
 
+import java.util.Iterator;
 import java.util.Objects;
 
 public class J_U_Iterator {
 
-    @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/util/Iterator"), subtypes = true)
-    public static void forEachRemaining(Iterator<?> iterator, J_U_F_Consumer<?> action) {
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Iterator"), subtypes = true)
+    public static <T> void forEachRemaining(Iterator<T> iterator, J_U_F_Consumer<? super T> action) {
         Objects.requireNonNull(action);
         while (iterator.hasNext()) {
             action.accept(iterator.next());

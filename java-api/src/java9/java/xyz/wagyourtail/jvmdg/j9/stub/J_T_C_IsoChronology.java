@@ -14,7 +14,7 @@ import static java.time.temporal.ChronoField.*;
 
 public class J_T_C_IsoChronology {
 
-    @Stub(javaVersion = Opcodes.V9)
+    @Stub(opcVers = Opcodes.V9)
     public static long epochSecond(
         IsoChronology self, int prolepticYear, int month, int dayOfMonth,
         int hour, int minute, int second, ZoneOffset zoneOffset

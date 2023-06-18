@@ -9,17 +9,17 @@ import java.util.zip.Deflater;
 
 public class J_U_Z_Deflater {
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static int deflate(Deflater def, ByteBuffer buf) {
         return def.deflate(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
     }
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static int deflate(Deflater def, ByteBuffer buf, int flush) {
         return def.deflate(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining(), flush);
     }
 
-    @Stub(javaVersion = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11)
     public static void setInput(Deflater def, ByteBuffer buf) {
         throw new UnsupportedOperationException(
             "JVMDowngrader, setInput(ByteBuffer) is not supported because it's impure.");

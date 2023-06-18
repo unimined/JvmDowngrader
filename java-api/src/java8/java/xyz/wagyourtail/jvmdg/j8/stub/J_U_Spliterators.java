@@ -2,19 +2,14 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.Ref;
-import xyz.wagyourtail.jvmdg.j8.intl.spliterator.ArraySpliterator;
-import xyz.wagyourtail.jvmdg.j8.intl.spliterator.DoubleArraySpliterator;
-import xyz.wagyourtail.jvmdg.j8.intl.spliterator.EmptySpliterator;
-import xyz.wagyourtail.jvmdg.j8.intl.spliterator.IntArraySpliterator;
-import xyz.wagyourtail.jvmdg.j8.longl.spliterator.LongArraySpliterator;
+import xyz.wagyourtail.jvmdg.j8.intl.spliterator.*;
 import xyz.wagyourtail.jvmdg.stub.Stub;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
-import java.util.PrimitiveIterator;
 
-@Stub(javaVersion = Opcodes.V1_8, ref = @Ref("Ljava/util/Spliterators"))
+@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/Spliterators"))
 public class J_U_Spliterators {
 
     private static final J_U_Spliterator<Object> EMPTY_SPLITERATOR = new EmptySpliterator.OfRef<>();
@@ -40,12 +35,13 @@ public class J_U_Spliterators {
         return EMPTY_DOUBLE_SPLITERATOR;
     }
 
-    public static <T> J_U_Spliterator<T> spliterator(Object[] array, int additionalCharacteristics) {
-        return new ArraySpliterator(Objects.requireNonNull(array), additionalCharacteristics);
+    public static <T> J_U_Spliterator<T> spliterator(T[] array, int additionalCharacteristics) {
+        return new ArraySpliterator<>(Objects.requireNonNull(array), additionalCharacteristics);
     }
 
-    public static <T> J_U_Spliterator<T> spliterator(Object[] array, int fromIndex, int toIndex, int additionalCharacteristics) {
-        return new ArraySpliterator(Objects.requireNonNull(array), fromIndex, toIndex, additionalCharacteristics);
+    public static <T> J_U_Spliterator<T> spliterator(T[] array, int fromIndex, int toIndex, int additionalCharacteristics) {
+        checkFromToBounds(Objects.requireNonNull(array).length, fromIndex, toIndex);
+        return new ArraySpliterator<>(Objects.requireNonNull(array), fromIndex, toIndex, additionalCharacteristics);
     }
 
     public static J_U_Spliterator.OfInt spliterator(int[] array, int additionalCharacteristics) {
@@ -53,6 +49,7 @@ public class J_U_Spliterators {
     }
 
     public static J_U_Spliterator.OfInt spliterator(int[] array, int fromIndex, int toIndex, int additionalCharacteristics) {
+        checkFromToBounds(Objects.requireNonNull(array).length, fromIndex, toIndex);
         return new IntArraySpliterator(Objects.requireNonNull(array), fromIndex, toIndex, additionalCharacteristics);
     }
 
@@ -61,6 +58,7 @@ public class J_U_Spliterators {
     }
 
     public static J_U_Spliterator.OfLong spliterator(long[] array, int fromIndex, int toIndex, int additionalCharacteristics) {
+        checkFromToBounds(Objects.requireNonNull(array).length, fromIndex, toIndex);
         return new LongArraySpliterator(Objects.requireNonNull(array), fromIndex, toIndex, additionalCharacteristics);
     }
 
@@ -83,10 +81,6 @@ public class J_U_Spliterators {
 
     public static <T> J_U_Spliterator<T> spliterator(Collection<? extends T> c, int characteristics) {
         return new IteratorSpliterator<>(Objects.requireNonNull(c), characteristics);
-    }
-
-    public static <T> J_U_Spliterator<T> spliteratorUnknownSize(Collection<? extends T> c, long size, int characteristics) {
-        return new IteratorSpliterator<>(Objects.requireNonNull(c), size, characteristics);
     }
 
     public static <T> J_U_Spliterator<T> spliteratorUnknownSize(Iterator<? extends T> iterator, int characteristics) {
@@ -119,7 +113,7 @@ public class J_U_Spliterators {
 
     public static <T> Iterator<T> iterator(J_U_Spliterator<? extends T> spliterator) {
         Objects.requireNonNull(spliterator);
-        return new IteratorFromSpliterator<T>(spliterator);
+        return new IteratorFromSpliterator<>(spliterator);
     }
 
     public static J_U_PrimitiveIterator.OfInt iterator(J_U_Spliterator.OfInt spliterator) {

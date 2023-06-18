@@ -1,23 +1,19 @@
 package xyz.wagyourtail.jvmdg.internal;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.objectweb.asm.Opcodes;
+import org.junit.jupiter.api.Test;
 import xyz.wagyourtail.jvmdg.VersionProvider;
 import xyz.wagyourtail.jvmdg.standalone.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.test.JavaRunner;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
@@ -28,11 +24,13 @@ public class JvmDowngraderTest {
         System.setProperty("jvmdg.java-api", javaApi.toString());
     }
 
+    private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.V1_8;
+
     private final Path original = Path.of("../downgradetest/build/libs/downgradetest-1.0.0.jar");
 
-    private final Path downgraded = getDowngradedPath(original, "-downgraded-7.jar");
+    private final Path downgraded = getDowngradedPath(original, "-downgraded-" + target.getMajorVersion() + ".jar");
 
-    private final Path downgradedJavaApi = getDowngradedPath(javaApi, "-downgraded-7.jar");
+    private final Path downgradedJavaApi = getDowngradedPath(javaApi, "-downgraded-" + target.getMajorVersion() + ".jar");
 
     public JvmDowngraderTest() throws Exception {
     }
@@ -54,7 +52,7 @@ public class JvmDowngraderTest {
     private Path getDowngradedPath(Path originalPath, String suffix) throws Exception {
         Path path = originalPath.getParent().resolve(originalPath.getFileName().toString().replace(".jar", suffix));
         if (!Files.exists(path)) {
-            ClassDowngrader downgrader = new ClassDowngrader(Opcodes.V1_7);
+            ClassDowngrader downgrader = new ClassDowngrader(target.toOpcode());
             downgrader.downgradeZip(originalPath.toFile(), path.toFile());
         }
         return path;
@@ -99,7 +97,7 @@ public class JvmDowngraderTest {
             Map.of(),
             true,
             List.of(),
-            Opcodes.V1_7,
+            target.toOpcode(),
             (String it) -> {
                 downgradedLog.append(it).append("\n");
                 System.out.println(it);
@@ -125,7 +123,7 @@ public class JvmDowngraderTest {
             Map.of(),
             true,
             List.of(/*"-Djvmdg.debug=true", */"-Djvmdg.java-api=" + javaApi),
-            Opcodes.V1_7,
+            target.toOpcode(),
             (String it) -> {
                 runtimeDowngradeLog.append(it).append("\n");
                 System.out.println(it);

@@ -10,28 +10,28 @@ import java.util.function.Function;
 
 public class J_U_C_CompletionStage {
 
-    @Stub(javaVersion = Opcodes.V12, include = ExceptionallyAsync.class, subtypes = true, returnDecendant = true)
+    @Stub(opcVers = Opcodes.V12, include = ExceptionallyAsync.class, subtypes = true, returnDecendant = true)
     public static <T> CompletionStage<T> exceptionallyAsync(CompletionStage<T> stage, Function<Throwable, ? extends T> fn) {
         return stage.handle(new ExceptionallyAsync<>(stage, fn)::handleAsync).thenCompose(Function.identity());
     }
 
-    @Stub(javaVersion = Opcodes.V12, include = ExceptionallyAsync.class, subtypes = true, returnDecendant = true)
+    @Stub(opcVers = Opcodes.V12, include = ExceptionallyAsync.class, subtypes = true, returnDecendant = true)
     public static <T> CompletionStage<T> exceptionallyAsync(CompletionStage<T> stage, Function<Throwable, ? extends T> fn, Executor executor) {
         return stage.handle(new ExceptionallyAsync<>(stage, fn, executor)::handleAsync)
             .thenCompose(Function.identity());
     }
 
-    @Stub(javaVersion = Opcodes.V12, include = ExceptionallyComposeAsync.class, subtypes = true, returnDecendant = true)
+    @Stub(opcVers = Opcodes.V12, include = ExceptionallyComposeAsync.class, subtypes = true, returnDecendant = true)
     public static <T> CompletionStage<T> exceptionallyCompose(CompletionStage<T> stage, Function<Throwable, ? extends CompletionStage<T>> fn) {
         return stage.handle(new ExceptionallyComposeAsync<>(stage, fn)::handle).thenCompose(Function.identity());
     }
 
-    @Stub(javaVersion = Opcodes.V12, include = ExceptionallyComposeAsync.class, subtypes = true, returnDecendant = true)
+    @Stub(opcVers = Opcodes.V12, include = ExceptionallyComposeAsync.class, subtypes = true, returnDecendant = true)
     public static <T> CompletionStage<T> exceptionallyComposeAsync(CompletionStage<T> stage, Function<Throwable, ? extends CompletionStage<T>> fn) {
         return stage.handle(new ExceptionallyComposeAsync<>(stage, fn)::handleAsync).thenCompose(Function.identity());
     }
 
-    @Stub(javaVersion = Opcodes.V12, include = ExceptionallyComposeAsync.class, subtypes = true, returnDecendant = true)
+    @Stub(opcVers = Opcodes.V12, include = ExceptionallyComposeAsync.class, subtypes = true, returnDecendant = true)
     public static <T> CompletionStage<T> exceptionallyComposeAsync(CompletionStage<T> stage, Function<Throwable, ? extends CompletionStage<T>> fn, Executor executor) {
         return stage.handle(new ExceptionallyComposeAsync<>(stage, fn, executor)::handleAsync)
             .thenCompose(Function.identity());

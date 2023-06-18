@@ -9,7 +9,7 @@ import java.util.List;
 
 public class J_L_Package {
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <A extends Annotation> A[] getAnnotationsByType(Package self, Class<A> annotationClass) {
         List<A> result = new ArrayList<>();
         for (Annotation a : self.getAnnotations()) {
@@ -20,7 +20,7 @@ public class J_L_Package {
         return result.toArray((A[]) new Annotation[0]);
     }
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <A extends Annotation> A getDeclaredAnnotation(Package self, Class<A> annotationClass) {
         for (Annotation a : self.getDeclaredAnnotations()) {
             if (annotationClass.isInstance(a)) {
@@ -30,7 +30,7 @@ public class J_L_Package {
         return null;
     }
 
-    @Stub(javaVersion = Opcodes.V1_8)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <A extends Annotation> A[] getDeclaredAnnotationsByType(Package self, Class<A> annotationClass) {
         List<A> result = new ArrayList<>();
         for (Annotation a : self.getDeclaredAnnotations()) {

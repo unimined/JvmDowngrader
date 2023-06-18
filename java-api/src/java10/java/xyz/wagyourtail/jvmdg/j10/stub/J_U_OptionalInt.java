@@ -9,7 +9,7 @@ import java.util.OptionalInt;
 
 public class J_U_OptionalInt {
 
-    @Stub(javaVersion = Opcodes.V10)
+    @Stub(opcVers = Opcodes.V10)
     public static int orElseThrow(OptionalInt optional) {
         if (optional.isPresent()) {
             return optional.getAsInt();

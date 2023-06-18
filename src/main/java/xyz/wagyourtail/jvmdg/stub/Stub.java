@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.stub;
 
 
-import org.objectweb.asm.tree.AnnotationNode;
 import xyz.wagyourtail.jvmdg.Ref;
 
 import java.lang.annotation.*;
@@ -10,7 +9,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Stub {
 
-    int javaVersion();
+    int opcVers();
 
     Ref ref() default @Ref("");
 

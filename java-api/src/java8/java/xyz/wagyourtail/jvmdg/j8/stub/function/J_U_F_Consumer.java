@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.stub.Stub;
 import java.util.Objects;
 
 @J_L_FunctionalInterface
-@Stub(javaVersion = Opcodes.V1_8, ref = @Ref("Ljava/util/function/Consumer"))
+@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/Consumer"))
 public interface J_U_F_Consumer<T> {
 
     void accept(T t);

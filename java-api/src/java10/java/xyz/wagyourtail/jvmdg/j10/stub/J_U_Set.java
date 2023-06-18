@@ -10,7 +10,7 @@ import java.util.Set;
 
 public class J_U_Set {
 
-    @Stub(javaVersion = Opcodes.V10, ref = @Ref("Ljava/util/Set;"))
+    @Stub(opcVers = Opcodes.V10, ref = @Ref("Ljava/util/Set;"))
     public static <E> Set<E> copyOf(Collection<? extends E> coll) {
         return (Set) Set.of(coll.toArray());
     }

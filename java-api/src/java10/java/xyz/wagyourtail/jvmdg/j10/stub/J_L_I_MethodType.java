@@ -9,7 +9,7 @@ import java.lang.invoke.MethodType;
 public class J_L_I_MethodType {
 
 
-    @Stub(javaVersion = Opcodes.V10)
+    @Stub(opcVers = Opcodes.V10)
     public static Class<?> lastParameterType(MethodType mt) {
         if (mt.parameterCount() == 0) {
             return void.class;

@@ -75,8 +75,9 @@ public class Java17Downgrader extends VersionProvider {
     }
 
     @Override
-    public void otherTransforms(ClassNode clazz) {
+    public ClassNode otherTransforms(ClassNode clazz) {
         unseal(clazz);
+        return clazz;
     }
 
     // TODO: add bytecode to check the seal and throw
@@ -89,7 +90,7 @@ public class Java17Downgrader extends VersionProvider {
             sb.deleteCharAt(sb.length() - 1);
             node.permittedSubclasses = null;
             node.visitField(
-                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC),
+                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
                 "permittedSubclasses$jvmdowngrader",
                 "Ljava/lang/String;",
                 null,
