@@ -2,12 +2,12 @@ package xyz.wagyourtail.jvmdg.j10;
 
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.j10.stub.*;
 
 public class Java10Downgrader extends VersionProvider {
         public Java10Downgrader() {
-            super(Opcodes.V10);
+            super(Opcodes.V10, Opcodes.V9);
         }
 
         public void init() {

@@ -5,10 +5,9 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.j9.stub.*;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -17,7 +16,7 @@ public class Java9Downgrader extends VersionProvider {
 
 
     public Java9Downgrader() {
-        super(Opcodes.V9);
+        super(Opcodes.V9, Opcodes.V1_8);
     }
 
     @Override

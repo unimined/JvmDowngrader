@@ -4,11 +4,9 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.Ref;
-import xyz.wagyourtail.jvmdg.replace.Replace;
+import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.Replace;
 
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.*;
 
 public class J_L_I_StringConcatFactory {

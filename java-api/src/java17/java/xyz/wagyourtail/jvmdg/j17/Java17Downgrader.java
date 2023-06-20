@@ -3,14 +3,12 @@ package xyz.wagyourtail.jvmdg.j17;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.j17.stub.*;
-
-import java.lang.reflect.InvocationTargetException;
 
 public class Java17Downgrader extends VersionProvider {
     public Java17Downgrader() {
-        super(Opcodes.V17);
+        super(Opcodes.V17, Opcodes.V16);
     }
 
     public void init() {

@@ -6,8 +6,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.Ref;
-import xyz.wagyourtail.jvmdg.replace.Replace;
+import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.Replace;
 
 import java.util.ArrayList;
 import java.util.List;

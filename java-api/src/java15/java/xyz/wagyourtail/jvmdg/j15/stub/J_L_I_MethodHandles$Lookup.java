@@ -3,7 +3,7 @@ package xyz.wagyourtail.jvmdg.j15.stub;
 
 import org.objectweb.asm.Opcodes;
 import sun.misc.Unsafe;
-import xyz.wagyourtail.jvmdg.stub.Stub;
+import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
@@ -54,6 +54,7 @@ public class J_L_I_MethodHandles$Lookup {
         public final Class<?> defineClass0(byte[] b, int off, int len) {
             return super.defineClass(null, b, off, len);
         }
+
     }
 
 }

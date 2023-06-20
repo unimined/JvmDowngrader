@@ -18,7 +18,7 @@ val toVersion = JavaVersion.VERSION_16
 
 sourceSets {
     for (vers in fromVersion..toVersion) {
-        val set = create("java${vers.ordinal + 2}") {
+        create("java${vers.ordinal + 2}") {
             inputOf(main.get())
             outputOf(main.get())
         }
@@ -27,7 +27,6 @@ sourceSets {
 
 dependencies {
     implementation(project(":"))
-    implementation(project(":standalone"))
 }
 
 for (vers in fromVersion..toVersion) {
@@ -46,4 +45,30 @@ fun JavaCompile.configCompile(version: JavaVersion) {
 
     options.encoding = "UTF-8"
     options.release.set(version.ordinal + 1)
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "WagYourMaven"
+            url = if (project.hasProperty("version_snapshot")) {
+                uri("https://maven.wagyourtail.xyz/snapshots/")
+            } else {
+                uri("https://maven.wagyourtail.xyz/releases/")
+            }
+            credentials {
+                username = project.findProperty("mvn.user") as String? ?: System.getenv("USERNAME")
+                password = project.findProperty("mvn.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
+    }
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = project.group as String
+            artifactId = project.property("archives_base_name") as String + "-java-api"
+            version = project.version as String
+
+            artifact(tasks["jar"]) {}
+        }
+    }
 }

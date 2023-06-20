@@ -4,8 +4,8 @@ import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpExchange;
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.Ref;
-import xyz.wagyourtail.jvmdg.stub.Stub;
+import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.io.IOException;
 import java.util.Objects;

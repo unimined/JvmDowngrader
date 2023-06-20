@@ -1,12 +1,12 @@
 package xyz.wagyourtail.jvmdg.j15;
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.j15.stub.*;
 
 public class Java15Downgrader extends VersionProvider {
     public Java15Downgrader() {
-        super(Opcodes.V15);
+        super(Opcodes.V15, Opcodes.V14);
     }
 
     public void init() {

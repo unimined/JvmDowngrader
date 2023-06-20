@@ -1,9 +1,5 @@
 package xyz.wagyourtail.jvmdg.j11.stub.httpclient;
 
-import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.Ref;
-import xyz.wagyourtail.jvmdg.stub.Stub;
-
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.net.Authenticator;

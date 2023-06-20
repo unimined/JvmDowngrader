@@ -3,15 +3,15 @@ package xyz.wagyourtail.jvmdg.j11;
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.Function;
-import xyz.wagyourtail.jvmdg.VersionProvider;
+import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.j11.stub.*;
 
 import java.util.*;
 
 public class Java11Downgrader extends VersionProvider {
         public Java11Downgrader() {
-            super(Opcodes.V11);
+            super(Opcodes.V11, Opcodes.V10);
         }
 
         public void init() {

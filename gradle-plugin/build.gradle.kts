@@ -10,10 +10,6 @@ dependencies {
 
 
 tasks.jar {
-//    from(sourceSets["api"].output, sourceSets["main"].output)
-
-    archiveClassifier.set("gradle")
-
     manifest {
         attributes.putAll(
             mapOf(
@@ -23,15 +19,23 @@ tasks.jar {
     }
 }
 
+gradlePlugin {
+    plugins {
+        create("simplePlugin") {
+            id = "xyz.wagyourtail.jvmdowngrader"
+            implementationClass = "xyz.wagyourtail.jvmdg.gradle.JVMDowngraderPlugin"
+        }
+    }
+}
 
 publishing {
     repositories {
         maven {
             name = "WagYourMaven"
-            if (project.hasProperty("version_snapshot")) {
-                url = uri("https://maven.wagyourtail.xyz/snapshots/")
+            url = if (project.hasProperty("version_snapshot")) {
+                uri("https://maven.wagyourtail.xyz/snapshots/")
             } else {
-                url = uri("https://maven.wagyourtail.xyz/releases/")
+                uri("https://maven.wagyourtail.xyz/releases/")
             }
             credentials {
                 username = project.findProperty("mvn.user") as String? ?: System.getenv("USERNAME")
@@ -42,10 +46,10 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             groupId = project.group as String
-            artifactId = rootProject.name
+            artifactId = project.property("archives_base_name") as String + "-gradle"
             version = project.version as String
 
-            from(components["java"])
+            artifact(tasks["jar"]) {}
         }
     }
 }

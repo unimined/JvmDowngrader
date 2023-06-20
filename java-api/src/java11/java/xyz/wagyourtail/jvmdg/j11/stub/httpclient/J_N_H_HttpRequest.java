@@ -1,8 +1,8 @@
 package xyz.wagyourtail.jvmdg.j11.stub.httpclient;
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.Ref;
-import xyz.wagyourtail.jvmdg.stub.Stub;
+import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.io.InputStream;
 import java.net.URI;

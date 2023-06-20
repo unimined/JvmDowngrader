@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j9.stub;
 
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.stub.Stub;
+import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Currency;
 

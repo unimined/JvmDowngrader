@@ -4,14 +4,12 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.RecordComponentNode;
 import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.j16.stub.*;
-
-import java.lang.reflect.InvocationTargetException;
 
 public class Java16Downgrader extends VersionProvider {
         public Java16Downgrader() {
-            super(Opcodes.V16);
+            super(Opcodes.V16, Opcodes.V15);
         }
 
         public void init() {

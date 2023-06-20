@@ -1,14 +1,14 @@
 package xyz.wagyourtail.jvmdg.j14;
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.j14.stub.J_I_PrintStream;
 import xyz.wagyourtail.jvmdg.j14.stub.J_L_StrictMath;
 import xyz.wagyourtail.jvmdg.j14.stub.J_U_C_L_LockSupport;
 
 public class Java14Downgrader extends VersionProvider {
     public Java14Downgrader() {
-        super(Opcodes.V14);
+        super(Opcodes.V14, Opcodes.V13);
     }
 
     public void init() {
