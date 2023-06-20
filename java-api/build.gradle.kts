@@ -64,9 +64,9 @@ publishing {
     }
     publications {
         create<MavenPublication>("maven") {
-            groupId = project.group as String
-            artifactId = project.property("archives_base_name") as String + "-java-api"
-            version = project.version as String
+            groupId = rootProject.group as String
+            artifactId = rootProject.property("archives_base_name") as String + "-java-api"
+            version = rootProject.version as String
 
             artifact(tasks["jar"]) {}
         }
