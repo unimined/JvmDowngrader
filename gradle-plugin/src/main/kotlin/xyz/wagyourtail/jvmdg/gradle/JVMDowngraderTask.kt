@@ -11,7 +11,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.tasks.Jar
 
-abstract class JVMDowngraderTask(jvmdg: JVMDowngraderExtension) : Jar() {
+abstract class JVMDowngraderTask(val jvmdg: JVMDowngraderExtension) : Jar() {
 
     @get:Input
     @get:Optional
@@ -36,6 +36,8 @@ abstract class JVMDowngraderTask(jvmdg: JVMDowngraderExtension) : Jar() {
                 archiveFile.get().asFile.absolutePath
             )
             it.workingDir = project.buildDir
+            it.classpath = jvmdg.core
+            it.jvmArgs = listOf("-Djvmdg.java-api=${jvmdg.api.resolve().first { it.extension == "jar" }.absolutePath}")
         }
         if (result.exitValue != 0) {
             throw Exception("Failed to downgrade jar")

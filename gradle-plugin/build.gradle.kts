@@ -28,3 +28,29 @@ gradlePlugin {
         }
     }
 }
+
+publishing {
+    repositories {
+        maven {
+            name = "WagYourMaven"
+            url = if (project.hasProperty("version_snapshot")) {
+                uri("https://maven.wagyourtail.xyz/snapshots/")
+            } else {
+                uri("https://maven.wagyourtail.xyz/releases/")
+            }
+            credentials {
+                username = project.findProperty("mvn.user") as String? ?: System.getenv("USERNAME")
+                password = project.findProperty("mvn.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
+    }
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = rootProject.group as String
+            artifactId = "gradle-plugin"
+            version = rootProject.version as String
+
+            artifact(tasks["jar"]) {}
+        }
+    }
+}
