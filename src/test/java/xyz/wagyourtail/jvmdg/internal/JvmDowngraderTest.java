@@ -116,7 +116,7 @@ public class JvmDowngraderTest {
         Integer ret3 = JavaRunner.runJarInSubprocess(
             null,
             new String[] {downgraded.toString(), mainClass},
-            "xyz.wagyourtail.jvmdg.standalone.runtime.Bootstrap",
+            "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             classpathJars,
             Path.of("."),
             Map.of(),

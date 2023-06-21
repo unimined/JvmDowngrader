@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
-import xyz.wagyourtail.jvmdg.Ref;
+import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.replace.Replace;
 
 public class J_L_VirtualMachineError {

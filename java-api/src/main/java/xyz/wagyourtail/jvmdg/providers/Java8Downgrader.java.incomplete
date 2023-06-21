@@ -1,15 +1,16 @@
-package xyz.wagyourtail.jvmdg.j8;
+package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.VersionProvider;
 import xyz.wagyourtail.jvmdg.j8.stub.*;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
+import xyz.wagyourtail.jvmdg.j9.stub.J_U_C_CompletableFuture;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java8Downgrader extends VersionProvider {
 
 
     public Java8Downgrader() {
-        super(Opcodes.V1_8);
+        super(Opcodes.V1_8, Opcodes.V1_7);
     }
 
     @Override
@@ -211,7 +212,10 @@ public class Java8Downgrader extends VersionProvider {
         // Tripwire
         // Vector -- handled by Collection.spliterator
         // ArrayBlockingQueue
-        stub(J_U_C_CompletableFuture.class);
+        // CompletableFuture // TODO
+        stub(J_U_C_CompletionException.class);
+        stub(J_U_C_ConcurrentHashMap.class);
+        stub(J_U_C_CompletionStage.class);
 
 
 

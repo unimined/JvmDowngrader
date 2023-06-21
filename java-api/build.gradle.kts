@@ -20,7 +20,9 @@ sourceSets {
     for (vers in fromVersion..toVersion) {
         create("java${vers.ordinal + 2}") {
             inputOf(main.get())
-            outputOf(main.get())
+            main {
+                outputOf(this@create)
+            }
         }
     }
 }
@@ -33,6 +35,10 @@ for (vers in fromVersion..toVersion) {
     tasks.getByName("compileJava${vers.ordinal + 2}Java") {
         (this as JavaCompile).configCompile(vers)
     }
+}
+
+tasks.compileJava {
+    configCompile(JavaVersion.VERSION_1_7)
 }
 
 tasks.jar {

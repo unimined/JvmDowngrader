@@ -1,9 +1,6 @@
 package xyz.wagyourtail.jvmdg.version;
 
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ClassInfo;
-import io.github.classgraph.ClassInfoList;
-import io.github.classgraph.ScanResult;
+import io.github.classgraph.*;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -200,7 +197,7 @@ public abstract class VersionProvider {
             if (!methodStub.subtypesOnly()) {
                 methodStubs.put(owner.getInternalName() + ";" + name + Type.getMethodDescriptor(ret, args), new Pair<>(m, methodStub));
             }
-            if (methodStub.subtypes() || methodStub.subtypesOnly()) {
+            if (methodStub.subtypes() || methodStub.subtypesOnly() || methodStub.defaultMethod()) {
                 final String ownerName = owner.getClassName();
                 for (ClassInfo ci : allClasses.getAllClasses().filter(new ClassInfoList.ClassInfoFilter() {
                     @Override
@@ -208,15 +205,29 @@ public abstract class VersionProvider {
                         return classInfo.extendsSuperclass(ownerName) || classInfo.implementsInterface(ownerName);
                     }
                 })) {
-                    if (methodStub.returnDecendant()) {
+                    String target;
+                    if (methodStub.defaultMethod()) {
+                        // check if the class has a method with the same name and descriptor (or if it's in a super type)
+                        boolean found = false;
+                        for (MethodInfo mi : ci.getMethodInfo(name)) {
+                            if (mi.getName().equals(name) && mi.getTypeDescriptorStr().equals(Type.getMethodDescriptor(ret, args)) && mi.hasBody()) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) continue;
+                        target = ci.getName().replace('.', '/') + ";" + name + Type.getMethodDescriptor(ret, args);
+                    } else if (methodStub.returnDecendant()) {
                         if (!owner.getInternalName().equals(ret.getInternalName())) {
                             throw new IllegalArgumentException("Return type must be the same as the owner to return a decendant");
                         }
                         Type ret2 = Type.getObjectType(ci.getName().replace('.', '/'));
-                        String target = ci.getName().replace('.', '/') + ";" + name + Type.getMethodDescriptor(ret2, args);
-                        // prioritize non-subtype stubs
-                        if (!methodStubs.containsKey(target)) methodStubs.put(target, new Pair<>(m, methodStub));
+                        target = ci.getName().replace('.', '/') + ";" + name + Type.getMethodDescriptor(ret2, args);
+                    } else {
+                        target = ci.getName().replace('.', '/') + ";" + name + Type.getMethodDescriptor(ret, args);
                     }
+                    // prioritize non-subtype stubs
+                    if (!methodStubs.containsKey(target)) methodStubs.put(target, new Pair<>(m, methodStub));
                 }
             }
         }

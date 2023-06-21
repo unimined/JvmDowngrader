@@ -1,8 +1,8 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.Ref;
-import xyz.wagyourtail.jvmdg.stub.Stub;
+import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Float {
     // @Stub(javaVersion = Opcodes.V1_8, ref = @Ref("java/lang/Double"))

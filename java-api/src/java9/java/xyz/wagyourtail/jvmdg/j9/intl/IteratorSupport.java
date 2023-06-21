@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.j9;
+package xyz.wagyourtail.jvmdg.j9.intl;
 
 import java.util.Iterator;
 import java.util.Spliterator;

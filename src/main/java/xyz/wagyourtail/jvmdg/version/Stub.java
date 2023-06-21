@@ -19,4 +19,6 @@ public @interface Stub {
 
     boolean returnDecendant() default false;
 
+    boolean defaultMethod() default false;
+
 }

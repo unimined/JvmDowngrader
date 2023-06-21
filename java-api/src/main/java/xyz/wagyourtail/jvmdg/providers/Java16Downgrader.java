@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.j16;
+package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;

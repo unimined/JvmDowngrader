@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.j11;
+package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;

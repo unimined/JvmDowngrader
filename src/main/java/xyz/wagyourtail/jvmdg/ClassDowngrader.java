@@ -2,7 +2,6 @@ package xyz.wagyourtail.jvmdg;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -17,33 +16,17 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ClassDowngrader {
     public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(VersionProvider.getCurrentClassVersion());
-    private static final Map<Integer, String> versionDowngraders = new HashMap<>();
-    public static final DowngradingClassLoader classLoader;
+    public static final DowngradingClassLoader classLoader = new DowngradingClassLoader(new URL[]{findJavaApi()}, ClassDowngrader.class.getClassLoader());
+    private static final Map<Integer, VersionProvider> downgraders = new HashMap<>();
+    private final int target;
 
     static {
-//        versionDowngraders.put(Opcodes.V1_8, "xyz.wagyourtail.jvmdg.j8.Java8Downgrader");
-        versionDowngraders.put(Opcodes.V9, "xyz.wagyourtail.jvmdg.j9.Java9Downgrader");
-        versionDowngraders.put(Opcodes.V10, "xyz.wagyourtail.jvmdg.j10.Java10Downgrader");
-        versionDowngraders.put(Opcodes.V11, "xyz.wagyourtail.jvmdg.j11.Java11Downgrader");
-        versionDowngraders.put(Opcodes.V12, "xyz.wagyourtail.jvmdg.j12.Java12Downgrader");
-        versionDowngraders.put(Opcodes.V13, "xyz.wagyourtail.jvmdg.j13.Java13Downgrader");
-        versionDowngraders.put(Opcodes.V14, "xyz.wagyourtail.jvmdg.j14.Java14Downgrader");
-        versionDowngraders.put(Opcodes.V15, "xyz.wagyourtail.jvmdg.j15.Java15Downgrader");
-        versionDowngraders.put(Opcodes.V16, "xyz.wagyourtail.jvmdg.j16.Java16Downgrader");
-        versionDowngraders.put(Opcodes.V17, "xyz.wagyourtail.jvmdg.j17.Java17Downgrader");
-        classLoader = new DowngradingClassLoader(new URL[]{findJavaApi()}, ClassDowngrader.class.getClassLoader());
+        collectProviders();
     }
-
-    private static final Map<Integer, VersionProvider> downgraders = new HashMap<>();
-
-    private final int target;
 
     protected ClassDowngrader(int versionTarget) {
         this.target = versionTarget;
@@ -57,6 +40,13 @@ public class ClassDowngrader {
         }
     }
 
+    public static void collectProviders() {
+        Iterator<VersionProvider> providerIterator = ServiceLoader.load(VersionProvider.class, classLoader).iterator();
+        while (providerIterator.hasNext()) {
+            VersionProvider provider = providerIterator.next();
+            downgraders.put(provider.inputVersion, provider);
+        }
+    }
 
     private static URL getJavaApiFromShade() throws IOException {
         return ClassDowngrader.class.getResource("/META-INF/lib/java-api.jar");
@@ -121,27 +111,15 @@ public class ClassDowngrader {
         }
     }
 
-    protected VersionProvider resolve(int opc) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        if (!downgraders.containsKey(opc)) {
-            synchronized (downgraders) {
-                if (!downgraders.containsKey(opc)) {
-                    if (!versionDowngraders.containsKey(opc)) {
-                        throw new RuntimeException("Unsupported class version: " + opc);
-                    }
-                    VersionProvider p = (VersionProvider) Class.forName(versionDowngraders.get(opc), true, classLoader).getConstructor().newInstance();
-                    downgraders.put(opc, p);
-                }
-            }
-        }
-        return downgraders.get(opc);
-    }
-
     protected Set<ClassNode> downgrade(ClassNode clazz, Function<String, ClassNode> getReadOnly) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException {
         Set<ClassNode> classes = new HashSet<>();
         classes.add(clazz);
         int version = clazz.version;
         while (version > target) {
-            VersionProvider downgrader = resolve(version);
+            VersionProvider downgrader = downgraders.get(version);
+            if (downgrader == null) {
+                throw new RuntimeException("Unsupported class version: " + version);
+            }
             Set<ClassNode> newClasses = new HashSet<>();
             for (ClassNode c : classes) {
                 newClasses.add(downgrader.downgrade(c, newClasses, getReadOnly));
@@ -227,7 +205,7 @@ public class ClassDowngrader {
     }
 
     public void stub(int versionOpcode, Class<?> clazz) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        resolve(versionOpcode).stub(clazz);
+        downgraders.get(versionOpcode).stub(clazz);
     }
 
     public static void main(String[] args) {

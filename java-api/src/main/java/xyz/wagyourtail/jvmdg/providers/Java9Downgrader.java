@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.j9;
+package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
