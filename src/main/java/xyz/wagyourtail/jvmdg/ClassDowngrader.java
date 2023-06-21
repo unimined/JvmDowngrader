@@ -21,12 +21,8 @@ import java.util.*;
 public class ClassDowngrader {
     public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(VersionProvider.getCurrentClassVersion());
     public static final DowngradingClassLoader classLoader = new DowngradingClassLoader(new URL[]{findJavaApi()}, ClassDowngrader.class.getClassLoader());
-    private static final Map<Integer, VersionProvider> downgraders = new HashMap<>();
+    private static final Map<Integer, VersionProvider> downgraders = collectProviders();
     private final int target;
-
-    static {
-        collectProviders();
-    }
 
     protected ClassDowngrader(int versionTarget) {
         this.target = versionTarget;
@@ -40,12 +36,14 @@ public class ClassDowngrader {
         }
     }
 
-    public static void collectProviders() {
+    public static Map<Integer, VersionProvider> collectProviders() {
         Iterator<VersionProvider> providerIterator = ServiceLoader.load(VersionProvider.class, classLoader).iterator();
+        Map<Integer, VersionProvider> downgraders = new HashMap<>();
         while (providerIterator.hasNext()) {
             VersionProvider provider = providerIterator.next();
             downgraders.put(provider.inputVersion, provider);
         }
+        return downgraders;
     }
 
     private static URL getJavaApiFromShade() throws IOException {

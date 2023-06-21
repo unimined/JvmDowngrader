@@ -27,23 +27,21 @@ public abstract class VersionProvider {
     public final int outputVersion;
     private final ScanResult allClasses;
 
+    private boolean initialized = false;
+
     protected VersionProvider(int inputVersion, int outputVersion) {
         this.inputVersion = inputVersion;
         this.outputVersion = outputVersion;
         allClasses = defaultClasspath;
-        init();
-        afterInit();
     }
 
     protected VersionProvider(int inputVersion, int outputVersion, Set<URI> classpath) {
         this.inputVersion = inputVersion;
         this.outputVersion = outputVersion;
         allClasses = resolveAllClasses(classpath);
-        init();
-        afterInit();
     }
 
-    protected void afterInit() {
+    public void afterInit() {
         if (Constants.DEBUG) {
             for (Map.Entry<Type, Pair<Type, Stub>> entry : classStubs.entrySet()) {
                 System.out.println(entry.getKey().getInternalName() + " -> " + entry.getValue().getFirst().getInternalName());
@@ -257,6 +255,17 @@ public abstract class VersionProvider {
 
     public ClassNode downgrade(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) throws InvocationTargetException, IllegalAccessException {
         if (clazz.version != inputVersion) throw new IllegalArgumentException("Class " + clazz.name + " is not version " + inputVersion);
+
+        if (!initialized) {
+            synchronized (this) {
+                if (!initialized) {
+                    init();
+                    initialized = true;
+                    afterInit();
+                }
+            }
+        }
+
         clazz = stubClasses(clazz);
         clazz = stubMethods(clazz, extra);
         clazz = otherTransforms(clazz, extra, getReadOnly);
