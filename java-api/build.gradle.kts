@@ -14,7 +14,7 @@ operator fun JavaVersion.rangeTo(that: JavaVersion): Array<JavaVersion> {
     return JavaVersion.values().copyOfRange(this.ordinal, that.ordinal + 1)
 }
 
-val fromVersion = JavaVersion.VERSION_1_8
+val fromVersion = JavaVersion.VERSION_1_7
 val toVersion = JavaVersion.VERSION_16
 
 sourceSets {
