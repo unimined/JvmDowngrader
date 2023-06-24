@@ -17,6 +17,6 @@ public class J_U_PriorityQueue {
 
     @Stub(opcVers = Opcodes.V1_8)
     public static <E> J_U_Spliterator<E> spliterator(PriorityQueue<E> queue) {
-        //TODO
+        return J_U_Spliterators.spliterator(queue, 0);
     }
 }

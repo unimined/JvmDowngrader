@@ -34,6 +34,11 @@ public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spl
         public void accept(int t) {
             value = t;
         }
+
+        @Override
+        public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
+            return IntConsumerDefaults.andThen(this, after);
+        }
     }
 
     @Override
@@ -84,6 +89,11 @@ public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spl
                 @Override
                 public void accept(int value) {
                     action.accept(value);
+                }
+
+                @Override
+                public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
+                    return IntConsumerDefaults.andThen(this, after);
                 }
             });
         }

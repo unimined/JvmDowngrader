@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongConsumer;
 
 import java.util.NoSuchElementException;
 
-public class DoubleIteratorFromSpliterator implements J_U_F_DoubleConsumer, J_U_PrimitiveIterator.OfDouble {
+        public class DoubleIteratorFromSpliterator implements J_U_F_DoubleConsumer, J_U_PrimitiveIterator.OfDouble {
     private final J_U_Spliterator.OfDouble spliterator;
 
     private boolean nextAvailable = false;
@@ -27,6 +27,16 @@ public class DoubleIteratorFromSpliterator implements J_U_F_DoubleConsumer, J_U_
     }
 
     @Override
+    public void forEachRemaining(J_U_F_DoubleConsumer action) {
+        J_U_PrimitiveIterator.OfDouble.OfDoubleDefaults.forEachRemaining(this, action);
+    }
+
+    @Override
+    public Double next() {
+        return nextDouble();
+    }
+
+    @Override
     public boolean hasNext() {
         if (!nextAvailable) {
             spliterator.tryAdvance(this);
@@ -43,5 +53,10 @@ public class DoubleIteratorFromSpliterator implements J_U_F_DoubleConsumer, J_U_
     public void accept(double value) {
         next = value;
         nextAvailable = true;
+    }
+
+    @Override
+    public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
+        return J_U_F_DoubleConsumer.DoubleConsumerDefaults.andThen(this, after);
     }
 }

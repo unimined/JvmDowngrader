@@ -5,7 +5,6 @@ import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
 
 import java.util.Comparator;
-import java.util.Spliterators;
 
 public class IntArraySpliterator implements J_U_Spliterator.OfInt {
 
@@ -36,13 +35,33 @@ public class IntArraySpliterator implements J_U_Spliterator.OfInt {
     }
 
     @Override
-    public boolean tryAdvance(J_U_F_Consumer<? super Integer> action) {
-        return tryAdvance((J_U_F_IntConsumer) action::accept);
+    public boolean tryAdvance(final J_U_F_Consumer<? super Integer> action) {
+        return tryAdvance(new J_U_F_IntConsumer() {
+            @Override
+            public void accept(int value) {
+                action.accept(value);
+            }
+
+            @Override
+            public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
+                return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
+            }
+        });
     }
 
     @Override
-    public void forEachRemaining(J_U_F_Consumer<? super Integer> action) {
-        forEachRemaining((J_U_F_IntConsumer) action::accept);
+    public void forEachRemaining(final J_U_F_Consumer<? super Integer> action) {
+        forEachRemaining(new J_U_F_IntConsumer() {
+            @Override
+            public void accept(int value) {
+                action.accept(value);
+            }
+
+            @Override
+            public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
+                return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
+            }
+        });
     }
 
     @Override

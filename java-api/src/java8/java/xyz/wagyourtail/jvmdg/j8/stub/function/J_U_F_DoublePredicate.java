@@ -5,22 +5,99 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
+import java.util.Objects;
+
 @J_L_FunctionalInterface
 @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/DoublePredicate"))
 public interface J_U_F_DoublePredicate {
 
     boolean test(double value);
 
-    default J_U_F_DoublePredicate and(J_U_F_DoublePredicate other) {
-        return (value) -> test(value) && other.test(value);
-    }
+    J_U_F_DoublePredicate and(J_U_F_DoublePredicate other);
 
-    default J_U_F_DoublePredicate negate() {
-        return (value) -> !test(value);
-    }
+    J_U_F_DoublePredicate negate();
 
-    default J_U_F_DoublePredicate or(J_U_F_DoublePredicate other) {
-        return (value) -> test(value) || other.test(value);
+    J_U_F_DoublePredicate or(J_U_F_DoublePredicate other);
+
+    class DoublePredicateDefaults {
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_DoublePredicate and(final J_U_F_DoublePredicate self, final J_U_F_DoublePredicate other) {
+            Objects.requireNonNull(other);
+            return new J_U_F_DoublePredicate() {
+                @Override
+                public boolean test(double value) {
+                    return self.test(value) && other.test(value);
+                }
+
+                @Override
+                public J_U_F_DoublePredicate and(J_U_F_DoublePredicate other) {
+                    return DoublePredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_DoublePredicate negate() {
+                    return DoublePredicateDefaults.negate(this);
+                }
+
+                @Override
+                public J_U_F_DoublePredicate or(J_U_F_DoublePredicate other) {
+                    return DoublePredicateDefaults.or(this, other);
+                }
+            };
+        }
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_DoublePredicate negate(final J_U_F_DoublePredicate self) {
+            return new J_U_F_DoublePredicate() {
+                @Override
+                public boolean test(double value) {
+                    return !self.test(value);
+                }
+
+                @Override
+                public J_U_F_DoublePredicate and(J_U_F_DoublePredicate other) {
+                    return DoublePredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_DoublePredicate negate() {
+                    return self;
+                }
+
+                @Override
+                public J_U_F_DoublePredicate or(J_U_F_DoublePredicate other) {
+                    return DoublePredicateDefaults.or(this, other);
+                }
+            };
+        }
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_DoublePredicate or(final J_U_F_DoublePredicate self, final J_U_F_DoublePredicate other) {
+            Objects.requireNonNull(other);
+            return new J_U_F_DoublePredicate() {
+                @Override
+                public boolean test(double value) {
+                    return self.test(value) || other.test(value);
+                }
+
+                @Override
+                public J_U_F_DoublePredicate and(J_U_F_DoublePredicate other) {
+                    return DoublePredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_DoublePredicate negate() {
+                    return DoublePredicateDefaults.negate(this);
+                }
+
+                @Override
+                public J_U_F_DoublePredicate or(J_U_F_DoublePredicate other) {
+                    return DoublePredicateDefaults.or(this, other);
+                }
+            };
+        }
+
     }
 
 }

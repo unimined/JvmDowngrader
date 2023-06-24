@@ -14,18 +14,93 @@ public interface J_U_F_BiPredicate<T, U> {
 
     boolean test(T t, U u);
 
-    default BiPredicate<T, U> and(BiPredicate<? super T, ? super U> other) {
-        Objects.requireNonNull(other);
-        return (T t, U u) -> test(t, u) && other.test(t, u);
-    }
+    J_U_F_BiPredicate<T, U> and(J_U_F_BiPredicate<? super T, ? super U> other);
 
-    default BiPredicate<T, U> negate() {
-        return (T t, U u) -> !test(t, u);
-    }
+    J_U_F_BiPredicate<T, U> negate();
 
-    default BiPredicate<T, U> or(BiPredicate<? super T, ? super U> other) {
-        Objects.requireNonNull(other);
-        return (T t, U u) -> test(t, u) || other.test(t, u);
+    J_U_F_BiPredicate<T, U> or(J_U_F_BiPredicate<? super T, ? super U> other);
+
+    class BiPredicateDefaults {
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static <T, U> J_U_F_BiPredicate<T, U> and(final J_U_F_BiPredicate<T, U> p1, final J_U_F_BiPredicate<? super T, ? super U> p2) {
+            Objects.requireNonNull(p2);
+            return new J_U_F_BiPredicate<T, U>() {
+                @Override
+                public boolean test(T t, U u) {
+                    return p1.test(t, u) && p2.test(t, u);
+                }
+
+                @Override
+                public J_U_F_BiPredicate<T, U> and(J_U_F_BiPredicate<? super T, ? super U> other) {
+                    Objects.requireNonNull(other);
+                    return BiPredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_BiPredicate<T, U> negate() {
+                    return BiPredicateDefaults.negate(this);
+                }
+
+                @Override
+                public J_U_F_BiPredicate<T, U> or(J_U_F_BiPredicate<? super T, ? super U> other) {
+                    return BiPredicateDefaults.or(this, other);
+                }
+            };
+        }
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static <T, U> J_U_F_BiPredicate<T, U> negate(final J_U_F_BiPredicate<T, U> p) {
+            return new J_U_F_BiPredicate<T, U>() {
+                @Override
+                public boolean test(T t, U u) {
+                    return !p.test(t, u);
+                }
+
+                @Override
+                public J_U_F_BiPredicate<T, U> and(J_U_F_BiPredicate<? super T, ? super U> other) {
+                    return BiPredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_BiPredicate<T, U> negate() {
+                    return p;
+                }
+
+                @Override
+                public J_U_F_BiPredicate<T, U> or(J_U_F_BiPredicate<? super T, ? super U> other) {
+                    return BiPredicateDefaults.or(this, other);
+                }
+            };
+        }
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static <T, U> J_U_F_BiPredicate<T, U> or(final J_U_F_BiPredicate<T, U> p1, final J_U_F_BiPredicate<? super T, ? super U> p2) {
+            Objects.requireNonNull(p2);
+            return new J_U_F_BiPredicate<T, U>() {
+                @Override
+                public boolean test(T t, U u) {
+                    return p1.test(t, u) || p2.test(t, u);
+                }
+
+                @Override
+                public J_U_F_BiPredicate<T, U> and(J_U_F_BiPredicate<? super T, ? super U> other) {
+                    Objects.requireNonNull(other);
+                    return BiPredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_BiPredicate<T, U> negate() {
+                    return BiPredicateDefaults.negate(this);
+                }
+
+                @Override
+                public J_U_F_BiPredicate<T, U> or(J_U_F_BiPredicate<? super T, ? super U> other) {
+                    Objects.requireNonNull(other);
+                    return BiPredicateDefaults.or(this, other);
+                }
+            };
+        }
     }
 
 }

@@ -12,7 +12,7 @@ public class J_U_List {
     @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/List"), subtypes = true)
     public static <T> void replaceAll(List<T> self, J_U_F_UnaryOperator<T> operator) {
         Objects.requireNonNull(operator);
-        final ListIterator<?> li = self.listIterator();
+        final ListIterator<T> li = self.listIterator();
         while (li.hasNext()) {
             li.set(operator.apply(li.next()));
         }

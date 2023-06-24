@@ -11,16 +11,89 @@ public interface J_U_F_IntPredicate {
 
     boolean test(int value);
 
-    default J_U_F_IntPredicate and(J_U_F_IntPredicate other) {
-        return (value) -> test(value) && other.test(value);
-    }
+    J_U_F_IntPredicate and(J_U_F_IntPredicate other);
 
-    default J_U_F_IntPredicate negate() {
-        return (value) -> !test(value);
-    }
+    J_U_F_IntPredicate negate();
 
-    default J_U_F_IntPredicate or(J_U_F_IntPredicate other) {
-        return (value) -> test(value) || other.test(value);
-    }
+    J_U_F_IntPredicate or(J_U_F_IntPredicate other);
 
+    class IntPredicateDefaults {
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_IntPredicate and(final J_U_F_IntPredicate self, final J_U_F_IntPredicate other) {
+            return new J_U_F_IntPredicate() {
+                @Override
+                public boolean test(int value) {
+                    return self.test(value) && other.test(value);
+                }
+
+                @Override
+                public J_U_F_IntPredicate and(J_U_F_IntPredicate other) {
+                    return IntPredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_IntPredicate negate() {
+                    return IntPredicateDefaults.negate(this);
+                }
+
+                @Override
+                public J_U_F_IntPredicate or(J_U_F_IntPredicate other) {
+                    return IntPredicateDefaults.or(this, other);
+                }
+            };
+        }
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_IntPredicate negate(final J_U_F_IntPredicate self) {
+            return new J_U_F_IntPredicate() {
+                @Override
+                public boolean test(int value) {
+                    return !self.test(value);
+                }
+
+                @Override
+                public J_U_F_IntPredicate and(J_U_F_IntPredicate other) {
+                    return IntPredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_IntPredicate negate() {
+                    return self;
+                }
+
+                @Override
+                public J_U_F_IntPredicate or(J_U_F_IntPredicate other) {
+                    return IntPredicateDefaults.or(this, other);
+                }
+            };
+        }
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_IntPredicate or(final J_U_F_IntPredicate self, final J_U_F_IntPredicate other) {
+            return new J_U_F_IntPredicate() {
+                @Override
+                public boolean test(int value) {
+                    return self.test(value) || other.test(value);
+                }
+
+                @Override
+                public J_U_F_IntPredicate and(J_U_F_IntPredicate other) {
+                    return IntPredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_IntPredicate negate() {
+                    return IntPredicateDefaults.negate(this);
+                }
+
+                @Override
+                public J_U_F_IntPredicate or(J_U_F_IntPredicate other) {
+                    return IntPredicateDefaults.or(this, other);
+                }
+            };
+        }
+
+
+    }
 }

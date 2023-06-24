@@ -13,9 +13,28 @@ public interface J_U_F_Consumer<T> {
 
     void accept(T t);
 
-    default J_U_F_Consumer<T> andThen(J_U_F_Consumer<? super T> after) {
-        Objects.requireNonNull(after);
-        return (T t) -> { accept(t); after.accept(t); };
+    J_U_F_Consumer<T> andThen(J_U_F_Consumer<? super T> after);
+
+    class ConsumerDefaults {
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static <T> J_U_F_Consumer<T> andThen(final J_U_F_Consumer<T> c1, final J_U_F_Consumer<? super T> c2) {
+
+            Objects.requireNonNull(c2);
+            return new J_U_F_Consumer<T>() {
+                @Override
+                public void accept(T t) {
+                    c1.accept(t);
+                    c2.accept(t);
+                }
+
+                @Override
+                public J_U_F_Consumer<T> andThen(J_U_F_Consumer<? super T> after) {
+                    return ConsumerDefaults.andThen(this, after);
+                }
+            };
+        }
+
     }
 
 }

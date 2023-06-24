@@ -67,20 +67,40 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
 
 
         @Override
-        public boolean tryAdvance(J_U_F_Consumer<? super Integer> action) {
+        public boolean tryAdvance(final J_U_F_Consumer<? super Integer> action) {
             if (action instanceof J_U_F_IntConsumer) {
                 return tryAdvance((J_U_F_IntConsumer) action);
             } else {
-                return tryAdvance((J_U_F_IntConsumer) action::accept);
+                return tryAdvance(new J_U_F_IntConsumer() {
+                    @Override
+                    public void accept(int value) {
+                        action.accept(value);
+                    }
+
+                    @Override
+                    public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
+                        return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
+                    }
+                });
             }
         }
 
         @Override
-        public void forEachRemaining(J_U_F_Consumer<? super Integer> action) {
+        public void forEachRemaining(final J_U_F_Consumer<? super Integer> action) {
             if (action instanceof J_U_F_IntConsumer) {
                 forEachRemaining((J_U_F_IntConsumer) action);
             } else {
-                forEachRemaining((J_U_F_IntConsumer) action::accept);
+                forEachRemaining(new J_U_F_IntConsumer() {
+                    @Override
+                    public void accept(int value) {
+                        action.accept(value);
+                    }
+
+                    @Override
+                    public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
+                        return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
+                    }
+                });
             }
         }
     }
@@ -91,20 +111,40 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
         }
 
         @Override
-        public boolean tryAdvance(J_U_F_Consumer<? super Long> action) {
+        public boolean tryAdvance(final J_U_F_Consumer<? super Long> action) {
             if (action instanceof J_U_F_LongConsumer) {
                 return tryAdvance((J_U_F_LongConsumer) action);
             } else {
-                return tryAdvance((J_U_F_LongConsumer) action::accept);
+                return tryAdvance(new J_U_F_LongConsumer() {
+                    @Override
+                    public void accept(long value) {
+                        action.accept(value);
+                    }
+
+                    @Override
+                    public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
+                        return J_U_F_LongConsumer.LongConsumerDefaults.andThen(this, after);
+                    }
+                });
             }
         }
 
         @Override
-        public void forEachRemaining(J_U_F_Consumer<? super Long> action) {
+        public void forEachRemaining(final J_U_F_Consumer<? super Long> action) {
             if (action instanceof J_U_F_LongConsumer) {
                 forEachRemaining((J_U_F_LongConsumer) action);
             } else {
-                forEachRemaining((J_U_F_LongConsumer) action::accept);
+                forEachRemaining(new J_U_F_LongConsumer() {
+                    @Override
+                    public void accept(long value) {
+                        action.accept(value);
+                    }
+
+                    @Override
+                    public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
+                        return J_U_F_LongConsumer.LongConsumerDefaults.andThen(this, after);
+                    }
+                });
             }
         }
     }
@@ -115,20 +155,40 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
         }
 
         @Override
-        public boolean tryAdvance(J_U_F_Consumer<? super Double> action) {
+        public boolean tryAdvance(final J_U_F_Consumer<? super Double> action) {
             if (action instanceof J_U_F_DoubleConsumer) {
                 return tryAdvance((J_U_F_DoubleConsumer) action);
             } else {
-                return tryAdvance((J_U_F_DoubleConsumer) action::accept);
+                return tryAdvance(new J_U_F_DoubleConsumer() {
+                    @Override
+                    public void accept(double value) {
+                        action.accept(value);
+                    }
+
+                    @Override
+                    public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
+                        return J_U_F_DoubleConsumer.DoubleConsumerDefaults.andThen(this, after);
+                    }
+                });
             }
         }
 
         @Override
-        public void forEachRemaining(J_U_F_Consumer<? super Double> action) {
+        public void forEachRemaining(final J_U_F_Consumer<? super Double> action) {
             if (action instanceof J_U_F_DoubleConsumer) {
                 forEachRemaining((J_U_F_DoubleConsumer) action);
             } else {
-                forEachRemaining((J_U_F_DoubleConsumer) action::accept);
+                forEachRemaining(new J_U_F_DoubleConsumer() {
+                    @Override
+                    public void accept(double value) {
+                        action.accept(value);
+                    }
+
+                    @Override
+                    public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
+                        return J_U_F_DoubleConsumer.DoubleConsumerDefaults.andThen(this, after);
+                    }
+                });
             }
         }
     }

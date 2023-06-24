@@ -60,7 +60,7 @@ public class J_U_OptionalInt {
     }
 
     public int orElseGet(J_U_F_IntSupplier supplier) {
-        return isPresent ? value : supplier.getAsint();
+        return isPresent ? value : supplier.getAsInt();
     }
 
     public int orElseThrow() {

@@ -22,26 +22,34 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
         int nextInt();
 
         @Override
-        default void forEachRemaining(J_U_F_IntConsumer action) {
-            Objects.requireNonNull(action);
-            while (hasNext())
-                action.accept(nextInt());
-        }
+        void forEachRemaining(J_U_F_IntConsumer action);
 
         @Override
-        default Integer next() {
-            return nextInt();
-        }
+        Integer next();
 
-        @Override
-        default void forEachRemaining(J_U_F_Consumer<? super Integer> action) {
-            if (action instanceof J_U_F_IntConsumer) {
-                forEachRemaining((J_U_F_IntConsumer) action);
-            } else {
-                Objects.requireNonNull(action);
-                while (hasNext())
-                    action.accept(nextInt());
+        class OfIntDefaults {
+
+            @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+            public static void forEachRemaining(J_U_PrimitiveIterator.OfInt it, J_U_F_Consumer<? super Integer> action) {
+                if (action instanceof J_U_F_IntConsumer) {
+                    forEachRemaining(it, (J_U_F_IntConsumer) action);
+                } else {
+                    Objects.requireNonNull(action);
+                    while (it.hasNext())
+                        action.accept(it.nextInt());
+                }
             }
+
+            @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+            public static void forEachRemaining(J_U_PrimitiveIterator.OfInt it, J_U_F_IntConsumer action) {
+                it.forEachRemaining(action);
+            }
+
+            @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+            public static Integer next(J_U_PrimitiveIterator.OfInt it) {
+                return it.nextInt();
+            }
+
         }
     }
 
@@ -51,26 +59,34 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
         long nextLong();
 
         @Override
-        default void forEachRemaining(J_U_F_LongConsumer action) {
-            Objects.requireNonNull(action);
-            while (hasNext())
-                action.accept(nextLong());
-        }
+        void forEachRemaining(J_U_F_LongConsumer action);
 
         @Override
-        default Long next() {
-            return nextLong();
-        }
+        Long next();
 
-        @Override
-        default void forEachRemaining(J_U_F_Consumer<? super Long> action) {
-            if (action instanceof J_U_F_LongConsumer) {
-                forEachRemaining((J_U_F_LongConsumer) action);
-            } else {
-                Objects.requireNonNull(action);
-                while (hasNext())
-                    action.accept(nextLong());
+        class OfLongDefaults {
+
+            @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/PrimitiveIterator$OfLong"), defaultMethod = true)
+            public static void forEachRemaining(J_U_PrimitiveIterator.OfLong it, J_U_F_Consumer<? super Long> action) {
+                if (action instanceof J_U_F_LongConsumer) {
+                    forEachRemaining(it, (J_U_F_LongConsumer) action);
+                } else {
+                    Objects.requireNonNull(action);
+                    while (it.hasNext())
+                        action.accept(it.nextLong());
+                }
             }
+
+            @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/PrimitiveIterator$OfLong"), defaultMethod = true)
+            public static void forEachRemaining(J_U_PrimitiveIterator.OfLong it, J_U_F_LongConsumer action) {
+                it.forEachRemaining(action);
+            }
+
+            @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/PrimitiveIterator$OfLong"), defaultMethod = true)
+            public static Long next(J_U_PrimitiveIterator.OfLong it) {
+                return it.nextLong();
+            }
+
         }
     }
 
@@ -80,26 +96,34 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
         double nextDouble();
 
         @Override
-        default void forEachRemaining(J_U_F_DoubleConsumer action) {
-            Objects.requireNonNull(action);
-            while (hasNext())
-                action.accept(nextDouble());
-        }
+        void forEachRemaining(J_U_F_DoubleConsumer action);
 
         @Override
-        default Double next() {
-            return nextDouble();
-        }
+        Double next();
 
-        @Override
-        default void forEachRemaining(J_U_F_Consumer<? super Double> action) {
-            if (action instanceof J_U_F_DoubleConsumer) {
-                forEachRemaining((J_U_F_DoubleConsumer) action);
-            } else {
-                Objects.requireNonNull(action);
-                while (hasNext())
-                    action.accept(nextDouble());
+        class OfDoubleDefaults {
+
+            @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble"), defaultMethod = true)
+            public static void forEachRemaining(J_U_PrimitiveIterator.OfDouble it, J_U_F_Consumer<? super Double> action) {
+                if (action instanceof J_U_F_DoubleConsumer) {
+                    forEachRemaining(it, (J_U_F_DoubleConsumer) action);
+                } else {
+                    Objects.requireNonNull(action);
+                    while (it.hasNext())
+                        action.accept(it.nextDouble());
+                }
             }
+
+            @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble"), defaultMethod = true)
+            public static void forEachRemaining(J_U_PrimitiveIterator.OfDouble it, J_U_F_DoubleConsumer action) {
+                it.forEachRemaining(action);
+            }
+
+            @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble"), defaultMethod = true)
+            public static Double next(J_U_PrimitiveIterator.OfDouble it) {
+                return it.nextDouble();
+            }
+
         }
     }
 

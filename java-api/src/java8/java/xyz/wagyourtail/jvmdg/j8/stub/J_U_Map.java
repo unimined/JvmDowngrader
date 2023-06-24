@@ -1,6 +1,9 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiConsumer;
+import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiFunction;
+import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Function;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -59,7 +62,7 @@ public class J_U_Map {
     }
 
     @Stub(opcVers = Opcodes.V1_8, subtypes = true)
-    public <K, V> void forEach(Map<K, V> self, J_U_BiConsumer<? super K, ? super V> action) {
+    public <K, V> void forEach(Map<K, V> self, J_U_F_BiConsumer<? super K, ? super V> action) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
             K k;
             V v;
@@ -68,10 +71,10 @@ public class J_U_Map {
     }
 
     @Stub(opcVers = Opcodes.V1_8, subtypes = true)
-    public void replaceAll(Map<?, ?> self, J_U_BiFunction<?, ?, ?> function) {
-        for (Map.Entry<?, ?> entry : self.entrySet()) {
-            Object k;
-            Object v;
+    public <T, U> void replaceAll(Map<T, U> self, J_U_F_BiFunction<T, U, U> function) {
+        for (Map.Entry<T, U> entry : self.entrySet()) {
+            T k;
+            U v;
             entry.setValue(function.apply(((k = entry.getKey()) != null) ? k : null, ((v = entry.getValue()) != null) ? v : null));
         }
     }
@@ -117,7 +120,7 @@ public class J_U_Map {
     }
 
     @Stub(opcVers = Opcodes.V1_8, subtypes = true)
-    public <K, V> V computeIfAbsent(Map<K, V> self, K key, J_U_Function<? super K, ? extends V> mappingFunction) {
+    public <K, V> V computeIfAbsent(Map<K, V> self, K key, J_U_F_Function<? super K, ? extends V> mappingFunction) {
         V v;
         if ((v = self.get(key)) == null) {
             V newValue;
@@ -130,7 +133,7 @@ public class J_U_Map {
     }
 
     @Stub(opcVers = Opcodes.V1_8, subtypes = true)
-    public <K, V> V computeIfPresent(Map<K, V> self, K key, J_U_BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public <K, V> V computeIfPresent(Map<K, V> self, K key, J_U_F_BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         V oldValue;
         if ((oldValue = self.get(key)) != null) {
             V newValue = remappingFunction.apply(key, oldValue);
@@ -147,7 +150,7 @@ public class J_U_Map {
     }
 
     @Stub(opcVers = Opcodes.V1_8, subtypes = true)
-    public <K, V> V compute(Map<K, V> self, K key, J_U_BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public <K, V> V compute(Map<K, V> self, K key, J_U_F_BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         V oldValue = self.get(key);
         V newValue = remappingFunction.apply(key, oldValue);
         if (newValue == null) {
@@ -164,7 +167,7 @@ public class J_U_Map {
     }
 
     @Stub(opcVers = Opcodes.V1_8, subtypes = true)
-    public <K, V> V merge(Map<K, V> self, K key, V value, J_U_BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+    public <K, V> V merge(Map<K, V> self, K key, V value, J_U_F_BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         V oldValue = self.get(key);
         V newValue = (oldValue == null) ? value :
                 remappingFunction.apply(oldValue, value);

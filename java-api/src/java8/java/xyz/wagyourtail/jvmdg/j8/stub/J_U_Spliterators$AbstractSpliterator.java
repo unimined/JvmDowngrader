@@ -33,6 +33,11 @@ public abstract class J_U_Spliterators$AbstractSpliterator<T> implements J_U_Spl
         public void accept(T t) {
             value = t;
         }
+
+        @Override
+        public J_U_F_Consumer<T> andThen(J_U_F_Consumer<? super T> after) {
+            return ConsumerDefaults.andThen(this, after);
+        }
     }
 
     @Override

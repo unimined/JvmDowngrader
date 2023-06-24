@@ -12,8 +12,25 @@ public interface J_U_F_LongConsumer {
 
     void accept(long value);
 
-    default J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
-        return (long t) -> { accept(t); after.accept(t); };
-    }
+    J_U_F_LongConsumer andThen(J_U_F_LongConsumer after);
 
+    class LongConsumerDefaults {
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_LongConsumer andThen(final J_U_F_LongConsumer self, final J_U_F_LongConsumer after) {
+            return new J_U_F_LongConsumer() {
+                @Override
+                public void accept(long value) {
+                    self.accept(value);
+                    after.accept(value);
+                }
+
+                @Override
+                public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
+                    return LongConsumerDefaults.andThen(this, after);
+                }
+            };
+        }
+
+    }
 }

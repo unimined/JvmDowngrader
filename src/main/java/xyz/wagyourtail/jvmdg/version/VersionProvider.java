@@ -179,7 +179,12 @@ public abstract class VersionProvider {
                 if (n.startsWith("L")) {
                     n = n.substring(1, n.length() - 1);
                 }
-                owner = Type.getObjectType(n);
+                Type refType = Type.getObjectType(n);
+                if (classStubs.containsKey(refType)) {
+                    owner = classStubs.get(refType).getFirst();
+                } else {
+                    owner = refType;
+                }
             }
             if (!methodStub.ref().member().equals("")) {
                 name = methodStub.ref().member();
@@ -225,6 +230,7 @@ public abstract class VersionProvider {
                         target = ci.getName().replace('.', '/') + ";" + name + Type.getMethodDescriptor(ret, args);
                     }
                     // prioritize non-subtype stubs
+                    // TODO: prioritize more specific subtypes, ie. Set over Collection
                     if (!methodStubs.containsKey(target)) methodStubs.put(target, new Pair<>(m, methodStub));
                 }
             }

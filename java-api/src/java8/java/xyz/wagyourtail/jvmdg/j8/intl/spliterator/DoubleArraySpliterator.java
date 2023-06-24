@@ -35,13 +35,33 @@ public class DoubleArraySpliterator implements J_U_Spliterator.OfDouble {
     }
 
     @Override
-    public boolean tryAdvance(J_U_F_Consumer<? super Double> action) {
-        return tryAdvance((J_U_F_DoubleConsumer) action::accept);
+    public boolean tryAdvance(final J_U_F_Consumer<? super Double> action) {
+        return tryAdvance(new J_U_F_DoubleConsumer() {
+            @Override
+            public void accept(double value) {
+                action.accept(value);
+            }
+
+            @Override
+            public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
+                return DoubleConsumerDefaults.andThen(this, after);
+            }
+        });
     }
 
     @Override
-    public void forEachRemaining(J_U_F_Consumer<? super Double> action) {
-        forEachRemaining((J_U_F_DoubleConsumer) action::accept);
+    public void forEachRemaining(final J_U_F_Consumer<? super Double> action) {
+        forEachRemaining(new J_U_F_DoubleConsumer() {
+            @Override
+            public void accept(double value) {
+                action.accept(value);
+            }
+
+            @Override
+            public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
+                return DoubleConsumerDefaults.andThen(this, after);
+            }
+        });
     }
 
     @Override

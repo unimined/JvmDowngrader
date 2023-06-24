@@ -10,7 +10,7 @@ public class J_L_R_Constructor {
         return self.getParameterTypes().length;
     }
 
-    // getAnnotatedReturnType
+    // TODO: getAnnotatedReturnType
 
-    // getAnnotatedReceiverType
+    // TODO: getAnnotatedReceiverType
 }

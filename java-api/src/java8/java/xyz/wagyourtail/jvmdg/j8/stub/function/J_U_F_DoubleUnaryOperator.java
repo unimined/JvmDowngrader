@@ -13,18 +13,62 @@ public interface J_U_F_DoubleUnaryOperator {
 
     double applyAsDouble(double operand);
 
-    default J_U_F_DoubleUnaryOperator compose(J_U_F_DoubleUnaryOperator before) {
-        Objects.requireNonNull(before);
-        return (double v) -> applyAsDouble(before.applyAsDouble(v));
+    J_U_F_DoubleUnaryOperator compose(J_U_F_DoubleUnaryOperator before);
+
+    J_U_F_DoubleUnaryOperator andThen(J_U_F_DoubleUnaryOperator after);
+
+    class DoubleUnaryOperatorDefaults {
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_DoubleUnaryOperator compose(final J_U_F_DoubleUnaryOperator f1, final J_U_F_DoubleUnaryOperator f2) {
+            Objects.requireNonNull(f2);
+            return new J_U_F_DoubleUnaryOperator() {
+                @Override
+                public double applyAsDouble(double operand) {
+                    return f1.applyAsDouble(f2.applyAsDouble(operand));
+                }
+
+                @Override
+                public J_U_F_DoubleUnaryOperator compose(J_U_F_DoubleUnaryOperator before) {
+                    return DoubleUnaryOperatorDefaults.compose(this, before);
+                }
+
+                @Override
+                public J_U_F_DoubleUnaryOperator andThen(J_U_F_DoubleUnaryOperator after) {
+                    return DoubleUnaryOperatorDefaults.andThen(this, after);
+                }
+            };
+        }
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_DoubleUnaryOperator andThen(final J_U_F_DoubleUnaryOperator f1, final J_U_F_DoubleUnaryOperator f2) {
+            Objects.requireNonNull(f2);
+            return compose(f2, f1);
+        }
     }
 
-    default J_U_F_DoubleUnaryOperator andThen(J_U_F_DoubleUnaryOperator after) {
-        Objects.requireNonNull(after);
-        return (double t) -> after.applyAsDouble(applyAsDouble(t));
-    }
+    class DoubleUnaryOperatorStatic {
 
-    static J_U_F_DoubleUnaryOperator identity() {
-        return t -> t;
+        @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/DoubleUnaryOperator;"))
+        public static J_U_F_DoubleUnaryOperator identity() {
+            return new J_U_F_DoubleUnaryOperator() {
+                @Override
+                public double applyAsDouble(double operand) {
+                    return operand;
+                }
+
+                @Override
+                public J_U_F_DoubleUnaryOperator compose(J_U_F_DoubleUnaryOperator before) {
+                    return DoubleUnaryOperatorDefaults.compose(this, before);
+                }
+
+                @Override
+                public J_U_F_DoubleUnaryOperator andThen(J_U_F_DoubleUnaryOperator after) {
+                    return DoubleUnaryOperatorDefaults.andThen(this, after);
+                }
+            };
+        }
+
     }
 
 }

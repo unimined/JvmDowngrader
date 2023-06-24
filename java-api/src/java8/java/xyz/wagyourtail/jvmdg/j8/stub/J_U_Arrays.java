@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
+import xyz.wagyourtail.jvmdg.j8.stub.stream.J_U_S_Stream;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -150,11 +151,6 @@ public class J_U_Arrays {
     }
 
     @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Arrays"))
-    public static void setAll(int[] array, J_U_F_IntUnaryOperator generator) {
-        //TODO
-    }
-
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Arrays"))
     public static void parallelSetAll(int[] array, J_U_F_IntUnaryOperator generator) {
         //TODO
     }
@@ -186,7 +182,7 @@ public class J_U_Arrays {
 
     @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Arrays"))
     public static <T> J_U_Spliterator<T> spliterator(T[] array, int startInclusive, int endExclusive) {
-        //TODO
+        return J_U_Spliterators.spliterator(array, startInclusive, endExclusive, 0);
     }
 
     @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Arrays"))
@@ -196,7 +192,7 @@ public class J_U_Arrays {
 
     @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Arrays"))
     public static J_U_Spliterator.OfInt spliterator(int[] array, int startInclusive, int endExclusive) {
-        //TODO
+        return J_U_Spliterators.spliterator(array, startInclusive, endExclusive, 0);
     }
 
     @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Arrays"))
@@ -206,7 +202,7 @@ public class J_U_Arrays {
 
     @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Arrays"))
     public static J_U_Spliterator.OfLong spliterator(long[] array, int startInclusive, int endExclusive) {
-        //TODO
+        return J_U_Spliterators.spliterator(array, startInclusive, endExclusive, 0);
     }
 
     @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Arrays"))
@@ -216,7 +212,7 @@ public class J_U_Arrays {
 
     @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Arrays"))
     public static J_U_Spliterator.OfDouble spliterator(double[] array, int startInclusive, int endExclusive) {
-        //TODO
+        return J_U_Spliterators.spliterator(array, startInclusive, endExclusive, 0);
     }
 
     @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Arrays"))

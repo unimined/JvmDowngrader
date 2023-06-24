@@ -19,6 +19,6 @@ public class J_L_R_Method {
         return (self.getModifiers() & (Modifier.ABSTRACT | Modifier.PUBLIC | Modifier.STATIC)) == Modifier.PUBLIC && self.getDeclaringClass().isInterface();
     }
 
-    // getAnnotatedReturnType
+    // TODO: getAnnotatedReturnType
 
 }

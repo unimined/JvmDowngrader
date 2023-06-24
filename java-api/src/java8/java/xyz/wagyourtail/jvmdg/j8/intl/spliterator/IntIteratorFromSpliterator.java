@@ -26,6 +26,16 @@ public class IntIteratorFromSpliterator implements J_U_F_IntConsumer, J_U_Primit
     }
 
     @Override
+    public void forEachRemaining(J_U_F_IntConsumer action) {
+        J_U_PrimitiveIterator.OfInt.OfIntDefaults.forEachRemaining(this, action);
+    }
+
+    @Override
+    public Integer next() {
+        return nextInt();
+    }
+
+    @Override
     public boolean hasNext() {
         if (!nextAvailable) {
             spliterator.tryAdvance(this);
@@ -42,5 +52,10 @@ public class IntIteratorFromSpliterator implements J_U_F_IntConsumer, J_U_Primit
     public void accept(int value) {
         next = value;
         nextAvailable = true;
+    }
+
+    @Override
+    public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
+        return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
     }
 }

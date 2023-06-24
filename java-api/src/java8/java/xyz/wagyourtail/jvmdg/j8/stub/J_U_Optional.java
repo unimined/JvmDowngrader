@@ -54,7 +54,7 @@ public class J_U_Optional<T> {
         if (!isPresent())
             return this;
         else
-            return predicate.test(value) ? this : empty();
+            return predicate.test(value) ? this : J_U_Optional.<T>empty();
     }
 
     public <U> J_U_Optional<U> map(J_U_F_Function<? super T, ? extends U> mapper) {

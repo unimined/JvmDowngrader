@@ -34,6 +34,11 @@ public abstract class J_U_Spliterators$AbstractDoubleSpliterator implements J_U_
         public void accept(double t) {
             value = t;
         }
+
+        @Override
+        public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
+            return DoubleConsumerDefaults.andThen(this, after);
+        }
     }
 
     @Override
@@ -83,6 +88,11 @@ public abstract class J_U_Spliterators$AbstractDoubleSpliterator implements J_U_
                 @Override
                 public void accept(double value) {
                     action.accept(value);
+                }
+
+                @Override
+                public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
+                    return DoubleConsumerDefaults.andThen(this, after);
                 }
             });
         }

@@ -3,7 +3,7 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.replace.Replace;
+import xyz.wagyourtail.jvmdg.version.Replace;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.invoke.CallSite;

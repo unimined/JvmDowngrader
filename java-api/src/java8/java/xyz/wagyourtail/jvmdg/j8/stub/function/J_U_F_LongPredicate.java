@@ -11,16 +11,89 @@ public interface J_U_F_LongPredicate {
 
     boolean test(long value);
 
-    default J_U_F_LongPredicate and(J_U_F_LongPredicate other) {
-        return (value) -> test(value) && other.test(value);
-    }
+    J_U_F_LongPredicate and(J_U_F_LongPredicate other);
 
-    default J_U_F_LongPredicate negate() {
-        return (value) -> !test(value);
-    }
+    J_U_F_LongPredicate negate();
 
-    default J_U_F_LongPredicate or(J_U_F_LongPredicate other) {
-        return (value) -> test(value) || other.test(value);
+    J_U_F_LongPredicate or(J_U_F_LongPredicate other);
+
+    class LongPredicateDefaults {
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_LongPredicate and(final J_U_F_LongPredicate self, final J_U_F_LongPredicate other) {
+            return new J_U_F_LongPredicate() {
+                @Override
+                public boolean test(long value) {
+                    return self.test(value) && other.test(value);
+                }
+
+                @Override
+                public J_U_F_LongPredicate and(J_U_F_LongPredicate other) {
+                    return LongPredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_LongPredicate negate() {
+                    return LongPredicateDefaults.negate(this);
+                }
+
+                @Override
+                public J_U_F_LongPredicate or(J_U_F_LongPredicate other) {
+                    return LongPredicateDefaults.or(this, other);
+                }
+            };
+        }
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_LongPredicate negate(final J_U_F_LongPredicate self) {
+            return new J_U_F_LongPredicate() {
+                @Override
+                public boolean test(long value) {
+                    return !self.test(value);
+                }
+
+                @Override
+                public J_U_F_LongPredicate and(J_U_F_LongPredicate other) {
+                    return LongPredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_LongPredicate negate() {
+                    return self;
+                }
+
+                @Override
+                public J_U_F_LongPredicate or(J_U_F_LongPredicate other) {
+                    return LongPredicateDefaults.or(this, other);
+                }
+            };
+        }
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_LongPredicate or(final J_U_F_LongPredicate self, final J_U_F_LongPredicate other) {
+            return new J_U_F_LongPredicate() {
+                @Override
+                public boolean test(long value) {
+                    return self.test(value) || other.test(value);
+                }
+
+                @Override
+                public J_U_F_LongPredicate and(J_U_F_LongPredicate other) {
+                    return LongPredicateDefaults.and(this, other);
+                }
+
+                @Override
+                public J_U_F_LongPredicate negate() {
+                    return LongPredicateDefaults.negate(this);
+                }
+
+                @Override
+                public J_U_F_LongPredicate or(J_U_F_LongPredicate other) {
+                    return LongPredicateDefaults.or(this, other);
+                }
+            };
+        }
+
     }
 
 }

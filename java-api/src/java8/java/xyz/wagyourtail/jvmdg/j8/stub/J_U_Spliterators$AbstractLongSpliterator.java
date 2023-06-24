@@ -1,8 +1,8 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.j8.intl.spliterator.LongArraySpliterator;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.j8.longl.spliterator.LongArraySpliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongConsumer;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -33,6 +33,11 @@ public abstract class J_U_Spliterators$AbstractLongSpliterator implements J_U_Sp
         @Override
         public void accept(long t) {
             value = t;
+        }
+
+        @Override
+        public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
+            return LongConsumerDefaults.andThen(this, after);
         }
     }
 
@@ -84,6 +89,11 @@ public abstract class J_U_Spliterators$AbstractLongSpliterator implements J_U_Sp
                 @Override
                 public void accept(long value) {
                     action.accept(value);
+                }
+
+                @Override
+                public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
+                    return LongConsumerDefaults.andThen(this, after);
                 }
             });
         }

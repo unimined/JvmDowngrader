@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiFunction;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Function;
 import xyz.wagyourtail.jvmdg.version.Ref;
@@ -71,17 +72,17 @@ public interface J_U_C_CompletionStage<T> {
 
     <U> J_U_C_CompletionStage<U> thenComposeAsync(J_U_F_Function<? super T, ? extends J_U_C_CompletionStage<U>> fn, Executor executor);
 
-    <U> J_U_C_CompletionStage<T> handle(J_U_F_BiFunction<? super T, Throwable, ? extends U> fn);
+    <U> J_U_C_CompletionStage<U> handle(J_U_F_BiFunction<? super T, Throwable, ? extends U> fn);
 
     <U> J_U_C_CompletionStage<U> handleAsync(J_U_F_BiFunction<? super T, Throwable, ? extends U> fn);
 
     <U> J_U_C_CompletionStage<U> handleAsync(J_U_F_BiFunction<? super T, Throwable, ? extends U> fn, Executor executor);
 
-    J_U_C_CompletionStage<T> whenComplete(J_U_F_BiFunction<? super T, Throwable, ? extends Void> action);
+    J_U_C_CompletionStage<T> whenComplete(J_U_F_BiConsumer<? super T, ? super Throwable> action);
 
-    J_U_C_CompletionStage<T> whenCompleteAsync(J_U_F_BiFunction<? super T, Throwable, ? extends Void> action);
+    J_U_C_CompletionStage<T> whenCompleteAsync(J_U_F_BiConsumer<? super T, ? super Throwable> action);
 
-    J_U_C_CompletionStage<T> whenCompleteAsync(J_U_F_BiFunction<? super T, Throwable, ? extends Void> action, Executor executor);
+    J_U_C_CompletionStage<T> whenCompleteAsync(J_U_F_BiConsumer<? super T, ? super Throwable> action, Executor executor);
 
     J_U_C_CompletableFuture<T> toCompletableFuture();
 }

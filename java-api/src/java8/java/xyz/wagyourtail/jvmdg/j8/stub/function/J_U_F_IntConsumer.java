@@ -11,8 +11,25 @@ public interface J_U_F_IntConsumer {
 
     void accept(int value);
 
-    default J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-        return (int t) -> { accept(t); after.accept(t); };
-    }
+    J_U_F_IntConsumer andThen(J_U_F_IntConsumer after);
 
+    class IntConsumerDefaults {
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static J_U_F_IntConsumer andThen(final J_U_F_IntConsumer self, final J_U_F_IntConsumer after) {
+            return new J_U_F_IntConsumer() {
+                @Override
+                public void accept(int value) {
+                    self.accept(value);
+                    after.accept(value);
+                }
+
+                @Override
+                public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
+                    return IntConsumerDefaults.andThen(this, after);
+                }
+            };
+        }
+
+    }
 }

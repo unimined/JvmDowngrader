@@ -27,6 +27,16 @@ public class LongIteratorFromSpliterator implements J_U_F_LongConsumer, J_U_Prim
     }
 
     @Override
+    public void forEachRemaining(J_U_F_LongConsumer action) {
+        J_U_PrimitiveIterator.OfLong.OfLongDefaults.forEachRemaining(this, action);
+    }
+
+    @Override
+    public Long next() {
+        return nextLong();
+    }
+
+    @Override
     public boolean hasNext() {
         if (!nextAvailable) {
             spliterator.tryAdvance(this);
@@ -43,5 +53,10 @@ public class LongIteratorFromSpliterator implements J_U_F_LongConsumer, J_U_Prim
     public void accept(long value) {
         next = value;
         nextAvailable = true;
+    }
+
+    @Override
+    public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
+        return J_U_F_LongConsumer.LongConsumerDefaults.andThen(this, after);
     }
 }

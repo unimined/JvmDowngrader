@@ -3,8 +3,9 @@ package xyz.wagyourtail.jvmdg.providers;
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j8.stub.*;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
-import xyz.wagyourtail.jvmdg.j9.stub.J_U_C_CompletableFuture;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
+
+import java.util.concurrent.ForkJoinTask;
 
 public class Java8Downgrader extends VersionProvider {
 
@@ -167,8 +168,8 @@ public class Java8Downgrader extends VersionProvider {
         // ZoneRules
         // ZoneRulesException
         // ZoneRulesProvider
-        stub(J_U_ArrayDeque.class);
-        stub(J_U_ArrayList.class);
+        // ArrayDeque
+        // ArrayList
         // ArrayPrefixHelpers
         stub(J_U_Arrays.class);
         stub(J_U_Base64.class);
@@ -212,16 +213,40 @@ public class Java8Downgrader extends VersionProvider {
         // Tripwire
         // Vector -- handled by Collection.spliterator
         // ArrayBlockingQueue
-        // CompletableFuture // TODO
+        stub(J_U_C_CompletableFuture.class);
         stub(J_U_C_CompletionException.class);
-        stub(J_U_C_ConcurrentHashMap.class);
         stub(J_U_C_CompletionStage.class);
-
-
-
-
-
-
+        // ConcurrentHashMap
+        // ConcurrentLinkedDeque TODO: concurrent iterator spliterator
+        // ConcurrentLinkedQueue
+        // ConcurrentMap
+        // ConcurrentSkipListMap
+        // ConcurrentSkipListSet
+        // CopyOnWriteArrayList
+        // CountedCompleter
+        stub(J_U_C_Executors.class);
+        stub(J_U_C_ForkJoinPool.class);
+        // ForkJoinTask
+        // LinkedBlockingDeque
+        // LinkedBlockingQueue
+        // LinkedTransferQueue
+        // PriorityBlockingQueue
+        // SynchronousQueue
+        // ThreadLocalRandom
+        // AtomicInteger
+        // AtomicIntegerArray
+        // AtomicIntegerFieldUpdater
+        // AtomicLong
+        // AtomicLongArray
+        // AtomicLongFieldUpdater
+        // AtomicReference
+        // AtomicReferenceArray
+        // AtomicReferenceFieldUpdater
+        // DoubleAccumulator
+        // DoubleAdder
+        // LongAccumulator
+        // LongAdder
+        // StampedLock
         stub(J_U_F_BiConsumer.class);
         stub(J_U_F_BiFunction.class);
         stub(J_U_F_BinaryOperator.class);
@@ -265,7 +290,15 @@ public class Java8Downgrader extends VersionProvider {
         stub(J_U_F_ToLongBiFunction.class);
         stub(J_U_F_ToLongFunction.class);
         stub(J_U_F_UnaryOperator.class);
-
+        // JarFile
+        // Matcher
+        // Pattern
+        // CalendarDateProvider
+        // CalendarNameProvider
+        // LocaleServiceProvider
+        // ResourceBundleControlProvider
+        // TimeZoneNameProvider
+        //TODO: STREAMS!!!!
 
     }
 }

@@ -9,13 +9,30 @@ import java.util.Objects;
 
 @J_L_FunctionalInterface
 @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/BiConsumer"))
-    public interface J_U_F_BiFunction<T, U, R> {
+public interface J_U_F_BiFunction<T, U, R> {
 
     R apply(T t, U u);
 
-    default <V> J_U_F_BiFunction<T, U, V> andThen(J_U_F_Function<? super R, ? extends V> after) {
-        Objects.requireNonNull(after);
-        return (T t, U u) -> after.apply(apply(t, u));
+    <V> J_U_F_BiFunction<T, U, V> andThen(J_U_F_Function<? super R, ? extends V> after);
+
+    class BiFunctionDefaults {
+
+        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        public static <T, U, V, R> J_U_F_BiFunction<T, U, R> andThen(final J_U_F_BiFunction<T, U, ? extends V> f1, final J_U_F_Function<? super V, ? extends R> f2) {
+            Objects.requireNonNull(f2);
+            return new J_U_F_BiFunction<T, U, R>() {
+                @Override
+                public R apply(T t, U u) {
+                    return f2.apply(f1.apply(t, u));
+                }
+
+                @Override
+                public <V> J_U_F_BiFunction<T, U, V> andThen(J_U_F_Function<? super R, ? extends V> after) {
+                    Objects.requireNonNull(after);
+                    return BiFunctionDefaults.andThen(this, after);
+                }
+            };
+        }
     }
 
 }
