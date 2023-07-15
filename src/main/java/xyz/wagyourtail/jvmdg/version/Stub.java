@@ -21,4 +21,6 @@ public @interface Stub {
 
     boolean defaultMethod() default false;
 
+    boolean needsRuntime() default false;
+
 }

@@ -14,6 +14,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ClassDowngradingAgent implements ClassFileTransformer {
     public static final MethodHandle defineClass;
@@ -33,7 +34,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
     public byte[] transform(final ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] bytes) throws IllegalClassFormatException {
         if (loader instanceof DowngradingClassLoader) return bytes; // already handled
         String internalName = className.replace('.', '/');
-        Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(internalName, bytes, new Function<String, byte[]>() {
+        Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), bytes, new Function<String, byte[]>() {
             @Override
             public byte[] apply(String s) {
                 try {

@@ -4,7 +4,7 @@ import java.lang.annotation.*;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Replace {
+public @interface  Replace {
 
     int javaVersion();
 

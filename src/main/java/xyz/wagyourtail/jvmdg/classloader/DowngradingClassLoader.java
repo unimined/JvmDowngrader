@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DowngradingClassLoader extends ClassLoader {
     private final List<ClassLoader> delegates = new ArrayList<>();
@@ -49,7 +50,7 @@ public class DowngradingClassLoader extends ClassLoader {
         byte[] bytes;
         try {
             bytes = Utils.readAllBytes(url.openStream());
-            Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(internalName, bytes, new Function<String, byte[]>() {
+            Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), bytes, new Function<String, byte[]>() {
                 @Override
                 public byte[] apply(String s) {
                     try {

@@ -17,6 +17,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ClassDowngrader {
     public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(VersionProvider.getCurrentClassVersion());
@@ -128,11 +129,11 @@ public class ClassDowngrader {
         return classes;
     }
 
-    public Map<String, byte[]> downgrade(String name, byte[] bytes, final Function<String, byte[]> getExtraRead) throws IllegalClassFormatException {
+    public Map<String, byte[]> downgrade(/* in out */ AtomicReference<String> name, byte[] bytes, final Function<String, byte[]> getExtraRead) throws IllegalClassFormatException {
         // check magic
         if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
             bytes[3] != (byte) 0xBE) {
-            throw new IllegalClassFormatException(name);
+            throw new IllegalClassFormatException(name.get());
         }
         // ignore minor version
         // get major version
@@ -143,9 +144,14 @@ public class ClassDowngrader {
         }
         // transform
         ClassNode node = bytesToClassNode(bytes);
+        if (name.get() == null) {
+            name.set(node.name);
+        } else if (!name.get().equals(node.name)) {
+            throw new RuntimeException("Class name mismatch: " + name.get() + " != " + node.name);
+        }
         Map<String, byte[]> outputs = new HashMap<>();
         try {
-            if (Constants.DEBUG) System.out.println("Transforming " + name);
+            if (Constants.DEBUG) System.out.println("Transforming " + name.get());
             Set<ClassNode> extra = downgrade(node, new Function<String, ClassNode>() {
 
                 @Override
@@ -162,7 +168,7 @@ public class ClassDowngrader {
                 }
             });
             for (ClassNode c : extra) {
-                outputs.put(c.name, classNodeToBytes(c));
+                outputs.put(c.name, classNodeToBytes(c, getExtraRead));
             }
         } catch (InvocationTargetException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException |
                  InstantiationException e) {
@@ -170,7 +176,7 @@ public class ClassDowngrader {
         }
         if (Constants.DEBUG) {
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
-                if (!entry.getKey().equals(name)) {
+                if (!entry.getKey().equals(name.get())) {
                     System.out.println("Downgraded " + entry.getKey() + " from unknown to " + target);
                 } else {
                     System.out.println("Downgraded " + entry.getKey() + " from " + version + " to " + target);
@@ -181,15 +187,21 @@ public class ClassDowngrader {
         return outputs;
     }
 
-    public byte[] classNodeToBytes(ClassNode node) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+    public byte[] classNodeToBytes(ClassNode node, Function<String, byte[]> getExtraRead) {
+        ClassWriter cw = new ClassWriterASM(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS, getExtraRead);
         node.accept(cw);
         return cw.toByteArray();
     }
 
-    public ClassNode bytesToClassNode(byte[] bytes) {
+    public static ClassNode bytesToClassNode(byte[] bytes) {
         ClassNode node = new ClassNode();
         new ClassReader(bytes).accept(node, 0);
+        return node;
+    }
+
+    public static ClassNode bytesToClassNode(byte[] bytes, int flags) {
+        ClassNode node = new ClassNode();
+        new ClassReader(bytes).accept(node, flags);
         return node;
     }
 
@@ -208,6 +220,63 @@ public class ClassDowngrader {
 
     public static void main(String[] args) {
         //TODO
+    }
+
+    private static class ClassWriterASM extends ClassWriter {
+        private final Function<String, byte[]> getExtraRead;
+
+        public ClassWriterASM(int flags, Function<String, byte[]> getExtraRead) {
+            super(flags);
+            this.getExtraRead = getExtraRead;
+        }
+
+        @Override
+        protected String getCommonSuperClass(String type1, String type2) {
+            try {
+                return super.getCommonSuperClass(type1, type2);
+            } catch (Exception e) {
+                try {
+                    List<String> tree1 = buildInheritanceTree(type1);
+                    List<String> tree2 = buildInheritanceTree(type2);
+                    // find first that's in both
+                    for (String s : tree1) {
+                        if (tree2.contains(s)) {
+                            return s;
+                        }
+                    }
+                    throw new IllegalStateException("they should both extend Object...");
+                } catch (Exception ex) {
+                    ex.addSuppressed(e);
+                    throw ex;
+                }
+            }
+        }
+
+        protected List<String> buildInheritanceTree(String type) {
+            List<String> tree = new ArrayList<>();
+            tree.add(type);
+            while (!type.equals("java/lang/Object")) {
+                type = getSuperClass(type);
+                tree.add(type);
+            }
+            tree.add("java/lang/Object");
+            return tree;
+        }
+
+        protected String getSuperClass(String type) {
+            // try loading
+            try {
+                Class<?> clazz = Class.forName(type.replace('/', '.'));
+                return clazz.getSuperclass().getCanonicalName().replace('.', '/');
+            } catch (ClassNotFoundException ignored) {
+                try {
+                    ClassNode node = bytesToClassNode(getExtraRead.apply(type), ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                    return node.superName;
+                } catch (Exception e) {
+                    return "java/lang/Object";
+                }
+            }
+        }
     }
 
 }

@@ -37,5 +37,4 @@ public class Utils {
         System.arraycopy(bytes, 0, trimmed, 0, readBytes);
         return trimmed;
     }
-
 }

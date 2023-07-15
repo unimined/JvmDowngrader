@@ -11,6 +11,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -48,7 +49,7 @@ public class ZipDowngrader {
                         if (file.getFileName().toString().endsWith(".class")) {
                             try {
                                 String internalName = file.toString().substring(1, file.toString().length() - 6);
-                                Map<String, byte[]> outputs = downgrader.downgrade(internalName, bytes, new Function<String, byte[]>() {
+                                Map<String, byte[]> outputs = downgrader.downgrade(new AtomicReference<>(internalName), bytes, new Function<String, byte[]>() {
                                     @Override
                                     public byte[] apply(String s) {
                                         try {
