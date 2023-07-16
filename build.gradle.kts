@@ -20,11 +20,11 @@ allprojects {
     }
 
     dependencies {
-        implementation("org.ow2.asm:asm:9.4")
-        implementation("org.ow2.asm:asm-commons:9.4")
-        implementation("org.ow2.asm:asm-tree:9.4")
-        implementation("org.ow2.asm:asm-util:9.4")
-        implementation("org.ow2.asm:asm-analysis:9.4")
+        implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
+        implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
+        implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
+        implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
+        implementation("org.ow2.asm:asm-analysis:${project.properties["asm_version"]}")
         implementation("io.github.classgraph:classgraph:4.8.156")
     }
 

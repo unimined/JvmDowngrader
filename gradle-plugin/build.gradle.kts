@@ -6,6 +6,13 @@ plugins {
 dependencies {
     // commons compress
     testImplementation("org.apache.commons:commons-compress:1.21")
+
+    // asm
+    testImplementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
+    testImplementation("org.ow2.asm:asm-analysis:${project.properties["asm_version"]}")
+    testImplementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
+    testImplementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
+    testImplementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
 }
 
 

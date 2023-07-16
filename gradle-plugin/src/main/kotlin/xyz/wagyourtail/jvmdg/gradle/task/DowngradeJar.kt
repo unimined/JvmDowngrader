@@ -1,17 +1,17 @@
 @file:Suppress("LeakingThis")
 
-package xyz.wagyourtail.jvmdg.gradle
+package xyz.wagyourtail.jvmdg.gradle.task
 
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.*
 import org.gradle.jvm.tasks.Jar
+import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
+import xyz.wagyourtail.jvmdg.gradle.jvToOpc
+import javax.inject.Inject
 
-abstract class JVMDowngraderTask(val jvmdg: JVMDowngraderExtension) : Jar() {
+abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngraderExtension) : Jar() {
 
     @get:Input
     @get:Optional
