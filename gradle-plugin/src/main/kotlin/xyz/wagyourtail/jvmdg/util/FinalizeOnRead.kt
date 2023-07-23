@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.gradle
+package xyz.wagyourtail.jvmdg.util
 
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty

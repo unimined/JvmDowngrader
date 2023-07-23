@@ -9,13 +9,15 @@ import org.gradle.api.tasks.*
 import org.gradle.jvm.tasks.Jar
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.jvToOpc
+import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
+import java.io.File
 import javax.inject.Inject
 
 abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngraderExtension) : Jar() {
 
     @get:Input
     @get:Optional
-    abstract val downgradeTo: Property<JavaVersion>
+    var downgradeTo by FinalizeOnRead(JavaVersion.VERSION_1_8)
 
     @get:InputFile
     abstract val inputFile: RegularFileProperty
@@ -23,17 +25,24 @@ abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngrad
     init {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
-        downgradeTo.convention(JavaVersion.VERSION_1_8)
+    }
+
+    fun File.deleteIfExists() {
+        if (exists()) {
+            delete()
+        }
     }
 
     @TaskAction
     fun doDowngrade() {
+        val tempOutput = project.buildDir.resolve("tmp").resolve(name).resolve("downgradedInput.jar")
+        tempOutput.deleteIfExists()
         val result = project.javaexec {
             it.mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
             it.args = listOf(
-                jvToOpc(downgradeTo.get()).toString(),
+                jvToOpc(downgradeTo).toString(),
                 inputFile.get().asFile.absolutePath,
-                archiveFile.get().asFile.absolutePath
+                tempOutput.absolutePath
             )
             it.workingDir = project.buildDir
             it.classpath = jvmdg.core
@@ -42,6 +51,8 @@ abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngrad
         if (result.exitValue != 0) {
             throw Exception("Failed to downgrade jar")
         }
+        from(tempOutput)
+        copy()
     }
 
 }

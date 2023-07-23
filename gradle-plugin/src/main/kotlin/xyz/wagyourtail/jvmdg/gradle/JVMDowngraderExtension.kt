@@ -4,6 +4,8 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.jvm.tasks.Jar
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
+import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
+import xyz.wagyourtail.jvmdg.util.defaultedMapOf
 import java.io.File
 
 abstract class JVMDowngraderExtension(val project: Project) {
@@ -19,7 +21,14 @@ abstract class JVMDowngraderExtension(val project: Project) {
 
     val api = project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${version}"))
 
-    fun downgradedApi(version: JavaVersion): File {
+    val downgradedApi = defaultedMapOf<JavaVersion, File> { version ->
+        // if it's 8 or 11, premade exists, grab off maven
+        if (version.isJava8 || version.isJava11) {
+            project.logger.lifecycle("Using pre-downgraded api for ${version.majorVersion}")
+            return@defaultedMapOf project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${this.version}:downgraded-$version")).resolve().first { it.extension == "jar" }
+        }
+        project.logger.lifecycle("Generating downgraded api for ${version.majorVersion}")
+        // else, generate it
         val downgradedApi = project.buildDir.resolve("jvmdg").resolve("java-api-${this.version}-downgraded-${version.majorVersion}.jar")
         if (!downgradedApi.exists()) {
             val result = project.javaexec {
@@ -37,6 +46,6 @@ abstract class JVMDowngraderExtension(val project: Project) {
                 throw Exception("Failed to downgrade jar")
             }
         }
-        return downgradedApi
+        downgradedApi
     }
 }
