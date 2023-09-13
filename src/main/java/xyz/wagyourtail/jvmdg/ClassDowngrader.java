@@ -187,8 +187,15 @@ public class ClassDowngrader {
         return outputs;
     }
 
-    public byte[] classNodeToBytes(ClassNode node, Function<String, byte[]> getExtraRead) {
-        ClassWriter cw = new ClassWriterASM(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS, getExtraRead);
+    public byte[] classNodeToBytes(ClassNode node, final Function<String, byte[]> getExtraRead) {
+        ASMClassWriter cw = new ASMClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS, new Function<String, String>() {
+            @Override
+            public String apply(String s) {
+                byte[] b = getExtraRead.apply(s);
+                if (b == null) return null;
+                return bytesToClassNode(b).superName;
+            }
+        });
         node.accept(cw);
         return cw.toByteArray();
     }

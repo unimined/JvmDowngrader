@@ -52,7 +52,7 @@ public class JvmDowngraderTest {
     private Path getDowngradedPath(Path originalPath, String suffix) throws Exception {
         Path path = originalPath.getParent().resolve(originalPath.getFileName().toString().replace(".jar", suffix));
         if (!Files.exists(path)) {
-            ZipDowngrader.downgradeZip(target.toOpcode(), originalPath, path);
+            ZipDowngrader.downgradeZip(target.toOpcode(), originalPath, new HashSet<>(), path);
         }
         return path;
     }

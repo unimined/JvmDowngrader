@@ -1,0 +1,17 @@
+plugins {
+    id 'java'
+    id 'xyz.wagyourtail.jvmdowngrader'
+}
+
+repositories {
+    flatDir {
+        dirs "../../java-api/build/libs"
+    }
+    flatDir {
+        dirs "../../build/libs"
+    }
+}
+
+jar {
+    from(zipTree("../../downgradetest/build/libs/downgradetest-1.0.0.jar"))
+}
