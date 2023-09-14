@@ -4,13 +4,12 @@ package xyz.wagyourtail.jvmdg.gradle.task
 
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.gradle.jvm.tasks.Jar
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
+import xyz.wagyourtail.jvmdg.gradle.deleteIfExists
 import xyz.wagyourtail.jvmdg.gradle.jvToOpc
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
-import java.io.File
 import javax.inject.Inject
 
 abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngraderExtension) : Jar() {
@@ -25,12 +24,6 @@ abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngrad
     init {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
-    }
-
-    fun File.deleteIfExists() {
-        if (exists()) {
-            delete()
-        }
     }
 
     @TaskAction
@@ -51,7 +44,7 @@ abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngrad
         if (result.exitValue != 0) {
             throw Exception("Failed to downgrade jar")
         }
-        from(tempOutput)
+        from(project.zipTree(tempOutput))
         copy()
     }
 

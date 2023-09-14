@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.gradle
 
 import org.gradle.api.JavaVersion
 import org.objectweb.asm.Opcodes
+import java.io.File
 import java.io.InputStream
 import java.net.URI
 import java.nio.file.FileSystem
@@ -12,6 +13,13 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.inputStream
 import kotlin.io.path.outputStream
+
+
+fun File.deleteIfExists() {
+    if (exists()) {
+        delete()
+    }
+}
 
 fun forEachInZip(zip: Path, action: (String, InputStream) -> Unit) {
     ZipInputStream(zip.inputStream()).use { stream ->
