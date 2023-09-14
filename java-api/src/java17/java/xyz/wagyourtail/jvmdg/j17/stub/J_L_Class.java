@@ -12,7 +12,7 @@ public class J_L_Class {
     public static Class<?>[] getPermittedSubclasses(Class<?> clazz) {
         // check if the field exists
         try {
-            Field f = clazz.getDeclaredField("permittedSubclasses$jvmdowngrader");
+            Field f = clazz.getDeclaredField("jvmdowngrader$permittedSubclasses");
             String typeStr = (String) f.get(null);
             String[] types = typeStr.split(";");
             Class<?>[] classes = new Class<?>[types.length];
@@ -30,7 +30,7 @@ public class J_L_Class {
     @Stub(opcVers = Opcodes.V17)
     public static boolean isSealed(Class<?> clazz) {
         try {
-            clazz.getDeclaredField("permittedSubclasses$jvmdowngrader");
+            clazz.getDeclaredField("jvmdowngrader$permittedSubclasses");
             return true;
         } catch (NoSuchFieldException e) {
             return false;

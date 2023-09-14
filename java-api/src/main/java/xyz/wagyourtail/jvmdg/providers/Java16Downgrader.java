@@ -97,20 +97,20 @@ public class Java16Downgrader extends VersionProvider {
     public void recordRemover(ClassNode node) {
         if ((node.access & Opcodes.ACC_RECORD) != 0) {
             node.access &= ~Opcodes.ACC_RECORD;
-            StringBuilder value = new StringBuilder();
-            for (int i = 0; i < node.recordComponents.size(); i++) {
-                RecordComponentNode recordComponent = node.recordComponents.get(i);
-                value.append(recordComponent.name).append(' ').append(recordComponent.signature).append(':');
-            }
-            value.deleteCharAt(value.length() - 1);
-            node.recordComponents = null;
-            node.visitField(
-                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
-                "recordComponents$jvmdowngrader",
-                "Ljava/lang/String;",
-                null,
-                value.toString()
-            ).visitEnd();
+//            StringBuilder value = new StringBuilder();
+//            for (int i = 0; i < node.recordComponents.size(); i++) {
+//                RecordComponentNode recordComponent = node.recordComponents.get(i);
+//                value.append(recordComponent.name).append(' ').append(recordComponent.signature).append(':');
+//            }
+//            value.deleteCharAt(value.length() - 1);
+//            node.recordComponents = null;
+//            node.visitField(
+//                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
+//                "jvmdowngrader$recordComponents",
+//                "Ljava/lang/String;",
+//                null,
+//                value.toString()
+//            ).visitEnd();
         }
     }
 }

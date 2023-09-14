@@ -464,7 +464,7 @@ public class J_L_I_StringConcatFactory {
                     ));
                     return list;
                 }
-                if (concatMethod.name.startsWith("concat$jvmdowngrader")) {
+                if (concatMethod.name.startsWith("jvmdowngrader$concat")) {
                     count++;
                 }
             }
@@ -490,7 +490,7 @@ public class J_L_I_StringConcatFactory {
         public StringConcatMethodNode(String args, Deque<Type> types, int index) {
             super(Opcodes.ASM9);
             this.args = args;
-            this.name = "concat$jvmdowngrader";
+            this.name = "jvmdowngrader$concat";
             if (index > 0) {
                 this.name += index;
             }

@@ -5,6 +5,8 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 
 public class J_L_Class {
 
@@ -12,21 +14,16 @@ public class J_L_Class {
     @Stub(opcVers = Opcodes.V16)
     public static J_L_R_RecordComponent[] getRecordComponents(Class<?> clazz) {
         // check if the field exists
-        try {
-            Field f = clazz.getDeclaredField("recordComponents$jvmdowngrader");
-            String typeStr = (String) f.get(null);
-            String[] types = typeStr.split(":");
-            J_L_R_RecordComponent[] components = new J_L_R_RecordComponent[types.length];
-            for (int i = 0; i < types.length; i++) {
-                components[i] = new J_L_R_RecordComponent(clazz, types[i]);
+        Field[] fields = clazz.getDeclaredFields();
+        List<J_L_R_RecordComponent> components = new ArrayList<>();
+        for (Field f : fields) {
+            // if not static
+            if ((f.getModifiers() & Opcodes.ACC_STATIC) == 0) {
+                components.add(new J_L_R_RecordComponent(clazz, f));
             }
-            return components;
-
-        } catch (NoSuchFieldException e) {
-            return null;
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
         }
+        return components.toArray(new J_L_R_RecordComponent[0]);
+
     }
 
     @Stub(opcVers = Opcodes.V16)

@@ -18,8 +18,11 @@ public record TestRecord(int a, String b, char c, Consumer<Integer> d) {
         System.out.println(components[0].getName());
         System.out.println(components[1].getGenericSignature());
         System.out.println(components[2].getType());
-        System.out.println(components[3].getGenericType());
+        System.out.println(components[3].getGenericType().getTypeName());
         System.out.println(components[0].toString());
+        System.out.println(components[3].getGenericSignature());
+        System.out.println(components[3].getAnnotatedType().getType());
+        System.out.println(components[3].getAccessor());
     }
 
 }

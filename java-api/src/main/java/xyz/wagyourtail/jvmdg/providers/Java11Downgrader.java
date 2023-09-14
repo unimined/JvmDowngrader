@@ -445,7 +445,7 @@ public class Java11Downgrader extends VersionProvider {
 
         clazz.visitField(
                 Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
-                "nestMembers$jvmdowngrader",
+                "jvmdowngrader$nestMembers",
                 "Ljava/lang/String;",
                 null,
                 sb.toString()
@@ -472,7 +472,7 @@ public class Java11Downgrader extends VersionProvider {
         // create nest members synthetic class
         clazz.visitField(
             Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
-            "nestHost$jvmdowngrader",
+            "jvmdowngrader$nestHost",
             "Ljava/lang/String;",
             null,
             clazz.nestHostClass
