@@ -47,7 +47,7 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_L_Runtime.Version.class);
         stub(J_L_Short.class);
         // StackTraceElement
-        // StackWalker
+        stub(J_L_StackWalker.class);
         stub(J_L_StrictMath.class);
         // String -- handled by CharSequence
         stub(J_L_System.class);
@@ -181,7 +181,7 @@ public class Java9Downgrader extends VersionProvider {
         // WhileOps
         stub(J_U_Z_Checksum.class);
         // CRC32C
-        // ZipEntry
+        stub(J_U_Z_ZipEntry.class);
         // ExtendedSSLSession
         // SSLEngine
         // SSLParameters

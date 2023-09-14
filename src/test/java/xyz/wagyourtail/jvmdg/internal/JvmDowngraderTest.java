@@ -201,4 +201,9 @@ public class JvmDowngraderTest {
     public void testNests() throws Exception {
         testDowngrade("xyz.wagyourtail.downgradetest.TestNests");
     }
+
+    @Test
+    public void testStackWalker() throws Exception {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestStackWalker");
+    }
 }
