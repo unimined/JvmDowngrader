@@ -57,6 +57,14 @@ dependencies {
 
 tasks.jar {
     from(sourceSets["gradle"].output, sourceSets["main"].output)
+
+    manifest {
+        attributes(
+                "Manifest-Version" to "1.0",
+                "Implementation-Title" to base.archivesName.get(),
+                "Implementation-Version" to project.version,
+        )
+    }
 }
 
 tasks.test {

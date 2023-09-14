@@ -1,18 +1,25 @@
 plugins {
     kotlin("jvm") version "1.8.0"
     `java-gradle-plugin`
+    `maven-publish`
+}
+
+repositories {
+    mavenCentral()
 }
 
 dependencies {
     // commons compress
-    testImplementation("org.apache.commons:commons-compress:1.21")
+    implementation("org.apache.commons:commons-compress:1.21")
 
     // asm
-    testImplementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
-    testImplementation("org.ow2.asm:asm-analysis:${project.properties["asm_version"]}")
-    testImplementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
-    testImplementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
-    testImplementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
+    implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
+    implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
+    implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
+    implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
+    implementation("org.ow2.asm:asm-analysis:${project.properties["asm_version"]}")
+
+    testImplementation(kotlin("test"))
 }
 
 
@@ -32,6 +39,7 @@ gradlePlugin {
         create("simplePlugin") {
             id = "xyz.wagyourtail.jvmdowngrader"
             implementationClass = "xyz.wagyourtail.jvmdg.gradle.JVMDowngraderPlugin"
+            version = project.version as String
         }
     }
 }
@@ -49,15 +57,6 @@ publishing {
                 username = project.findProperty("mvn.user") as String? ?: System.getenv("USERNAME")
                 password = project.findProperty("mvn.key") as String? ?: System.getenv("TOKEN")
             }
-        }
-    }
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = rootProject.group as String
-            artifactId = "gradle-plugin"
-            version = rootProject.version as String
-
-            artifact(tasks["jar"]) {}
         }
     }
 }

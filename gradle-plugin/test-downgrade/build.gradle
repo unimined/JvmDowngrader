@@ -12,6 +12,12 @@ repositories {
     }
 }
 
-jar {
-    from(zipTree("../../downgradetest/build/libs/downgradetest-1.0.0.jar"))
+sourceSets {
+    main {
+        java {
+            srcDirs = ["../../downgradetest/src/main/java"]
+        }
+    }
 }
+
+build.dependsOn(shadeDowngradedApi)

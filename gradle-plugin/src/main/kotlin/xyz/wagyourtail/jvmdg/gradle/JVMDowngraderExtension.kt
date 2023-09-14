@@ -4,17 +4,28 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.jvm.tasks.Jar
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
+import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.defaultedMapOf
 import java.io.File
 
 abstract class JVMDowngraderExtension(val project: Project) {
 
-    var version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion)
+    var version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.0.1")
 
-    val defaultTask = project.tasks.register("downgradeJar", DowngradeJar::class.java) {
-        val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
-        it.inputFile.set(jar.archiveFile)
+    val defaultTask = project.tasks.register("downgradeJar", DowngradeJar::class.java, this).apply {
+        configure {
+            val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
+            it.inputFile.set(jar.archiveFile)
+            it.archiveClassifier.set("downgraded-${it.downgradeTo.majorVersion}")
+        }
+    }
+
+    val defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeAPI::class.java, this).apply {
+        configure {
+            it.inputFile.set(defaultTask.get().archiveFile)
+            it.archiveClassifier.set("downgraded-${it.downgradeTo.majorVersion}-shaded")
+        }
     }
 
     val core = project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader:${version}:all"))
@@ -25,7 +36,7 @@ abstract class JVMDowngraderExtension(val project: Project) {
         // if it's 8 or 11, premade exists, grab off maven
         if (version.isJava8 || version.isJava11) {
             project.logger.lifecycle("Using pre-downgraded api for ${version.majorVersion}")
-            return@defaultedMapOf project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${this.version}:downgraded-$version")).resolve().first { it.extension == "jar" }
+            return@defaultedMapOf project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${this.version}:downgraded-${version.majorVersion}")).resolve().first { it.extension == "jar" }
         }
         project.logger.lifecycle("Generating downgraded api for ${version.majorVersion}")
         // else, generate it

@@ -26,8 +26,10 @@ public class ZipDowngrader {
         File input = new File(args[1]);
         File output = new File(args[2]);
         Set<File> classpath = new HashSet<>();
-        for (String s : args[3].split(File.pathSeparator)) {
-            classpath.add(new File(s));
+        if (args.length > 3) {
+            for (String s : args[3].split(File.pathSeparator)) {
+                classpath.add(new File(s));
+            }
         }
         downgradeZip(target, input, classpath, output);
     }
