@@ -4,14 +4,6 @@ plugins {
     `maven-publish`
 }
 
-
-version = if (project.hasProperty("version_snapshot")) "${project.properties["version"]}-SNAPSHOT" else project.properties["version"] as String
-group = project.properties["maven_group"] as String
-
-base {
-    archivesName.set("${properties["archives_base_name"]}-gradle-plugin")
-}
-
 repositories {
     mavenCentral()
 }
@@ -65,15 +57,6 @@ publishing {
                 username = project.findProperty("mvn.user") as String? ?: System.getenv("USERNAME")
                 password = project.findProperty("mvn.key") as String? ?: System.getenv("TOKEN")
             }
-        }
-    }
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = rootProject.group as String
-            artifactId = "gradle-plugin"
-            version = rootProject.version as String
-
-            artifact(tasks["jar"]) {}
         }
     }
 }

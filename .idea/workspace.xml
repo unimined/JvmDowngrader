@@ -6,7 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="bb33fdfa-7f6c-44bb-b0b3-1bc51f0df232" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/compile/ZipDowngrader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/compile/ZipDowngrader.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle-plugin/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-plugin/build.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -221,7 +221,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1694650156274</updated>
-      <workItem from="1694650160146" duration="13384000" />
+      <workItem from="1694650160146" duration="13864000" />
     </task>
     <servers />
   </component>
