@@ -13,7 +13,7 @@ public class J_L_Class {
             return clazz;
         }
         try {
-            Field fd = clazz.getDeclaredField("nestHost$jvmdowngrader");
+            Field fd = clazz.getDeclaredField("jvmdowngrader$nestHost");
             String host = (String) fd.get(null);
             return Class.forName(host.replace('/', '.'));
         } catch (NoSuchFieldException e) {
@@ -43,7 +43,7 @@ public class J_L_Class {
         }
         try {
             Class<?> host = getNestHost(clazz);
-            Field fd = host.getDeclaredField("nestMembers$jvmdowngrader");
+            Field fd = host.getDeclaredField("jvmdowngrader$nestMembers");
             String[] members = ((String) fd.get(null)).split(":");
             Class<?>[] classes = new Class<?>[members.length + 1];
             classes[0] = host;

@@ -89,7 +89,7 @@ public class Java17Downgrader extends VersionProvider {
             node.permittedSubclasses = null;
             node.visitField(
                 Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
-                "permittedSubclasses$jvmdowngrader",
+                "jvmdowngrader$permittedSubclasses",
                 "Ljava/lang/String;",
                 null,
                 sb.toString()

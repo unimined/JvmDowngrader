@@ -6,46 +6,51 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
+import java.util.regex.Pattern;
 
 @Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/lang/reflect/RecordComponent;"))
 public class J_L_R_RecordComponent {
 
     private final Class<?> declaring;
-    private final String name;
-    private final String signature;
-
     private final Field field;
     private final Method accessor;
 
-    public J_L_R_RecordComponent(Class<?> declaring, String descriptor) {
+    public J_L_R_RecordComponent(Class<?> declaring, Field field) {
         this.declaring = declaring;
 
-        String[] parts = descriptor.split(" ");
-        this.name = parts[0];
-        if (parts[1].equals("null")) {
-            this.signature = null;
-        } else {
-            this.signature = parts[1];
+        this.field = field;
+        for (Method m : declaring.getDeclaredMethods()) {
+            if (m.getName().equals(field.getName()) && m.getReturnType() == field.getType()) {
+                this.accessor = m;
+                return;
+            }
         }
-
-        try {
-            this.field = declaring.getDeclaredField(name);
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            this.accessor = declaring.getDeclaredMethod(name);
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
+        throw new RuntimeException("no accessor found for " + field);
     }
 
     public String getGenericSignature() {
-        return signature;
+        Type genericType = field.getGenericType();
+        if (!(genericType instanceof ParameterizedType)) {
+            return null;
+        }
+        ParameterizedType pt = (ParameterizedType) genericType;
+        return getGenericSignature(pt);
+    }
+
+    private String getGenericSignature(ParameterizedType pt) {
+        StringBuilder sb = new StringBuilder("L");
+        sb.append(pt.getRawType().getTypeName().replace('.', '/'));
+        sb.append("<");
+        for (Type t : pt.getActualTypeArguments()) {
+            if (t instanceof ParameterizedType) {
+                sb.append(getGenericSignature((ParameterizedType) t));
+            } else {
+                sb.append("L").append(t.getTypeName().replace('.', '/')).append(";");
+            }
+        }
+        sb.append(">;");
+        return sb.toString();
     }
 
     public Type getGenericType() {
@@ -77,7 +82,7 @@ public class J_L_R_RecordComponent {
     }
 
     public String getName() {
-        return name;
+        return field.getName();
     }
 
     public Class<?> getType() {

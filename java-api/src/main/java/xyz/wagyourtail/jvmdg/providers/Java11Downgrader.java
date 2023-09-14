@@ -210,16 +210,16 @@ public class Java11Downgrader extends VersionProvider {
                                     }
                                     switch (insn.getOpcode()) {
                                         case Opcodes.GETSTATIC:
-                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESTATIC, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "$") + "$get$" + fieldInsn.name, "()" + fieldInsn.desc, false));
+                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESTATIC, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$get$" + fieldInsn.name, "()" + fieldInsn.desc, false));
                                             break;
                                         case Opcodes.PUTSTATIC:
-                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESTATIC, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "$") + "$set$" + fieldInsn.name, "(" + fieldInsn.desc + ")V", false));
+                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESTATIC, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$set$" + fieldInsn.name, "(" + fieldInsn.desc + ")V", false));
                                             break;
                                         case Opcodes.GETFIELD:
-                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKEVIRTUAL, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "$") + "$get$" + fieldInsn.name, "()" + fieldInsn.desc, false));
+                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKEVIRTUAL, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$get$" + fieldInsn.name, "()" + fieldInsn.desc, false));
                                             break;
                                         case Opcodes.PUTFIELD:
-                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKEVIRTUAL, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "$") + "$set$" + fieldInsn.name, "(" + fieldInsn.desc + ")V", false));
+                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKEVIRTUAL, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$set$" + fieldInsn.name, "(" + fieldInsn.desc + ")V", false));
                                             break;
                                         default:
                                             throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
@@ -240,13 +240,13 @@ public class Java11Downgrader extends VersionProvider {
                                 }
                                 switch (insn.getOpcode()) {
                                     case Opcodes.INVOKESTATIC:
-                                        method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESTATIC, methodInsn.owner, "jvmdowngrader$nest$" + methodInsn.owner.replace("/", "$") + "$" + methodInsn.name, methodInsn.desc, false));
+                                        method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESTATIC, methodInsn.owner, "jvmdowngrader$nest$" + methodInsn.owner.replace("/", "_") + "$" + methodInsn.name, methodInsn.desc, false));
                                         break;
                                     case Opcodes.INVOKEVIRTUAL:
-                                        method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKEVIRTUAL, methodInsn.owner, "jvmdowngrader$nest$" + methodInsn.owner.replace("/", "$") + "$" + methodInsn.name, methodInsn.desc, false));
+                                        method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKEVIRTUAL, methodInsn.owner, "jvmdowngrader$nest$" + methodInsn.owner.replace("/", "_") + "$" + methodInsn.name, methodInsn.desc, false));
                                         break;
                                     case Opcodes.INVOKESPECIAL:
-                                        method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESPECIAL, methodInsn.owner, "jvmdowngrader$nest$" + methodInsn.owner.replace("/", "$") + "$" + methodInsn.name, methodInsn.desc, false));
+                                        method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESPECIAL, methodInsn.owner, "jvmdowngrader$nest$" + methodInsn.owner.replace("/", "_") + "$" + methodInsn.name, methodInsn.desc, false));
                                         break;
                                     default:
                                         throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
@@ -266,13 +266,13 @@ public class Java11Downgrader extends VersionProvider {
                                 }
                                 switch (methodInsn.bsm.getTag()) {
                                     case Opcodes.H_INVOKESTATIC:
-                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKESTATIC, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "$") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
+                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKESTATIC, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "_") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
                                         break;
                                     case Opcodes.H_INVOKEVIRTUAL:
-                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKEVIRTUAL, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "$") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
+                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKEVIRTUAL, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "_") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
                                         break;
                                     case Opcodes.H_INVOKESPECIAL:
-                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKESPECIAL, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "$") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
+                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKESPECIAL, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "_") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
                                         break;
                                     default:
                                         throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
@@ -295,13 +295,13 @@ public class Java11Downgrader extends VersionProvider {
                                             }
                                             switch (handle.getTag()) {
                                                 case Opcodes.H_INVOKESTATIC:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "$") + "$" + handle.getName(), handle.getDesc(), false);
+                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$" + handle.getName(), handle.getDesc(), false);
                                                     break;
                                                 case Opcodes.H_INVOKEVIRTUAL:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "$") + "$" + handle.getName(), handle.getDesc(), false);
+                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$" + handle.getName(), handle.getDesc(), false);
                                                     break;
                                                 case Opcodes.H_INVOKESPECIAL:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESPECIAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "$") + "$" + handle.getName(), handle.getDesc(), false);
+                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESPECIAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$" + handle.getName(), handle.getDesc(), false);
                                                     break;
                                                 default:
                                                     throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
@@ -316,16 +316,16 @@ public class Java11Downgrader extends VersionProvider {
                                             }
                                             switch (handle.getTag()) {
                                                 case Opcodes.H_GETFIELD:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "$") + "$get$" + handle.getName(), handle.getDesc(), false);
+                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$get$" + handle.getName(), handle.getDesc(), false);
                                                     break;
                                                 case Opcodes.H_PUTFIELD:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "$") + "$set$" + handle.getName(), handle.getDesc(), false);
+                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$set$" + handle.getName(), handle.getDesc(), false);
                                                     break;
                                                 case Opcodes.H_GETSTATIC:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "$") + "$get$" + handle.getName(), handle.getDesc(), false);
+                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$get$" + handle.getName(), handle.getDesc(), false);
                                                     break;
                                                 case Opcodes.H_PUTSTATIC:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "$") + "$set$" + handle.getName(), handle.getDesc(), false);
+                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$set$" + handle.getName(), handle.getDesc(), false);
                                                     break;
                                                 default:
                                                     throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
@@ -374,7 +374,7 @@ public class Java11Downgrader extends VersionProvider {
                 } else {
 
                     // create new package-private method to call private method
-                    MethodVisitor mv = clazz.visitMethod(Constants.synthetic(isStatic ? Opcodes.ACC_STATIC : 0), "jvmdowngrader$nest$" + clazz.name.replace("/", "$") + "$" + name, desc, null, null);
+                    MethodVisitor mv = clazz.visitMethod(Constants.synthetic(isStatic ? Opcodes.ACC_STATIC : 0), "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$" + name, desc, null, null);
                     mv.visitCode();
                     if (!isStatic) {
                         mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -407,7 +407,7 @@ public class Java11Downgrader extends VersionProvider {
                 }
 
                 // create new package-private method to get field
-                MethodVisitor mv = clazz.visitMethod(Constants.synthetic(isStatic ? Opcodes.ACC_STATIC : 0), "jvmdowngrader$nest$" + clazz.name.replace("/", "$") + "$get$" + field, "()" + desc, null, null);
+                MethodVisitor mv = clazz.visitMethod(Constants.synthetic(isStatic ? Opcodes.ACC_STATIC : 0), "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$get$" + field, "()" + desc, null, null);
                 mv.visitCode();
                 if (!isStatic) {
                     mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -417,7 +417,7 @@ public class Java11Downgrader extends VersionProvider {
                 mv.visitEnd();
 
                 // create new package-private method to set field
-                mv = clazz.visitMethod(Constants.synthetic(isStatic ? Opcodes.ACC_STATIC : 0), "jvmdowngrader$nest$" + clazz.name.replace("/", "$") + "$set$" + field, "(" + desc + ")V", null, null);
+                mv = clazz.visitMethod(Constants.synthetic(isStatic ? Opcodes.ACC_STATIC : 0), "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$set$" + field, "(" + desc + ")V", null, null);
                 mv.visitCode();
                 if (!isStatic) {
                     mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -445,7 +445,7 @@ public class Java11Downgrader extends VersionProvider {
 
         clazz.visitField(
                 Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
-                "nestMembers$jvmdowngrader",
+                "jvmdowngrader$nestMembers",
                 "Ljava/lang/String;",
                 null,
                 sb.toString()
@@ -472,7 +472,7 @@ public class Java11Downgrader extends VersionProvider {
         // create nest members synthetic class
         clazz.visitField(
             Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
-            "nestHost$jvmdowngrader",
+            "jvmdowngrader$nestHost",
             "Ljava/lang/String;",
             null,
             clazz.nestHostClass

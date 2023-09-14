@@ -39,7 +39,7 @@ public class Java16Downgrader extends VersionProvider {
             stub(J_U_S_LongStream.LongMapMultiConsumer.class);
             stub(J_U_S_Stream.class);
             // ValueBased
-            // Preconditions TODO: same exact as J_U_Objects, but it's internal here... jdk package
+            // Preconditions // same exact as J_U_Objects, but it's internal here... jdk package
             // IntrinsicCandidate
             // TypeAnnotation
 
@@ -97,20 +97,20 @@ public class Java16Downgrader extends VersionProvider {
     public void recordRemover(ClassNode node) {
         if ((node.access & Opcodes.ACC_RECORD) != 0) {
             node.access &= ~Opcodes.ACC_RECORD;
-            StringBuilder value = new StringBuilder();
-            for (int i = 0; i < node.recordComponents.size(); i++) {
-                RecordComponentNode recordComponent = node.recordComponents.get(i);
-                value.append(recordComponent.name).append(' ').append(recordComponent.signature).append(':');
-            }
-            value.deleteCharAt(value.length() - 1);
-            node.recordComponents = null;
-            node.visitField(
-                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
-                "recordComponents$jvmdowngrader",
-                "Ljava/lang/String;",
-                null,
-                value.toString()
-            ).visitEnd();
+//            StringBuilder value = new StringBuilder();
+//            for (int i = 0; i < node.recordComponents.size(); i++) {
+//                RecordComponentNode recordComponent = node.recordComponents.get(i);
+//                value.append(recordComponent.name).append(' ').append(recordComponent.signature).append(':');
+//            }
+//            value.deleteCharAt(value.length() - 1);
+//            node.recordComponents = null;
+//            node.visitField(
+//                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
+//                "jvmdowngrader$recordComponents",
+//                "Ljava/lang/String;",
+//                null,
+//                value.toString()
+//            ).visitEnd();
         }
     }
 }
