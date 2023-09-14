@@ -17,7 +17,7 @@ public class TestNests {
 
         System.out.println(Nest1.class.getNestHost());
         System.out.println(Arrays.toString(Nest2.class.getNestMembers()));
-
+        new NestChild().run3();
     }
 
     public void test2() {
@@ -36,6 +36,14 @@ public class TestNests {
             }
 
         });
+    }
+
+    private void test4() {
+        System.out.println(test);
+    }
+
+    private void test5() {
+        System.out.println(test2);
     }
 
     public static class Nest1 {
@@ -72,6 +80,51 @@ public class TestNests {
                 System.out.println(Nest1.test11());
             }
         }
+    }
+
+    public static class NestSuper1 {
+        private String test = "testsuper";
+
+        public void run() {
+            new NestInner().run();
+        }
+
+        private void test() {
+            System.out.println(test);
+        }
+
+        public class NestInner {
+            private void run() {
+                test();
+                System.out.println(test);
+            }
+        }
+
+    }
+
+    public static class NestChild extends NestSuper1 {
+        private String test = "testchild";
+
+        public void run2() {
+            new NestInner2().run();
+        }
+
+        public void run3() {
+            super.run();
+            run2();
+        }
+
+        private void test() {
+            System.out.println(test);
+        }
+
+        public class NestInner2 {
+            private void run() {
+                test();
+                System.out.println(test);
+            }
+        }
+
     }
 
 }

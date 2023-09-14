@@ -5,10 +5,7 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.util.AbstractMap;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class J_U_Map {
 
@@ -139,7 +136,7 @@ public class J_U_Map {
         if (entries.length == 1) {
             return Collections.singletonMap(entries[0].getKey(), entries[0].getValue());
         }
-        Map<K, V> map = new HashMap<>(entries.length);
+        Map<K, V> map = new HashMap<>((int) (entries.length / 0.75f + 1));
         for (Map.Entry<? extends K, ? extends V> entry : entries) {
             map.put(entry.getKey(), entry.getValue());
         }
@@ -148,7 +145,7 @@ public class J_U_Map {
 
     @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map.Entry<K, V> entry(K k, V v) {
-        return new AbstractMap.SimpleImmutableEntry<>(k, v);
+        return new AbstractMap.SimpleImmutableEntry<>(Objects.requireNonNull(k), Objects.requireNonNull(v));
     }
 
 }
