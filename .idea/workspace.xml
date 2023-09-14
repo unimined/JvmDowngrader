@@ -5,19 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bb33fdfa-7f6c-44bb-b0b3-1bc51f0df232" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/gradle-plugin/gradle.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/ASMClassWriter.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle-plugin/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-plugin/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/JVMDowngraderExtension.kt" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/JVMDowngraderExtension.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/JVMDowngraderPlugin.kt" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/JVMDowngraderPlugin.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/Util.kt" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/Util.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/task/DowngradeJar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/task/DowngradeJar.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/task/ShadeAPI.kt" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/task/ShadeAPI.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle-plugin/test-downgrade/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-plugin/test-downgrade/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/compile/ZipDowngrader.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/compile/ZipDowngrader.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -232,7 +221,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1694650156274</updated>
-      <workItem from="1694650160146" duration="12872000" />
+      <workItem from="1694650160146" duration="13384000" />
     </task>
     <servers />
   </component>
