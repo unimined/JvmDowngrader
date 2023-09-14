@@ -39,7 +39,7 @@ public class Java16Downgrader extends VersionProvider {
             stub(J_U_S_LongStream.LongMapMultiConsumer.class);
             stub(J_U_S_Stream.class);
             // ValueBased
-            // Preconditions TODO: same exact as J_U_Objects, but it's internal here... jdk package
+            // Preconditions // same exact as J_U_Objects, but it's internal here... jdk package
             // IntrinsicCandidate
             // TypeAnnotation
 
