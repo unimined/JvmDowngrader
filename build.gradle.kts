@@ -12,7 +12,7 @@ allprojects {
     group = project.properties["maven_group"] as String
 
     base {
-        archivesName.set("${properties["archives_base_name"]}${path.replace(":", "-")}")
+        archivesName.set("${properties["archives_base_name"]}${if (path == ":") "" else path.replace(":", "-")}")
     }
 
     repositories {
@@ -53,16 +53,20 @@ dependencies {
     testImplementation("org.apache.commons:commons-compress:1.21")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
+    "jij"(project(":java-api")) {
+        isTransitive = false
+    }
 }
 
 tasks.jar {
-    from(sourceSets["gradle"].output, sourceSets["main"].output)
-
     manifest {
         attributes(
                 "Manifest-Version" to "1.0",
                 "Implementation-Title" to base.archivesName.get(),
                 "Implementation-Version" to project.version,
+                "Main-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+                "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+                "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
         )
     }
 }
@@ -78,10 +82,23 @@ tasks.test {
 
 tasks.register("jarInJar", Jar::class.java) {
     dependsOn(tasks.shadowJar)
+
     archiveClassifier.set("jij")
+    duplicatesStrategy = DuplicatesStrategy.WARN
 
     // Copy the shadow jar contents into the jij jar
     from(zipTree(tasks.shadowJar.get().outputs.files.singleFile))
+
+    manifest {
+        attributes(
+            "Manifest-Version" to "1.0",
+            "Implementation-Title" to base.archivesName.get(),
+            "Implementation-Version" to project.version,
+            "Main-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+        )
+    }
 
     from(configurations["jij"]) {
         into("META-INF/lib")
