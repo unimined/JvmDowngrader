@@ -36,9 +36,4 @@ public class Utils {
         return trimmed;
     }
 
-    public static void dumpClass(String name, byte[] bytes) throws IOException {
-        Path path = Paths.get("./.jvmdg/dump").resolve(name + ".class");
-        Files.createDirectories(path.getParent());
-        Files.write(path, bytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-    }
 }

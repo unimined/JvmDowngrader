@@ -96,7 +96,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 LOGGER.info("Loading " + entry.getKey() + " into " + loader);
                 if (DUMP_CLASSES) {
-                    Utils.dumpClass(entry.getKey(), entry.getValue());
+                    ClassDowngrader.currentVersionDowngrader.writeBytesToDebug(entry.getKey(), entry.getValue());
                 }
                 if (entry.getKey().equals(className)) {
                     bytes = entry.getValue();

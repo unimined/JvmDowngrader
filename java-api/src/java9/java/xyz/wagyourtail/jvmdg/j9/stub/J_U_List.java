@@ -9,6 +9,11 @@ import java.util.*;
 
 public class J_U_List {
 
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/List;"))
+    public static <E> List<E> of() {
+        return Collections.emptyList();
+    }
+
     @SafeVarargs
     @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/List;"))
     public static <E> List<E> of(E... coll) {

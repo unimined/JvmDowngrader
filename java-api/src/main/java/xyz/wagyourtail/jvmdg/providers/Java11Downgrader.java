@@ -394,8 +394,10 @@ public class Java11Downgrader extends VersionProvider {
                     if (!isStatic) {
                         mv.visitVarInsn(Opcodes.ALOAD, 0);
                     }
-                    for (int i = 0; i < args.length; i++) {
-                        mv.visitVarInsn(args[i].getOpcode(Opcodes.ILOAD), i + (isStatic ? 0 : 1));
+                    int index = isStatic ? 0 : 1;
+                    for (Type arg : args) {
+                        mv.visitVarInsn(arg.getOpcode(Opcodes.ILOAD), index);
+                        index += arg.getSize();
                     }
                     mv.visitMethodInsn(isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKESPECIAL, clazz.name, name, desc, false);
                     if (returnType == Type.VOID_TYPE) {

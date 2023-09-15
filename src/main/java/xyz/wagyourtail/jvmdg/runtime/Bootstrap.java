@@ -1,12 +1,22 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
+import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.instrument.Instrumentation;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -14,7 +24,7 @@ public class Bootstrap {
     private static final Logger LOGGER = Logger.getLogger("JVMDowngrader");
 
     static {
-        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "true")) ? Level.ALL : Level.OFF);
+        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "true")) ? Level.ALL : Level.WARNING);
     }
 
     public static void main(String[] args) {
@@ -38,8 +48,50 @@ public class Bootstrap {
         }
     }
 
-    public static void premain(String args, Instrumentation instrumentation) throws IOException {
+//    fun Path.getSha1(): String {
+//        val digestSha1 = MessageDigest.getInstance("SHA-1")
+//        inputStream().use {
+//            digestSha1.update(it.readBytes())
+//        }
+//        val hashBytes = digestSha1.digest()
+//        return hashBytes.joinToString("") { String.format("%02x", it) }
+//    }
+
+    public static String sha1(Path p) {
+        try (InputStream stream = Files.newInputStream(p)) {
+            MessageDigest digestSha1 = MessageDigest.getInstance("SHA-1");
+            digestSha1.update(Utils.readAllBytes(stream));
+            byte[] hashBytes = digestSha1.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    public static void premain(String args, Instrumentation instrumentation) throws IOException, URISyntaxException {
         LOGGER.info("Starting JVMDowngrader Bootstrap in agent mode.");
+        // downgrade api
+        Path zip = Paths.get(ClassDowngrader.javaApi.toURI());
+        String zipSha = sha1(zip);
+        Path tmp = Paths.get("./.jvmdg/downgraded-java-api-" + zipSha.substring(0, 8) + ".jar");
+        boolean downgrade = false;
+        if (!Files.exists(tmp)) {
+            LOGGER.warning("Downgrading java-api.jar as its hash changed or this is first launch, this may take a minute...");
+            downgrade = true;
+        }
+        if (downgrade) {
+            Files.createDirectories(tmp.getParent());
+            ZipDowngrader.downgradeZip(ClassDowngrader.currentVersionDowngrader, zip, new HashSet<URL>(), tmp);
+            // TODO: remove other files starting with downgraded-java-api
+        }
+        instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(tmp.toFile()));
+        // add self
+        instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(ClassDowngrader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()));
         instrumentation.addTransformer(new ClassDowngradingAgent());
         LOGGER.info("JVMDowngrader Bootstrap agent loaded.");
     }

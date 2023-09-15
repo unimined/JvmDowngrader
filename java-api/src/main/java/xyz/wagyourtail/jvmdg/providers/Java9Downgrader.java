@@ -38,7 +38,7 @@ public class Java9Downgrader extends VersionProvider {
         // LayeredInstantiationException
         stub(J_L_Math.class);
         stub(J_L_Module.class);
-        // ModuleLayer
+        stub(J_L_ModuleLayer.class);
         // Process
         // ProcessBuilder
         // ProcessHandle
@@ -108,6 +108,7 @@ public class Java9Downgrader extends VersionProvider {
         // URLConnection
         // URLStreamHandlerProvider
         stub(J_N_Buffer.class);
+        stub(J_N_F_Path.class);
         // AuthProvider
         // DrbgParameters
         // KeyStore
@@ -522,87 +523,18 @@ public class Java9Downgrader extends VersionProvider {
 
     @Override
     public ClassNode otherTransforms(ClassNode clazz) {
-        removeModuleInfo(clazz);
         fixPrivateMethodsInInterfaces(clazz);
         return clazz;
     }
 
-    private void assertMethod(String owner, String name, String desc, AbstractInsnNode node) {
+    private boolean assertMethod(String owner, String name, String desc, AbstractInsnNode node) {
         if (node.getType() == AbstractInsnNode.METHOD_INSN) {
             MethodInsnNode min = (MethodInsnNode) node;
             if (min.owner.equals(owner) && min.name.equals(name) && min.desc.equals(desc)) {
-                return;
+                return true;
             }
         }
-        throw new AssertionError("Expected method " + owner + "." + name + desc + " but got " + node);
-    }
-
-
-    //TODO: store in some other way instead of removing
-    public void removeModuleInfo(ClassNode clazz) {
-        MethodNode clinit = null;
-        for (MethodNode method : clazz.methods) {
-            if (method.name.equals("<clinit>")) {
-                clinit = method;
-                break;
-            }
-        }
-        if (clinit == null) return;
-
-        int stage = -1;
-        ListIterator<AbstractInsnNode> it = clinit.instructions.iterator();
-        out: while (it.hasNext()) {
-            AbstractInsnNode insn = it.next();
-            switch (stage) {
-                case -1:
-                    if (insn.getType() == AbstractInsnNode.LDC_INSN) {
-                        LdcInsnNode ldc = (LdcInsnNode) insn;
-                        if (ldc.cst instanceof Type && ((Type) ldc.cst).getDescriptor().equals("Ljava/lang/Runtime;")) {
-                            stage = 1;
-                            it.remove();
-                        }
-                    }
-                    break;
-                case 1:
-                    assertMethod("java/lang/Class", "getModule", "()Ljava/lang/Module;", insn);
-                    stage++;
-                    it.remove();
-                    break;
-                case 2:
-                    assertMethod("java/lang/Module", "getLayer", "()Ljava/lang/ModuleLayer;", insn);
-                    stage++;
-                    it.remove();
-                    break;
-                case 3:
-                    if (insn.getType() == AbstractInsnNode.LDC_INSN) {
-                        LdcInsnNode ldc = (LdcInsnNode) insn;
-                        if ("D" == ldc.cst) {
-                            stage++;
-                            it.remove();
-                            continue;
-                        }
-                    }
-                    throw new IllegalStateException("Expected jdk.jfr load but found " + insn);
-                case 4:
-                    assertMethod("java/lang/ModuleLayer", "findModule", "(Ljava/lang/String;)Ljava/lang/Module;", insn);
-                    stage++;
-                    it.remove();
-                    break;
-                case 5:
-                    assertMethod("java/util/Optional", "isPresent", "()Z", insn);
-                    stage++;
-                    it.set(new InsnNode(Opcodes.ICONST_0));
-                    break out;
-            }
-        }
-
-        if (stage == -1) {
-            if (Constants.DEBUG) System.out.println("No module info found in " + clazz.name);
-            return;
-        }
-        if (stage != 6) {
-            throw new IllegalStateException("Encountered an issue while removing module data from " + clazz.name + " at stage " + stage);
-        }
+        return false;
     }
 
     public void fixPrivateMethodsInInterfaces(ClassNode node) {
