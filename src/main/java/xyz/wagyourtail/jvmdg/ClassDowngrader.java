@@ -15,13 +15,15 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ClassDowngrader {
     public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(VersionProvider.getCurrentClassVersion());
-    public static final DowngradingClassLoader classLoader = new DowngradingClassLoader(new URL[]{findJavaApi()}, ClassDowngrader.class.getClassLoader());
+    public static final URL javaApi = findJavaApi();
+    public static final DowngradingClassLoader classLoader = new DowngradingClassLoader(new URL[]{javaApi}, ClassDowngrader.class.getClassLoader());
     private static final Map<Integer, VersionProvider> downgraders = collectProviders();
     private final int target;
 
@@ -96,15 +98,18 @@ public class ClassDowngrader {
 
     private static URL findJavaApi() {
         try {
+            Path tmp = Files.createTempFile("jvmdg-api", ".jar");
             URL url = getJavaApiFromSystemProperty();
-            if (url != null) {
-                return url;
+            if (url == null) {
+                url = getJavaApiFromShade();
             }
-            url = getJavaApiFromShade();
-            if (url != null) {
-                return url;
+            if (url == null) {
+                url = getJavaApiFromMaven();
             }
-            return getJavaApiFromMaven();
+            try (InputStream in = url.openStream()) {
+                Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+            }
+            return tmp.toUri().toURL();
         } catch (IOException e) {
             throw new RuntimeException("Failed to find java api", e);
         }
@@ -117,7 +122,7 @@ public class ClassDowngrader {
         while (version > target) {
             VersionProvider downgrader = downgraders.get(version);
             if (downgrader == null) {
-                throw new RuntimeException("Unsupported class version: " + version);
+                throw new RuntimeException("Unsupported class version: " + version + " supported: " + downgraders.keySet());
             }
             Set<ClassNode> newClasses = new HashSet<>();
             for (ClassNode c : classes) {
@@ -273,7 +278,7 @@ public class ClassDowngrader {
         protected String getSuperClass(String type) {
             // try loading
             try {
-                Class<?> clazz = Class.forName(type.replace('/', '.'));
+                Class<?> clazz = java.lang.Class.forName(type.replace('/', '.'));
                 return clazz.getSuperclass().getCanonicalName().replace('.', '/');
             } catch (ClassNotFoundException ignored) {
                 try {

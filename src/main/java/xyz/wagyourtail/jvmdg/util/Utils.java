@@ -3,9 +3,7 @@ package xyz.wagyourtail.jvmdg.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.util.Map;
 
 public class Utils {
@@ -36,5 +34,11 @@ public class Utils {
         byte[] trimmed = new byte[readBytes];
         System.arraycopy(bytes, 0, trimmed, 0, readBytes);
         return trimmed;
+    }
+
+    public static void dumpClass(String name, byte[] bytes) throws IOException {
+        Path path = Paths.get("./.jvmdg/dump").resolve(name + ".class");
+        Files.createDirectories(path.getParent());
+        Files.write(path, bytes, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 }

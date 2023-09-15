@@ -3,7 +3,9 @@ package xyz.wagyourtail.jvmdg.runtime;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.instrument.Instrumentation;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,12 +38,13 @@ public class Bootstrap {
         }
     }
 
-    public static void premain(String args, Instrumentation instrumentation) {
+    public static void premain(String args, Instrumentation instrumentation) throws IOException {
         LOGGER.info("Starting JVMDowngrader Bootstrap in agent mode.");
         instrumentation.addTransformer(new ClassDowngradingAgent());
+        LOGGER.info("JVMDowngrader Bootstrap agent loaded.");
     }
 
-    public static void agentmain(String args, Instrumentation instrumentation) {
+    public static void agentmain(String args, Instrumentation instrumentation) throws URISyntaxException, IOException {
         premain(args, instrumentation);
     }
 }

@@ -31,8 +31,13 @@ public class ASMClassWriter extends ClassWriter {
             l.add(current);
             try {
                 Class<?> c = Class.forName(current.replace('/', '.'));
-                current = c.getSuperclass().getName().replace('.', '/');
-            } catch (ClassNotFoundException e) {
+                Class<?> s = c.getSuperclass();
+                if (s == null) {
+                    current = "java/lang/Object";
+                } else {
+                    current = c.getSuperclass().getName().replace('.', '/');
+                }
+            } catch (Throwable e) {
                 current = getSuperType.apply(current);
                 if (current == null) {
                     current = "java/lang/Object";

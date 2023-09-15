@@ -625,10 +625,13 @@ public class Java9Downgrader extends VersionProvider {
                     }
                 } else if (insn instanceof InvokeDynamicInsnNode) {
                     InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
-                    if (indy.bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
+                    if (indy.bsmArgs[1] instanceof Handle) {
                         Handle lambda = (Handle) indy.bsmArgs[1];
-                        if (privateMethods.contains(lambda.getName() + lambda.getDesc())) {
-                            indy.bsmArgs[1] = new Handle(Opcodes.H_INVOKEVIRTUAL, lambda.getOwner(), lambda.getName(), lambda.getDesc(), lambda.isInterface());
+                        if (lambda.getOwner().equals(node.name) &&
+                            lambda.getTag() == Opcodes.H_INVOKEINTERFACE &&
+                            privateMethods.contains(lambda.getName() + lambda.getDesc())
+                        ) {
+                            indy.bsmArgs[1] = new Handle(Opcodes.H_INVOKESPECIAL, lambda.getOwner(), lambda.getName(), lambda.getDesc(), lambda.isInterface());
                         }
                     }
                 }

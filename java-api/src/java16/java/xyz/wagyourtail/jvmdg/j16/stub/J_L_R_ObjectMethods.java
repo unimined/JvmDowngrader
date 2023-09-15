@@ -209,7 +209,7 @@ public class J_L_R_ObjectMethods {
         visitor.visitVarInsn(Opcodes.ALOAD, 1);
         visitor.visitMethodInsn(
             Opcodes.INVOKESTATIC,
-            "java/util/Objects",
+            "java/util/Arrays",
             "hashCode",
             "([Ljava/lang/Object;)I",
             false

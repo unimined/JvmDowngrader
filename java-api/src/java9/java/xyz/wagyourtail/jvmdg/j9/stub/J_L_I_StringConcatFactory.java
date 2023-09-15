@@ -533,7 +533,7 @@ public class J_L_I_StringConcatFactory {
                         // stack = [StringBuilder, StringBuilder]
                         visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
                         // stack = [StringBuilder]
-                        visitVarInsn(Opcodes.ALOAD, 0);
+                        visitVarInsn(first.getOpcode(Opcodes.ILOAD), 0);
                         // stack = [StringBuilder, type]
                         visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + type + ")Ljava/lang/StringBuilder;", false);
                 }

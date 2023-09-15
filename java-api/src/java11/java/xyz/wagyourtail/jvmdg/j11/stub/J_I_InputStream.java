@@ -19,7 +19,7 @@ public class J_I_InputStream {
         return new NullInputStream();
     }
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub(opcVers = Opcodes.V11, subtypes = true)
     public static byte[] readNBytes(InputStream stream, int len) throws IOException {
         if (len < 0) {
             throw new IllegalArgumentException("len < 0");

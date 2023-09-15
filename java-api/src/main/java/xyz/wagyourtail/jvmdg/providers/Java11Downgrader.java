@@ -17,6 +17,7 @@ public class Java11Downgrader extends VersionProvider {
         public void init() {
             // -- java.base --
             // ChaCha20Cipher
+            stub(J_I_ByteArrayOutputStream.class);
             stub(J_I_FileReader.class);
             stub(J_I_FileWriter.class);
             stub(J_I_InputStream.class);
@@ -24,12 +25,12 @@ public class Java11Downgrader extends VersionProvider {
             stub(J_I_Reader.class);
             stub(J_I_Writer.class);
             // AbstractStringBuilder
-            // Character (more unicode spaces);
+            stub(J_L_Character.class);
             stub(J_L_CharSequence.class);
             stub(J_L_Class.class);
             stub(J_L_String.class);
-            stub(J_L_StringBuilder.class);
             stub(J_L_StringBuffer.class);
+            stub(J_L_StringBuilder.class);
             // ConstantBootstraps
             // Reference
             stub(J_N_C_SelectionKey.class);
@@ -49,13 +50,24 @@ public class Java11Downgrader extends VersionProvider {
             // RSAPublicKeySpec
             // XECPrivateKeySpec
             // XECPublicKeySpec
+            stub(J_U_Collection.class);
+            stub(J_U_Optional.class);
+            stub(J_U_OptionalDouble.class);
+            stub(J_U_OptionalInt.class);
+            stub(J_U_OptionalLong.class);
             stub(J_U_C_TimeUnit.class);
             stub(J_U_F_Predicate.class);
+            stub(J_U_R_Pattern.class);
             stub(J_U_Z_Deflater.class);
             stub(J_U_Z_Inflater.class);
+            // ZipInputStream -- handled by InputStream
             // ChaCha20ParameterSpec
             // Container
             // Metrics
+            // MGF1
+            // RSAPSSSignature
+            // RSAUtil
+            // SignatureUtil
 
             // -- java.compiler --
             // SourceVersion
@@ -280,10 +292,13 @@ public class Java11Downgrader extends VersionProvider {
                                 break;
                             }
                         }
-                        for (int j = 0; j < methodInsn.bsmArgs.length; j++) {
-                            Object arg = methodInsn.bsmArgs[j];
-                            if (arg instanceof Handle) {
-                                Handle handle = (Handle) arg;
+                    }
+                    for (int j = 0; j < methodInsn.bsmArgs.length; j++) {
+                        Object arg = methodInsn.bsmArgs[j];
+                        if (arg instanceof Handle) {
+                            Handle handle = (Handle) arg;
+                            if (nestMembers.containsKey(handle.getOwner())) {
+                                ClassNode target = nestMembers.get(handle.getOwner());
                                 if (handle.getOwner().equals(target.name)) {
                                     if (handle.getName().equals("<init>")) {
                                         continue;
