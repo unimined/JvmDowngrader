@@ -27,7 +27,7 @@ public abstract class VersionProvider {
     public final int outputVersion;
     private final ScanResult allClasses;
 
-    private boolean initialized = false;
+    private volatile boolean initialized = false;
 
     protected VersionProvider(int inputVersion, int outputVersion) {
         this.inputVersion = inputVersion;
@@ -181,7 +181,7 @@ public abstract class VersionProvider {
                 }
                 owner = Type.getObjectType(n);
             }
-            if (!methodStub.ref().member().equals("")) {
+            if (!methodStub.ref().member().isEmpty()) {
                 name = methodStub.ref().member();
             } else {
                 name = m.getName();
@@ -189,7 +189,7 @@ public abstract class VersionProvider {
             if (name.equals("<init>")) {
                 ret = Type.VOID_TYPE;
             }
-            if (!methodStub.ref().desc().equals("")) {
+            if (!methodStub.ref().desc().isEmpty()) {
                 throw new UnsupportedOperationException("Not implemented yet");
             }
             if (!methodStub.subtypesOnly()) {

@@ -25,7 +25,7 @@ public class ClassDowngrader {
     public static final URL javaApi = findJavaApi();
     public static final DowngradingClassLoader classLoader = new DowngradingClassLoader(new URL[]{javaApi}, ClassDowngrader.class.getClassLoader());
     private static final Map<Integer, VersionProvider> downgraders = collectProviders();
-    private final int target;
+    public final int target;
 
     protected ClassDowngrader(int versionTarget) {
         this.target = versionTarget;

@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -78,7 +79,7 @@ public class Bootstrap {
         // downgrade api
         Path zip = Paths.get(ClassDowngrader.javaApi.toURI());
         String zipSha = sha1(zip);
-        Path tmp = Paths.get("./.jvmdg/downgraded-java-api-" + zipSha.substring(0, 8) + ".jar");
+        Path tmp = Constants.DIR.toPath().resolve("java-api-downgraded-" + ClassDowngrader.currentVersionDowngrader.target + "-" + zipSha.substring(0, 8) + ".jar");
         boolean downgrade = false;
         if (!Files.exists(tmp)) {
             LOGGER.warning("Downgrading java-api.jar as its hash changed or this is first launch, this may take a minute...");
