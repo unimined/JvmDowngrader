@@ -24,7 +24,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
     public static final boolean DUMP_CLASSES = Boolean.parseBoolean(System.getProperty("jvmdg.dump", "true"));
 
     static {
-        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "true")) ? Level.ALL : Level.OFF);
+        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "false")) ? Level.WARNING : Level.OFF);
     }
 
     static {
@@ -93,10 +93,10 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             int version = ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF);
             if (version <= currentVersion) {
                 // already at or below the target version
-//            LOGGER.info("Ignoring " + className + " as it is already at or below the target version");
+            LOGGER.finer("Ignoring " + className + " as it is already at or below the target version");
                 return null;
             }
-            LOGGER.info("Transforming " + className + " from " + version + " to " + currentVersion);
+            LOGGER.fine("Transforming " + className + " from " + version + " to " + currentVersion);
 //        if (loader instanceof DowngradingClassLoader) return bytes; // already handled
             Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(className), bytes, new Function<String, byte[]>() {
                 @Override
@@ -110,10 +110,10 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                     }
                 }
             });
-            LOGGER.info("transform size: " + (outputs == null ? null : outputs.size()));
+            LOGGER.fine("transform size: " + (outputs == null ? null : outputs.size()));
             if (outputs == null || outputs.isEmpty()) return bytes;
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
-                LOGGER.info("Loading " + entry.getKey() + " into " + loader);
+                LOGGER.fine("Loading " + entry.getKey() + " into " + loader);
                 if (DUMP_CLASSES) {
                     ClassDowngrader.currentVersionDowngrader.writeBytesToDebug(entry.getKey(), entry.getValue());
                 }

@@ -27,6 +27,10 @@ operator fun JavaVersion.rangeTo(that: JavaVersion): Array<JavaVersion> {
     return JavaVersion.values().copyOfRange(this.ordinal, that.ordinal + 1)
 }
 
+operator fun JavaVersion.minus(int: Int): JavaVersion {
+    return JavaVersion.values()[this.ordinal - int]
+}
+
 val fromVersion = JavaVersion.toVersion(project.properties["stubFromVersion"]!!)
 val toVersion = JavaVersion.toVersion(project.properties["stubToVersion"]!!)
 
@@ -47,7 +51,7 @@ dependencies {
 
 for (vers in fromVersion..toVersion) {
     tasks.getByName("compileJava${vers.ordinal + 1}Java") {
-        (this as JavaCompile).configCompile(vers)
+        (this as JavaCompile).configCompile(vers - 1)
     }
 }
 
