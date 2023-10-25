@@ -43,17 +43,68 @@ public class J_L_Runtime {
             if (s == null)
                 throw new NullPointerException();
 
-            if (!s.matches("1(?:[._][0-9]*)*"))
+            // Shortcut to avoid initializing VersionPattern when creating
+            // feature-version constants during startup
+            if (isSimpleNumber(s)) {
+                return new Version(Arrays.asList(Integer.parseInt(s)),
+                    Optional.empty(), Optional.empty(), Optional.empty());
+            }
+            Matcher m = VersionPattern.VSTR_PATTERN.matcher(s);
+            if (!m.matches())
                 throw new IllegalArgumentException("Invalid version string: '"
                     + s + "'");
 
-            String[] split = s.split("[._]");
-            Integer[] version = new Integer[split.length - 1];
-            for (int i = 1; i < split.length; i++) {
-                version[i - 1] = Integer.parseInt(split[i]);
+            // $VNUM is a dot-separated list of integers of arbitrary length
+            String[] split = m.group(VersionPattern.VNUM_GROUP).split("[._]");
+            Integer[] version = new Integer[split.length];
+            for (int i = 0; i < split.length; i++) {
+                version[i] = Integer.parseInt(split[i]);
             }
 
-            return new Version(Arrays.asList(version), Optional.empty(), Optional.empty(), Optional.empty());
+            Optional<String> pre = Optional.ofNullable(
+                m.group(VersionPattern.PRE_GROUP));
+
+            String b = m.group(VersionPattern.BUILD_GROUP);
+            // $BUILD is an integer
+            Optional<Integer> build = (b == null)
+                ? Optional.empty()
+                : Optional.of(Integer.parseInt(b));
+
+            Optional<String> optional = Optional.ofNullable(
+                m.group(VersionPattern.OPT_GROUP));
+
+            // empty '+'
+            if (!build.isPresent()) {
+                if (m.group(VersionPattern.PLUS_GROUP) != null) {
+                    if (optional.isPresent()) {
+                        if (pre.isPresent())
+                            throw new IllegalArgumentException("'+' found with"
+                                + " pre-release and optional components:'" + s
+                                + "'");
+                    } else {
+                        throw new IllegalArgumentException("'+' found with neither"
+                            + " build or optional components: '" + s + "'");
+                    }
+                } else {
+                    if (optional.isPresent() && !pre.isPresent()) {
+                        throw new IllegalArgumentException("optional component"
+                            + " must be preceded by a pre-release component"
+                            + " or '+': '" + s + "'");
+                    }
+                }
+            }
+            return new Version(Arrays.asList(version), pre, build, optional);
+        }
+
+        private static boolean isSimpleNumber(String s) {
+            for (int i = 0; i < s.length(); i++) {
+                char c = s.charAt(i);
+                char lowerBound = (i > 0) ? '0' : '1';
+                if (c < lowerBound || c > '9') {
+                    return false;
+                }
+            }
+            return true;
         }
 
         public int major() {
@@ -232,6 +283,28 @@ public class J_L_Runtime {
             h = p * h + optional.hashCode();
 
             return h;
+        }
+
+        private static class VersionPattern {
+            // $VNUM(-$PRE)?(\+($BUILD)?(\-$OPT)?)?
+            // RE limits the format of version strings
+            // ([1-9][0-9]*(?:(?:\.0)*\.[1-9][0-9]*)*)(?:-([a-zA-Z0-9]+))?(?:(\+)(0|[1-9][0-9]*)?)?(?:-([-a-zA-Z0-9.]+))?
+
+            private static final String VNUM
+                = "(?:1\\.)?(?<VNUM>[1-9][0-9]*(?:(?:\\.0)*[._][1-9][0-9]*)*)";
+            private static final String PRE      = "(?:-(?<PRE>[a-zA-Z0-9]+))?";
+            private static final String BUILD
+                = "(?:(?<PLUS>\\+)(?<BUILD>0|[1-9][0-9]*)?)?";
+            private static final String OPT      = "(?:-(?<OPT>[-a-zA-Z0-9.]+))?";
+            private static final String VSTR_FORMAT = VNUM + PRE + BUILD + OPT;
+
+            static final Pattern VSTR_PATTERN = Pattern.compile(VSTR_FORMAT);
+
+            static final String VNUM_GROUP  = "VNUM";
+            static final String PRE_GROUP   = "PRE";
+            static final String PLUS_GROUP  = "PLUS";
+            static final String BUILD_GROUP = "BUILD";
+            static final String OPT_GROUP   = "OPT";
         }
     }
 }
