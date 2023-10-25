@@ -5,8 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7e7df771-698c-431d-9767-76b5851e0ca4" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java9/java/xyz/wagyourtail/jvmdg/j9/stub/J_L_Runtime.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java9/java/xyz/wagyourtail/jvmdg/j9/stub/J_L_Runtime.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle-plugin/gradle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/Util.kt" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/Util.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -71,20 +78,7 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected="Gradle.JvmDowngraderTest.testVersion">
-    <configuration name="TestVersion" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="xyz.wagyourtail.downgradetest.TestVersion" />
-      <module name="JvmDowngrader.downgradetest.main" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="xyz.wagyourtail.downgradetest.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="Gradle.JvmDowngrader [build]">
     <configuration name="JvmDowngrader [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -107,7 +101,7 @@
       <RunAsTest>false</RunAsTest>
       <method v="2" />
     </configuration>
-    <configuration name="JvmDowngrader [jarInJar]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="JvmDowngrader [clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -118,7 +112,29 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value="jarInJar" />
+            <option value="clean" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>true</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>false</RunAsTest>
+      <method v="2" />
+    </configuration>
+    <configuration name="JvmDowngrader [gradleClasses]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value="gradleClasses" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -179,11 +195,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.JvmDowngraderTest.testVersion" />
         <item itemvalue="Gradle.JvmDowngrader [build]" />
+        <item itemvalue="Gradle.JvmDowngrader [clean]" />
+        <item itemvalue="Gradle.JvmDowngrader [gradleClasses]" />
+        <item itemvalue="Gradle.JvmDowngraderTest.testVersion" />
         <item itemvalue="Gradle.JvmDowngraderTest.testNotEquals" />
-        <item itemvalue="Application.TestVersion" />
-        <item itemvalue="Gradle.JvmDowngrader [jarInJar]" />
       </list>
     </recent_temporary>
   </component>
@@ -196,7 +212,9 @@
       <option name="presentableId" value="Default" />
       <updated>1698200764741</updated>
       <workItem from="1698200766053" duration="807000" />
-      <workItem from="1698202487806" duration="5092000" />
+      <workItem from="1698202487806" duration="6374000" />
+      <workItem from="1698209580509" duration="1526000" />
+      <workItem from="1698211157438" duration="884000" />
     </task>
     <servers />
   </component>

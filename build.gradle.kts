@@ -25,7 +25,6 @@ allprojects {
         implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
         implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
         implementation("org.ow2.asm:asm-analysis:${project.properties["asm_version"]}")
-        implementation("io.github.classgraph:classgraph:4.8.156")
     }
 
     tasks.jar {
@@ -58,6 +57,18 @@ dependencies {
     }
 }
 
+base {
+
+}
+
+val mainVersion = project.properties["mainVersion"] as String
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(mainVersion.toInt()))
+    }
+}
+
 tasks.jar {
     manifest {
         attributes(
@@ -72,6 +83,16 @@ tasks.jar {
     }
 }
 
+val testVersion = project.properties["testVersion"] as String
+
+tasks.compileTestJava {
+    options.encoding = "UTF-8"
+
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
     dependsOn(
@@ -79,9 +100,13 @@ tasks.test {
             project(":java-api").tasks.build
     )
     jvmArgs("-Djvmdg.debug=true")
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
+    }
 }
 
-tasks.register("jarInJar", Jar::class.java) {
+val jarInJar by tasks.registering(Jar::class) {
+    group = "jvmdg"
     dependsOn(tasks.shadowJar)
 
     archiveClassifier.set("jij")
@@ -111,15 +136,7 @@ tasks.register("jarInJar", Jar::class.java) {
 }
 
 tasks.compileJava {
-    sourceCompatibility = JavaVersion.VERSION_1_7.toString()
-    targetCompatibility = JavaVersion.VERSION_1_7.toString()
-
     options.encoding = "UTF-8"
-
-    var version = 7
-    if (JavaVersion.current().isJava9Compatible()) {
-        options.release.set(version)
-    }
 }
 
 publishing {
