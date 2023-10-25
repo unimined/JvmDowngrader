@@ -11,16 +11,4 @@ public @interface Stub {
 
     Ref ref() default @Ref("");
 
-    Class<?>[] include() default {};
-
-    boolean subtypes() default false;
-
-    boolean subtypesOnly() default false;
-
-    boolean returnDecendant() default false;
-
-    boolean defaultMethod() default false;
-
-    boolean needsRuntime() default false;
-
 }

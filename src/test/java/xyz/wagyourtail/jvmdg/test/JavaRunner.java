@@ -234,7 +234,9 @@ public class JavaRunner {
         V17,
         V18,
         V19,
-        V20;
+        V20,
+        V21,
+        V22;
 
         public int getMajorVersion() {
             return this.ordinal() + 1;

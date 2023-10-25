@@ -10,12 +10,12 @@ import java.util.zip.Checksum;
 
 public class J_U_Z_Checksum {
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/zip/Checksum;"), subtypes = true)
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/zip/Checksum;"))
     public static void update(Checksum checksum, byte[] b) {
         checksum.update(b, 0, b.length);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/zip/Checksum;"), subtypes = true)
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/zip/Checksum;"))
     public static void update(Checksum checksum, ByteBuffer buffer) {
         if (buffer.hasArray()) {
             checksum.update(buffer.array(), buffer.position() + buffer.arrayOffset(), buffer.remaining());

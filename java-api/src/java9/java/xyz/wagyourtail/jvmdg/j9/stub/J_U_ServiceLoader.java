@@ -16,7 +16,7 @@ import java.util.stream.StreamSupport;
 public class J_U_ServiceLoader {
 
 
-    @Stub(opcVers = Opcodes.V9, include = ProviderImpl.class)
+    @Stub(opcVers = Opcodes.V9)
     public static <S> Stream<Provider<S>> stream(ServiceLoader<S> loader) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(loader.iterator(), 0), false)
             .map(ProviderImpl::new);

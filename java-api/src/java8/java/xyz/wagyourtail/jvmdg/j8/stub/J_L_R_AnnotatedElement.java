@@ -10,7 +10,7 @@ import java.util.List;
 
 public class J_L_R_AnnotatedElement {
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <T extends Annotation> T[] getAnnotationsByType(AnnotatedElement self, Class<T> annotationClass) {
         List<T> result = new ArrayList<>();
         for (Annotation annotation : self.getAnnotations()) {
@@ -21,7 +21,7 @@ public class J_L_R_AnnotatedElement {
         return (T[]) result.toArray(new Annotation[0]);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <T extends Annotation> T getDeclaredAnnotation(AnnotatedElement self, Class<T> annotationClass) {
         for (Annotation annotation : self.getDeclaredAnnotations()) {
             if (annotation.annotationType().equals(annotationClass)) {
@@ -31,7 +31,7 @@ public class J_L_R_AnnotatedElement {
         return null;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <T extends Annotation> T[] getDeclaredAnnotationsByType(AnnotatedElement self, Class<T> annotationClass) {
         List<T> result = new ArrayList<>();
         for (Annotation annotation : self.getDeclaredAnnotations()) {

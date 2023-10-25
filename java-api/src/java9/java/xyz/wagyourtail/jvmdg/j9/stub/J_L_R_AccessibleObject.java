@@ -17,7 +17,7 @@ public class J_L_R_AccessibleObject {
         }
     }
 
-    @Stub(opcVers = Opcodes.V9, include = CallingClass.class)
+    @Stub(opcVers = Opcodes.V9)
     public static boolean canAccess(AccessibleObject obj, Object target) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         if (!Member.class.isInstance(obj)) {
             return obj.isAccessible();

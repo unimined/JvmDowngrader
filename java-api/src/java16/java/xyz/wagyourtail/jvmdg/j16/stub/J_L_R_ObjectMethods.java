@@ -7,14 +7,14 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Replace;
+import xyz.wagyourtail.jvmdg.version.Modify;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class J_L_R_ObjectMethods {
 
-    @Replace(javaVersion = Opcodes.V16, ref = @Ref(value = "java/lang/runtime/ObjectMethods", member = "bootstrap", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"), idBSM = true)
+    @Modify(javaVersion = Opcodes.V16, ref = @Ref(value = "java/lang/runtime/ObjectMethods", member = "bootstrap", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"))
     public static void bootstrap(MethodNode mnode, int i, ClassNode cnode) {
         var indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         var recordClass = (Type) indy.bsmArgs[0];
@@ -55,7 +55,7 @@ public class J_L_R_ObjectMethods {
         var notEqual = new Label();
         // if (obj != null) {
         visitor.visitVarInsn(Opcodes.ALOAD, 1);
-        visitor.visitJumpInsn(Opcodes.IFNONNULL, notEqual);
+        visitor.visitJumpInsn(Opcodes.IFNULL, notEqual);
         // if (obj instanceof clazz) {
         visitor.visitVarInsn(Opcodes.ALOAD, 1);
         visitor.visitTypeInsn(Opcodes.INSTANCEOF, recordClass.getInternalName());
@@ -96,7 +96,7 @@ public class J_L_R_ObjectMethods {
                         "(Ljava/lang/Object;Ljava/lang/Object;)Z",
                         false
                     );
-                    visitor.visitJumpInsn(Opcodes.IFNE, notEqual);
+                    visitor.visitJumpInsn(Opcodes.IFEQ, notEqual);
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + type.getSort());
             }

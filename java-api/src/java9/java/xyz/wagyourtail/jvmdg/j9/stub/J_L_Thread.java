@@ -14,7 +14,7 @@ public class J_L_Thread {
         Thread.yield();
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref(value = "Ljava/lang/Thread", member = "<init>"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref(value = "Ljava/lang/Thread;", member = "<init>"))
     public static Thread init(ThreadGroup group, Runnable target, String name, long stackSize, boolean inheritThreadLocals) throws IllegalAccessException, NoSuchFieldException {
         if (inheritThreadLocals) {
             return new Thread(group, target, name, stackSize);

@@ -8,7 +8,7 @@ import java.util.Objects;
 
 public class J_L_Iterable {
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static void forEach(Iterable<?> iterable, J_U_F_Consumer<?> action) {
         Objects.requireNonNull(action);
         for (Object o : iterable) {
@@ -16,7 +16,7 @@ public class J_L_Iterable {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static J_U_Spliterator<?> spliterator(Iterable<?> iterable) {
         return J_U_Spliterators.spliteratorUnknownSize(iterable.iterator(), 0);
     }

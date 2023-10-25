@@ -36,4 +36,15 @@ public class Utils {
         return trimmed;
     }
 
+    public static int getCurrentClassVersion() {
+        String version = System.getProperty("java.class.version");
+        if (version != null) {
+            try {
+                return Integer.parseInt(version.split("\\.")[0]);
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+        }
+        throw new UnsupportedOperationException("Unable to determine current class version");
+    }
 }

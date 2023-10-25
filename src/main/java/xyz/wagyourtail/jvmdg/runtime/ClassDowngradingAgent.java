@@ -1,7 +1,7 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
+import org.objectweb.asm.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
-import xyz.wagyourtail.jvmdg.cursed.UnsafeWrapper;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -12,7 +12,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -54,14 +53,35 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
         }
     }
 
+    public byte[] retransformCodeSource(byte[] bytes) {
+        ClassReader reader = new ClassReader(bytes);
+        ClassWriter writer = new ClassWriter(reader, 0);
+        ClassVisitor visitor = new ClassVisitor(Opcodes.ASM9, writer) {
+            @Override
+            public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                if (name.equals("<init>")) {
+                    return new MethodVisitor(api, super.visitMethod(access, name, descriptor, signature, exceptions)) {
+                        @Override
+                        public void visitCode() {
+                            super.visitCode();
+                            visitInsn(Opcodes.ACONST_NULL);
+                            visitVarInsn(Opcodes.ASTORE, 2);
+                        }
+                    };
+                } else {
+                    return super.visitMethod(access, name, descriptor, signature, exceptions);
+                }
+            }
+        };
+        reader.accept(visitor, 0);
+        return writer.toByteArray();
+    }
+
     @Override
     public byte[] transform(final ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] bytes) throws IllegalClassFormatException {
         try {
-            if (protectionDomain != null) {
-                // remove signers
-                UnsafeWrapper.putObject(protectionDomain.getCodeSource(), UnsafeWrapper.objectFieldOffset(CodeSource.class.getDeclaredField("signers")), null);
-                UnsafeWrapper.putObject(protectionDomain.getCodeSource(), UnsafeWrapper.objectFieldOffset(CodeSource.class.getDeclaredField("certs")), null);
-                UnsafeWrapper.putObject(protectionDomain.getCodeSource(), UnsafeWrapper.objectFieldOffset(CodeSource.class.getDeclaredField("factory")), null);
+            if (className != null && className.equals("java/security/CodeSource")) {
+                return retransformCodeSource(bytes);
             }
             // check magic
             if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
@@ -78,8 +98,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             }
             LOGGER.info("Transforming " + className + " from " + version + " to " + currentVersion);
 //        if (loader instanceof DowngradingClassLoader) return bytes; // already handled
-            String internalName = className.replace('.', '/');
-            Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), bytes, new Function<String, byte[]>() {
+            Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(className), bytes, new Function<String, byte[]>() {
                 @Override
                 public byte[] apply(String s) {
                     try {

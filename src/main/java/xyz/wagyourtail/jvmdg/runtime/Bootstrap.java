@@ -9,11 +9,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.instrument.Instrumentation;
+import java.lang.instrument.UnmodifiableClassException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.util.HashSet;
 import java.util.Set;
@@ -74,7 +76,7 @@ public class Bootstrap {
     }
 
 
-    public static void premain(String args, Instrumentation instrumentation) throws IOException, URISyntaxException {
+    public static void premain(String args, Instrumentation instrumentation) throws IOException, URISyntaxException, UnmodifiableClassException {
         LOGGER.info("Starting JVMDowngrader Bootstrap in agent mode.");
         // downgrade api
         Path zip = Paths.get(ClassDowngrader.javaApi.toURI());
@@ -93,11 +95,17 @@ public class Bootstrap {
         instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(tmp.toFile()));
         // add self
         instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(ClassDowngrader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()));
-        instrumentation.addTransformer(new ClassDowngradingAgent());
+        instrumentation.addTransformer(new ClassDowngradingAgent(), true);
+        if (!instrumentation.isModifiableClass(CodeSource.class)) {
+            LOGGER.severe("CodeSource is not modifiable, this will prevent loading signed classes properly!!!");
+        } else {
+            LOGGER.info("CodeSource is modifiable, attempting to retransform it to fix code signing.");
+            instrumentation.retransformClasses(CodeSource.class);
+        }
         LOGGER.info("JVMDowngrader Bootstrap agent loaded.");
     }
 
-    public static void agentmain(String args, Instrumentation instrumentation) throws URISyntaxException, IOException {
+    public static void agentmain(String args, Instrumentation instrumentation) throws URISyntaxException, IOException, UnmodifiableClassException {
         premain(args, instrumentation);
     }
 }

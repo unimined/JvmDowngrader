@@ -10,7 +10,7 @@ import java.nio.charset.Charset;
 
 public class J_I_PrintWriter {
 
-    @Stub(opcVers = Opcodes.V10, ref = @Ref(value = "Ljava/io/PrintWriter", member = "<init>"))
+    @Stub(opcVers = Opcodes.V10, ref = @Ref(value = "Ljava/io/PrintWriter;", member = "<init>"))
     public static PrintWriter init(OutputStream out, boolean autoFlush, Charset encoding) {
         return new PrintWriter(new BufferedWriter(new OutputStreamWriter(out, encoding)), autoFlush);
     }

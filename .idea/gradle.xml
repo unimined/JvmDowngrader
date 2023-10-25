@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
@@ -10,26 +11,6 @@
             <option value="$PROJECT_DIR$/downgradetest" />
             <option value="$PROJECT_DIR$/gradle-plugin" />
             <option value="$PROJECT_DIR$/java-api" />
-          </set>
-        </option>
-      </GradleProjectSettings>
-      <GradleProjectSettings>
-        <compositeConfiguration>
-          <compositeBuild compositeDefinitionSource="SCRIPT">
-            <builds>
-              <build path="$PROJECT_DIR$/gradle-plugin" name="gradle-plugin">
-                <projects>
-                  <project path="$PROJECT_DIR$/gradle-plugin" />
-                </projects>
-              </build>
-            </builds>
-          </compositeBuild>
-        </compositeConfiguration>
-        <option name="externalProjectPath" value="$PROJECT_DIR$/gradle-plugin/test-downgrade" />
-        <option name="modules">
-          <set>
-            <option value="$PROJECT_DIR$/gradle-plugin" />
-            <option value="$PROJECT_DIR$/gradle-plugin/test-downgrade" />
           </set>
         </option>
       </GradleProjectSettings>

@@ -23,6 +23,12 @@ public record TestRecord(int a, String b, char c, Consumer<Integer> d) {
         System.out.println(components[3].getGenericSignature());
         System.out.println(components[3].getAnnotatedType().getType());
         System.out.println(components[3].getAccessor());
+        TestRecord2 tr = new TestRecord2(1, "2,=", '3');
+        System.out.println(tr);
+        System.out.println(or.equals(tr));
+        TestRecord2 tr2 = new TestRecord2(1, "2,=", '4');
+        System.out.println(tr2);
+        System.out.println(or.equals(tr2));
     }
 
 }

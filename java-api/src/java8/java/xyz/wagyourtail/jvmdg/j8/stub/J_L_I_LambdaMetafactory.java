@@ -13,7 +13,7 @@ import java.util.Set;
 
 public class J_L_I_LambdaMetafactory {
 
-    @Replace(javaVersion = Opcodes.V1_8, ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory", member = "metafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"), idBSM = true)
+    @Replace(javaVersion = Opcodes.V1_8, ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "metafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
     public static void makeLambdaInnerClass(MethodNode mnode, int i, ClassNode cnode, Set<ClassNode> extra) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         String ifName = indy.name;
@@ -53,7 +53,7 @@ public class J_L_I_LambdaMetafactory {
         mnode.instructions.remove(indy);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory", member = "altMetafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
+    @Stub(opcVers = Opcodes.V1_8, ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "altMetafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
     public static CallSite altMetafactory(MethodHandles.Lookup caller, String invokedName, MethodType invokedType, Object... args) {
         throw new UnsupportedOperationException("altMetafactory is not supported currently... because I don't know enough about how it works.");
     }

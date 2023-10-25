@@ -15,7 +15,7 @@ import java.util.stream.StreamSupport;
 
 public class J_U_S_Stream {
 
-    @Stub(opcVers = Opcodes.V9, include = TakeWhileStream.class)
+    @Stub(opcVers = Opcodes.V9)
     public static <T> Stream<T> takeWhile(Stream<T> stream, Predicate<T> predicate) {
         return new TakeWhileStream<>(stream.iterator(), predicate).stream();
     }
@@ -37,7 +37,7 @@ public class J_U_S_Stream {
             StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/stream/Stream;"), include = {StreamIterator.class})
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/stream/Stream;"))
     public static <T> Stream<T> iterate(T seed, Predicate<T> hasNext, UnaryOperator<T> next) {
         return new StreamIterator<>(seed, hasNext, next).stream();
     }

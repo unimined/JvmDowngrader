@@ -13,17 +13,17 @@ import java.util.stream.Stream;
 
 public class J_U_Scanner {
 
-    @Stub(opcVers = Opcodes.V9, include = {ScannerStream.class, IteratorSupport.class})
+    @Stub(opcVers = Opcodes.V9)
     public static Stream<String> tokens(Scanner scanner) {
         return new ScannerStream(scanner, null).tokens();
     }
 
-    @Stub(opcVers = Opcodes.V9, include = {ScannerStream.class, IteratorSupport.class})
+    @Stub(opcVers = Opcodes.V9)
     public static Stream<MatchResult> findAll(Scanner scanner, Pattern pattern) {
         return new ScannerStream(scanner, pattern).findAll();
     }
 
-    @Stub(opcVers = Opcodes.V9, include = {ScannerStream.class, IteratorSupport.class})
+    @Stub(opcVers = Opcodes.V9)
     public static Stream<MatchResult> findAll(Scanner scanner, String patternString) {
         return new ScannerStream(scanner, Pattern.compile(patternString)).findAll();
     }

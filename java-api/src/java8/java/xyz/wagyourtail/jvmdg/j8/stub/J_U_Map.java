@@ -50,7 +50,7 @@ public class J_U_Map {
         };
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public <K, V> V getOrDefault(Map<K, V> self, Object key, V defaultValue) {
         V v;
         return (((v = self.get(key)) != null) || self.containsKey(key))
@@ -58,7 +58,7 @@ public class J_U_Map {
                 : defaultValue;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public <K, V> void forEach(Map<K, V> self, J_U_BiConsumer<? super K, ? super V> action) {
         for (Map.Entry<K, V> entry : self.entrySet()) {
             K k;
@@ -67,7 +67,7 @@ public class J_U_Map {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public void replaceAll(Map<?, ?> self, J_U_BiFunction<?, ?, ?> function) {
         for (Map.Entry<?, ?> entry : self.entrySet()) {
             Object k;
@@ -76,7 +76,7 @@ public class J_U_Map {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public <K, V> V putIfAbsent(Map<K, V> self, K key, V value) {
         V v = self.get(key);
         if (v == null) {
@@ -85,7 +85,7 @@ public class J_U_Map {
         return v;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public <K, V> boolean remove(Map<K, V> self, Object key, Object value) {
         Object curValue = self.get(key);
         if (!Objects.equals(curValue, value) ||
@@ -96,7 +96,7 @@ public class J_U_Map {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public <K, V> boolean replace(Map<K, V> self, K key, V oldValue, V newValue) {
         Object curValue = self.get(key);
         if (!Objects.equals(curValue, oldValue) ||
@@ -107,7 +107,7 @@ public class J_U_Map {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public <K, V> V replace(Map<K, V> self, K key, V value) {
         V curValue;
         if (((curValue = self.get(key)) != null) || self.containsKey(key)) {
@@ -116,7 +116,7 @@ public class J_U_Map {
         return curValue;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public <K, V> V computeIfAbsent(Map<K, V> self, K key, J_U_Function<? super K, ? extends V> mappingFunction) {
         V v;
         if ((v = self.get(key)) == null) {
@@ -129,7 +129,7 @@ public class J_U_Map {
         return v;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public <K, V> V computeIfPresent(Map<K, V> self, K key, J_U_BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         V oldValue;
         if ((oldValue = self.get(key)) != null) {
@@ -146,7 +146,7 @@ public class J_U_Map {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public <K, V> V compute(Map<K, V> self, K key, J_U_BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         V oldValue = self.get(key);
         V newValue = remappingFunction.apply(key, oldValue);
@@ -163,7 +163,7 @@ public class J_U_Map {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public <K, V> V merge(Map<K, V> self, K key, V value, J_U_BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         V oldValue = self.get(key);
         V newValue = (oldValue == null) ? value :

@@ -2,8 +2,10 @@ package xyz.wagyourtail.jvmdg;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 
@@ -21,7 +23,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ClassDowngrader {
-    public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(VersionProvider.getCurrentClassVersion());
+    public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(Utils.getCurrentClassVersion());
     public static final URL javaApi = findJavaApi();
     public static final DowngradingClassLoader classLoader = new DowngradingClassLoader(new URL[]{javaApi}, ClassDowngrader.class.getClassLoader());
     private static final Map<Integer, VersionProvider> downgraders = collectProviders();
@@ -32,7 +34,7 @@ public class ClassDowngrader {
     }
 
     public static ClassDowngrader downgradeTo(int version) {
-        if (VersionProvider.getCurrentClassVersion() != version) {
+        if (Utils.getCurrentClassVersion() != version) {
             return new ClassDowngrader(version);
         } else {
             return currentVersionDowngrader;
@@ -115,7 +117,40 @@ public class ClassDowngrader {
         }
     }
 
-    protected Set<ClassNode> downgrade(ClassNode clazz, Function<String, ClassNode> getReadOnly) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException {
+    public List<Type> getSupertypes(int version, Type type) throws IOException {
+        for (int vers = version; vers > target; vers--) {
+            VersionProvider downgrader = downgraders.get(vers);
+            if (downgrader == null) {
+                throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
+            }
+            downgrader.ensureInit();
+            Type stubbed = downgrader.stubClass(type);
+            if (!stubbed.equals(type)) {
+                try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
+                    if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
+                    ClassReader reader = new ClassReader(stream);
+                    List<Type> types = new ArrayList<>();
+                    types.add(Type.getObjectType(reader.getSuperName()));
+                    for (String anInterface : reader.getInterfaces()) {
+                        types.add(Type.getObjectType(anInterface));
+                    }
+                    return types;
+                }
+            }
+        }
+        try (InputStream stream = classLoader.getResourceAsStream(type.getInternalName() + ".class")) {
+            if (stream == null) return null;
+            ClassReader reader = new ClassReader(stream);
+            List<Type> types = new ArrayList<>();
+            types.add(Type.getObjectType(reader.getSuperName()));
+            for (String anInterface : reader.getInterfaces()) {
+                types.add(Type.getObjectType(anInterface));
+            }
+            return types;
+        }
+    }
+
+    protected Set<ClassNode> downgrade(ClassNode clazz, Function<String, ClassNode> getReadOnly) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IOException {
         Set<ClassNode> classes = new HashSet<>();
         classes.add(clazz);
         int version = clazz.version;
@@ -176,7 +211,7 @@ public class ClassDowngrader {
                 outputs.put(c.name, classNodeToBytes(c, getExtraRead));
             }
         } catch (InvocationTargetException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException |
-                 InstantiationException e) {
+                 InstantiationException | IOException e) {
             throw new RuntimeException(e);
         }
         if (Constants.DEBUG) {

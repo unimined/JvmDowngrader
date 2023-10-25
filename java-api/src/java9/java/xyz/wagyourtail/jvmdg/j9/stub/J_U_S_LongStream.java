@@ -15,7 +15,7 @@ import java.util.stream.StreamSupport;
 
 public class J_U_S_LongStream {
 
-    @Stub(opcVers = Opcodes.V9, include = TakeWhileStream.class)
+    @Stub(opcVers = Opcodes.V9)
     public static LongStream takeWhile(LongStream stream, LongPredicate predicate) {
         return new TakeWhileStream(stream.iterator(), predicate).stream();
     }
@@ -37,7 +37,7 @@ public class J_U_S_LongStream {
             StreamSupport.longStream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/stream/LongStream;"), include = {LongIterator.class})
+    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/stream/LongStream;"))
     public static LongStream iterate(int seed, LongPredicate hasNext, IntUnaryOperator next) {
         return new LongIterator(seed, hasNext, next).stream();
     }

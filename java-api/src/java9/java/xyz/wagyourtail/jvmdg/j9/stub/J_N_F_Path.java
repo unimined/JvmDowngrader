@@ -32,46 +32,34 @@ public class J_N_F_Path {
 
     // defaults were added in j9, so...
 
-    @Stub(opcVers = Opcodes.V9, subtypes = true)
+    @Stub(opcVers = Opcodes.V9)
     public static Path resolve(Path self, String other) throws Throwable {
         try {
             return (Path) resolveString.bindTo(self).invokeExact(other);
-        } catch (Throwable throwable) {
-            if (throwable instanceof AbstractMethodError) {
-                return self.resolve(self.getFileSystem().getPath(other));
-            } else {
-                throw throwable;
-            }
+        } catch (AbstractMethodError throwable) {
+            return self.resolve(self.getFileSystem().getPath(other));
         }
     }
 
-    @Stub(opcVers = Opcodes.V9, subtypes = true)
+    @Stub(opcVers = Opcodes.V9)
     public static Path resolveSibling(Path self, Path other) throws Throwable {
         try {
             return (Path) resolveSiblingPath.bindTo(self).invokeExact(other);
-        } catch (Throwable throwable) {
-            if (throwable instanceof AbstractMethodError) {
-                Path parent = self.getParent();
-                if (parent == null) {
-                    return other;
-                }
-                return parent.resolve(other);
-            } else {
-                throw throwable;
+        } catch (AbstractMethodError throwable) {
+            Path parent = self.getParent();
+            if (parent == null) {
+                return other;
             }
+            return parent.resolve(other);
         }
     }
 
-    @Stub(opcVers = Opcodes.V9, subtypes = true)
+    @Stub(opcVers = Opcodes.V9)
     public static Path resolveSibling(Path self, String other) throws Throwable {
         try {
             return (Path) resolveSiblingString.bindTo(self).invokeExact(other);
-        } catch (Throwable throwable) {
-            if (throwable instanceof AbstractMethodError) {
-                return resolveSibling(self, self.getFileSystem().getPath(other));
-            } else {
-                throw throwable;
-            }
+        } catch (AbstractMethodError throwable) {
+            return resolveSibling(self, self.getFileSystem().getPath(other));
         }
     }
 

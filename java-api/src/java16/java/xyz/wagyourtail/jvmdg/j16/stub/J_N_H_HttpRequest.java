@@ -50,7 +50,7 @@ public class J_N_H_HttpRequest {
         return builder;
     }
 
-    @Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/net/http/HttpRequest;"), include = {AggregatePublisher.class})
+    @Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/net/http/HttpRequest;"))
     public static HttpRequest.BodyPublisher concat(HttpRequest.BodyPublisher... publishers) {
         if (publishers.length == 0) {
             return HttpRequest.BodyPublishers.noBody();

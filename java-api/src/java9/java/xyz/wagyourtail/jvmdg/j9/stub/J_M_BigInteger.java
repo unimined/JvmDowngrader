@@ -15,12 +15,12 @@ public class J_M_BigInteger {
     @Stub(opcVers = Opcodes.V9, ref = @Ref("java/lang/Integer"))
     public static final BigInteger TWO = BigInteger.valueOf(2);
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref(value = "Ljava/math/BigInteger", member = "<init>"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>"))
     public static BigInteger init(byte[] val, int off, int len) {
         return new BigInteger(Arrays.copyOfRange(val, off, off + len));
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref(value = "Ljava/math/BigInteger", member = "<init>"))
+    @Stub(opcVers = Opcodes.V9, ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>"))
     public static BigInteger init(int signum, byte[] magnitude, int off, int len) {
         return new BigInteger(signum, Arrays.copyOfRange(magnitude, off, off + len));
     }

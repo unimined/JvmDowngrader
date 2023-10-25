@@ -44,7 +44,7 @@ public class J_U_R_Matcher {
         return buffer.toString();
     }
 
-    @Stub(opcVers = Opcodes.V9, include = IteratorSupport.class)
+    @Stub(opcVers = Opcodes.V9)
     public static Stream<MatchResult> results(Matcher m) {
         return new IteratorSupport<>(m::find, m::toMatchResult).stream();
     }

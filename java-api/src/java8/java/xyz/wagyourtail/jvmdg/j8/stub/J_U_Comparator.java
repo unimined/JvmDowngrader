@@ -14,12 +14,12 @@ import java.util.Objects;
 
 public class J_U_Comparator {
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <T> Comparator<T> reversed(Comparator<T> self) {
         return Collections.reverseOrder(self);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <T> Comparator<T> thenComparing(final Comparator<T> self, final Comparator<? super T> other) {
         Objects.requireNonNull(other);
         return new Comparator<T>() {
@@ -31,32 +31,32 @@ public class J_U_Comparator {
         };
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <T> Comparator<T> thenComparing(final Comparator<T> self, final J_U_F_Function<? super T, ? extends T> keyExtractor, final Comparator<? super T> keyComparator) {
         Objects.requireNonNull(keyExtractor);
         Objects.requireNonNull(keyComparator);
         return thenComparing(self, comparing(keyExtractor, keyComparator));
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <T, U extends Comparable<? super U>> Comparator<T> comparing(final Comparator<T> self, final J_U_F_Function<? super T, ? extends U> keyExtractor) {
         Objects.requireNonNull(keyExtractor);
         return thenComparing(self, comparing(keyExtractor));
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <T> Comparator<T> thenComparingInt(Comparator<T> self, J_U_F_ToIntFunction keyExtractor) {
         Objects.requireNonNull(keyExtractor);
         return thenComparing(self, comparingInt(keyExtractor));
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <T> Comparator<T> thenComparingLong(Comparator<T> self, J_U_F_ToLongFunction keyExtractor) {
         Objects.requireNonNull(keyExtractor);
         return thenComparing(self, comparingLong(keyExtractor));
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
+    @Stub(opcVers = Opcodes.V1_8)
     public static <T> Comparator<T> thenComparingDouble(Comparator<T> self, J_U_F_ToDoubleFunction keyExtractor) {
         Objects.requireNonNull(keyExtractor);
         return thenComparing(self, comparingDouble(keyExtractor));

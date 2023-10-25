@@ -28,7 +28,7 @@ public class J_T_LocalDate {
         return LongStream.range(startEpochDay, endEpochDay).mapToObj(LocalDate::ofEpochDay);
     }
 
-    @Stub(opcVers = Opcodes.V9, include = DatesUntil.class)
+    @Stub(opcVers = Opcodes.V9)
     public static Stream<LocalDate> datesUntil(LocalDate self, LocalDate endExclusive, Period step) {
         return new DatesUntil(self, endExclusive, step).dateStream();
     }

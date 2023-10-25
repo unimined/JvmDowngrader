@@ -67,6 +67,7 @@ tasks.jar {
                 "Main-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
                 "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
                 "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+                "Can-Retransform-Classes" to "true",
         )
     }
 }
@@ -97,6 +98,7 @@ tasks.register("jarInJar", Jar::class.java) {
             "Main-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            "Can-Retransform-Classes" to "true",
         )
     }
 
