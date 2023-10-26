@@ -53,7 +53,7 @@ public class ZipDowngrader {
                 Files.walkFileTree(zipfs.getPath("/"), new FileVisitor<Path>() {
                     @Override
                     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-                        if (dir.startsWith("META-INF"))
+                        if (dir.startsWith("META-INF/versions"))
                             return FileVisitResult.SKIP_SUBTREE;
                         return FileVisitResult.CONTINUE;
                     }

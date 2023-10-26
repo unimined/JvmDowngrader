@@ -51,15 +51,6 @@ public class Bootstrap {
         }
     }
 
-//    fun Path.getSha1(): String {
-//        val digestSha1 = MessageDigest.getInstance("SHA-1")
-//        inputStream().use {
-//            digestSha1.update(it.readBytes())
-//        }
-//        val hashBytes = digestSha1.digest()
-//        return hashBytes.joinToString("") { String.format("%02x", it) }
-//    }
-
     public static String sha1(Path p) {
         try (InputStream stream = Files.newInputStream(p)) {
             MessageDigest digestSha1 = MessageDigest.getInstance("SHA-1");
@@ -88,13 +79,17 @@ public class Bootstrap {
             downgrade = true;
         }
         if (downgrade) {
+            for (File file : tmp.getParent().toFile().listFiles()) {
+                if (file.isDirectory()) continue;
+                file.delete();
+            }
             Files.createDirectories(tmp.getParent());
             ZipDowngrader.downgradeZip(ClassDowngrader.currentVersionDowngrader, zip, new HashSet<URL>(), tmp);
-            // TODO: remove other files starting with downgraded-java-api
         }
         instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(tmp.toFile()));
         // add self
-        instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(ClassDowngrader.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()));
+        URL self = ClassDowngrader.class.getProtectionDomain().getCodeSource().getLocation();
+        instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(self.toURI().getPath()));
         instrumentation.addTransformer(new ClassDowngradingAgent(), true);
         if (!instrumentation.isModifiableClass(CodeSource.class)) {
             LOGGER.severe("CodeSource is not modifiable, this will prevent loading signed classes properly!!!");

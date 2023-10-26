@@ -46,7 +46,9 @@ sourceSets {
 }
 
 dependencies {
-    implementation(project(":"))
+    implementation(project(":")) {
+        isTransitive = false
+    }
 }
 
 for (vers in fromVersion..toVersion) {

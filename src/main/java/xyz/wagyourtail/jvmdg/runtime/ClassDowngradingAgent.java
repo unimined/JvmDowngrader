@@ -13,15 +13,18 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.ProtectionDomain;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ClassDowngradingAgent implements ClassFileTransformer {
     public static final MethodHandle defineClass;
     private static final Logger LOGGER = Logger.getLogger("JVMDowngrader/Agent");
-    public static final boolean DUMP_CLASSES = Boolean.parseBoolean(System.getProperty("jvmdg.dump", "true"));
+    public static final boolean DUMP_CLASSES = Boolean.parseBoolean(System.getProperty("jvmdg.dump", "false"));
 
     static {
         LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "false")) ? Level.WARNING : Level.OFF);
@@ -129,8 +132,10 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             }
             return bytes;
         } catch (Throwable t) {
-            LOGGER.log(Level.SEVERE, "Failed to transform " + className, t);
-            System.exit(1);
+            System.err.println("Failed to transform " + className);
+            t.printStackTrace(System.err);
+            System.err.flush();
+            System.exit(42);
             return null;
         }
     }

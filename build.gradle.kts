@@ -21,17 +21,15 @@ allprojects {
 
     dependencies {
         implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
         implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-analysis:${project.properties["asm_version"]}")
+        implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
     }
 
     tasks.jar {
         manifest {
             attributes(
                     "Manifest-Version" to "1.0",
-                    "Implementation-Title" to base.archivesName.get(),
+                    "Implementation-Title" to project.name,
                     "Implementation-Version" to project.version,
             )
         }
@@ -73,7 +71,7 @@ tasks.jar {
     manifest {
         attributes(
                 "Manifest-Version" to "1.0",
-                "Implementation-Title" to base.archivesName.get(),
+                "Implementation-Title" to project.name,
                 "Implementation-Version" to project.version,
                 "Main-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
                 "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
@@ -118,7 +116,7 @@ val jarInJar by tasks.registering(Jar::class) {
     manifest {
         attributes(
             "Manifest-Version" to "1.0",
-            "Implementation-Title" to base.archivesName.get(),
+            "Implementation-Title" to project.name,
             "Implementation-Version" to project.version,
             "Main-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",

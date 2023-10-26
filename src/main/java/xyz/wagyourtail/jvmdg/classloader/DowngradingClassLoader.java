@@ -1,7 +1,7 @@
 package xyz.wagyourtail.jvmdg.classloader;
 
-import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.IOException;
