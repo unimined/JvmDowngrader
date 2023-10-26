@@ -1,12 +1,13 @@
 plugins {
     java
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
     `maven-publish`
 }
 
 allprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
+    apply(plugin = "com.github.johnrengelman.shadow")
 
     version = if (project.hasProperty("version_snapshot")) "${project.properties["version"]}-SNAPSHOT" else project.properties["version"] as String
     group = project.properties["maven_group"] as String
@@ -36,23 +37,12 @@ allprojects {
     }
 }
 
-configurations {
-    create("jij")
-}
-
-sourceSets {
-    create("gradle")
-}
-
 dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
     testImplementation("com.google.code.gson:gson:2.9.0")
     testImplementation("org.apache.commons:commons-compress:1.21")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
-    "jij"(project(":java-api")) {
-        isTransitive = false
-    }
 }
 
 base {
@@ -103,6 +93,10 @@ tasks.test {
     }
 }
 
+tasks.shadowJar {
+    relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
+}
+
 val jarInJar by tasks.registering(Jar::class) {
     group = "jvmdg"
     dependsOn(tasks.shadowJar)
@@ -125,7 +119,9 @@ val jarInJar by tasks.registering(Jar::class) {
         )
     }
 
-    from(configurations["jij"]) {
+    dependsOn(project(":java-api").tasks.shadowJar)
+
+    from(project.project(":java-api").tasks.shadowJar.get().outputs.files) {
         into("META-INF/lib")
         rename {
             "java-api.jar"
@@ -159,11 +155,11 @@ publishing {
             version = rootProject.version as String
 
             artifact(project.tasks.jar) {}
-            artifact(project.tasks.shadowJar) {
-                classifier = "all"
-            }
+//            artifact(project.tasks.shadowJar) {
+//                classifier = "all"
+//            }
             artifact(project.tasks["jarInJar"]) {
-                classifier = "all-java-api"
+                classifier = "all"
             }
         }
     }

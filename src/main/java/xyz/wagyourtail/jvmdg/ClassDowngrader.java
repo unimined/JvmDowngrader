@@ -72,13 +72,13 @@ public class ClassDowngrader {
         String version = pkg.getImplementationVersion();
         if (version.contains("SNAPSHOT")) {
             // retrieve maven metadata
-            URL url = URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/unimined/jvmdowngrader-java-api/" + version + "/maven-metadata.xml").toURL();
+            URL url = URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/maven-metadata.xml").toURL();
             // get actual latest
             try (InputStream in = url.openStream()) {
                 XMLDecoder decoder = new XMLDecoder(in);
                 Map<String, Object> metadata = (Map<String, Object>) decoder.readObject();
                 String snapshotVersion = ((Map<String, Object>) ((Map<String, Object>) metadata.get("versioning")).get("snapshot")).get("timestamp") + "-" + ((Map<String, Object>) ((Map<String, Object>) metadata.get("versioning")).get("snapshot")).get("buildNumber");
-                return URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/unimined/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + "-" + snapshotVersion + ".jar").toURL();
+                return URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + "-" + snapshotVersion + ".jar").toURL();
             }
         } else {
             File file = Constants.DIR;
@@ -89,7 +89,7 @@ public class ClassDowngrader {
                 return file.toURI().toURL();
             }
 
-            URL url = URI.create("https://maven.wagyourtail.xyz/releases/xyz/wagyourtail/unimined/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + ".jar").toURL();
+            URL url = URI.create("https://maven.wagyourtail.xyz/releases/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + ".jar").toURL();
             // download
             try (InputStream in = url.openStream()) {
                 Files.copy(in, file.toPath(), StandardCopyOption.REPLACE_EXISTING);

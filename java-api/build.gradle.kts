@@ -12,7 +12,6 @@ buildscript {
     }
 }
 
-
 fun SourceSet.inputOf(sourceSet: SourceSet) {
     compileClasspath += sourceSet.compileClasspath
     runtimeClasspath += sourceSet.runtimeClasspath
@@ -110,6 +109,13 @@ tasks.compileTestJava {
 
 tasks.jar {
     from(*sourceSets.toList().map { it.output }.toTypedArray())
+}
+
+tasks.shadowJar {
+    from(*sourceSets.toList().map { it.output }.toTypedArray())
+    archiveClassifier.set("jij")
+    relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
+    configurations = listOf()
 }
 
 fun JavaCompile.configCompile(version: JavaVersion) {
