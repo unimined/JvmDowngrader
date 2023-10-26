@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
 import org.objectweb.asm.*;
+import sun.misc.Unsafe;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
@@ -10,6 +11,7 @@ import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.ProtectionDomain;
@@ -34,8 +36,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
         Method md;
         try {
             md = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
-            md.setAccessible(true);
-            defineClass = MethodHandles.lookup().unreflect(md);
+            defineClass = Utils.getImplLookup().unreflect(md);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }

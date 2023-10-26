@@ -90,8 +90,8 @@ public class Bootstrap {
         // add self
         URL self = ClassDowngrader.class.getProtectionDomain().getCodeSource().getLocation();
         instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(self.toURI().getPath()));
-        instrumentation.addTransformer(new ClassDowngradingAgent(), true);
-        if (!instrumentation.isModifiableClass(CodeSource.class)) {
+        instrumentation.addTransformer(new ClassDowngradingAgent(), instrumentation.isRetransformClassesSupported());
+        if (!instrumentation.isModifiableClass(CodeSource.class) || !instrumentation.isRetransformClassesSupported()) {
             LOGGER.severe("CodeSource is not modifiable, this will prevent loading signed classes properly!!!");
         } else {
             LOGGER.info("CodeSource is modifiable, attempting to retransform it to fix code signing.");
