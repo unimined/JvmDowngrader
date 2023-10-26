@@ -233,7 +233,7 @@ public class ClassDowngrader {
             public String apply(String s) {
                 byte[] b = getExtraRead.apply(s);
                 if (b == null) return null;
-                return bytesToClassNode(b).superName;
+                return bytesToClassNode(b, ClassReader.SKIP_CODE).superName;
             }
         });
         node.accept(cw);
