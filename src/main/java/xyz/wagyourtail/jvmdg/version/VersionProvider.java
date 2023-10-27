@@ -426,6 +426,14 @@ public abstract class VersionProvider {
     public ClassNode insertAbstractMethods(ClassNode clazz, Set<ClassNode> extra, IOFunction<Type, List<Type>> getSuperTypes) throws IOException {
         Map<MemberNameAndDesc, Method> members = getStubMapper(Type.getObjectType(clazz.name), getSuperTypes).getAbstracts();
         for (Map.Entry<MemberNameAndDesc, Method> member : members.entrySet()) {
+            boolean contains = false;
+            for (MethodNode method : clazz.methods) {
+                if (method.name.equals(member.getKey().getName()) && method.desc.equals(member.getKey().getDesc().getDescriptor())) {
+                    contains = true;
+                    break;
+                }
+            }
+            if (contains) continue;
             MethodVisitor mv = clazz.visitMethod(Opcodes.ACC_PUBLIC, member.getKey().getName(), member.getKey().getDesc().getDescriptor(), null, null);
             mv.visitCode();
             // try {
