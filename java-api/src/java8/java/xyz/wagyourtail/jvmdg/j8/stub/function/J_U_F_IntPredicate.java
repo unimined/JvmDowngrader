@@ -19,7 +19,7 @@ public interface J_U_F_IntPredicate {
 
     class IntPredicateDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_IntPredicate and(final J_U_F_IntPredicate self, final J_U_F_IntPredicate other) {
             return new J_U_F_IntPredicate() {
                 @Override
@@ -44,7 +44,7 @@ public interface J_U_F_IntPredicate {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_IntPredicate negate(final J_U_F_IntPredicate self) {
             return new J_U_F_IntPredicate() {
                 @Override
@@ -69,7 +69,7 @@ public interface J_U_F_IntPredicate {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_IntPredicate or(final J_U_F_IntPredicate self, final J_U_F_IntPredicate other) {
             return new J_U_F_IntPredicate() {
                 @Override

@@ -19,7 +19,7 @@ public interface J_U_F_DoubleUnaryOperator {
 
     class DoubleUnaryOperatorDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_DoubleUnaryOperator compose(final J_U_F_DoubleUnaryOperator f1, final J_U_F_DoubleUnaryOperator f2) {
             Objects.requireNonNull(f2);
             return new J_U_F_DoubleUnaryOperator() {
@@ -40,7 +40,7 @@ public interface J_U_F_DoubleUnaryOperator {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_DoubleUnaryOperator andThen(final J_U_F_DoubleUnaryOperator f1, final J_U_F_DoubleUnaryOperator f2) {
             Objects.requireNonNull(f2);
             return compose(f2, f1);
@@ -49,7 +49,7 @@ public interface J_U_F_DoubleUnaryOperator {
 
     class DoubleUnaryOperatorStatic {
 
-        @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/DoubleUnaryOperator;"))
+        @Stub(ref = @Ref("Ljava/util/function/DoubleUnaryOperator;"))
         public static J_U_F_DoubleUnaryOperator identity() {
             return new J_U_F_DoubleUnaryOperator() {
                 @Override

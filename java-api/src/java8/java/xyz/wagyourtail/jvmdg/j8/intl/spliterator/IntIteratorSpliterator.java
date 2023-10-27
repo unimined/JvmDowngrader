@@ -1,15 +1,11 @@
 package xyz.wagyourtail.jvmdg.j8.intl.spliterator;
 
-import xyz.wagyourtail.jvmdg.j8.stub.J_U_Iterator;
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_PrimitiveIterator;
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_Spliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
 
-import java.util.Collection;
 import java.util.Comparator;
-import java.util.Iterator;
-import java.util.PrimitiveIterator;
 
 public class IntIteratorSpliterator implements J_U_Spliterator.OfInt {
     static final int BATCH_UNIT = 1 << 10;

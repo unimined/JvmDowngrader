@@ -2,8 +2,8 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
+import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Replace;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.invoke.CallSite;
@@ -13,7 +13,7 @@ import java.util.Set;
 
 public class J_L_I_LambdaMetafactory {
 
-    @Replace(javaVersion = Opcodes.V1_8, ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "metafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
+    @Modify(javaVersion = Opcodes.V1_8, ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "metafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
     public static void makeLambdaInnerClass(MethodNode mnode, int i, ClassNode cnode, Set<ClassNode> extra) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         String ifName = indy.name;

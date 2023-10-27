@@ -127,7 +127,7 @@ public class ClassMapping {
             if (!runtimeAvailable && pair.getSecond().requiresRuntime()) {
                 System.err.println("WARNING: " + m + " requires runtime transformation but runtime is not available...");
             }
-            if (pair.getSecond().wasAbstract()) {
+            if (pair.getSecond().abstractDefault()) {
                 // these are special and should be treated differently, as we will implement them on the newer classes in a seperate transform
                 return null;
             }
@@ -177,7 +177,7 @@ public class ClassMapping {
             methods.putAll(parent.getAbstracts());
         }
         for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> entry : methodStub.entrySet()) {
-            if (entry.getValue().getSecond().wasAbstract()) {
+            if (entry.getValue().getSecond().abstractDefault()) {
                 methods.put(entry.getKey(), entry.getValue().getFirst());
             }
         }

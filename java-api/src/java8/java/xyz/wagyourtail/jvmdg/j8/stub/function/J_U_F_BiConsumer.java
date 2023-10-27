@@ -17,7 +17,7 @@ public interface J_U_F_BiConsumer<T, U> {
 
     class BiConsumerDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static <T, U> J_U_F_BiConsumer<T, U> andThen(final J_U_F_BiConsumer<T, U> c1, final J_U_F_BiConsumer<? super T, ? super U> c2) {
             return new J_U_F_BiConsumer<T, U>() {
                 @Override

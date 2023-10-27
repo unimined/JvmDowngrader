@@ -1,14 +1,14 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
+import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntSupplier;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.NoSuchElementException;
-import java.util.function.Supplier;
 
-@Stub(opcVers = 8, ref = @Ref("java/util/Optionalint"))
+@Stub(ref = @Ref("java/util/OptionalInt"))
 public class J_U_OptionalInt {
 
     private static final J_U_OptionalInt EMPTY = new J_U_OptionalInt();
@@ -70,7 +70,7 @@ public class J_U_OptionalInt {
         return value;
     }
 
-    public<X extends Throwable> int orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
+    public<X extends Throwable> int orElseThrow(J_U_F_Supplier<? extends X> exceptionSupplier) throws X {
         if (isPresent) {
             return value;
         } else {
@@ -94,7 +94,7 @@ public class J_U_OptionalInt {
 
     @Override
     public int hashCode() {
-        return isPresent ? Integer.hashCode(value) : 0;
+        return isPresent ? value : 0;
     }
 
     @Override

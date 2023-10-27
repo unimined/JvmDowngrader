@@ -15,7 +15,7 @@ public interface J_U_F_IntConsumer {
 
     class IntConsumerDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_IntConsumer andThen(final J_U_F_IntConsumer self, final J_U_F_IntConsumer after) {
             return new J_U_F_IntConsumer() {
                 @Override

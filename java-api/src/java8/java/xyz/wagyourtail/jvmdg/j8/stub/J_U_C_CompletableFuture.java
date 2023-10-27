@@ -681,7 +681,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
         return this;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/concurrent/CompletableFuture$AsynchronousCompletionTask"))
+    @Stub(ref = @Ref("java/util/concurrent/CompletableFuture$AsynchronousCompletionTask"))
     public interface AsynchronousCompletionTask {
     }
 

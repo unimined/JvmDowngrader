@@ -19,7 +19,7 @@ public interface J_U_F_LongUnaryOperator {
 
     class LongUnaryOperatorDefault {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_LongUnaryOperator compose(final J_U_F_LongUnaryOperator f1, final J_U_F_LongUnaryOperator f2) {
             Objects.requireNonNull(f2);
             return new J_U_F_LongUnaryOperator() {
@@ -40,7 +40,7 @@ public interface J_U_F_LongUnaryOperator {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_LongUnaryOperator andThen(final J_U_F_LongUnaryOperator f1, final J_U_F_LongUnaryOperator f2) {
             Objects.requireNonNull(f2);
             return compose(f2, f1);
@@ -50,7 +50,7 @@ public interface J_U_F_LongUnaryOperator {
 
     class LongUnaryOperatorStatic {
 
-        @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/LongUnaryOperator;"))
+        @Stub(ref = @Ref("Ljava/util/function/LongUnaryOperator;"))
         public static J_U_F_LongUnaryOperator identity() {
             return new J_U_F_LongUnaryOperator() {
                 @Override

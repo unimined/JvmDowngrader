@@ -42,12 +42,12 @@ public class J_U_C_ForkJoinPool {
         COMMON_POOL = new ForkJoinPool(p, fac, handler, true);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/concurrent/ForkJoinPool"))
+    @Stub(ref = @Ref("java/util/concurrent/ForkJoinPool"))
     public static ForkJoinPool commonPool() {
         return COMMON_POOL;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/concurrent/ForkJoinPool"))
+    @Stub(ref = @Ref("java/util/concurrent/ForkJoinPool"))
     public static int getCommonPoolParallelism() {
         return COMMON_POOL.getParallelism();
     }

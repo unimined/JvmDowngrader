@@ -21,7 +21,7 @@ public interface J_U_F_Predicate<T> {
 
     class PredicateDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static <T> J_U_F_Predicate<T> and(final J_U_F_Predicate<T> self, final J_U_F_Predicate<? super T> other) {
             return new J_U_F_Predicate<T>() {
                 @Override
@@ -46,7 +46,7 @@ public interface J_U_F_Predicate<T> {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static <T> J_U_F_Predicate<T> negate(final J_U_F_Predicate<T> self) {
             return new J_U_F_Predicate<T>() {
                 @Override
@@ -71,7 +71,7 @@ public interface J_U_F_Predicate<T> {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static <T> J_U_F_Predicate<T> or(final J_U_F_Predicate<T> self, final J_U_F_Predicate<? super T> other) {
             return new J_U_F_Predicate<T>() {
                 @Override
@@ -100,7 +100,7 @@ public interface J_U_F_Predicate<T> {
 
     class PredicateStatic {
 
-        @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/Predicate;"))
+        @Stub(ref = @Ref("Ljava/util/function/Predicate;"))
         public static <T> J_U_F_Predicate<T> isEqual(final Object targetRef) {
             return new J_U_F_Predicate<T>() {
                 @Override
@@ -129,7 +129,7 @@ public interface J_U_F_Predicate<T> {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/Predicate;"))
+        @Stub(ref = @Ref("Ljava/util/function/Predicate;"))
         public static <T> J_U_F_Predicate<T> not(J_U_F_Predicate<? super T> target) {
             return (J_U_F_Predicate<T>) PredicateDefaults.negate(target);
         }

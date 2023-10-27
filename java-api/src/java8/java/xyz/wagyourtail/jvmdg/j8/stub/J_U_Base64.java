@@ -597,7 +597,9 @@ public class J_U_Base64 {
             if (closed) {
                 throw new IOException("Stream is closed");
             }
-            Objects.checkFromIndexSize(off, len, b.length);
+            if (off < 0 || len < 0 || len > b.length - off) {
+                throw new IndexOutOfBoundsException();
+            }
             if (len == 0) {
                 return 0;
             }

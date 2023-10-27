@@ -24,7 +24,7 @@ public class JvmDowngraderTest {
         System.setProperty("jvmdg.java-api", javaApi.toString());
     }
 
-    private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.V1_8;
+    private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.V1_7;
 
     private final Path original = Path.of("./downgradetest/build/libs/downgradetest-1.0.0.jar");
 

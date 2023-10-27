@@ -17,7 +17,7 @@ public interface J_U_F_DoubleConsumer {
 
     class DoubleConsumerDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_DoubleConsumer andThen(final J_U_F_DoubleConsumer c1, final J_U_F_DoubleConsumer c2) {
             Objects.requireNonNull(c2);
             return new J_U_F_DoubleConsumer() {

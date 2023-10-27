@@ -9,7 +9,7 @@ import java.util.Objects;
 public class J_L_Iterable {
 
     @Stub
-    public static void forEach(Iterable<?> iterable, J_U_F_Consumer<?> action) {
+    public static <T> void forEach(Iterable<T> iterable, J_U_F_Consumer<T> action) {
         Objects.requireNonNull(action);
         for (T o : iterable) {
             action.accept(o);
@@ -17,7 +17,7 @@ public class J_L_Iterable {
     }
 
     @Stub
-    public static J_U_Spliterator<?> spliterator(Iterable<?> iterable) {
+    public static <T> J_U_Spliterator<T> spliterator(Iterable<T> iterable) {
         return J_U_Spliterators.spliteratorUnknownSize(iterable.iterator(), 0);
     }
 

@@ -3,7 +3,7 @@ package xyz.wagyourtail.jvmdg.providers;
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j8.stub.*;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
-import xyz.wagyourtail.jvmdg.j8.stub.stream.J_U_S_BaseStream;
+import xyz.wagyourtail.jvmdg.j8.stub.stream.*;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.util.concurrent.ForkJoinTask;
@@ -220,7 +220,7 @@ public class Java8Downgrader extends VersionProvider {
         // ConcurrentHashMap
         // ConcurrentLinkedDeque TODO: concurrent iterator spliterator
         // ConcurrentLinkedQueue
-        // ConcurrentMap
+        stub(J_U_C_ConcurrentMap.class);
         // ConcurrentSkipListMap
         // ConcurrentSkipListSet
         // CopyOnWriteArrayList
@@ -300,6 +300,8 @@ public class Java8Downgrader extends VersionProvider {
         // ResourceBundleControlProvider
         // TimeZoneNameProvider
         stub(J_U_S_BaseStream.class);
+        stub(J_U_S_Collector.class);
+        stub(J_U_S_Collectors.class);
 
     }
 }

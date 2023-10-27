@@ -19,7 +19,7 @@ public interface J_U_F_IntUnaryOperator {
 
     class IntUnaryOperatorDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_IntUnaryOperator compose(final J_U_F_IntUnaryOperator f1, final J_U_F_IntUnaryOperator f2) {
             Objects.requireNonNull(f2);
             return new J_U_F_IntUnaryOperator() {
@@ -40,7 +40,7 @@ public interface J_U_F_IntUnaryOperator {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_IntUnaryOperator andThen(final J_U_F_IntUnaryOperator f1, final J_U_F_IntUnaryOperator f2) {
             Objects.requireNonNull(f2);
             return compose(f2, f1);
@@ -49,7 +49,7 @@ public interface J_U_F_IntUnaryOperator {
 
     class IntUnaryOperatorStatic {
 
-        @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/IntUnaryOperator;"))
+        @Stub(ref = @Ref("Ljava/util/function/IntUnaryOperator;"))
         public static J_U_F_IntUnaryOperator identity() {
             return new J_U_F_IntUnaryOperator() {
                 @Override

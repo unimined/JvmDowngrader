@@ -21,7 +21,7 @@ public interface J_U_F_DoublePredicate {
 
     class DoublePredicateDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_DoublePredicate and(final J_U_F_DoublePredicate self, final J_U_F_DoublePredicate other) {
             Objects.requireNonNull(other);
             return new J_U_F_DoublePredicate() {
@@ -47,7 +47,7 @@ public interface J_U_F_DoublePredicate {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_DoublePredicate negate(final J_U_F_DoublePredicate self) {
             return new J_U_F_DoublePredicate() {
                 @Override
@@ -72,7 +72,7 @@ public interface J_U_F_DoublePredicate {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_DoublePredicate or(final J_U_F_DoublePredicate self, final J_U_F_DoublePredicate other) {
             Objects.requireNonNull(other);
             return new J_U_F_DoublePredicate() {

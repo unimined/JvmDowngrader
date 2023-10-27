@@ -1,14 +1,14 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
+import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_DoubleConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_DoubleSupplier;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.NoSuchElementException;
-import java.util.function.Supplier;
 
-@Stub(opcVers = 8, ref = @Ref("java/util/OptionalDouble"))
+@Stub(ref = @Ref("java/util/OptionalDouble"))
 public class J_U_OptionalDouble {
 
     private static final J_U_OptionalDouble EMPTY = new J_U_OptionalDouble();
@@ -70,7 +70,7 @@ public class J_U_OptionalDouble {
         return value;
     }
 
-    public<X extends Throwable> double orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
+    public<X extends Throwable> double orElseThrow(J_U_F_Supplier<? extends X> exceptionSupplier) throws X {
         if (isPresent) {
             return value;
         } else {
@@ -94,7 +94,12 @@ public class J_U_OptionalDouble {
 
     @Override
     public int hashCode() {
-        return isPresent ? Double.hashCode(value) : 0;
+        return isPresent ? hashCode(value) : 0;
+    }
+
+    private int hashCode(double value) {
+        long bits = Double.doubleToLongBits(value);
+        return (int)(bits ^ (bits >>> 32));
     }
 
     @Override

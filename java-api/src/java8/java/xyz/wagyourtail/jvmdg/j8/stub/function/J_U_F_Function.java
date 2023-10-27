@@ -19,7 +19,7 @@ public interface J_U_F_Function<T, R> {
 
     class FunctionDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static <T, R, V> J_U_F_Function<V, R> compose(final J_U_F_Function<T, R> f1, final J_U_F_Function<? super V, ? extends T> f2) {
             Objects.requireNonNull(f2);
             return new J_U_F_Function<V, R>() {
@@ -40,7 +40,7 @@ public interface J_U_F_Function<T, R> {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static <T, R, V> J_U_F_Function<T, V> andThen(final J_U_F_Function<T, R> f1, final J_U_F_Function<? super R, ? extends V> f2) {
             Objects.requireNonNull(f2);
             return (J_U_F_Function<T, V>) compose(f2, f1);
@@ -50,7 +50,7 @@ public interface J_U_F_Function<T, R> {
 
     class FunctionStatic {
 
-        @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/Function;"))
+        @Stub(ref = @Ref("Ljava/util/function/Function;"))
         public static <T> J_U_F_Function<T, T> identity() {
             return new J_U_F_Function<T, T>() {
                 @Override

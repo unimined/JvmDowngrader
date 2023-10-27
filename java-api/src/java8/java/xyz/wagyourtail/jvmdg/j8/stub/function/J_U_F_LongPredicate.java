@@ -19,7 +19,7 @@ public interface J_U_F_LongPredicate {
 
     class LongPredicateDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_LongPredicate and(final J_U_F_LongPredicate self, final J_U_F_LongPredicate other) {
             return new J_U_F_LongPredicate() {
                 @Override
@@ -44,7 +44,7 @@ public interface J_U_F_LongPredicate {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_LongPredicate negate(final J_U_F_LongPredicate self) {
             return new J_U_F_LongPredicate() {
                 @Override
@@ -69,7 +69,7 @@ public interface J_U_F_LongPredicate {
             };
         }
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_LongPredicate or(final J_U_F_LongPredicate self, final J_U_F_LongPredicate other) {
             return new J_U_F_LongPredicate() {
                 @Override

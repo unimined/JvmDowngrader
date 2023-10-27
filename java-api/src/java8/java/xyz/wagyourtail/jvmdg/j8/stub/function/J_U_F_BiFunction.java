@@ -17,7 +17,7 @@ import java.util.Objects;
 
     class BiFunctionDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static <T, U, V, R> J_U_F_BiFunction<T, U, R> andThen(final J_U_F_BiFunction<T, U, ? extends V> f1, final J_U_F_Function<? super V, ? extends R> f2) {
             Objects.requireNonNull(f2);
             return new J_U_F_BiFunction<T, U, R>() {

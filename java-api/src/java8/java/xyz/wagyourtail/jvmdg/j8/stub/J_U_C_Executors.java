@@ -9,12 +9,12 @@ import java.util.concurrent.ForkJoinPool;
 
 public class J_U_C_Executors {
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/concurrent/Executors"))
+    @Stub(ref = @Ref("java/util/concurrent/Executors"))
     public static ExecutorService newWorkStealingPool(int parallelism) {
         return new ForkJoinPool(parallelism, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/concurrent/Executors"))
+    @Stub(ref = @Ref("java/util/concurrent/Executors"))
     public static ExecutorService newWorkStealingPool() {
         return new ForkJoinPool(Runtime.getRuntime().availableProcessors(), ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
     }

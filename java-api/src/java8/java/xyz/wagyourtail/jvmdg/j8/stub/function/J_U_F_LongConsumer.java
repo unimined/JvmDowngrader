@@ -16,7 +16,7 @@ public interface J_U_F_LongConsumer {
 
     class LongConsumerDefaults {
 
-        @Stub(opcVers = Opcodes.V1_8, defaultMethod = true)
+        @Stub(abstractDefault = true)
         public static J_U_F_LongConsumer andThen(final J_U_F_LongConsumer self, final J_U_F_LongConsumer after) {
             return new J_U_F_LongConsumer() {
                 @Override

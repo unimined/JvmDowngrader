@@ -2,12 +2,12 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
+import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Replace;
 
 public class J_L_VirtualMachineError {
 
-    @Replace(javaVersion = Opcodes.V1_8, ref = @Ref(value = "java/lang/VirtualMachineError", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V"))
+    @Modify(javaVersion = Opcodes.V1_8, ref = @Ref(value = "java/lang/VirtualMachineError", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V"))
     public static void init(MethodNode mnode, int i) {
         // stack: VirtualMachineError, String, Throwable
         AbstractInsnNode node = mnode.instructions.get(i);
@@ -30,7 +30,7 @@ public class J_L_VirtualMachineError {
         mnode.instructions.remove(node);
     }
 
-    @Replace(javaVersion = Opcodes.V1_8, ref = @Ref(value = "java/lang/VirtualMachineError", member = "<init>", desc = "(Ljava/lang/Throwable;)V"))
+    @Modify(javaVersion = Opcodes.V1_8, ref = @Ref(value = "java/lang/VirtualMachineError", member = "<init>", desc = "(Ljava/lang/Throwable;)V"))
     public static void init2(MethodNode mnode, int i) {
         // stack:  VirtualMachineError, Throwable
         AbstractInsnNode node = mnode.instructions.get(i);
