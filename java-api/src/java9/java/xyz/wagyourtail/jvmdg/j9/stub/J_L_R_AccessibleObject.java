@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.lang.reflect.*;
 
 public class J_L_R_AccessibleObject {
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static boolean trySetAccessible(AccessibleObject obj) {
         try {
             obj.setAccessible(true);
@@ -17,7 +17,7 @@ public class J_L_R_AccessibleObject {
         }
     }
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static boolean canAccess(AccessibleObject obj, Object target) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         if (!Member.class.isInstance(obj)) {
             return obj.isAccessible();

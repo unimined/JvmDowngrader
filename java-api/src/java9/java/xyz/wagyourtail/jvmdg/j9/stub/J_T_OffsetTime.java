@@ -10,7 +10,7 @@ import java.util.Objects;
 
 public class J_T_OffsetTime {
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static long toEpochSecond(OffsetTime time, LocalDate date) {
         Objects.requireNonNull(date, "date");
         long epochDay = date.toEpochDay();

@@ -9,12 +9,12 @@ import java.lang.reflect.Modifier;
 
 public class J_L_R_Method {
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static int getParameterCount(Method self) {
         return self.getParameterTypes().length;
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static boolean isDefault(Method self) {
         return (self.getModifiers() & (Modifier.ABSTRACT | Modifier.PUBLIC | Modifier.STATIC)) == Modifier.PUBLIC && self.getDeclaringClass().isInterface();
     }

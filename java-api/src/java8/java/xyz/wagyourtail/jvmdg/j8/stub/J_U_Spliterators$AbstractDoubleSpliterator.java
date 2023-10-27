@@ -9,7 +9,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Comparator;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref(value = "java/util/Spliterators$AbstractDoubleSpliterator"))
+@Stub(ref = @Ref(value = "java/util/Spliterators$AbstractDoubleSpliterator"))
 public abstract class J_U_Spliterators$AbstractDoubleSpliterator implements J_U_Spliterator.OfDouble {
     static final int MAX_BATCH = J_U_Spliterators$AbstractSpliterator.MAX_BATCH;
     static final int BATCH_UNIT = J_U_Spliterators$AbstractSpliterator.BATCH_UNIT;

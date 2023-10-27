@@ -102,7 +102,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             }
             LOGGER.fine("Transforming " + className + " from " + version + " to " + currentVersion);
 //        if (loader instanceof DowngradingClassLoader) return bytes; // already handled
-            Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(className), bytes, new Function<String, byte[]>() {
+            Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(className), bytes, true, new Function<String, byte[]>() {
                 @Override
                 public byte[] apply(String s) {
                     try {

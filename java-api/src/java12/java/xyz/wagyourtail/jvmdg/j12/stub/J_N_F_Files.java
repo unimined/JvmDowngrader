@@ -11,7 +11,7 @@ import java.nio.file.Path;
 
 public class J_N_F_Files {
 
-    @Stub(opcVers = Opcodes.V12, ref = @Ref("Ljava/nio/file/Files;"))
+    @Stub(ref = @Ref("Ljava/nio/file/Files;"))
     public static long mismatch(Path p1, Path p2) {
         try (InputStream f1 = Files.newInputStream(p1); InputStream f2 = Files.newInputStream(p2)) {
             long pos = 0;

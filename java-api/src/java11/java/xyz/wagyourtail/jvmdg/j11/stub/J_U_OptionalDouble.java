@@ -8,7 +8,7 @@ import java.util.OptionalDouble;
 
 public class J_U_OptionalDouble {
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static boolean isEmpty(OptionalDouble optional) {
         return !optional.isPresent();
     }

@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/Spliterators;"))
+@Stub(ref = @Ref("Ljava/util/Spliterators;"))
 public class J_U_Spliterators {
 
     private static final J_U_Spliterator<Object> EMPTY_SPLITERATOR = new EmptySpliterator.OfRef<>();

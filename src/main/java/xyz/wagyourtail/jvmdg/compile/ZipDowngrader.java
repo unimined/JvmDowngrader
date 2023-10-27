@@ -65,7 +65,7 @@ public class ZipDowngrader {
                             if (file.getFileName().toString().endsWith(".class")) {
                                 try {
                                     String internalName = file.toString().substring(1, file.toString().length() - 6);
-                                    Map<String, byte[]> outputs = downgrader.downgrade(new AtomicReference<>(internalName), bytes, new Function<String, byte[]>() {
+                                    Map<String, byte[]> outputs = downgrader.downgrade(new AtomicReference<>(internalName), bytes, false, new Function<String, byte[]>() {
                                         @Override
                                         public byte[] apply(String s) {
                                             try {

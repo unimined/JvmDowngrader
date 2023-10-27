@@ -11,12 +11,12 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.util.Iterator;
 import java.util.Objects;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/PrimitiveIterator;"))
+@Stub(ref = @Ref("Ljava/util/PrimitiveIterator;"))
 public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
 
     void forEachRemaining(T_CONS action);
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/PrimitiveIterator$OfInt;"))
+    @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfInt;"))
     interface OfInt extends J_U_PrimitiveIterator<Integer, J_U_F_IntConsumer> {
 
         int nextInt();
@@ -45,7 +45,7 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"))
+    @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"))
     interface OfLong extends J_U_PrimitiveIterator<Long, J_U_F_LongConsumer> {
 
         long nextLong();
@@ -74,7 +74,7 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"))
+    @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"))
     interface OfDouble extends J_U_PrimitiveIterator<Double, J_U_F_DoubleConsumer> {
 
         double nextDouble();

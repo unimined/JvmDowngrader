@@ -5,7 +5,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_R_Constructor {
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static int getParameterCount(java.lang.reflect.Constructor<?> self) {
         return self.getParameterTypes().length;
     }

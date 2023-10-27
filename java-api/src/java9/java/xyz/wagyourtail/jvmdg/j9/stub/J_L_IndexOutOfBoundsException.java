@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_IndexOutOfBoundsException {
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref(value = "Ljava/lang/IndexOutOfBoundsException;", member = "<init>"))
+    @Stub(ref = @Ref(value = "Ljava/lang/IndexOutOfBoundsException;", member = "<init>"))
     public static IndexOutOfBoundsException init(int index) {
         return new IndexOutOfBoundsException("Index out of range: " + index);
     }

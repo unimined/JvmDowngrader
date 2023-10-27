@@ -10,7 +10,7 @@ import java.util.Objects;
 
 public class J_U_Iterator {
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Iterator"))
+    @Stub(ref = @Ref("java/util/Iterator"))
     public static <T> void forEachRemaining(Iterator<T> iterator, J_U_F_Consumer<? super T> action) {
         Objects.requireNonNull(action);
         while (iterator.hasNext()) {

@@ -5,12 +5,12 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_CharSequence {
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static J_U_S_IntStream chars(CharSequence cs) {
         //TODO
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static J_U_S_IntStream codePoints(CharSequence cs) {
         //TODO
     }

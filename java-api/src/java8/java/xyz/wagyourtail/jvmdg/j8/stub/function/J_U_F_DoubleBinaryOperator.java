@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 @J_L_FunctionalInterface
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/DoubleBinaryOperator;"))
+@Stub(ref = @Ref("Ljava/util/function/DoubleBinaryOperator;"))
 public interface J_U_F_DoubleBinaryOperator {
 
     double applyAsDouble(double left, double right);

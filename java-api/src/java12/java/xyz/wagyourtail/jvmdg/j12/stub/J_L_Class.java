@@ -8,7 +8,7 @@ import java.lang.reflect.Array;
 
 public class J_L_Class {
 
-    @Stub(opcVers = Opcodes.V12)
+    @Stub
     public static String descriptorString(Class<?> clazz) {
         if (clazz.isPrimitive()) {
             switch (clazz.getName()) {
@@ -40,12 +40,12 @@ public class J_L_Class {
         return "L" + clazz.getName().replace('.', '/') + ";";
     }
 
-    @Stub(opcVers = Opcodes.V12)
+    @Stub
     public static Class<?> componentType(Class<?> clazz) {
         return clazz.getComponentType();
     }
 
-    @Stub(opcVers = Opcodes.V12)
+    @Stub
     public static Class<?> arrayType(Class<?> clazz) {
         return Array.newInstance(clazz, 0).getClass();
     }

@@ -7,7 +7,7 @@ import java.io.ByteArrayOutputStream;
 
 public class J_I_ByteArrayOutputStream {
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static void writeBytes(ByteArrayOutputStream baos, byte[] b) {
         baos.write(b, 0, b.length);
     }

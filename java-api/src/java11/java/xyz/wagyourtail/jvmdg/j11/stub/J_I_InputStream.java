@@ -14,12 +14,12 @@ import java.util.Objects;
 
 public class J_I_InputStream {
 
-    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/io/InputStream;"))
+    @Stub(ref = @Ref("Ljava/io/InputStream;"))
     public static InputStream nullInputStream() {
         return new NullInputStream();
     }
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static byte[] readNBytes(InputStream stream, int len) throws IOException {
         if (len < 0) {
             throw new IllegalArgumentException("len < 0");

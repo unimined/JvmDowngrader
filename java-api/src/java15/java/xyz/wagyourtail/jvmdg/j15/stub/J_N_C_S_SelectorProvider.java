@@ -13,13 +13,13 @@ import java.util.Objects;
 
 public class J_N_C_S_SelectorProvider {
 
-    @Stub(opcVers = Opcodes.V15)
+    @Stub
     public static SocketChannel openSocketChannel(SelectorProvider provider, ProtocolFamily family) throws IOException {
         Objects.requireNonNull(family);
         throw new UnsupportedOperationException("Protocol family not supported");
     }
 
-    @Stub(opcVers = Opcodes.V15)
+    @Stub
     public static ServerSocketChannel openServerSocketChannel(SelectorProvider provider, ProtocolFamily family) throws IOException {
         Objects.requireNonNull(family);
         throw new UnsupportedOperationException("Protocol family not supported");

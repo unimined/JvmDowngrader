@@ -7,17 +7,17 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Class {
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Class;"))
+    @Stub(ref = @Ref("Ljava/lang/Class;"))
     public static Class<?> forName(String name, J_L_Module module) throws ClassNotFoundException {
         return Class.forName(name, true, module.getClassLoader());
     }
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static J_L_Module getModule(Class<?> clazz) {
         return new J_L_Module(clazz.getClassLoader());
     }
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static String getPackageName(Class<?> clazz) {
         String name = clazz.getName();
         int lastDot = name.lastIndexOf('.');

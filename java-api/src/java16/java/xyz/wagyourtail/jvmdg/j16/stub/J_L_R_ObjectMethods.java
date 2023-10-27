@@ -10,6 +10,7 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Modify;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class J_L_R_ObjectMethods {
@@ -235,9 +236,14 @@ public class J_L_R_ObjectMethods {
             "(Ljava/lang/String;)V",
             false
         );
-        String[] fns = fieldNames.split(";");
+        String[] fns;
+        if (fieldNames.isEmpty()) {
+            fns = new String[0];
+        } else {
+            fns = fieldNames.split(";");
+        }
         if (fns.length != getters.size()) {
-            throw new IllegalStateException("field names and getters size mismatch");
+            throw new IllegalStateException("field names and getters size mismatch, \nfn's: (" + fns.length + ") " + Arrays.toString(fns) + "\ngetters: (" + getters.size() + ") " + getters);
         }
         for (int i = 0; i < fns.length; i++) {
             visitor.visitLdcInsn(fns[i] + "=");

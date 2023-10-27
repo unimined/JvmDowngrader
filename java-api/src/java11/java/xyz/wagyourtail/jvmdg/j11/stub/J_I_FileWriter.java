@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.io.*;
 import java.nio.charset.Charset;
 
-@Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/io/FileWriter;"))
+@Stub(ref = @Ref("Ljava/io/FileWriter;"))
 public class J_I_FileWriter extends OutputStreamWriter {
 
     public J_I_FileWriter(String fileName) throws FileNotFoundException {

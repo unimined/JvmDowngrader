@@ -4,7 +4,7 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-@Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/lang/Record;"))
+@Stub(ref = @Ref("Ljava/lang/Record;"))
 public abstract class J_L_Record {
 
     public J_L_Record() {

@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Iterator;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/stream/BaseStream;"))
+@Stub(ref = @Ref("Ljava/util/stream/BaseStream;"))
 public interface J_U_S_BaseStream<T, S extends J_U_S_BaseStream<T, S>> extends AutoCloseable {
 
     Iterator<T> iterator();

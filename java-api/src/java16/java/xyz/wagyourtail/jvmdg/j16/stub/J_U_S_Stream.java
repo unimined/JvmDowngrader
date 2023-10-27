@@ -13,27 +13,27 @@ import java.util.stream.*;
 
 public class J_U_S_Stream {
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static <T, R> Stream<R> mapMulti(Stream<T> stream, BiConsumer<? super T, ? super Consumer<R>> mapper) {
         return stream.flatMap(new MapMultiConsumer<>(mapper));
     }
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static <T> IntStream mapMultiToInt(Stream<T> stream, BiConsumer<? super T, ? super IntConsumer> mapper) {
         return stream.flatMapToInt(new MapMultiIntConsumer<>(mapper));
     }
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static <T> LongStream mapMultiToLong(Stream<T> stream, BiConsumer<? super T, ? super LongConsumer> mapper) {
         return stream.flatMapToLong(new MapMultiLongConsumer<>(mapper));
     }
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static <T> DoubleStream mapMultiToDouble(Stream<T> stream, BiConsumer<? super T, ? super DoubleConsumer> mapper) {
         return stream.flatMapToDouble(new MapMultiDoubleConsumer<>(mapper));
     }
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static <T> List<T> toList(Stream<T> stream) {
         return (List<T>) Collections.unmodifiableList(new ArrayList<>(Arrays.asList(stream.toArray())));
     }

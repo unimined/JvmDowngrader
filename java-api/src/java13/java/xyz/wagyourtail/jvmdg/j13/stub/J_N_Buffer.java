@@ -9,7 +9,7 @@ import java.nio.*;
 public class J_N_Buffer {
 
 
-    @Stub(opcVers = Opcodes.V13)
+    @Stub
     public static Buffer slice(Buffer buffer, int index, int length) {
         int pos = buffer.position();
         buffer.position(index);

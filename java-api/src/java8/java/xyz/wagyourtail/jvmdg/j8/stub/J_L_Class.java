@@ -12,7 +12,7 @@ import java.util.List;
 
 public class J_L_Class {
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static String toGenericString(Class<?> clazz) {
         if (clazz.isPrimitive()) {
             return clazz.toString();
@@ -86,7 +86,7 @@ public class J_L_Class {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static String getTypeName(Class clazz) {
         if (clazz.isArray()) {
             try {
@@ -106,7 +106,7 @@ public class J_L_Class {
         return clazz.getName();
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static <A extends Annotation> A[] getAnnotationsByType(Class<?> self, Class<A> clazz) {
         List<A> annotations = new ArrayList<>();
         for (Annotation a : self.getAnnotations()) {
@@ -117,7 +117,7 @@ public class J_L_Class {
         return annotations.toArray((A[]) new Annotation[0]);
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static <A extends Annotation> A getDeclaredAnnotation(Class<?> self, Class<A> clazz) {
         for (Annotation a : self.getDeclaredAnnotations()) {
             if (clazz.isInstance(a)) {
@@ -127,7 +127,7 @@ public class J_L_Class {
         return null;
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<?> self, Class<A> clazz) {
         List<A> annotations = new ArrayList<>();
         for (Annotation a : self.getDeclaredAnnotations()) {

@@ -16,7 +16,7 @@ import java.util.stream.StreamSupport;
 public class J_U_ServiceLoader {
 
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static <S> Stream<Provider<S>> stream(ServiceLoader<S> loader) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(loader.iterator(), 0), false)
             .map(ProviderImpl::new);
@@ -27,14 +27,14 @@ public class J_U_ServiceLoader {
 //        throw new UnsupportedOperationException("JVMDowngrade does not support this method yet.");
 //    }
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static <S> Optional<S> findFirst(ServiceLoader<S> loader) {
         Iterator<S> iterator = loader.iterator();
         return iterator.hasNext() ? Optional.of(iterator.next()) : Optional.empty();
     }
 
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/ServiceLoader$Provider;"))
+    @Stub(ref = @Ref("Ljava/util/ServiceLoader$Provider;"))
     public interface Provider<S> extends Supplier<S> {
 
         Class<? extends S> type();

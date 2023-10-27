@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 public class J_U_R_Pattern {
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static Predicate<String> asMatchPredicate(Pattern pattern) {
         return s -> pattern.matcher(s).matches();
     }

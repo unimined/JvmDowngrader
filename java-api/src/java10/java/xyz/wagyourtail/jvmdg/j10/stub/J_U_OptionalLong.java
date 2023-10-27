@@ -9,7 +9,7 @@ import java.util.OptionalLong;
 
 public class J_U_OptionalLong {
 
-    @Stub(opcVers = Opcodes.V10)
+    @Stub
     public static long orElseThrow(OptionalLong optional) {
         if (optional.isPresent()) {
             return optional.getAsLong();

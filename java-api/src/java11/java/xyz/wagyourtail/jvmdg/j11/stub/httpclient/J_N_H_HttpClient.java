@@ -14,7 +14,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
-@Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/net/http/HttpClient;"))
+@Stub(ref = @Ref("Ljava/net/http/HttpClient;"))
 public abstract class J_N_H_HttpClient {
 
 
@@ -44,20 +44,20 @@ public abstract class J_N_H_HttpClient {
 
     public abstract Optional<Executor> executor();
 
-    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/net/http/HttpClient$Redirect;"))
+    @Stub(ref = @Ref("Ljava/net/http/HttpClient$Redirect;"))
     public enum Redirect {
         NEVER,
         ALWAYS,
         NORMAL
     }
 
-    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/net/http/HttpClient$Version;"))
+    @Stub(ref = @Ref("Ljava/net/http/HttpClient$Version;"))
     public enum Version {
         HTTP_1_1,
         HTTP_2
     }
 
-    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/net/http/HttpClient$Builder;"))
+    @Stub(ref = @Ref("Ljava/net/http/HttpClient$Builder;"))
     public interface Builder {
         Builder cookieHandler(CookieHandler handler);
 

@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 
-@Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/net/http/HttpRequest;"))
+@Stub(ref = @Ref("Ljava/net/http/HttpRequest;"))
 public abstract class J_N_H_HttpRequest {
     public J_N_H_HttpRequest() {
         throw new UnsupportedOperationException("TODO");
@@ -56,12 +56,12 @@ public abstract class J_N_H_HttpRequest {
         return method().hashCode() + uri().hashCode(); // + headers().hashCode();
     }
 
-    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/net/http/HttpRequest$BodyPublisher;"))
+    @Stub(ref = @Ref("Ljava/net/http/HttpRequest$BodyPublisher;"))
     public interface BodyPublisher extends Flow.Publisher<ByteBuffer> {
         long contentLength();
     }
 
-    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/net/http/HttpRequest$Builder;"))
+    @Stub(ref = @Ref("Ljava/net/http/HttpRequest$Builder;"))
     public interface Builder {
         Builder uri(URI uri);
         Builder expectContinue(boolean expectContinue);
@@ -79,7 +79,7 @@ public abstract class J_N_H_HttpRequest {
         Builder copy();
     }
 
-    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/net/http/HttpRequest$BodyPublishers;"))
+    @Stub(ref = @Ref("Ljava/net/http/HttpRequest$BodyPublishers;"))
     public static class BodyPublishers {
         private BodyPublishers() {
         }

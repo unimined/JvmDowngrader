@@ -15,12 +15,12 @@ import java.util.stream.Collectors;
 public class J_L_Runtime {
 
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("java/lang/Runtime"))
+    @Stub(ref = @Ref("java/lang/Runtime"))
     public static Version version() {
         return Version.INSTANCE;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("java/lang/Runtime$Version"))
+    @Stub(ref = @Ref("java/lang/Runtime$Version"))
     public static final class Version implements Comparable<Version> {
         public static final Version INSTANCE = Version.parse(System.getProperty("java.runtime.version"));
         private final List<Integer> version;

@@ -8,7 +8,7 @@ import java.util.OptionalLong;
 
 public class J_U_OptionalLong {
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static boolean isEmpty(OptionalLong optional) {
         return !optional.isPresent();
     }

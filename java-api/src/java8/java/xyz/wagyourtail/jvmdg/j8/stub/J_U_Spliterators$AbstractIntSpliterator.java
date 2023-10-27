@@ -9,7 +9,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Comparator;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref(value = "java/util/Spliterators$AbstractIntSpliterator"))
+@Stub(ref = @Ref(value = "java/util/Spliterators$AbstractIntSpliterator"))
 public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spliterator.OfInt {
     static final int MAX_BATCH = J_U_Spliterators$AbstractSpliterator.MAX_BATCH;
     static final int BATCH_UNIT = J_U_Spliterators$AbstractSpliterator.BATCH_UNIT;

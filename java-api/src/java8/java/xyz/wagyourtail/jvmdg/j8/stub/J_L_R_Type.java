@@ -7,7 +7,7 @@ import java.lang.reflect.Type;
 
 public class J_L_R_Type {
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static String getTypeName(Type self) {
         return self.toString();
     }

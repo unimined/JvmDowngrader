@@ -4,7 +4,7 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/lang/reflect/MalformedParametersException;"))
+@Stub(ref = @Ref("Ljava/lang/reflect/MalformedParametersException;"))
 public class J_L_R_MalformedParametersException extends RuntimeException {
 
     public J_L_R_MalformedParametersException() {

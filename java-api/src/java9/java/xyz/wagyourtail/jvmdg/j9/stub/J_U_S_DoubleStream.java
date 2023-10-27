@@ -15,12 +15,12 @@ import java.util.stream.StreamSupport;
 
 public class J_U_S_DoubleStream {
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static DoubleStream takeWhile(DoubleStream stream, DoublePredicate predicate) {
         return new TakeWhileStream(stream.iterator(), predicate).stream();
     }
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static DoubleStream dropWhile(DoubleStream stream, DoublePredicate predicate) {
         PrimitiveIterator.OfDouble iterator = stream.iterator();
         double next;
@@ -37,7 +37,7 @@ public class J_U_S_DoubleStream {
             StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/stream/DoubleStream;"))
+    @Stub(ref = @Ref("Ljava/util/stream/DoubleStream;"))
     public static DoubleStream iterate(double seed, DoublePredicate hasNext, DoubleUnaryOperator next) {
         return new DoubleIterator(seed, hasNext, next).stream();
     }

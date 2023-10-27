@@ -8,7 +8,7 @@ import java.util.OptionalInt;
 
 public class J_U_OptionalInt {
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static boolean isEmpty(OptionalInt optional) {
         return !optional.isPresent();
     }

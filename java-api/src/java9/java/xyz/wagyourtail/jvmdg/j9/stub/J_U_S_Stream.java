@@ -15,12 +15,12 @@ import java.util.stream.StreamSupport;
 
 public class J_U_S_Stream {
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static <T> Stream<T> takeWhile(Stream<T> stream, Predicate<T> predicate) {
         return new TakeWhileStream<>(stream.iterator(), predicate).stream();
     }
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static <T> Stream<T> dropWhile(Stream<T> stream, Predicate<T> predicate) {
         Iterator<T> iterator = stream.iterator();
         T next;
@@ -37,12 +37,12 @@ public class J_U_S_Stream {
             StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/stream/Stream;"))
+    @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
     public static <T> Stream<T> iterate(T seed, Predicate<T> hasNext, UnaryOperator<T> next) {
         return new StreamIterator<>(seed, hasNext, next).stream();
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/stream/Stream;"))
+    @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
     public static <T> Stream<T> ofNullable(T t) {
         return t == null ? Stream.empty() : Stream.of(t);
     }

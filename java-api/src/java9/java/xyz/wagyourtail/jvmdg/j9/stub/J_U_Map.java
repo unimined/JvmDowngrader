@@ -9,17 +9,17 @@ import java.util.*;
 
 public class J_U_Map {
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of() {
         return Collections.emptyMap();
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1) {
         return Collections.singletonMap(k1, v1);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2) {
         Map<K, V> map = new HashMap<>(2);
         map.put(k1, v1);
@@ -27,7 +27,7 @@ public class J_U_Map {
         return Collections.unmodifiableMap(map);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
         Map<K, V> map = new HashMap<>(3);
         map.put(k1, v1);
@@ -36,7 +36,7 @@ public class J_U_Map {
         return Collections.unmodifiableMap(map);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
         Map<K, V> map = new HashMap<>(4);
         map.put(k1, v1);
@@ -46,7 +46,7 @@ public class J_U_Map {
         return Collections.unmodifiableMap(map);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
         Map<K, V> map = new HashMap<>(5);
         map.put(k1, v1);
@@ -57,7 +57,7 @@ public class J_U_Map {
         return Collections.unmodifiableMap(map);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
         Map<K, V> map = new HashMap<>(6);
         map.put(k1, v1);
@@ -69,7 +69,7 @@ public class J_U_Map {
         return Collections.unmodifiableMap(map);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7) {
         Map<K, V> map = new HashMap<>(7);
         map.put(k1, v1);
@@ -82,7 +82,7 @@ public class J_U_Map {
         return Collections.unmodifiableMap(map);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8) {
         Map<K, V> map = new HashMap<>(8);
         map.put(k1, v1);
@@ -96,7 +96,7 @@ public class J_U_Map {
         return Collections.unmodifiableMap(map);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
         Map<K, V> map = new HashMap<>(9);
         map.put(k1, v1);
@@ -111,7 +111,7 @@ public class J_U_Map {
         return Collections.unmodifiableMap(map);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
         Map<K, V> map = new HashMap<>(10);
         map.put(k1, v1);
@@ -128,7 +128,7 @@ public class J_U_Map {
     }
 
     @SafeVarargs
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> ofEntries(Map.Entry<? extends K, ? extends V>... entries) {
         if (entries.length == 0) {
             return Collections.emptyMap();
@@ -143,7 +143,7 @@ public class J_U_Map {
         return Collections.unmodifiableMap(map);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Map;"))
+    @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map.Entry<K, V> entry(K k, V v) {
         return new AbstractMap.SimpleImmutableEntry<>(Objects.requireNonNull(k), Objects.requireNonNull(v));
     }

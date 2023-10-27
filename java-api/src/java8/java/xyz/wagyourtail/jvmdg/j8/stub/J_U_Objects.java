@@ -7,17 +7,17 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_U_Objects {
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Objects"))
+    @Stub(ref = @Ref("java/util/Objects"))
     public static boolean isNull(Object obj) {
         return obj == null;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Objects"))
+    @Stub(ref = @Ref("java/util/Objects"))
     public static boolean nonNull(Object obj) {
         return obj != null;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Objects"))
+    @Stub(ref = @Ref("java/util/Objects"))
     public static <T> T requireNonNull(T obj, J_U_F_Supplier<String> messageSupplier) {
         if (obj == null) {
             throw new NullPointerException(messageSupplier == null ? null : messageSupplier.get());

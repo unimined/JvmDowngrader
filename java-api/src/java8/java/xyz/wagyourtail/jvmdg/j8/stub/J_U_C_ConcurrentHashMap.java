@@ -15,7 +15,7 @@ import java.util.function.BiConsumer;
 
 public class J_U_C_ConcurrentHashMap {
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static long mappingCount(ConcurrentHashMap<?, ?> map) {
         int size = map.size();
         if (size == Integer.MAX_VALUE) {
@@ -33,39 +33,39 @@ public class J_U_C_ConcurrentHashMap {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/concurrent/ConcurrentHashMap"))
+    @Stub(ref = @Ref("java/util/concurrent/ConcurrentHashMap"))
     public static <K> KeySetView<K, Boolean> newKeySet() {
         return new KeySetView<>(new ConcurrentHashMap<K, Boolean>(), Boolean.TRUE);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/concurrent/ConcurrentHashMap"))
+    @Stub(ref = @Ref("java/util/concurrent/ConcurrentHashMap"))
     public static <K> KeySetView<K, Boolean> newKeySet(int initialCapacity) {
         return new KeySetView<>(new ConcurrentHashMap<K, Boolean>(initialCapacity), Boolean.TRUE);
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static <K, V> void forEach(ConcurrentHashMap<K, V> map, long parallismThreshold, J_U_F_BiConsumer<? super K, ? super V> action) {
         //TODO
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static <K, V> void forEach(ConcurrentHashMap<K, V> map, long parallismThreshold, J_U_F_BiFunction<? super K, ? super V, ? extends V> transformer, J_U_F_BiConsumer<? super K, ? super V> action) {
         //TODO
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static <K, V, U> void search(ConcurrentHashMap<K, V> map, long parallismThreshold, J_U_F_BiFunction<? super K, ? super V, ? extends U> searchFunction) {
         //TODO
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static <K, V, U> U reduce(ConcurrentHashMap<K, V> map, long parallismThreshold, J_U_F_BiFunction<? super K, ? super V, ? extends U> transformer, J_U_F_BiFunction<? super U, ? super U, ? extends U> reducer) {
         //TODO
     }
 
 
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/concurrent/ConcurrentHashMap$KeySetView"))
+    @Stub(ref = @Ref("java/util/concurrent/ConcurrentHashMap$KeySetView"))
     public static class KeySetView<K, V> implements Set<K> {
         private final ConcurrentHashMap<K, V> map;
         private final V value;

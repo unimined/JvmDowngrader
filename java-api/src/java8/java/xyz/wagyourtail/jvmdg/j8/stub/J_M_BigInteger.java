@@ -7,7 +7,7 @@ import java.math.BigInteger;
 
 public class J_M_BigInteger {
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static long longValueExact(BigInteger self) {
         // todo: check if mag length is 2 ints, so it's faster because bitlength is a bit slow
         if (self.bitLength() <= 63) {
@@ -17,7 +17,7 @@ public class J_M_BigInteger {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static int intValueExact(BigInteger self) {
         // todo: check if mag length is 1 int, so it's faster because bitlength is a bit slow
         if (self.bitLength() <= 31) {
@@ -27,7 +27,7 @@ public class J_M_BigInteger {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static short shortValueExact(BigInteger self) {
         if (self.bitLength() <= 31) {
             int val = self.intValue();
@@ -38,7 +38,7 @@ public class J_M_BigInteger {
         throw new ArithmeticException("BigInteger out of short range");
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static byte byteValueExact(BigInteger self) {
         if (self.bitLength() <= 31) {
             int val = self.intValue();

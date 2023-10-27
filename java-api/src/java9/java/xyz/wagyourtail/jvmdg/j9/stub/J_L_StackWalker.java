@@ -14,10 +14,10 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-@Stub(opcVers = Opcodes.V9, ref = @Ref("java/lang/StackWalker"))
+@Stub(ref = @Ref("java/lang/StackWalker"))
 public class J_L_StackWalker {
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("java/lang/StackWalker$StackFrame"))
+    @Stub(ref = @Ref("java/lang/StackWalker$StackFrame"))
     public interface StackFrame {
         String getClassName();
         String getMethodName();
@@ -29,7 +29,7 @@ public class J_L_StackWalker {
         StackTraceElement toStackTraceElement();
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("java/lang/StackWalker$Option"))
+    @Stub(ref = @Ref("java/lang/StackWalker$Option"))
     public enum Option {
         RETAIN_CLASS_REFERENCE,
         SHOW_REFLECT_FRAMES,

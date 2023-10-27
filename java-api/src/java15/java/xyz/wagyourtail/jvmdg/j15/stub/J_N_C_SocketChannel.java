@@ -12,7 +12,7 @@ import java.nio.channels.spi.SelectorProvider;
 
 public class J_N_C_SocketChannel {
 
-    @Stub(opcVers = Opcodes.V15, ref = @Ref("Ljava/nio/channels/SocketChannel;"))
+    @Stub(ref = @Ref("Ljava/nio/channels/SocketChannel;"))
     public static SocketChannel open(ProtocolFamily family) throws IOException {
         return J_N_C_S_SelectorProvider.openSocketChannel(SelectorProvider.provider(), family);
     }

@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Base64"))
+@Stub(ref = @Ref("java/util/Base64"))
 public class J_U_Base64 {
 
     private J_U_Base64() {}
@@ -58,7 +58,7 @@ public class J_U_Base64 {
         return Decoder.RFC2045;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Base64$Encoder"))
+    @Stub(ref = @Ref("java/util/Base64$Encoder"))
     public static class Encoder {
         private final byte[] newline;
         private final int linemax;
@@ -213,7 +213,7 @@ public class J_U_Base64 {
 
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Base64$Decoder"))
+    @Stub(ref = @Ref("java/util/Base64$Decoder"))
     public static class Decoder {
         private final boolean isURL;
         private final boolean isMIME;

@@ -15,12 +15,12 @@ import java.util.stream.StreamSupport;
 
 public class J_U_S_IntStream {
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static IntStream takeWhile(IntStream stream, IntPredicate predicate) {
         return new TakeWhileStream(stream.iterator(), predicate).stream();
     }
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static IntStream dropWhile(IntStream stream, IntPredicate predicate) {
         PrimitiveIterator.OfInt iterator = stream.iterator();
         int next;
@@ -37,7 +37,7 @@ public class J_U_S_IntStream {
             StreamSupport.intStream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/stream/IntStream;"))
+    @Stub(ref = @Ref("Ljava/util/stream/IntStream;"))
     public static IntStream iterate(int seed, IntPredicate hasNext, IntUnaryOperator next) {
         return new IntIterator(seed, hasNext, next).stream();
     }

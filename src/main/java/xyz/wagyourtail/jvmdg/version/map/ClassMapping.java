@@ -4,6 +4,10 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.util.Lazy;
+import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.version.Modify;
+import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -11,31 +15,33 @@ import java.util.*;
 
 public class ClassMapping {
 
-    private final Map<MemberNameAndDesc, Method> methodStub = new HashMap<>();
-    private final Map<MemberNameAndDesc, Method> methodModify = new HashMap<>();
+    private final Map<MemberNameAndDesc, Pair<Method, Stub>> methodStub = new HashMap<>();
+    private final Map<MemberNameAndDesc, Pair<Method, Modify>> methodModify = new HashMap<>();
 
     protected final Lazy<List<ClassMapping>> parents;
     protected final Type current;
+    protected final VersionProvider vp;
 
-    public ClassMapping(Lazy<List<ClassMapping>> parents, Type current) {
+    public ClassMapping(Lazy<List<ClassMapping>> parents, Type current, VersionProvider vp) {
         this.parents = parents;
         this.current = current;
+        this.vp = vp;
     }
 
-    public void addStub(MemberNameAndDesc member, Method method) {
-        methodStub.put(member, method);
+    public void addStub(MemberNameAndDesc member, Method method, Stub stub) {
+        methodStub.put(member, new Pair<>(method, stub));
     }
 
-    public void addModify(MemberNameAndDesc member, Method method) {
-        methodModify.put(member, method);
+    public void addModify(MemberNameAndDesc member, Method method, Modify modify) {
+        methodModify.put(member, new Pair<>(method, modify));
     }
 
-    public void transform(MethodNode method, int index, ClassNode classNode, Set<ClassNode> extra) {
+    public void transform(MethodNode method, int index, ClassNode classNode, Set<ClassNode> extra, boolean runtimeAvailable) {
         AbstractInsnNode insn = method.instructions.get(index);
         if (insn instanceof MethodInsnNode) {
             MethodInsnNode min = (MethodInsnNode) insn;
             MemberNameAndDesc member = new MemberNameAndDesc(min.name, Type.getMethodType(min.desc));
-            MethodInsnNode newMin = getStubFor(member, min.getOpcode() == Opcodes.INVOKESTATIC);
+            InsnList newMin = getStubFor(member, min.getOpcode() == Opcodes.INVOKESTATIC, runtimeAvailable);
             Type returnType = Type.getReturnType(min.desc);
             if (newMin != null) {
                 if (member.getName().equals("<init>")) {
@@ -65,18 +71,20 @@ public class ClassMapping {
                         throw new IllegalStateException("Could not find NEW for <init> call...");
                     }
                 }
-                method.instructions.set(min, newMin);
-                if (!returnType.equals(Type.getReturnType(newMin.desc))) {
+                MethodInsnNode target = (MethodInsnNode) newMin.getLast();
+                method.instructions.insertBefore(min, newMin);
+                method.instructions.remove(min);
+                if (!returnType.equals(Type.getReturnType(target.desc))) {
                     // add cast
-                    method.instructions.insert(newMin, new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName()));
+                    method.instructions.insert(target, new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName()));
                 }
                 return;
             }
-            Method m = methodModify.get(member);
+            Pair<Method, Modify> m = methodModify.get(member);
             if (m != null) {
                 try {
                     List<Object> modifyArgs = Arrays.asList(method, index, classNode, extra);
-                    m.invoke(null, modifyArgs.subList(0, m.getParameterTypes().length).toArray());
+                    m.getFirst().invoke(null, modifyArgs.subList(0, m.getFirst().getParameterTypes().length).toArray());
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
@@ -89,11 +97,11 @@ public class ClassMapping {
 //                method.instructions.set(indy, newMin);
 //                return;
 //            }
-            Method m = methodModify.get(member);
+            Pair<Method, Modify> m = methodModify.get(member);
             if (m != null) {
                 try {
                     List<Object> modifyArgs = Arrays.asList(method, index, classNode, extra);
-                    m.invoke(null, modifyArgs.subList(0, m.getParameterTypes().length).toArray());
+                    m.getFirst().invoke(null, modifyArgs.subList(0, m.getFirst().getParameterTypes().length).toArray());
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
@@ -101,34 +109,80 @@ public class ClassMapping {
         }
     }
 
-    public MethodInsnNode getStubFor(MemberNameAndDesc member, boolean invoke_static) {
+    public InsnList getStubFor(MemberNameAndDesc member, boolean invoke_static, boolean runtimeAvailable) {
         try {
             if (!invoke_static) {
                 for (ClassMapping parent : parents.get()) {
-                    MethodInsnNode node = parent.getStubFor(member, false);
+                    InsnList node = parent.getStubFor(member, false, runtimeAvailable);
                     if (node != null) {
                         return node;
                     }
                 }
             }
-            Method m = methodStub.get(member);
-            if (m == null) {
+            Pair<Method, Stub> pair = methodStub.get(member);
+            if (pair == null) {
+                return null;
+            }
+            Method m = pair.getFirst();
+            if (!runtimeAvailable && pair.getSecond().requiresRuntime()) {
+                System.err.println("WARNING: " + m + " requires runtime transformation but runtime is not available, skipping stub...");
+                return null;
+            }
+            if (pair.getSecond().wasAbstract()) {
+                // these are special and should be treated differently, as we will implement them on the newer classes in a seperate transform
                 return null;
             }
             int modifiers = m.getModifiers();
             if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
                 throw new RuntimeException("stub method must be public static");
             }
-            return new MethodInsnNode(
+            InsnList insnList = new InsnList();
+            if (pair.getSecond().downgradeVersion()) {
+                insnList.add(new LdcInsnNode(vp.inputVersion));
+            }
+            insnList.add(new MethodInsnNode(
                     Opcodes.INVOKESTATIC,
                     Type.getType(m.getDeclaringClass()).getInternalName(),
                     m.getName(),
                     Type.getMethodDescriptor(m),
                     false
-            );
+            ));
+            return insnList;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Map<MemberNameAndDesc, Pair<Method, Stub>> getMethodStub() {
+        return methodStub;
+    }
+
+    public Map<MemberNameAndDesc, Pair<Method, Modify>> getMethodModify() {
+        return methodModify;
+    }
+
+    public List<Method> getStubTargets() {
+        List<Method> methods = new ArrayList<>();
+        for (ClassMapping parent : parents.get()) {
+            methods.addAll(parent.getStubTargets());
+        }
+        for (Pair<Method, Stub> pair : methodStub.values()) {
+            methods.add(pair.getFirst());
+        }
+        return methods;
+    }
+
+    public Map<MemberNameAndDesc, Method> getAbstracts() {
+        Map<MemberNameAndDesc, Method> methods = new HashMap<>();
+        for (ClassMapping parent : parents.get()) {
+            methods.putAll(parent.getAbstracts());
+        }
+        for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> entry : methodStub.entrySet()) {
+            if (entry.getValue().getSecond().wasAbstract()) {
+                methods.put(entry.getKey(), entry.getValue().getFirst());
+            }
+        }
+        return methods;
     }
 
 

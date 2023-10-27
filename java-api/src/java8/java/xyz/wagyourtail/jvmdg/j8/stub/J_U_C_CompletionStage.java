@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.concurrent.Executor;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/concurrent/CompletionStage"))
+@Stub(ref = @Ref("java/util/concurrent/CompletionStage"))
 public interface J_U_C_CompletionStage<T> {
 
     <U> J_U_C_CompletionStage<U> thenApply(J_U_F_Function<? super T, ? extends U> fn);

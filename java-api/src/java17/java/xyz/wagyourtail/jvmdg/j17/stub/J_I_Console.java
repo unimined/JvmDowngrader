@@ -9,7 +9,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 
 public class J_I_Console {
-    @Stub(opcVers = Opcodes.V17)
+    @Stub
     public static Charset charset(Console console) throws NoSuchFieldException, IllegalAccessException {
         // get cs field
         Field f = Console.class.getDeclaredField("cs");

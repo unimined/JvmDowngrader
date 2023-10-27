@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.function.BiPredicate;
 
 @J_L_FunctionalInterface
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/BiPredicate"))
+@Stub(ref = @Ref("Ljava/util/function/BiPredicate"))
 public interface J_U_F_BiPredicate<T, U> {
 
     boolean test(T t, U u);

@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Character {
 
-    @Stub(opcVers = Opcodes.V11, ref = @Ref("java/lang/Character"))
+    @Stub(ref = @Ref("java/lang/Character"))
     public static String toString(int codePoint) {
         return new String(Character.toChars(codePoint));
     }

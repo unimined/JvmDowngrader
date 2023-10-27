@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public class J_U_Optional {
 
-    @Stub(opcVers = Opcodes.V10)
+    @Stub
     public static <T> T orElseThrow(Optional<T> optional) {
         if (optional.isPresent()) {
             return optional.get();

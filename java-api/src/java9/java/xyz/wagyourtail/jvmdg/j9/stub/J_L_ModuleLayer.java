@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Optional;
 
-@Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/ModuleLayer;"))
+@Stub(ref = @Ref("Ljava/lang/ModuleLayer;"))
 public class J_L_ModuleLayer {
 
     // TODO: Controller

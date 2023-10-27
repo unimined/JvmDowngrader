@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Comparator;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref(value = "java/util/Spliterators$AbstractSpliterator"))
+@Stub(ref = @Ref(value = "java/util/Spliterators$AbstractSpliterator"))
 public abstract class J_U_Spliterators$AbstractSpliterator<T> implements J_U_Spliterator<T> {
     static final int BATCH_UNIT = 1 << 10;
     static final int MAX_BATCH = 1 << 25;
