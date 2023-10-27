@@ -2,8 +2,12 @@ package xyz.wagyourtail.jvmdg;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.util.Textifier;
+import org.objectweb.asm.util.TraceClassVisitor;
 import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 
@@ -15,22 +19,24 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ClassDowngrader {
-    public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(VersionProvider.getCurrentClassVersion());
-    public static final DowngradingClassLoader classLoader = new DowngradingClassLoader(new URL[]{findJavaApi()}, ClassDowngrader.class.getClassLoader());
+    public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(Utils.getCurrentClassVersion());
+    public static final URL javaApi = findJavaApi();
+    public static final DowngradingClassLoader classLoader = new DowngradingClassLoader(new URL[]{javaApi}, ClassDowngrader.class.getClassLoader());
     private static final Map<Integer, VersionProvider> downgraders = collectProviders();
-    private final int target;
+    public final int target;
 
     protected ClassDowngrader(int versionTarget) {
         this.target = versionTarget;
     }
 
     public static ClassDowngrader downgradeTo(int version) {
-        if (VersionProvider.getCurrentClassVersion() != version) {
+        if (Utils.getCurrentClassVersion() != version) {
             return new ClassDowngrader(version);
         } else {
             return currentVersionDowngrader;
@@ -68,13 +74,13 @@ public class ClassDowngrader {
         String version = pkg.getImplementationVersion();
         if (version.contains("SNAPSHOT")) {
             // retrieve maven metadata
-            URL url = URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/unimined/jvmdowngrader-java-api/" + version + "/maven-metadata.xml").toURL();
+            URL url = URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/maven-metadata.xml").toURL();
             // get actual latest
             try (InputStream in = url.openStream()) {
                 XMLDecoder decoder = new XMLDecoder(in);
                 Map<String, Object> metadata = (Map<String, Object>) decoder.readObject();
                 String snapshotVersion = ((Map<String, Object>) ((Map<String, Object>) metadata.get("versioning")).get("snapshot")).get("timestamp") + "-" + ((Map<String, Object>) ((Map<String, Object>) metadata.get("versioning")).get("snapshot")).get("buildNumber");
-                return URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/unimined/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + "-" + snapshotVersion + ".jar").toURL();
+                return URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + "-" + snapshotVersion + ".jar").toURL();
             }
         } else {
             File file = Constants.DIR;
@@ -85,7 +91,7 @@ public class ClassDowngrader {
                 return file.toURI().toURL();
             }
 
-            URL url = URI.create("https://maven.wagyourtail.xyz/releases/xyz/wagyourtail/unimined/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + ".jar").toURL();
+            URL url = URI.create("https://maven.wagyourtail.xyz/releases/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + ".jar").toURL();
             // download
             try (InputStream in = url.openStream()) {
                 Files.copy(in, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -96,32 +102,83 @@ public class ClassDowngrader {
 
     private static URL findJavaApi() {
         try {
+            Path tmp = Files.createTempFile("jvmdg-api", ".jar");
             URL url = getJavaApiFromSystemProperty();
-            if (url != null) {
-                return url;
+            if (url == null) {
+                url = getJavaApiFromShade();
             }
-            url = getJavaApiFromShade();
-            if (url != null) {
-                return url;
+            if (url == null) {
+                url = getJavaApiFromMaven();
             }
-            return getJavaApiFromMaven();
+            try (InputStream in = url.openStream()) {
+                Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+            }
+            return tmp.toUri().toURL();
         } catch (IOException e) {
             throw new RuntimeException("Failed to find java api", e);
         }
     }
 
-    protected Set<ClassNode> downgrade(ClassNode clazz, Function<String, ClassNode> getReadOnly) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException {
+    public List<Type> getSupertypes(int version, Type type) throws IOException {
+        for (int vers = version; vers > target; vers--) {
+            VersionProvider downgrader = downgraders.get(vers);
+            if (downgrader == null) {
+                throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
+            }
+            downgrader.ensureInit();
+            Type stubbed = downgrader.stubClass(type);
+            if (!stubbed.equals(type)) {
+                try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
+                    if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
+                    ClassReader reader = new ClassReader(stream);
+                    List<Type> types = new ArrayList<>();
+                    types.add(Type.getObjectType(reader.getSuperName()));
+                    for (String anInterface : reader.getInterfaces()) {
+                        types.add(Type.getObjectType(anInterface));
+                    }
+                    return types;
+                }
+            }
+        }
+        try (InputStream stream = classLoader.getResourceAsStream(type.getInternalName() + ".class")) {
+            if (stream == null) return null;
+            ClassReader reader = new ClassReader(stream);
+            List<Type> types = new ArrayList<>();
+            types.add(Type.getObjectType(reader.getSuperName()));
+            for (String anInterface : reader.getInterfaces()) {
+                types.add(Type.getObjectType(anInterface));
+            }
+            return types;
+        }
+    }
+
+    public Type stubClass(int version, Type type) {
+        for (int vers = version; vers > target; vers--) {
+            VersionProvider downgrader = downgraders.get(vers);
+            if (downgrader == null) {
+                throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
+            }
+            downgrader.ensureInit();
+            Type stubbed = downgrader.stubClass(type);
+            if (!stubbed.equals(type)) {
+                return stubbed;
+            }
+        }
+        return type;
+    }
+
+    protected Set<ClassNode> downgrade(ClassNode clazz, boolean enableRuntime, Function<String, ClassNode> getReadOnly) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IOException {
         Set<ClassNode> classes = new HashSet<>();
         classes.add(clazz);
         int version = clazz.version;
         while (version > target) {
             VersionProvider downgrader = downgraders.get(version);
             if (downgrader == null) {
-                throw new RuntimeException("Unsupported class version: " + version);
+                throw new RuntimeException("Unsupported class version: " + version + " supported: " + downgraders.keySet());
             }
             Set<ClassNode> newClasses = new HashSet<>();
             for (ClassNode c : classes) {
-                newClasses.add(downgrader.downgrade(c, newClasses, getReadOnly));
+                newClasses.add(downgrader.downgrade(c, newClasses, enableRuntime, getReadOnly));
             }
             classes = newClasses;
             version = downgrader.outputVersion;
@@ -129,7 +186,21 @@ public class ClassDowngrader {
         return classes;
     }
 
-    public Map<String, byte[]> downgrade(/* in out */ AtomicReference<String> name, byte[] bytes, final Function<String, byte[]> getExtraRead) throws IllegalClassFormatException {
+    public List<VersionProvider> versionProviders(int inputVersion) {
+        List<VersionProvider> providers = new ArrayList<>();
+        int version = inputVersion;
+        while (version > target) {
+            VersionProvider downgrader = downgraders.get(version);
+            if (downgrader == null) {
+                throw new RuntimeException("Unsupported class version: " + version + " supported: " + downgraders.keySet());
+            }
+            providers.add(downgrader);
+            version = downgrader.outputVersion;
+        }
+        return providers;
+    }
+
+    public Map<String, byte[]> downgrade(/* in out */ AtomicReference<String> name, byte[] bytes, boolean enableRuntime, final Function<String, byte[]> getExtraRead) throws IllegalClassFormatException {
         // check magic
         if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
             bytes[3] != (byte) 0xBE) {
@@ -152,7 +223,7 @@ public class ClassDowngrader {
         Map<String, byte[]> outputs = new HashMap<>();
         try {
             if (Constants.DEBUG) System.out.println("Transforming " + name.get());
-            Set<ClassNode> extra = downgrade(node, new Function<String, ClassNode>() {
+            Set<ClassNode> extra = downgrade(node, enableRuntime, new Function<String, ClassNode>() {
 
                 @Override
                 public ClassNode apply(String s) {
@@ -168,10 +239,19 @@ public class ClassDowngrader {
                 }
             });
             for (ClassNode c : extra) {
+                if (Constants.DEBUG) {
+                    File f = new File(Constants.DEBUG_DIR, c.name + ".javasm");
+                    f.getParentFile().mkdirs();
+                    try (FileOutputStream fos = new FileOutputStream(f)) {
+                        TraceClassVisitor tcv = new TraceClassVisitor(null, new Textifier(), new PrintWriter(fos));
+                        c.accept(tcv);
+                    } catch (IOException ignored) {
+                    }
+                }
                 outputs.put(c.name, classNodeToBytes(c, getExtraRead));
             }
         } catch (InvocationTargetException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException |
-                 InstantiationException e) {
+                 InstantiationException | IOException e) {
             throw new RuntimeException(e);
         }
         if (Constants.DEBUG) {
@@ -193,7 +273,8 @@ public class ClassDowngrader {
             public String apply(String s) {
                 byte[] b = getExtraRead.apply(s);
                 if (b == null) return null;
-                return bytesToClassNode(b).superName;
+                ClassNode cn = bytesToClassNode(b, ClassReader.SKIP_CODE);
+                return stubClass(cn.version, Type.getObjectType(cn.superName)).getInternalName();
             }
         });
         node.accept(cw);
@@ -227,63 +308,6 @@ public class ClassDowngrader {
 
     public static void main(String[] args) {
         //TODO
-    }
-
-    private static class ClassWriterASM extends ClassWriter {
-        private final Function<String, byte[]> getExtraRead;
-
-        public ClassWriterASM(int flags, Function<String, byte[]> getExtraRead) {
-            super(flags);
-            this.getExtraRead = getExtraRead;
-        }
-
-        @Override
-        protected String getCommonSuperClass(String type1, String type2) {
-            try {
-                return super.getCommonSuperClass(type1, type2);
-            } catch (Exception e) {
-                try {
-                    List<String> tree1 = buildInheritanceTree(type1);
-                    List<String> tree2 = buildInheritanceTree(type2);
-                    // find first that's in both
-                    for (String s : tree1) {
-                        if (tree2.contains(s)) {
-                            return s;
-                        }
-                    }
-                    throw new IllegalStateException("they should both extend Object...");
-                } catch (Exception ex) {
-                    ex.addSuppressed(e);
-                    throw ex;
-                }
-            }
-        }
-
-        protected List<String> buildInheritanceTree(String type) {
-            List<String> tree = new ArrayList<>();
-            tree.add(type);
-            while (!type.equals("java/lang/Object")) {
-                type = getSuperClass(type);
-                tree.add(type);
-            }
-            tree.add("java/lang/Object");
-            return tree;
-        }
-
-        protected String getSuperClass(String type) {
-            // try loading
-            try {
-                Class<?> clazz = Class.forName(type.replace('/', '.'));
-                return clazz.getSuperclass().getCanonicalName().replace('.', '/');
-            } catch (ClassNotFoundException ignored) {
-                try {
-                    ClassNode node = bytesToClassNode(getExtraRead.apply(type), ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-                    return node.superName;
-                } catch (Exception e) {
-                    return "java/lang/Object";
-                }
-            }
-        }
     }
 
 }

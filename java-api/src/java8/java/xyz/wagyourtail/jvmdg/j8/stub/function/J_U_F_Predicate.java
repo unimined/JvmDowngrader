@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.util.Objects;
 
 @J_L_FunctionalInterface
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/Predicate"))
+@Stub(ref = @Ref("Ljava/util/function/Predicate"))
 public interface J_U_F_Predicate<T> {
 
     boolean test(T t);

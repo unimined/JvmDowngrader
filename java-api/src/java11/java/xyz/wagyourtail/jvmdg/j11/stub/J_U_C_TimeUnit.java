@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 public class J_U_C_TimeUnit {
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static long convert(TimeUnit tu, Duration duration) {
         return tu.convert(duration.getSeconds(), TimeUnit.SECONDS) + tu.convert(
             duration.getNano(),

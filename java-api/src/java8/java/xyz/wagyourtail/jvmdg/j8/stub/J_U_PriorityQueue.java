@@ -10,12 +10,12 @@ import java.util.PriorityQueue;
 public class J_U_PriorityQueue {
 
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref(value = "java/util/PriorityQueue", member = "<init>"))
+    @Stub(ref = @Ref(value = "java/util/PriorityQueue", member = "<init>"))
     public static <E> PriorityQueue<E> init(Comparator<? super E> comparator) {
         return new PriorityQueue<>(11, comparator);
     }
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static <E> J_U_Spliterator<E> spliterator(PriorityQueue<E> queue) {
         return J_U_Spliterators.spliterator(queue, 0);
     }

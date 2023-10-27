@@ -11,7 +11,7 @@ import java.nio.charset.Charset;
 
 public class J_N_URLEncoder {
 
-    @Stub(opcVers = Opcodes.V10, ref = @Ref("Ljava/net/URLEncoder;"))
+    @Stub(ref = @Ref("Ljava/net/URLEncoder;"))
     public static String encode(String s, Charset charset) throws UnsupportedEncodingException {
         return URLEncoder.encode(s, charset.name());
     }

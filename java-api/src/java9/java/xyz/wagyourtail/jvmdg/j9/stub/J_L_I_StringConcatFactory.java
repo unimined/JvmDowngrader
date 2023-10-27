@@ -4,14 +4,14 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Replace;
 
 import java.util.*;
 
 public class J_L_I_StringConcatFactory {
 
-    @Replace(javaVersion = Opcodes.V9, ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcat", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"), idBSM = true)
+    @Modify(javaVersion = Opcodes.V9, ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcat", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
     public static void makeConcat(MethodNode mnode, int i, ClassNode cnode) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         Type[] args = Type.getArgumentTypes(indy.desc);
@@ -24,7 +24,7 @@ public class J_L_I_StringConcatFactory {
         mnode.instructions.remove(indy);
     }
 
-    @Replace(javaVersion = Opcodes.V9, ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcatWithConstants", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"), idBSM = true)
+    @Modify(javaVersion = Opcodes.V9, ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcatWithConstants", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
     public static void makeConcatWithConstants(MethodNode mnode, int i, ClassNode cnode) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         Type[] args = Type.getArgumentTypes(indy.desc);
@@ -533,7 +533,7 @@ public class J_L_I_StringConcatFactory {
                         // stack = [StringBuilder, StringBuilder]
                         visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
                         // stack = [StringBuilder]
-                        visitVarInsn(Opcodes.ALOAD, 0);
+                        visitVarInsn(first.getOpcode(Opcodes.ILOAD), 0);
                         // stack = [StringBuilder, type]
                         visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + type + ")Ljava/lang/StringBuilder;", false);
                 }

@@ -8,7 +8,7 @@ import java.io.BufferedReader;
 
 public class J_I_BufferedReader {
 
-    @Stub(opcVers = Opcodes.V1_8)
+    @Stub
     public static J_U_S_Stream<String> lines(BufferedReader reader) {
         //TODO
     }

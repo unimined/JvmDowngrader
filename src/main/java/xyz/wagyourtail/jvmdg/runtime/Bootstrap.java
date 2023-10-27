@@ -1,10 +1,25 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
+import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.instrument.Instrumentation;
+import java.lang.instrument.UnmodifiableClassException;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.CodeSource;
+import java.security.MessageDigest;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -12,7 +27,7 @@ public class Bootstrap {
     private static final Logger LOGGER = Logger.getLogger("JVMDowngrader");
 
     static {
-        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "true")) ? Level.ALL : Level.OFF);
+        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "true")) ? Level.ALL : Level.WARNING);
     }
 
     public static void main(String[] args) {
@@ -36,12 +51,56 @@ public class Bootstrap {
         }
     }
 
-    public static void premain(String args, Instrumentation instrumentation) {
-        LOGGER.info("Starting JVMDowngrader Bootstrap in agent mode.");
-        instrumentation.addTransformer(new ClassDowngradingAgent());
+    public static String sha1(Path p) {
+        try (InputStream stream = Files.newInputStream(p)) {
+            MessageDigest digestSha1 = MessageDigest.getInstance("SHA-1");
+            digestSha1.update(Utils.readAllBytes(stream));
+            byte[] hashBytes = digestSha1.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static void agentmain(String args, Instrumentation instrumentation) {
+
+    public static void premain(String args, Instrumentation instrumentation) throws IOException, URISyntaxException, UnmodifiableClassException {
+        LOGGER.info("Starting JVMDowngrader Bootstrap in agent mode.");
+        // downgrade api
+        Path zip = Paths.get(ClassDowngrader.javaApi.toURI());
+        String zipSha = sha1(zip);
+        Path tmp = Constants.DIR.toPath().resolve("java-api-downgraded-" + ClassDowngrader.currentVersionDowngrader.target + "-" + zipSha.substring(0, 8) + ".jar");
+        boolean downgrade = false;
+        if (!Files.exists(tmp)) {
+            LOGGER.warning("Downgrading java-api.jar as its hash changed or this is first launch, this may take a minute...");
+            downgrade = true;
+        }
+        if (downgrade) {
+            for (File file : tmp.getParent().toFile().listFiles()) {
+                if (file.isDirectory()) continue;
+                file.delete();
+            }
+            Files.createDirectories(tmp.getParent());
+            ZipDowngrader.downgradeZip(ClassDowngrader.currentVersionDowngrader, zip, new HashSet<URL>(), tmp);
+        }
+        instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(tmp.toFile()));
+        // add self
+        URL self = ClassDowngrader.class.getProtectionDomain().getCodeSource().getLocation();
+        instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(self.toURI().getPath()));
+        instrumentation.addTransformer(new ClassDowngradingAgent(), instrumentation.isRetransformClassesSupported());
+        if (!instrumentation.isModifiableClass(CodeSource.class) || !instrumentation.isRetransformClassesSupported()) {
+            LOGGER.severe("CodeSource is not modifiable, this will prevent loading signed classes properly!!!");
+        } else {
+            LOGGER.info("CodeSource is modifiable, attempting to retransform it to fix code signing.");
+            instrumentation.retransformClasses(CodeSource.class);
+        }
+        LOGGER.info("JVMDowngrader Bootstrap agent loaded.");
+    }
+
+    public static void agentmain(String args, Instrumentation instrumentation) throws URISyntaxException, IOException, UnmodifiableClassException {
         premain(args, instrumentation);
     }
 }

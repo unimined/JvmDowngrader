@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.internal;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import xyz.wagyourtail.jvmdg.version.VersionProvider;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.test.JavaRunner;
 
@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class JvmDowngraderTest {
@@ -56,8 +56,11 @@ public class JvmDowngraderTest {
         }
         return path;
     }
-
     private void testDowngrade(String mainClass) throws Exception {
+        testDowngrade(mainClass, true);
+    }
+
+    private void testDowngrade(String mainClass, boolean eq) throws Exception {
         System.out.println();
         System.out.println("Original: ");
 
@@ -72,7 +75,7 @@ public class JvmDowngraderTest {
             Map.of(),
             true,
             List.of(),
-            VersionProvider.getCurrentClassVersion(),
+            Utils.getCurrentClassVersion(),
             (String it) -> {
                 originalLog.append(it).append("\n");
                 System.out.println(it);
@@ -143,8 +146,13 @@ public class JvmDowngraderTest {
             throw new Exception("Runtime Downgraded jar did not return 0");
         }
 
-        assertEquals(originalLog.toString(), downgradedLog.toString());
-        assertEquals(originalLog.toString(), runtimeDowngradeLog.toString());
+        if (eq) {
+            assertEquals(originalLog.toString(), downgradedLog.toString());
+            assertEquals(originalLog.toString(), runtimeDowngradeLog.toString());
+        } else {
+            assertNotEquals(originalLog.toString(), downgradedLog.toString());
+            assertNotEquals(originalLog.toString(), runtimeDowngradeLog.toString());
+        }
     }
 
     @Test
@@ -200,5 +208,15 @@ public class JvmDowngraderTest {
     @Test
     public void testNests() throws Exception {
         testDowngrade("xyz.wagyourtail.downgradetest.TestNests");
+    }
+
+    @Test
+    public void testStackWalker() throws Exception {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestStackWalker");
+    }
+
+    @Test
+    public void testVersion() throws Exception {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestVersion", false);
     }
 }

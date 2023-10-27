@@ -30,7 +30,7 @@ public class J_L_I_MethodHandles$Lookup {
         }
     }
 
-    @Stub(opcVers = Opcodes.V15)
+    @Stub
     public static Class<?> ensureInitialized(Class<?> c) {
         if (c.isPrimitive()) {
             throw new IllegalArgumentException(c + " is a primitive class");
@@ -43,7 +43,7 @@ public class J_L_I_MethodHandles$Lookup {
         return c;
     }
 
-    @Stub(opcVers = Opcodes.V15, needsRuntime = true)
+    @Stub(requiresRuntime = true)
     public static Class<?> defineHiddenClass(MethodHandles.Lookup lookup, byte[] bytes, boolean initialize, J_L_I_MethodHandles$Lookup$ClassOption... options) throws IllegalClassFormatException {
         Objects.requireNonNull(bytes);
         Objects.requireNonNull(options);
@@ -55,7 +55,7 @@ public class J_L_I_MethodHandles$Lookup {
             return loader.defineClass0(bytes, 0, bytes.length);
         }
         AtomicReference<String> name = new AtomicReference<>(null);
-        Map<String, byte[]> classBytes = ClassDowngrader.currentVersionDowngrader.downgrade(name, bytes, loader);
+        Map<String, byte[]> classBytes = ClassDowngrader.currentVersionDowngrader.downgrade(name, bytes, true, loader);
         Class<?> c = null;
         for (Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
             if (Objects.equals(entry.getKey(), name.get())) {

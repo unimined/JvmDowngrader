@@ -11,7 +11,7 @@ import java.util.List;
 public class J_L_Class {
 
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static J_L_R_RecordComponent[] getRecordComponents(Class<?> clazz) {
         // check if the field exists
         Field[] fields = clazz.getDeclaredFields();
@@ -26,7 +26,7 @@ public class J_L_Class {
 
     }
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static boolean isRecord(Class<?> clazz) {
         return J_L_Record.class.isAssignableFrom(clazz);
     }

@@ -9,18 +9,18 @@ public class J_L_ClassLoader {
 
     // TODO: stub init's...
 
-    @Stub(opcVers = Opcodes.V9, subtypes = true)
+    @Stub
     public static String getName(ClassLoader classLoader) {
         // TODO: check if subclass actually overrides this method
         return null;
     }
 
-    @Stub(opcVers = Opcodes.V9, subtypes = true)
+    @Stub
     public static J_L_Module getUnnamedModule(ClassLoader classLoader) {
         return new J_L_Module(classLoader);
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/ClassLoader;"))
+    @Stub(ref = @Ref("Ljava/lang/ClassLoader;"))
     public static ClassLoader getPlatformClassLoader() {
         return ClassLoader.getSystemClassLoader();
     }

@@ -11,14 +11,14 @@ import java.util.stream.DoubleStream;
 
 public class J_U_S_DoubleStream {
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static DoubleStream mapMulti(DoubleStream stream, DoubleMapMultiConsumer mapper) {
         Objects.requireNonNull(mapper);
         return stream.flatMap(mapper::of);
     }
 
     @FunctionalInterface
-    @Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/util/stream/DoubleStream$DoubleMapMultiConsumer;"))
+    @Stub(ref = @Ref("Ljava/util/stream/DoubleStream$DoubleMapMultiConsumer;"))
     public interface DoubleMapMultiConsumer {
 
         default DoubleStream of(double d) {

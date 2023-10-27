@@ -8,7 +8,7 @@ import java.lang.reflect.Modifier;
 
 public class J_L_R_Modifier {
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/lang/reflect/Modifier;"))
+    @Stub(ref = @Ref("Ljava/lang/reflect/Modifier;"))
     public static int parameterModifiers() {
         return Modifier.FINAL;
     }

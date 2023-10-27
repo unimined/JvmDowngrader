@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_U_BitSet {
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/BitSet"))
+    @Stub(ref = @Ref("java/util/BitSet"))
     public static J_U_S_IntStream stream(java.util.BitSet bitSet) {
         //TODO
     }

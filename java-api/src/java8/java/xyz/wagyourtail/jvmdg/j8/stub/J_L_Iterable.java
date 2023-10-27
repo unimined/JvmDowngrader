@@ -8,16 +8,16 @@ import java.util.Objects;
 
 public class J_L_Iterable {
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
-    public static <T> void forEach(Iterable<T> iterable, J_U_F_Consumer<T> action) {
+    @Stub
+    public static void forEach(Iterable<?> iterable, J_U_F_Consumer<?> action) {
         Objects.requireNonNull(action);
         for (T o : iterable) {
             action.accept(o);
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8, subtypes = true)
-    public static <T> J_U_Spliterator<T> spliterator(Iterable<T> iterable) {
+    @Stub
+    public static J_U_Spliterator<?> spliterator(Iterable<?> iterable) {
         return J_U_Spliterators.spliteratorUnknownSize(iterable.iterator(), 0);
     }
 

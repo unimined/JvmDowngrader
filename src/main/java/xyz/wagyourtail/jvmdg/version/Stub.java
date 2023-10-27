@@ -7,20 +7,24 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Stub {
 
-    int opcVers();
-
+    /**
+     * reference to the stub target, if it can't be auto-resolved.
+     */
     Ref ref() default @Ref("");
 
-    Class<?>[] include() default {};
+    /**
+     * if the input version in the VersionProvider should be pushed onto the stack before the stub is called.
+     */
+    boolean downgradeVersion() default false;
 
-    boolean subtypes() default false;
+    /**
+     * if the stub requires the runtime to be loaded to work properly.
+     */
+    boolean requiresRuntime() default false;
 
-    boolean subtypesOnly() default false;
-
-    boolean returnDecendant() default false;
-
-    boolean defaultMethod() default false;
-
-    boolean needsRuntime() default false;
+    /**
+     * if was abstract/default and need to insert as default implementation while downgrading.
+     */
+    boolean wasAbstract() default false;
 
 }

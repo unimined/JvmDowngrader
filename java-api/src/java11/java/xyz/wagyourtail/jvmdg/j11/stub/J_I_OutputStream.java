@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public class J_I_OutputStream {
 
-    @Stub(opcVers = Opcodes.V11, ref = @Ref("Ljava/io/OutputStream;"), include = NullOutputStream.class)
+    @Stub(ref = @Ref("Ljava/io/OutputStream;"))
     public static OutputStream nullOutputStream() {
         return new NullOutputStream();
     }

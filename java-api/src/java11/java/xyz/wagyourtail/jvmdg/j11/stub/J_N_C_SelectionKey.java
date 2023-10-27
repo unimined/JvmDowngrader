@@ -8,7 +8,7 @@ import java.nio.channels.SelectionKey;
 
 public class J_N_C_SelectionKey {
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static int interestOpsOr(SelectionKey key, int ops) {
         synchronized (key) {
             int old = key.interestOps();

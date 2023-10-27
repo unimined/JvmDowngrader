@@ -10,7 +10,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Comparator;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Spliterator"))
+@Stub(ref = @Ref("java/util/Spliterator"))
 public interface J_U_Spliterator<T> {
 
     int ORDERED = 0x00000010;
@@ -90,7 +90,7 @@ public interface J_U_Spliterator<T> {
 
 
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Spliterator$OfInt"))
+    @Stub(ref = @Ref("java/util/Spliterator$OfInt"))
     interface OfInt extends OfPrimitive<Integer, J_U_F_IntConsumer, OfInt> {
 
         @Override
@@ -148,7 +148,7 @@ public interface J_U_Spliterator<T> {
 
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Spliterator$OfLong"))
+    @Stub(ref = @Ref("java/util/Spliterator$OfLong"))
     interface OfLong extends OfPrimitive<Long, J_U_F_LongConsumer, OfLong> {
 
         @Override
@@ -205,7 +205,7 @@ public interface J_U_Spliterator<T> {
 
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Spliterator$OfDouble"))
+    @Stub(ref = @Ref("java/util/Spliterator$OfDouble"))
     interface OfDouble extends OfPrimitive<Double, J_U_F_DoubleConsumer, OfDouble> {
 
         @Override

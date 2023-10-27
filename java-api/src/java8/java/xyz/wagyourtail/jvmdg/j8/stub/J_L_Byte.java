@@ -6,17 +6,17 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Byte {
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Byte"))
+    @Stub(ref = @Ref("java/lang/Byte"))
     public static int hashCode(byte value) {
         return value;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Byte"))
+    @Stub(ref = @Ref("java/lang/Byte"))
     public static int toUnsignedInt(byte value) {
         return value & 0xFF;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Byte"))
+    @Stub(ref = @Ref("java/lang/Byte"))
     public static long toUnsignedLong(byte value) {
         return value & 0xFFL;
     }

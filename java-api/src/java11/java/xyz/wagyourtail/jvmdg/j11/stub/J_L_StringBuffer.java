@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_StringBuffer {
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static int compareTo(StringBuffer sb, StringBuffer other) {
         synchronized (sb) {
             return J_L_CharSequence.compare(sb, other);

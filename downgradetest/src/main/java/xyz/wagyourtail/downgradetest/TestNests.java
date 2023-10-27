@@ -28,6 +28,8 @@ public class TestNests {
 
     public void test3() {
         String test3 = "test3";
+        Nest2.Nest3 nest3 = new Nest2().new Nest3();
+        nest3.test();
         System.out.println(new Object() {
 
             @Override
@@ -78,6 +80,7 @@ public class TestNests {
                 Nest1 nest1 = new Nest1();
                 System.out.println(nest1.test10());
                 System.out.println(Nest1.test11());
+                System.out.println(TestNests.this.test2);
             }
         }
     }

@@ -10,7 +10,7 @@ import java.util.Objects;
 
 public class J_U_Arrays {
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
         long[] a, int aFromIndex, int aToIndex,
         long[] b, int bFromIndex, int bToIndex
@@ -31,7 +31,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
         int[] a, int aFromIndex, int aToIndex,
         int[] b, int bFromIndex, int bToIndex
@@ -52,7 +52,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
         short[] a, int aFromIndex, int aToIndex,
         short[] b, int bFromIndex, int bToIndex
@@ -73,7 +73,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
         char[] a, int aFromIndex, int aToIndex,
         char[] b, int bFromIndex, int bToIndex
@@ -94,7 +94,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
         byte[] a, int aFromIndex, int aToIndex,
         byte[] b, int bFromIndex, int bToIndex
@@ -115,7 +115,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
         boolean[] a, int aFromIndex, int aToIndex,
         boolean[] b, int bFromIndex, int bToIndex
@@ -136,7 +136,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
         double[] a, int aFromIndex, int aToIndex,
         double[] b, int bFromIndex, int bToIndex
@@ -157,7 +157,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
         float[] a, int aFromIndex, int aToIndex,
         float[] b, int bFromIndex, int bToIndex
@@ -178,7 +178,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
         Object[] a, int aFromIndex, int aToIndex,
         Object[] b, int bFromIndex, int bToIndex
@@ -199,7 +199,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T> boolean equals(
         T[] a, T[] b, Comparator<? super T> comparator
     ) {
@@ -219,7 +219,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T> boolean equals(
         T[] a, int aFromIndex, int aToIndex,
         T[] b, int bFromIndex, int bToIndex,
@@ -241,7 +241,7 @@ public class J_U_Arrays {
         return true;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(boolean[] a, boolean[] b) {
         if (a == b) {
             return 0;
@@ -261,7 +261,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
         boolean[] a, int aFromIndex, int aToIndex,
         boolean[] b, int bFromIndex, int bToIndex
@@ -278,7 +278,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(byte[] a, byte[] b) {
         if (a == b) {
             return 0;
@@ -298,7 +298,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
         byte[] a, int aFromIndex, int aToIndex,
         byte[] b, int bFromIndex, int bToIndex
@@ -315,7 +315,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(byte[] a, byte[] b) {
         if (a == b) {
             return 0;
@@ -335,7 +335,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(
         byte[] a, int aFromIndex, int aToIndex,
         byte[] b, int bFromIndex, int bToIndex
@@ -352,7 +352,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(short[] a, short[] b) {
         if (a == b) {
             return 0;
@@ -372,7 +372,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
         short[] a, int aFromIndex, int aToIndex,
         short[] b, int bFromIndex, int bToIndex
@@ -389,7 +389,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(short[] a, short[] b) {
         if (a == b) {
             return 0;
@@ -409,7 +409,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(
         short[] a, int aFromIndex, int aToIndex,
         short[] b, int bFromIndex, int bToIndex
@@ -426,7 +426,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(char[] a, char[] b) {
         if (a == b) {
             return 0;
@@ -446,7 +446,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
         char[] a, int aFromIndex, int aToIndex,
         char[] b, int bFromIndex, int bToIndex
@@ -463,7 +463,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(int[] a, int[] b) {
         if (a == b) {
             return 0;
@@ -483,7 +483,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
         int[] a, int aFromIndex, int aToIndex,
         int[] b, int bFromIndex, int bToIndex
@@ -500,7 +500,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(int[] a, int[] b) {
         if (a == b) {
             return 0;
@@ -520,7 +520,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(
         int[] a, int aFromIndex, int aToIndex,
         int[] b, int bFromIndex, int bToIndex
@@ -537,7 +537,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(long[] a, long[] b) {
         if (a == b) {
             return 0;
@@ -557,7 +557,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
         long[] a, int aFromIndex, int aToIndex,
         long[] b, int bFromIndex, int bToIndex
@@ -574,7 +574,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(long[] a, long[] b) {
         if (a == b) {
             return 0;
@@ -594,7 +594,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(
         long[] a, int aFromIndex, int aToIndex,
         long[] b, int bFromIndex, int bToIndex
@@ -611,7 +611,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(float[] a, float[] b) {
         if (a == b) {
             return 0;
@@ -631,7 +631,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
         float[] a, int aFromIndex, int aToIndex,
         float[] b, int bFromIndex, int bToIndex
@@ -648,7 +648,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(double[] a, double[] b) {
         if (a == b) {
             return 0;
@@ -668,7 +668,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
         double[] a, int aFromIndex, int aToIndex,
         double[] b, int bFromIndex, int bToIndex
@@ -685,7 +685,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T extends Comparable<? super T>> int compare(T[] a, T[] b) {
         if (a == b) {
             return 0;
@@ -705,7 +705,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T extends Comparable<? super T>> int compare(
         T[] a, int aFromIndex, int aToIndex,
         T[] b, int bFromIndex, int bToIndex
@@ -722,7 +722,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T> int compare(T[] a, T[] b, Comparator<? super T> c) {
         if (a == b) {
             return 0;
@@ -742,7 +742,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T> int compare(
         T[] a, int aFromIndex, int aToIndex,
         T[] b, int bFromIndex, int bToIndex,
@@ -760,7 +760,7 @@ public class J_U_Arrays {
         return aLength - bLength;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(boolean[] a, boolean[] b) {
         int length = Math.min(a.length, b.length);
         if (a == b) {
@@ -777,7 +777,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"), include = ArraySupport.class)
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
         boolean[] a, int aFromIndex, int aToIndex,
         boolean[] b, int bFromIndex, int bToIndex
@@ -798,7 +798,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(byte[] a, byte[] b) {
         int length = Math.min(a.length, b.length);
         if (a == b) {
@@ -815,7 +815,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"), include = ArraySupport.class)
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
         byte[] a, int aFromIndex, int aToIndex,
         byte[] b, int bFromIndex, int bToIndex
@@ -836,7 +836,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(char[] a, char[] b) {
         int length = Math.min(a.length, b.length);
         if (a == b) {
@@ -853,7 +853,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"), include = ArraySupport.class)
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
         char[] a, int aFromIndex, int aToIndex,
         char[] b, int bFromIndex, int bToIndex
@@ -874,7 +874,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(short[] a, short[] b) {
         int length = Math.min(a.length, b.length);
         if (a == b) {
@@ -891,7 +891,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"), include = ArraySupport.class)
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
         short[] a, int aFromIndex, int aToIndex,
         short[] b, int bFromIndex, int bToIndex
@@ -912,7 +912,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(int[] a, int[] b) {
         int length = Math.min(a.length, b.length);
         if (a == b) {
@@ -929,7 +929,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"), include = ArraySupport.class)
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
         int[] a, int aFromIndex, int aToIndex,
         int[] b, int bFromIndex, int bToIndex
@@ -950,7 +950,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(long[] a, long[] b) {
         int length = Math.min(a.length, b.length);
         if (a == b) {
@@ -967,7 +967,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"), include = ArraySupport.class)
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
         long[] a, int aFromIndex, int aToIndex,
         long[] b, int bFromIndex, int bToIndex
@@ -988,7 +988,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(float[] a, float[] b) {
         int length = Math.min(a.length, b.length);
         if (a == b) {
@@ -1005,7 +1005,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"), include = ArraySupport.class)
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
         float[] a, int aFromIndex, int aToIndex,
         float[] b, int bFromIndex, int bToIndex
@@ -1026,7 +1026,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(double[] a, double[] b) {
         int length = Math.min(a.length, b.length);
         if (a == b) {
@@ -1043,7 +1043,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"), include = ArraySupport.class)
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
         double[] a, int aFromIndex, int aToIndex,
         double[] b, int bFromIndex, int bToIndex
@@ -1064,7 +1064,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(Object[] a, Object[] b) {
         int length = Math.min(a.length, b.length);
         if (a == b) {
@@ -1081,7 +1081,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"), include = ArraySupport.class)
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
         Object[] a, int aFromIndex, int aToIndex,
         Object[] b, int bFromIndex, int bToIndex
@@ -1102,7 +1102,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"))
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T> int mismatch(T[] a, T[] b, Comparator<? super T> comparator) {
         int length = Math.min(a.length, b.length);
         if (a == b) {
@@ -1119,7 +1119,7 @@ public class J_U_Arrays {
         return -1;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/util/Arrays;"), include = ArraySupport.class)
+    @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T> int mismatch(
         T[] a, int aFromIndex, int aToIndex,
         T[] b, int bFromIndex, int bToIndex,

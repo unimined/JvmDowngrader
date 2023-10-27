@@ -8,7 +8,7 @@ import java.util.Currency;
 
 public class J_U_Currency {
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static String getNumericCodeAsString(Currency self) {
         int code = self.getNumericCode();
         if (code < 100) {

@@ -5,7 +5,7 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/StringJoiner"))
+@Stub(ref = @Ref("java/util/StringJoiner"))
 public final class J_U_StringJoiner {
 
     private final String prefix;

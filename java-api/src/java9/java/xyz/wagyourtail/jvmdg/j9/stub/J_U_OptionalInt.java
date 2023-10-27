@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 
 public class J_U_OptionalInt {
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static void ifPresentOrElse(OptionalInt optional, IntConsumer action, Runnable emptyAction) {
         if (optional.isPresent()) {
             action.accept(optional.getAsInt());
@@ -19,7 +19,7 @@ public class J_U_OptionalInt {
         }
     }
 
-    @Stub(opcVers = Opcodes.V9)
+    @Stub
     public static IntStream stream(OptionalInt optional) {
         return optional.isPresent() ? IntStream.of(optional.getAsInt()) : IntStream.empty();
     }

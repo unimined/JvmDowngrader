@@ -7,7 +7,7 @@ import java.lang.reflect.Field;
 
 public class J_L_Class {
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static Class<?> getNestHost(Class<?> clazz) throws IllegalAccessException, ClassNotFoundException {
         if (clazz.isPrimitive() || clazz.isArray()) {
             return clazz;
@@ -21,7 +21,7 @@ public class J_L_Class {
         }
     }
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static boolean isNestmateOf(Class<?> clazz) throws ClassNotFoundException, IllegalAccessException {
         Class<?> host = getNestHost(clazz);
         if (host == clazz) {
@@ -36,7 +36,7 @@ public class J_L_Class {
         return false;
     }
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static Class<?>[] getNestMembers(Class<?> clazz) throws IllegalAccessException, ClassNotFoundException {
         if (clazz.isPrimitive() || clazz.isArray()) {
             return new Class<?>[] { clazz };

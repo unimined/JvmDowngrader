@@ -8,7 +8,7 @@ import java.lang.reflect.Field;
 
 public class J_L_Class {
 
-    @Stub(opcVers = Opcodes.V17)
+    @Stub
     public static Class<?>[] getPermittedSubclasses(Class<?> clazz) {
         // check if the field exists
         try {
@@ -27,7 +27,7 @@ public class J_L_Class {
         }
     }
 
-    @Stub(opcVers = Opcodes.V17)
+    @Stub
     public static boolean isSealed(Class<?> clazz) {
         try {
             clazz.getDeclaredField("jvmdowngrader$permittedSubclasses");

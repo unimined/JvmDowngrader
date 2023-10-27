@@ -10,7 +10,7 @@ import java.io.InputStream;
 
 public class J_I_InputStream {
 
-    @Stub(opcVers = Opcodes.V12)
+    @Stub
     public static void skipNBytes(InputStream stream, long n) throws IOException {
         while (n > 0) {
             long ns = stream.skip(n);

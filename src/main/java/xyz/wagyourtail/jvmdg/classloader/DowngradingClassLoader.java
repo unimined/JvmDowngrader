@@ -1,7 +1,7 @@
 package xyz.wagyourtail.jvmdg.classloader;
 
-import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.IOException;
@@ -50,7 +50,7 @@ public class DowngradingClassLoader extends ClassLoader {
         byte[] bytes;
         try {
             bytes = Utils.readAllBytes(url.openStream());
-            Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), bytes, new Function<String, byte[]>() {
+            Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), bytes, true, new Function<String, byte[]>() {
                 @Override
                 public byte[] apply(String s) {
                     try {

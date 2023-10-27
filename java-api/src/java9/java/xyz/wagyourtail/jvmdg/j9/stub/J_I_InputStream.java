@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public class J_I_InputStream {
 
-    @Stub(opcVers = Opcodes.V9, subtypes = true)
+    @Stub
     public static byte[] readAllBytes(InputStream in) throws IOException {
         int readBytes = 0;
         byte[] bytes = new byte[8192];
@@ -31,7 +31,7 @@ public class J_I_InputStream {
         return trimmed;
     }
 
-    @Stub(opcVers = Opcodes.V9, subtypes = true)
+    @Stub
     public static int readNBytes(InputStream in, byte[] b, int off, int len) throws IOException {
         J_U_Objects.checkFromIndexSize(off, len, b.length);
 
@@ -46,7 +46,7 @@ public class J_I_InputStream {
         return total;
     }
 
-    @Stub(opcVers = Opcodes.V9, subtypes = true)
+    @Stub
     public static long transferTo(InputStream in, OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
         long transferred = 0L;

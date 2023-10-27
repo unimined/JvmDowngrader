@@ -15,14 +15,14 @@ import java.util.stream.Collectors;
 public class J_L_Runtime {
 
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("java/lang/Runtime"))
+    @Stub(ref = @Ref("java/lang/Runtime"))
     public static Version version() {
         return Version.INSTANCE;
     }
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("java/lang/Runtime$Version"))
+    @Stub(ref = @Ref("java/lang/Runtime$Version"))
     public static final class Version implements Comparable<Version> {
-        public static final Version INSTANCE = Version.parse(System.getProperty("java.version"));
+        public static final Version INSTANCE = Version.parse(System.getProperty("java.runtime.version"));
         private final List<Integer> version;
         private final Optional<String> pre;
         private final Optional<Integer> build;
@@ -55,7 +55,7 @@ public class J_L_Runtime {
                     + s + "'");
 
             // $VNUM is a dot-separated list of integers of arbitrary length
-            String[] split = m.group(VersionPattern.VNUM_GROUP).split("\\.");
+            String[] split = m.group(VersionPattern.VNUM_GROUP).split("[._]");
             Integer[] version = new Integer[split.length];
             for (int i = 0; i < split.length; i++) {
                 version[i] = Integer.parseInt(split[i]);
@@ -69,6 +69,11 @@ public class J_L_Runtime {
             Optional<Integer> build = (b == null)
                 ? Optional.empty()
                 : Optional.of(Integer.parseInt(b));
+
+            if (pre.isPresent() && !build.isPresent() && pre.get().matches("b\\d+")) {
+                build = Optional.of(Integer.parseInt(pre.get().substring(1)));
+                pre = Optional.empty();
+            }
 
             Optional<String> optional = Optional.ofNullable(
                 m.group(VersionPattern.OPT_GROUP));
@@ -291,10 +296,10 @@ public class J_L_Runtime {
             // ([1-9][0-9]*(?:(?:\.0)*\.[1-9][0-9]*)*)(?:-([a-zA-Z0-9]+))?(?:(\+)(0|[1-9][0-9]*)?)?(?:-([-a-zA-Z0-9.]+))?
 
             private static final String VNUM
-                = "(?<VNUM>[1-9][0-9]*(?:(?:\\.0)*\\.[1-9][0-9]*)*)";
+                = "(?:1\\.)?(?<VNUM>[1-9][0-9]*(?:(?:\\.0)*[._][1-9][0-9]*)*)";
             private static final String PRE      = "(?:-(?<PRE>[a-zA-Z0-9]+))?";
             private static final String BUILD
-                = "(?:(?<PLUS>\\+)(?<BUILD>0|[1-9][0-9]*)?)?";
+                = "(?:(?<PLUS>\\+|-b)(?<BUILD>[0-9]+)?)?";
             private static final String OPT      = "(?:-(?<OPT>[-a-zA-Z0-9.]+))?";
             private static final String VSTR_FORMAT = VNUM + PRE + BUILD + OPT;
 

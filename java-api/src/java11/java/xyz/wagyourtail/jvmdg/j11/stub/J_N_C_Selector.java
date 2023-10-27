@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 
 public class J_N_C_Selector {
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static int select(Selector selector, Consumer<SelectionKey> action, long timeout) throws IOException {
         if (timeout < 0) {
             throw new IllegalArgumentException("Negative timeout");
@@ -22,12 +22,12 @@ public class J_N_C_Selector {
         return SelectorInternal.doSelect(selector, Objects.requireNonNull(action), timeout);
     }
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static int select(Selector selector, Consumer<SelectionKey> action) throws IOException {
         return SelectorInternal.doSelect(selector, Objects.requireNonNull(action), 0);
     }
 
-    @Stub(opcVers = Opcodes.V11)
+    @Stub
     public static int selectNow(Selector selector, Consumer<SelectionKey> action) throws IOException {
         return SelectorInternal.doSelect(selector, Objects.requireNonNull(action), -1);
     }

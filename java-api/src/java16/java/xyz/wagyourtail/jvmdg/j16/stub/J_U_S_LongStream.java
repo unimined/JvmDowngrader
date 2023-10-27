@@ -10,7 +10,7 @@ import java.util.stream.LongStream;
 
 public class J_U_S_LongStream {
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static LongStream mapMulti(LongStream stream, LongMapMultiConsumer mapper) {
         if (mapper == null) {
             throw new NullPointerException();
@@ -19,7 +19,7 @@ public class J_U_S_LongStream {
     }
 
     @FunctionalInterface
-    @Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/util/stream/LongStream$LongMapMultiConsumer;"))
+    @Stub(ref = @Ref("Ljava/util/stream/LongStream$LongMapMultiConsumer;"))
     public interface LongMapMultiConsumer {
 
         default LongStream of(long d) {

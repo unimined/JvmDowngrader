@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Byte {
 
-    @Stub(opcVers = Opcodes.V9, ref = @Ref("Ljava/lang/Byte;"))
+    @Stub(ref = @Ref("Ljava/lang/Byte;"))
     public static int compareUnsigned(byte x, byte y) {
         return Byte.toUnsignedInt(x) - Byte.toUnsignedInt(y);
     }

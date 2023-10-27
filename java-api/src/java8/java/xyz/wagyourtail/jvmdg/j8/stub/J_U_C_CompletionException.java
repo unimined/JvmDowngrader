@@ -4,7 +4,7 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/concurrent/CompletionException"))
+@Stub(ref = @Ref("java/util/concurrent/CompletionException"))
 public class J_U_C_CompletionException extends RuntimeException {
 
     protected J_U_C_CompletionException() {

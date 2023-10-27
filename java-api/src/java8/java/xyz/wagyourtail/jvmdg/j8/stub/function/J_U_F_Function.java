@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.util.Objects;
 
 @J_L_FunctionalInterface
-@Stub(opcVers = Opcodes.V1_8, ref = @Ref("Ljava/util/function/Function"))
+@Stub(ref = @Ref("Ljava/util/function/Function"))
 public interface J_U_F_Function<T, R> {
 
     R apply(T t);

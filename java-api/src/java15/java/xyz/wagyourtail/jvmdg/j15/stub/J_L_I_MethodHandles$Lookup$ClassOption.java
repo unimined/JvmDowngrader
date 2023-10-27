@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Set;
 
-@Stub(opcVers = Opcodes.V15, ref = @Ref("Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;"))
+@Stub(ref = @Ref("Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;"))
 public enum J_L_I_MethodHandles$Lookup$ClassOption {
     NESTMATE(0x00000001),
     STRONG(0x00000004);

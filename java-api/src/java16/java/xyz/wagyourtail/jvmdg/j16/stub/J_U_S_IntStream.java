@@ -10,7 +10,7 @@ import java.util.stream.IntStream;
 
 public class J_U_S_IntStream {
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static IntStream mapMulti(IntStream stream, IntMapMultiConsumer mapper) {
         if (mapper == null)
             throw new NullPointerException();
@@ -18,7 +18,7 @@ public class J_U_S_IntStream {
     }
 
     @FunctionalInterface
-    @Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/util/stream/IntStream$IntMapMultiConsumer;"))
+    @Stub(ref = @Ref("Ljava/util/stream/IntStream$IntMapMultiConsumer;"))
     public interface IntMapMultiConsumer {
 
         default IntStream of(int d) {

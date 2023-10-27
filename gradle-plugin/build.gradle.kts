@@ -16,8 +16,6 @@ dependencies {
     implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
     implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
     implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
-    implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
-    implementation("org.ow2.asm:asm-analysis:${project.properties["asm_version"]}")
 
     testImplementation(kotlin("test"))
 }

@@ -14,7 +14,7 @@ public class J_N_F_FileSystems {
 
     // fix env bug in older java
 
-    @Stub(opcVers = Opcodes.V12, ref = @Ref("java/nio/file/FileSystems"))
+    @Stub(ref = @Ref("java/nio/file/FileSystems"))
     public static FileSystem newFileSystem(URI uri, Map<String, Object> env) throws IOException {
         env.replaceAll((k, v) -> {
             if (v instanceof Boolean && !k.equals("useTempFile")) {
@@ -25,7 +25,7 @@ public class J_N_F_FileSystems {
         return FileSystems.newFileSystem(uri, env);
     }
 
-    @Stub(opcVers = Opcodes.V12, ref = @Ref("java/nio/file/FileSystems"))
+    @Stub(ref = @Ref("java/nio/file/FileSystems"))
     public static FileSystem newFileSystem(URI uri, Map<String, Object> env, ClassLoader loader) throws IOException {
         env.replaceAll((k, v) -> {
             if (v instanceof Boolean && !k.equals("useTempFile")) {

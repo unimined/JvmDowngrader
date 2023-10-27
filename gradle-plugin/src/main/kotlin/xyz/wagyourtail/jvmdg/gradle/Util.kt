@@ -62,5 +62,10 @@ fun jvToOpc(vers: JavaVersion): Int = when (vers) {
     JavaVersion.VERSION_15 -> Opcodes.V15
     JavaVersion.VERSION_16 -> Opcodes.V16
     JavaVersion.VERSION_17 -> Opcodes.V17
+    JavaVersion.VERSION_18 -> Opcodes.V18
+    JavaVersion.VERSION_19 -> Opcodes.V19
+    JavaVersion.VERSION_20 -> Opcodes.V20
+    JavaVersion.VERSION_21 -> Opcodes.V21
+    JavaVersion.VERSION_22 -> Opcodes.V22
     else -> throw IllegalArgumentException("Unsupported Java Version: $vers")
 }

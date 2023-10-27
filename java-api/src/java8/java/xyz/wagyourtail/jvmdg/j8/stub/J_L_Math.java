@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Math {
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static int addExact(int x, int y) {
         int r = x + y;
         if (((x ^ r) & (y ^ r)) < 0) {
@@ -15,7 +15,7 @@ public class J_L_Math {
         return r;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static long addExact(long x, long y) {
         long r = x + y;
         if (((x ^ r) & (y ^ r)) < 0) {
@@ -24,7 +24,7 @@ public class J_L_Math {
         return r;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static int subtractExact(int x, int y) {
         int r = x - y;
         if (((x ^ y) & (x ^ r)) < 0) {
@@ -33,7 +33,7 @@ public class J_L_Math {
         return r;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static long subtractExact(long x, long y) {
         long r = x - y;
         if (((x ^ y) & (x ^ r)) < 0) {
@@ -42,7 +42,7 @@ public class J_L_Math {
         return r;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static int multiplyExact(int x, int y) {
         long r = (long) x * (long) y;
         if ((int) r != r) {
@@ -51,7 +51,7 @@ public class J_L_Math {
         return (int) r;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static long multiplyExact(long x, long y) {
         long r = x * y;
         long ax = Math.abs(x);
@@ -65,7 +65,7 @@ public class J_L_Math {
         return r;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static int incrementExact(int a) {
         if (a == Integer.MAX_VALUE) {
             throw new ArithmeticException("integer overflow");
@@ -73,7 +73,7 @@ public class J_L_Math {
         return a + 1;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static long incrementExact(long a) {
         if (a == Long.MAX_VALUE) {
             throw new ArithmeticException("long overflow");
@@ -81,7 +81,7 @@ public class J_L_Math {
         return a + 1L;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static int decrementExact(int a) {
         if (a == Integer.MIN_VALUE) {
             throw new ArithmeticException("integer overflow");
@@ -89,7 +89,7 @@ public class J_L_Math {
         return a - 1;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static long decrementExact(long a) {
         if (a == Long.MIN_VALUE) {
             throw new ArithmeticException("long overflow");
@@ -97,7 +97,7 @@ public class J_L_Math {
         return a - 1L;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static int negateExact(int a) {
         if (a == Integer.MIN_VALUE) {
             throw new ArithmeticException("integer overflow");
@@ -105,7 +105,7 @@ public class J_L_Math {
         return -a;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static long negateExact(long a) {
         if (a == Long.MIN_VALUE) {
             throw new ArithmeticException("long overflow");
@@ -113,7 +113,7 @@ public class J_L_Math {
         return -a;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static int toIntExact(long value) {
         if ((int) value != value) {
             throw new ArithmeticException("integer overflow");
@@ -121,7 +121,7 @@ public class J_L_Math {
         return (int) value;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static int floorDiv(int x, int y) {
         int r = x / y;
         if (((x ^ y) < 0) && ((r * y) != x)) {
@@ -130,7 +130,7 @@ public class J_L_Math {
         return r;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static long floorDiv(long x, long y) {
         long r = x / y;
         if (((x ^ y) < 0) && ((r * y) != x)) {
@@ -139,7 +139,7 @@ public class J_L_Math {
         return r;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static int floorMod(int x, int y) {
         int r = x % y;
         if (((x ^ y) < 0) && (r < 0)) {
@@ -148,7 +148,7 @@ public class J_L_Math {
         return r;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static long floorMod(long x, long y) {
         long r = x % y;
         if (((x ^ y) < 0) && (r < 0)) {
@@ -157,7 +157,7 @@ public class J_L_Math {
         return r;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static double nextDown(double d) {
         if (Double.isNaN(d) || d == Double.NEGATIVE_INFINITY) {
             return d;
@@ -170,7 +170,7 @@ public class J_L_Math {
         }
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/lang/Math"))
+    @Stub(ref = @Ref("java/lang/Math"))
     public static float nextDown(float f) {
         if (Float.isNaN(f) || f == Float.NEGATIVE_INFINITY) {
             return f;

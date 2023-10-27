@@ -9,7 +9,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.regex.Pattern;
 
-@Stub(opcVers = Opcodes.V16, ref = @Ref("Ljava/lang/reflect/RecordComponent;"))
+@Stub(ref = @Ref("Ljava/lang/reflect/RecordComponent;"))
 public class J_L_R_RecordComponent {
 
     private final Class<?> declaring;

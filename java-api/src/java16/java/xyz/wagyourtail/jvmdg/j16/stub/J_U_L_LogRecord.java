@@ -8,12 +8,12 @@ import java.util.logging.LogRecord;
 
 public class J_U_L_LogRecord {
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static long getLongThreadID(LogRecord record) {
         return record.getThreadID();
     }
 
-    @Stub(opcVers = Opcodes.V16)
+    @Stub
     public static void setLongThreadID(LogRecord record, long threadID) {
         if (threadID >= 0 && threadID <= Integer.MAX_VALUE) {
             record.setThreadID((int) threadID);

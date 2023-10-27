@@ -1,4 +1,20 @@
-import groovyjarjarasm.asm.Opcodes
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.tree.ClassNode
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.ow2.asm:asm:${project.properties["asm_version"]}")
+    }
+}
+
+plugins {
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+}
 
 fun SourceSet.inputOf(sourceSet: SourceSet) {
     compileClasspath += sourceSet.compileClasspath
@@ -14,12 +30,16 @@ operator fun JavaVersion.rangeTo(that: JavaVersion): Array<JavaVersion> {
     return JavaVersion.values().copyOfRange(this.ordinal, that.ordinal + 1)
 }
 
-val fromVersion = JavaVersion.VERSION_1_7
-val toVersion = JavaVersion.VERSION_16
+operator fun JavaVersion.minus(int: Int): JavaVersion {
+    return JavaVersion.values()[this.ordinal - int]
+}
+
+val fromVersion = JavaVersion.toVersion(project.properties["stubFromVersion"]!!)
+val toVersion = JavaVersion.toVersion(project.properties["stubToVersion"]!!)
 
 sourceSets {
     for (vers in fromVersion..toVersion) {
-        create("java${vers.ordinal + 2}") {
+        create("java${vers.ordinal + 1}") {
             inputOf(main.get())
             main {
                 outputOf(this@create)
@@ -29,21 +49,77 @@ sourceSets {
 }
 
 dependencies {
-    implementation(project(":"))
-}
-
-for (vers in fromVersion..toVersion) {
-    tasks.getByName("compileJava${vers.ordinal + 2}Java") {
-        (this as JavaCompile).configCompile(vers)
+    implementation(project(":")) {
+        isTransitive = false
     }
 }
 
+for (vers in fromVersion..toVersion) {
+    tasks.getByName("compileJava${vers.ordinal + 1}Java") {
+        (this as JavaCompile).configCompile(vers - 1)
+    }
+}
+
+val mainVersion = JavaVersion.toVersion(project.properties["mainVersion"]!!)
+
 tasks.compileJava {
-    configCompile(JavaVersion.VERSION_1_7)
+    doFirst {
+        val tempDir = project.projectDir.resolve("build/tmp/compileJava").resolve("stubClasspath")
+        for (vers in fromVersion..toVersion) {
+            classpath -= sourceSets["java${vers.ordinal + 1}"].output
+            sourceSets["java${vers.ordinal + 1}"].output.files.forEach {
+                for (file in it.walk()) {
+                    if (file.isFile && file.extension == "class") {
+                        // write class file to subdir of tempDir as empty class file of version 1.7
+                        val path = file.relativeTo(it).path
+                        val stubFile = tempDir.resolve(path)
+                        stubFile.parentFile.mkdirs()
+                        val stubClass = ClassWriter(0)
+                        val reader = file.inputStream().buffered().use { ClassReader(it) }
+                        val node = ClassNode()
+                        reader.accept(node, ClassReader.SKIP_CODE)
+                        stubClass.visit(
+                            jvToOpc(mainVersion),
+                            node.access,
+                            node.name,
+                            node.signature,
+                            node.superName,
+                            node.interfaces.toTypedArray()
+                        )
+                        for (innerClass in node.innerClasses ?: listOf()) {
+                            stubClass.visitInnerClass(
+                                innerClass.name,
+                                innerClass.outerName,
+                                innerClass.innerName,
+                                innerClass.access
+                            )
+                        }
+                        stubClass.visitEnd()
+                        stubFile.writeBytes(stubClass.toByteArray())
+                    }
+                }
+            }
+        }
+        classpath += files(tempDir)
+    }
+    configCompile(mainVersion)
+}
+
+val testVersion = JavaVersion.toVersion(project.properties["testVersion"]!!)
+
+tasks.compileTestJava {
+    configCompile(testVersion)
 }
 
 tasks.jar {
     from(*sourceSets.toList().map { it.output }.toTypedArray())
+}
+
+tasks.shadowJar {
+    from(*sourceSets.toList().map { it.output }.toTypedArray())
+    archiveClassifier.set("jij")
+    relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
+    configurations = listOf()
 }
 
 fun JavaCompile.configCompile(version: JavaVersion) {
@@ -51,7 +127,10 @@ fun JavaCompile.configCompile(version: JavaVersion) {
     targetCompatibility = version.toString()
 
     options.encoding = "UTF-8"
-    options.release.set(version.ordinal + 1)
+
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(version.majorVersion)
+    }
 }
 
 fun jvToOpc(vers: JavaVersion): Int = when (vers) {
@@ -72,10 +151,15 @@ fun jvToOpc(vers: JavaVersion): Int = when (vers) {
     JavaVersion.VERSION_15 -> Opcodes.V15
     JavaVersion.VERSION_16 -> Opcodes.V16
     JavaVersion.VERSION_17 -> Opcodes.V17
+    JavaVersion.VERSION_18 -> Opcodes.V18
+    JavaVersion.VERSION_19 -> Opcodes.V19
+    JavaVersion.VERSION_20 -> Opcodes.V20
+    JavaVersion.VERSION_21 -> Opcodes.V21
+    JavaVersion.VERSION_22 -> Opcodes.V22
     else -> throw IllegalArgumentException("Unsupported Java Version: $vers")
 }
 
-tasks.register("downgradeJar11", Jar::class.java) {
+val downgradeJar11 by tasks.registering(Jar::class) {
     dependsOn(tasks.jar)
     archiveClassifier.set("downgraded-11")
 
@@ -100,7 +184,7 @@ tasks.register("downgradeJar11", Jar::class.java) {
 }
 
 
-tasks.register("downgradeJar8", Jar::class.java) {
+val downgradeJar8 by tasks.registering(Jar::class) {
     dependsOn(tasks.jar)
     archiveClassifier.set("downgraded-8")
 

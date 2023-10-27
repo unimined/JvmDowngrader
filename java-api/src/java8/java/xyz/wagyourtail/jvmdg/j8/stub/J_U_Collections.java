@@ -10,57 +10,57 @@ import java.util.*;
 
 public class J_U_Collections {
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <T> NavigableSet<T> unmodifiableNavigableSet(NavigableSet<? extends T> s) {
         return (NavigableSet<T>) new UnmodifiableNavigableCollection<>(s);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <K, V> NavigableMap<K, V> unmodifiableNavigableMap(NavigableMap<K, ? extends V> m) {
         return (NavigableMap<K, V>) new UnmodifiableNavigableMap<>(m);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <T> NavigableSet<T> synchronizedNavigableSet(NavigableSet<T> s) {
         return new SynchronizedNavigableSet<>(s);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <K, V> NavigableMap<K, V> synchronizedNavigableMap(NavigableMap<K, V> m) {
         return new SynchronizedNavigableMap<>(m);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <E> Queue<E> checkedQueue(Queue<E> queue, Class<E> type) {
         return new CheckedQueue<>(queue, type);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <E> NavigableSet<E> checkedNavigableSet(NavigableSet<E> s, Class<E> type) {
         return new CheckedNavigableSet<>(s, type);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <K, V> NavigableMap<K, V> checkedNavigableMap(NavigableMap<K, V> s, Class<K> keyType, Class<V> valueType) {
         return new CheckedNavigableMap<>(s, keyType, valueType);
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <E> SortedSet<E> emptySortedSet() {
         return Collections.unmodifiableSortedSet(new TreeSet());
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <E> NavigableSet<E> emptyNavigableSet() {
         return UnmodifiableNavigableCollection.EMPTY;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <K, V> SortedMap<K, V> emptySortedMap() {
         return UnmodifiableNavigableMap.EMPTY;
     }
 
-    @Stub(opcVers = Opcodes.V1_8, ref = @Ref("java/util/Collections"))
+    @Stub(ref = @Ref("java/util/Collections"))
     public static <K, V> NavigableMap<K, V> emptyNavigableMap() {
         return UnmodifiableNavigableMap.EMPTY;
     }

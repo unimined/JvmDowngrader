@@ -18,7 +18,7 @@ class ASMClassWriter(flags: Int, private val getSuperType: (String) -> String?) 
             try {
                 val c = Class.forName(current.replace('/', '.'))
                 current = c.superclass.getName().replace('.', '/')
-            } catch (e: ClassNotFoundException) {
+            } catch (e: Throwable) {
                 current = getSuperType(current)
                 if (current == null) {
                     current = "java/lang/Object"
