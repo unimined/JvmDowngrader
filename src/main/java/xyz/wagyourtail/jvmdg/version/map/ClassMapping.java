@@ -125,8 +125,7 @@ public class ClassMapping {
             }
             Method m = pair.getFirst();
             if (!runtimeAvailable && pair.getSecond().requiresRuntime()) {
-                System.err.println("WARNING: " + m + " requires runtime transformation but runtime is not available, skipping stub...");
-                return null;
+                System.err.println("WARNING: " + m + " requires runtime transformation but runtime is not available...");
             }
             if (pair.getSecond().wasAbstract()) {
                 // these are special and should be treated differently, as we will implement them on the newer classes in a seperate transform
