@@ -7,7 +7,9 @@ plugins {
 allprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
-    apply(plugin = "com.github.johnrengelman.shadow")
+    if (this.path.equals(":java-api")) {
+        apply(plugin = "com.github.johnrengelman.shadow")
+    }
 
     version = if (project.hasProperty("version_snapshot")) "${project.properties["version"]}-SNAPSHOT" else project.properties["version"] as String
     group = project.properties["maven_group"] as String
@@ -122,7 +124,7 @@ val jarInJar by tasks.registering(Jar::class) {
 
     dependsOn(project(":java-api").tasks.shadowJar)
 
-    from(project.project(":java-api").tasks.shadowJar.get().outputs.files) {
+    from(project.project(":java-api").tasks.getByName("shadowJar").outputs.files) {
         into("META-INF/lib")
         rename {
             "java-api.jar"
