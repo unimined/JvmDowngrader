@@ -36,30 +36,20 @@ public class IntArraySpliterator implements J_U_Spliterator.OfInt {
 
     @Override
     public boolean tryAdvance(final J_U_F_Consumer<? super Integer> action) {
-        return tryAdvance(new J_U_F_IntConsumer() {
+        return tryAdvance(new J_U_F_IntConsumer.IntConsumerAdapter() {
             @Override
             public void accept(int value) {
                 action.accept(value);
-            }
-
-            @Override
-            public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-                return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
             }
         });
     }
 
     @Override
     public void forEachRemaining(final J_U_F_Consumer<? super Integer> action) {
-        forEachRemaining(new J_U_F_IntConsumer() {
+        forEachRemaining(new J_U_F_IntConsumer.IntConsumerAdapter() {
             @Override
             public void accept(int value) {
                 action.accept(value);
-            }
-
-            @Override
-            public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-                return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
             }
         });
     }

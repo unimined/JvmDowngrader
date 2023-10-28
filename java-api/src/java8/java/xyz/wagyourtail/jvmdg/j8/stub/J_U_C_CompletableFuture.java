@@ -242,7 +242,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
         });
         try {
             semaphore.acquire();
-            return other.thenApply(new J_U_F_Function<U, V>() {
+            return other.thenApply(new J_U_F_Function.FunctionAdapter<U, V>() {
                 @Override
                 public V apply(U u) {
                     try {
@@ -252,16 +252,6 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
                     } catch (ExecutionException e) {
                         throw new J_U_C_CompletionException(e.getCause());
                     }
-                }
-
-                @Override
-                public <V1> J_U_F_Function<V1, V> compose(J_U_F_Function<? super V1, ? extends U> before) {
-                    return FunctionDefaults.compose(this, before);
-                }
-
-                @Override
-                public <V1> J_U_F_Function<U, V1> andThen(J_U_F_Function<? super V, ? extends V1> after) {
-                    return FunctionDefaults.andThen(this, after);
                 }
             });
         } catch (InterruptedException e) {
@@ -295,7 +285,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
         });
         try {
             semaphore.acquire();
-            return other.thenAccept((J_U_F_Function) new J_U_F_Function<U, Object>() {
+            return other.thenAccept((J_U_F_Function) new J_U_F_Function.FunctionAdapter<U, Object>() {
                 @Override
                 public Object apply(U u) {
                     try {
@@ -304,16 +294,6 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
                         throw new RuntimeException(e);
                     }
                     return null;
-                }
-
-                @Override
-                public <V> J_U_F_Function<V, Object> compose(J_U_F_Function<? super V, ? extends U> before) {
-                    return FunctionDefaults.compose(this, before);
-                }
-
-                @Override
-                public <V> J_U_F_Function<U, V> andThen(J_U_F_Function<? super Object, ? extends V> after) {
-                    return FunctionDefaults.andThen(this, after);
                 }
             });
         } catch (InterruptedException e) {
@@ -441,22 +421,12 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
 
     @Override
     public J_U_C_CompletionStage<Void> acceptEither(final J_U_C_CompletionStage<? extends T> other, final J_U_F_Function<? super T, Void> action) {
-        return applyToEither(other, (J_U_F_Function) new J_U_F_Function<T, Object>() {
+        return applyToEither(other, (J_U_F_Function) new J_U_F_Function.FunctionAdapter<T, Object>() {
 
             @Override
             public Object apply(T t) {
                 action.apply(t);
                 return null;
-            }
-
-            @Override
-            public <V> J_U_F_Function<V, Object> compose(J_U_F_Function<? super V, ? extends T> before) {
-                return FunctionDefaults.compose(this, before);
-            }
-
-            @Override
-            public <V> J_U_F_Function<T, V> andThen(J_U_F_Function<? super Object, ? extends V> after) {
-                return FunctionDefaults.andThen(this, after);
             }
         });
     }
@@ -468,21 +438,11 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
 
     @Override
     public J_U_C_CompletionStage<Void> acceptEitherAsync(J_U_C_CompletionStage<? extends T> other, final J_U_F_Function<? super T, Void> action, Executor executor) {
-        return applyToEitherAsync(other, new J_U_F_Function<T, Void>() {
+        return applyToEitherAsync(other, new J_U_F_Function.FunctionAdapter<T, Void>() {
             @Override
             public Void apply(T t) {
                 action.apply(t);
                 return null;
-            }
-
-            @Override
-            public <V> J_U_F_Function<V, Void> compose(J_U_F_Function<? super V, ? extends T> before) {
-                return FunctionDefaults.compose(this, before);
-            }
-
-            @Override
-            public <V> J_U_F_Function<T, V> andThen(J_U_F_Function<? super Void, ? extends V> after) {
-                return FunctionDefaults.andThen(this, after);
             }
         }, executor);
     }
@@ -572,20 +532,10 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
 
     @Override
     public <U> J_U_C_CompletionStage<U> thenComposeAsync(J_U_F_Function<? super T, ? extends J_U_C_CompletionStage<U>> fn, Executor executor) {
-        return thenApplyAsync(fn, executor).thenApplyAsync(new J_U_F_Function<J_U_C_CompletionStage<U>, U>() {
+        return thenApplyAsync(fn, executor).thenApplyAsync(new J_U_F_Function.FunctionAdapter<J_U_C_CompletionStage<U>, U>() {
             @Override
             public U apply(J_U_C_CompletionStage<U> ujUCCompletionStage) {
                 return ujUCCompletionStage.toCompletableFuture().join();
-            }
-
-            @Override
-            public <V> J_U_F_Function<V, U> compose(J_U_F_Function<? super V, ? extends J_U_C_CompletionStage<U>> before) {
-                return FunctionDefaults.compose(this, before);
-            }
-
-            @Override
-            public <V> J_U_F_Function<J_U_C_CompletionStage<U>, V> andThen(J_U_F_Function<? super U, ? extends V> after) {
-                return FunctionDefaults.andThen(this, after);
             }
         }, executor);
     }
@@ -641,16 +591,11 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
 
     @Override
     public J_U_C_CompletionStage<T> whenComplete(final J_U_F_BiConsumer<? super T, ? super Throwable> action) {
-        return handle(new J_U_F_BiFunction<T, Throwable, T>() {
+        return handle(new J_U_F_BiFunction.BiFunctionAdapter<T, Throwable, T>() {
             @Override
             public T apply(T t, Throwable throwable) {
                 action.accept(t, throwable);
                 return t;
-            }
-
-            @Override
-            public <V> J_U_F_BiFunction<T, Throwable, V> andThen(J_U_F_Function<? super T, ? extends V> after) {
-                return BiFunctionDefaults.andThen(this, after);
             }
         });
     }
@@ -662,16 +607,11 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
 
     @Override
     public J_U_C_CompletionStage<T> whenCompleteAsync(final J_U_F_BiConsumer<? super T, ? super Throwable> action, Executor executor) {
-        return handleAsync(new J_U_F_BiFunction<T, Throwable, T>() {
+        return handleAsync(new J_U_F_BiFunction.BiFunctionAdapter<T, Throwable, T>() {
             @Override
             public T apply(T t, Throwable throwable) {
                 action.accept(t, throwable);
                 return t;
-            }
-
-            @Override
-            public <V> J_U_F_BiFunction<T, Throwable, V> andThen(J_U_F_Function<? super T, ? extends V> after) {
-                return BiFunctionDefaults.andThen(this, after);
             }
         }, executor);
     }

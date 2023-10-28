@@ -49,15 +49,10 @@ public class IntIteratorSpliterator implements J_U_Spliterator.OfInt {
         if (action == null) {
             throw new NullPointerException();
         }
-        it.forEachRemaining(new J_U_F_IntConsumer() {
+        it.forEachRemaining(new J_U_F_IntConsumer.IntConsumerAdapter() {
             @Override
             public void accept(int value) {
                 action.accept(value);
-            }
-
-            @Override
-            public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-                return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
             }
         });
     }

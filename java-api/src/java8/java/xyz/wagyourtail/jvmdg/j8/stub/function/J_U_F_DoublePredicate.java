@@ -24,50 +24,20 @@ public interface J_U_F_DoublePredicate {
         @Stub(abstractDefault = true)
         public static J_U_F_DoublePredicate and(final J_U_F_DoublePredicate self, final J_U_F_DoublePredicate other) {
             Objects.requireNonNull(other);
-            return new J_U_F_DoublePredicate() {
+            return new J_U_F_DoublePredicate.DoublePredicateAdapter() {
                 @Override
                 public boolean test(double value) {
                     return self.test(value) && other.test(value);
-                }
-
-                @Override
-                public J_U_F_DoublePredicate and(J_U_F_DoublePredicate other) {
-                    return DoublePredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_DoublePredicate negate() {
-                    return DoublePredicateDefaults.negate(this);
-                }
-
-                @Override
-                public J_U_F_DoublePredicate or(J_U_F_DoublePredicate other) {
-                    return DoublePredicateDefaults.or(this, other);
                 }
             };
         }
 
         @Stub(abstractDefault = true)
         public static J_U_F_DoublePredicate negate(final J_U_F_DoublePredicate self) {
-            return new J_U_F_DoublePredicate() {
+            return new J_U_F_DoublePredicate.DoublePredicateAdapter() {
                 @Override
                 public boolean test(double value) {
                     return !self.test(value);
-                }
-
-                @Override
-                public J_U_F_DoublePredicate and(J_U_F_DoublePredicate other) {
-                    return DoublePredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_DoublePredicate negate() {
-                    return self;
-                }
-
-                @Override
-                public J_U_F_DoublePredicate or(J_U_F_DoublePredicate other) {
-                    return DoublePredicateDefaults.or(this, other);
                 }
             };
         }
@@ -75,27 +45,31 @@ public interface J_U_F_DoublePredicate {
         @Stub(abstractDefault = true)
         public static J_U_F_DoublePredicate or(final J_U_F_DoublePredicate self, final J_U_F_DoublePredicate other) {
             Objects.requireNonNull(other);
-            return new J_U_F_DoublePredicate() {
+            return new J_U_F_DoublePredicate.DoublePredicateAdapter() {
                 @Override
                 public boolean test(double value) {
                     return self.test(value) || other.test(value);
                 }
-
-                @Override
-                public J_U_F_DoublePredicate and(J_U_F_DoublePredicate other) {
-                    return DoublePredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_DoublePredicate negate() {
-                    return DoublePredicateDefaults.negate(this);
-                }
-
-                @Override
-                public J_U_F_DoublePredicate or(J_U_F_DoublePredicate other) {
-                    return DoublePredicateDefaults.or(this, other);
-                }
             };
+        }
+
+    }
+
+    abstract class DoublePredicateAdapter implements J_U_F_DoublePredicate {
+
+        @Override
+        public J_U_F_DoublePredicate and(J_U_F_DoublePredicate other) {
+            return DoublePredicateDefaults.and(this, other);
+        }
+
+        @Override
+        public J_U_F_DoublePredicate negate() {
+            return DoublePredicateDefaults.negate(this);
+        }
+
+        @Override
+        public J_U_F_DoublePredicate or(J_U_F_DoublePredicate other) {
+            return DoublePredicateDefaults.or(this, other);
         }
 
     }

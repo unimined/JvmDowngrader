@@ -20,18 +20,22 @@ public interface J_U_F_DoubleConsumer {
         @Stub(abstractDefault = true)
         public static J_U_F_DoubleConsumer andThen(final J_U_F_DoubleConsumer c1, final J_U_F_DoubleConsumer c2) {
             Objects.requireNonNull(c2);
-            return new J_U_F_DoubleConsumer() {
+            return new J_U_F_DoubleConsumer.DoubleConsumerAdapter() {
                 @Override
                 public void accept(double value) {
                     c1.accept(value);
                     c2.accept(value);
                 }
-
-                @Override
-                public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
-                    return DoubleConsumerDefaults.andThen(this, after);
-                }
             };
+        }
+
+    }
+
+    abstract class DoubleConsumerAdapter implements J_U_F_DoubleConsumer {
+
+        @Override
+        public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
+            return DoubleConsumerDefaults.andThen(this, after);
         }
 
     }

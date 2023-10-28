@@ -22,20 +22,10 @@ public interface J_U_F_LongUnaryOperator {
         @Stub(abstractDefault = true)
         public static J_U_F_LongUnaryOperator compose(final J_U_F_LongUnaryOperator f1, final J_U_F_LongUnaryOperator f2) {
             Objects.requireNonNull(f2);
-            return new J_U_F_LongUnaryOperator() {
+            return new J_U_F_LongUnaryOperator.LongUnaryOperatorAdapter() {
                 @Override
                 public long applyAsLong(long v) {
                     return f1.applyAsLong(f2.applyAsLong(v));
-                }
-
-                @Override
-                public J_U_F_LongUnaryOperator compose(J_U_F_LongUnaryOperator before) {
-                    return LongUnaryOperatorDefault.compose(this, before);
-                }
-
-                @Override
-                public J_U_F_LongUnaryOperator andThen(J_U_F_LongUnaryOperator after) {
-                    return LongUnaryOperatorDefault.andThen(this, after);
                 }
             };
         }
@@ -52,22 +42,26 @@ public interface J_U_F_LongUnaryOperator {
 
         @Stub(ref = @Ref("Ljava/util/function/LongUnaryOperator;"))
         public static J_U_F_LongUnaryOperator identity() {
-            return new J_U_F_LongUnaryOperator() {
+            return new J_U_F_LongUnaryOperator.LongUnaryOperatorAdapter() {
                 @Override
                 public long applyAsLong(long operand) {
                     return operand;
                 }
-
-                @Override
-                public J_U_F_LongUnaryOperator compose(J_U_F_LongUnaryOperator before) {
-                    return LongUnaryOperatorDefault.compose(this, before);
-                }
-
-                @Override
-                public J_U_F_LongUnaryOperator andThen(J_U_F_LongUnaryOperator after) {
-                    return LongUnaryOperatorDefault.andThen(this, after);
-                }
             };
+        }
+
+    }
+
+    abstract class LongUnaryOperatorAdapter implements J_U_F_LongUnaryOperator {
+
+        @Override
+        public J_U_F_LongUnaryOperator compose(J_U_F_LongUnaryOperator before) {
+            return LongUnaryOperatorDefault.compose(this, before);
+        }
+
+        @Override
+        public J_U_F_LongUnaryOperator andThen(J_U_F_LongUnaryOperator after) {
+            return LongUnaryOperatorDefault.andThen(this, after);
         }
 
     }

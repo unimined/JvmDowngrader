@@ -54,7 +54,7 @@ public class J_U_C_ConcurrentMap {
     @Stub
     public static <K, V> void replaceAll(final ConcurrentMap<K, V> map, final J_U_F_BiFunction<? super K, ? super V, ? extends V> function) {
         Objects.requireNonNull(function);
-        forEach(map, new J_U_F_BiConsumer<K, V>() {
+        forEach(map, new J_U_F_BiConsumer.BiConsumerAdapter<K, V>() {
             @Override
             public void accept(K k, V v) {
                 while (!map.replace(k, v, function.apply(k, v))) {
@@ -62,11 +62,6 @@ public class J_U_C_ConcurrentMap {
                         break;
                     }
                 }
-            }
-
-            @Override
-            public J_U_F_BiConsumer<K, V> andThen(J_U_F_BiConsumer<? super K, ? super V> after) {
-                return J_U_F_BiConsumer.BiConsumerDefaults.andThen(this, after);
             }
         });
     }

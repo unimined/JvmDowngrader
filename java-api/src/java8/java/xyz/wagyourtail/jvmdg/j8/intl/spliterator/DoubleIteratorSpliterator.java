@@ -49,15 +49,10 @@ public class DoubleIteratorSpliterator implements J_U_Spliterator.OfDouble {
         if (action == null) {
             throw new NullPointerException();
         }
-        it.forEachRemaining(new J_U_F_DoubleConsumer() {
+        it.forEachRemaining(new J_U_F_DoubleConsumer.DoubleConsumerAdapter() {
             @Override
             public void accept(double value) {
                 action.accept(value);
-            }
-
-            @Override
-            public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
-                return J_U_F_DoubleConsumer.DoubleConsumerDefaults.andThen(this, after);
             }
         });
     }

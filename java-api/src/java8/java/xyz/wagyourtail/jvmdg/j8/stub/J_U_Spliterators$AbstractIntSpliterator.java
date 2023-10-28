@@ -85,15 +85,10 @@ public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spl
         if (action instanceof J_U_F_IntConsumer) {
             forEachRemaining((J_U_F_IntConsumer) action);
         } else {
-            forEachRemaining(new J_U_F_IntConsumer() {
+            forEachRemaining(new J_U_F_IntConsumer.IntConsumerAdapter() {
                 @Override
                 public void accept(int value) {
                     action.accept(value);
-                }
-
-                @Override
-                public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-                    return IntConsumerDefaults.andThen(this, after);
                 }
             });
         }

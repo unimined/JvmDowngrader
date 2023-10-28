@@ -22,20 +22,10 @@ public interface J_U_F_DoubleUnaryOperator {
         @Stub(abstractDefault = true)
         public static J_U_F_DoubleUnaryOperator compose(final J_U_F_DoubleUnaryOperator f1, final J_U_F_DoubleUnaryOperator f2) {
             Objects.requireNonNull(f2);
-            return new J_U_F_DoubleUnaryOperator() {
+            return new J_U_F_DoubleUnaryOperator.DoubleUnaryOperatorAdapter() {
                 @Override
                 public double applyAsDouble(double operand) {
                     return f1.applyAsDouble(f2.applyAsDouble(operand));
-                }
-
-                @Override
-                public J_U_F_DoubleUnaryOperator compose(J_U_F_DoubleUnaryOperator before) {
-                    return DoubleUnaryOperatorDefaults.compose(this, before);
-                }
-
-                @Override
-                public J_U_F_DoubleUnaryOperator andThen(J_U_F_DoubleUnaryOperator after) {
-                    return DoubleUnaryOperatorDefaults.andThen(this, after);
                 }
             };
         }
@@ -51,22 +41,26 @@ public interface J_U_F_DoubleUnaryOperator {
 
         @Stub(ref = @Ref("Ljava/util/function/DoubleUnaryOperator;"))
         public static J_U_F_DoubleUnaryOperator identity() {
-            return new J_U_F_DoubleUnaryOperator() {
+            return new J_U_F_DoubleUnaryOperator.DoubleUnaryOperatorAdapter() {
                 @Override
                 public double applyAsDouble(double operand) {
                     return operand;
                 }
-
-                @Override
-                public J_U_F_DoubleUnaryOperator compose(J_U_F_DoubleUnaryOperator before) {
-                    return DoubleUnaryOperatorDefaults.compose(this, before);
-                }
-
-                @Override
-                public J_U_F_DoubleUnaryOperator andThen(J_U_F_DoubleUnaryOperator after) {
-                    return DoubleUnaryOperatorDefaults.andThen(this, after);
-                }
             };
+        }
+
+    }
+
+    abstract class DoubleUnaryOperatorAdapter implements J_U_F_DoubleUnaryOperator {
+
+        @Override
+        public J_U_F_DoubleUnaryOperator compose(J_U_F_DoubleUnaryOperator before) {
+            return DoubleUnaryOperatorDefaults.compose(this, before);
+        }
+
+        @Override
+        public J_U_F_DoubleUnaryOperator andThen(J_U_F_DoubleUnaryOperator after) {
+            return DoubleUnaryOperatorDefaults.andThen(this, after);
         }
 
     }

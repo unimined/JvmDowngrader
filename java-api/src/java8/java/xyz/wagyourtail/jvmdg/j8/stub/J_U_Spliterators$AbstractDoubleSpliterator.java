@@ -84,15 +84,10 @@ public abstract class J_U_Spliterators$AbstractDoubleSpliterator implements J_U_
         if (action instanceof J_U_F_DoubleConsumer) {
             forEachRemaining((J_U_F_DoubleConsumer) action);
         } else {
-            forEachRemaining(new J_U_F_DoubleConsumer() {
+            forEachRemaining(new J_U_F_DoubleConsumer.DoubleConsumerAdapter() {
                 @Override
                 public void accept(double value) {
                     action.accept(value);
-                }
-
-                @Override
-                public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
-                    return DoubleConsumerDefaults.andThen(this, after);
                 }
             });
         }

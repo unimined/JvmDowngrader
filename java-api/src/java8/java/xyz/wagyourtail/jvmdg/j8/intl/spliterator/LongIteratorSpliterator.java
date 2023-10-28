@@ -50,15 +50,10 @@ public class LongIteratorSpliterator implements J_U_Spliterator.OfLong {
         if (action == null) {
             throw new NullPointerException();
         }
-        it.forEachRemaining(new J_U_F_LongConsumer() {
+        it.forEachRemaining(new J_U_F_LongConsumer.LongConsumerAdapter() {
             @Override
             public void accept(long value) {
                 action.accept(value);
-            }
-
-            @Override
-            public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
-                return J_U_F_LongConsumer.LongConsumerDefaults.andThen(this, after);
             }
         });
     }

@@ -71,15 +71,10 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
             if (action instanceof J_U_F_IntConsumer) {
                 return tryAdvance((J_U_F_IntConsumer) action);
             } else {
-                return tryAdvance(new J_U_F_IntConsumer() {
+                return tryAdvance(new J_U_F_IntConsumer.IntConsumerAdapter() {
                     @Override
                     public void accept(int value) {
                         action.accept(value);
-                    }
-
-                    @Override
-                    public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-                        return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
                     }
                 });
             }
@@ -90,15 +85,10 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
             if (action instanceof J_U_F_IntConsumer) {
                 forEachRemaining((J_U_F_IntConsumer) action);
             } else {
-                forEachRemaining(new J_U_F_IntConsumer() {
+                forEachRemaining(new J_U_F_IntConsumer.IntConsumerAdapter() {
                     @Override
                     public void accept(int value) {
                         action.accept(value);
-                    }
-
-                    @Override
-                    public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-                        return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
                     }
                 });
             }
@@ -115,15 +105,10 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
             if (action instanceof J_U_F_LongConsumer) {
                 return tryAdvance((J_U_F_LongConsumer) action);
             } else {
-                return tryAdvance(new J_U_F_LongConsumer() {
+                return tryAdvance(new J_U_F_LongConsumer.LongConsumerAdapter() {
                     @Override
                     public void accept(long value) {
                         action.accept(value);
-                    }
-
-                    @Override
-                    public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
-                        return J_U_F_LongConsumer.LongConsumerDefaults.andThen(this, after);
                     }
                 });
             }
@@ -134,15 +119,10 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
             if (action instanceof J_U_F_LongConsumer) {
                 forEachRemaining((J_U_F_LongConsumer) action);
             } else {
-                forEachRemaining(new J_U_F_LongConsumer() {
+                forEachRemaining(new J_U_F_LongConsumer.LongConsumerAdapter() {
                     @Override
                     public void accept(long value) {
                         action.accept(value);
-                    }
-
-                    @Override
-                    public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
-                        return J_U_F_LongConsumer.LongConsumerDefaults.andThen(this, after);
                     }
                 });
             }
@@ -159,15 +139,10 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
             if (action instanceof J_U_F_DoubleConsumer) {
                 return tryAdvance((J_U_F_DoubleConsumer) action);
             } else {
-                return tryAdvance(new J_U_F_DoubleConsumer() {
+                return tryAdvance(new J_U_F_DoubleConsumer.DoubleConsumerAdapter() {
                     @Override
                     public void accept(double value) {
                         action.accept(value);
-                    }
-
-                    @Override
-                    public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
-                        return J_U_F_DoubleConsumer.DoubleConsumerDefaults.andThen(this, after);
                     }
                 });
             }
@@ -178,15 +153,10 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
             if (action instanceof J_U_F_DoubleConsumer) {
                 forEachRemaining((J_U_F_DoubleConsumer) action);
             } else {
-                forEachRemaining(new J_U_F_DoubleConsumer() {
+                forEachRemaining(new J_U_F_DoubleConsumer.DoubleConsumerAdapter() {
                     @Override
                     public void accept(double value) {
                         action.accept(value);
-                    }
-
-                    @Override
-                    public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
-                        return J_U_F_DoubleConsumer.DoubleConsumerDefaults.andThen(this, after);
                     }
                 });
             }

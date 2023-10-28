@@ -17,19 +17,24 @@ public interface J_U_F_IntConsumer {
 
         @Stub(abstractDefault = true)
         public static J_U_F_IntConsumer andThen(final J_U_F_IntConsumer self, final J_U_F_IntConsumer after) {
-            return new J_U_F_IntConsumer() {
+            return new J_U_F_IntConsumer.IntConsumerAdapter() {
                 @Override
                 public void accept(int value) {
                     self.accept(value);
                     after.accept(value);
                 }
-
-                @Override
-                public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-                    return IntConsumerDefaults.andThen(this, after);
-                }
             };
         }
 
     }
+
+    abstract class IntConsumerAdapter implements J_U_F_IntConsumer {
+
+        @Override
+        public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
+            return IntConsumerDefaults.andThen(this, after);
+        }
+
+    }
+
 }

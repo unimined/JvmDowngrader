@@ -24,51 +24,20 @@ public interface J_U_F_BiPredicate<T, U> {
         @Stub(abstractDefault = true)
         public static <T, U> J_U_F_BiPredicate<T, U> and(final J_U_F_BiPredicate<T, U> p1, final J_U_F_BiPredicate<? super T, ? super U> p2) {
             Objects.requireNonNull(p2);
-            return new J_U_F_BiPredicate<T, U>() {
+            return new J_U_F_BiPredicate.BiPredicateAdapter<T, U>() {
                 @Override
                 public boolean test(T t, U u) {
                     return p1.test(t, u) && p2.test(t, u);
-                }
-
-                @Override
-                public J_U_F_BiPredicate<T, U> and(J_U_F_BiPredicate<? super T, ? super U> other) {
-                    Objects.requireNonNull(other);
-                    return BiPredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_BiPredicate<T, U> negate() {
-                    return BiPredicateDefaults.negate(this);
-                }
-
-                @Override
-                public J_U_F_BiPredicate<T, U> or(J_U_F_BiPredicate<? super T, ? super U> other) {
-                    return BiPredicateDefaults.or(this, other);
                 }
             };
         }
 
         @Stub(abstractDefault = true)
         public static <T, U> J_U_F_BiPredicate<T, U> negate(final J_U_F_BiPredicate<T, U> p) {
-            return new J_U_F_BiPredicate<T, U>() {
+            return new J_U_F_BiPredicate.BiPredicateAdapter<T, U>() {
                 @Override
                 public boolean test(T t, U u) {
                     return !p.test(t, u);
-                }
-
-                @Override
-                public J_U_F_BiPredicate<T, U> and(J_U_F_BiPredicate<? super T, ? super U> other) {
-                    return BiPredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_BiPredicate<T, U> negate() {
-                    return p;
-                }
-
-                @Override
-                public J_U_F_BiPredicate<T, U> or(J_U_F_BiPredicate<? super T, ? super U> other) {
-                    return BiPredicateDefaults.or(this, other);
                 }
             };
         }
@@ -76,30 +45,32 @@ public interface J_U_F_BiPredicate<T, U> {
         @Stub(abstractDefault = true)
         public static <T, U> J_U_F_BiPredicate<T, U> or(final J_U_F_BiPredicate<T, U> p1, final J_U_F_BiPredicate<? super T, ? super U> p2) {
             Objects.requireNonNull(p2);
-            return new J_U_F_BiPredicate<T, U>() {
+            return new J_U_F_BiPredicate.BiPredicateAdapter<T, U>() {
                 @Override
                 public boolean test(T t, U u) {
                     return p1.test(t, u) || p2.test(t, u);
                 }
-
-                @Override
-                public J_U_F_BiPredicate<T, U> and(J_U_F_BiPredicate<? super T, ? super U> other) {
-                    Objects.requireNonNull(other);
-                    return BiPredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_BiPredicate<T, U> negate() {
-                    return BiPredicateDefaults.negate(this);
-                }
-
-                @Override
-                public J_U_F_BiPredicate<T, U> or(J_U_F_BiPredicate<? super T, ? super U> other) {
-                    Objects.requireNonNull(other);
-                    return BiPredicateDefaults.or(this, other);
-                }
             };
         }
+    }
+
+    abstract class BiPredicateAdapter<T, U> implements J_U_F_BiPredicate<T, U> {
+
+        @Override
+        public J_U_F_BiPredicate<T, U> and(J_U_F_BiPredicate<? super T, ? super U> other) {
+            return BiPredicateDefaults.and(this, other);
+        }
+
+        @Override
+        public J_U_F_BiPredicate<T, U> negate() {
+            return BiPredicateDefaults.negate(this);
+        }
+
+        @Override
+        public J_U_F_BiPredicate<T, U> or(J_U_F_BiPredicate<? super T, ? super U> other) {
+            return BiPredicateDefaults.or(this, other);
+        }
+
     }
 
 }

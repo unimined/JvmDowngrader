@@ -179,16 +179,16 @@ public class Java8Downgrader extends VersionProvider {
         stub(J_U_Collection.class);
         stub(J_U_Collections.class);
         // Date
-        // DoubleSummaryStatistics
+        stub(J_U_DoubleSummaryStatistics.class);
         // GregorianCalendar
         // HashSet -- handled by Collection.spliterator
-        // IntSummaryStatistics
+        stub(J_U_IntSummaryStatistics.class);
         stub(J_U_Iterator.class);
         // LinkedHashSet
         // LinkedList
         stub(J_U_List.class);
         // Locale
-        // LongSummaryStatistics
+        stub(J_U_LongSummaryStatistics.class);
         stub(J_U_Map.class);
         stub(J_U_Objects.class);
         stub(J_U_Optional.class);

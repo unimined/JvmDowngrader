@@ -23,75 +23,30 @@ public interface J_U_F_Predicate<T> {
 
         @Stub(abstractDefault = true)
         public static <T> J_U_F_Predicate<T> and(final J_U_F_Predicate<T> self, final J_U_F_Predicate<? super T> other) {
-            return new J_U_F_Predicate<T>() {
+            return new J_U_F_Predicate.PredicateAdapter<T>() {
                 @Override
                 public boolean test(T t) {
                     return self.test(t) && other.test(t);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> and(J_U_F_Predicate<? super T> other) {
-                    return PredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> negate() {
-                    return PredicateDefaults.negate(this);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> or(J_U_F_Predicate<? super T> other) {
-                    return PredicateDefaults.or(this, other);
                 }
             };
         }
 
         @Stub(abstractDefault = true)
         public static <T> J_U_F_Predicate<T> negate(final J_U_F_Predicate<T> self) {
-            return new J_U_F_Predicate<T>() {
+            return new J_U_F_Predicate.PredicateAdapter<T>() {
                 @Override
                 public boolean test(T t) {
                     return !self.test(t);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> and(J_U_F_Predicate<? super T> other) {
-                    return PredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> negate() {
-                    return PredicateDefaults.negate(this);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> or(J_U_F_Predicate<? super T> other) {
-                    return PredicateDefaults.or(this, other);
                 }
             };
         }
 
         @Stub(abstractDefault = true)
         public static <T> J_U_F_Predicate<T> or(final J_U_F_Predicate<T> self, final J_U_F_Predicate<? super T> other) {
-            return new J_U_F_Predicate<T>() {
+            return new J_U_F_Predicate.PredicateAdapter<T>() {
                 @Override
                 public boolean test(T t) {
                     return self.test(t) || other.test(t);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> and(J_U_F_Predicate<? super T> other) {
-                    return PredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> negate() {
-                    return PredicateDefaults.negate(this);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> or(J_U_F_Predicate<? super T> other) {
-                    return PredicateDefaults.or(this, other);
                 }
             };
         }
@@ -102,7 +57,7 @@ public interface J_U_F_Predicate<T> {
 
         @Stub(ref = @Ref("Ljava/util/function/Predicate;"))
         public static <T> J_U_F_Predicate<T> isEqual(final Object targetRef) {
-            return new J_U_F_Predicate<T>() {
+            return new J_U_F_Predicate.PredicateAdapter<T>() {
                 @Override
                 public boolean test(T t) {
                     if (null == targetRef) {
@@ -111,27 +66,31 @@ public interface J_U_F_Predicate<T> {
                         return targetRef.equals(t);
                     }
                 }
-
-                @Override
-                public J_U_F_Predicate<T> and(J_U_F_Predicate<? super T> other) {
-                    return PredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> negate() {
-                    return PredicateDefaults.negate(this);
-                }
-
-                @Override
-                public J_U_F_Predicate<T> or(J_U_F_Predicate<? super T> other) {
-                    return PredicateDefaults.or(this, other);
-                }
             };
         }
 
         @Stub(ref = @Ref("Ljava/util/function/Predicate;"))
         public static <T> J_U_F_Predicate<T> not(J_U_F_Predicate<? super T> target) {
             return (J_U_F_Predicate<T>) PredicateDefaults.negate(target);
+        }
+
+    }
+
+    abstract class PredicateAdapter<T> implements J_U_F_Predicate<T> {
+
+        @Override
+        public J_U_F_Predicate<T> and(J_U_F_Predicate<? super T> other) {
+            return PredicateDefaults.and(this, other);
+        }
+
+        @Override
+        public J_U_F_Predicate<T> negate() {
+            return PredicateDefaults.negate(this);
+        }
+
+        @Override
+        public J_U_F_Predicate<T> or(J_U_F_Predicate<? super T> other) {
+            return PredicateDefaults.or(this, other);
         }
 
     }

@@ -21,77 +21,51 @@ public interface J_U_F_LongPredicate {
 
         @Stub(abstractDefault = true)
         public static J_U_F_LongPredicate and(final J_U_F_LongPredicate self, final J_U_F_LongPredicate other) {
-            return new J_U_F_LongPredicate() {
+            return new J_U_F_LongPredicate.LongPredicateAdapter() {
                 @Override
                 public boolean test(long value) {
                     return self.test(value) && other.test(value);
-                }
-
-                @Override
-                public J_U_F_LongPredicate and(J_U_F_LongPredicate other) {
-                    return LongPredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_LongPredicate negate() {
-                    return LongPredicateDefaults.negate(this);
-                }
-
-                @Override
-                public J_U_F_LongPredicate or(J_U_F_LongPredicate other) {
-                    return LongPredicateDefaults.or(this, other);
                 }
             };
         }
 
         @Stub(abstractDefault = true)
         public static J_U_F_LongPredicate negate(final J_U_F_LongPredicate self) {
-            return new J_U_F_LongPredicate() {
+            return new J_U_F_LongPredicate.LongPredicateAdapter() {
                 @Override
                 public boolean test(long value) {
                     return !self.test(value);
-                }
-
-                @Override
-                public J_U_F_LongPredicate and(J_U_F_LongPredicate other) {
-                    return LongPredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_LongPredicate negate() {
-                    return self;
-                }
-
-                @Override
-                public J_U_F_LongPredicate or(J_U_F_LongPredicate other) {
-                    return LongPredicateDefaults.or(this, other);
                 }
             };
         }
 
         @Stub(abstractDefault = true)
         public static J_U_F_LongPredicate or(final J_U_F_LongPredicate self, final J_U_F_LongPredicate other) {
-            return new J_U_F_LongPredicate() {
+            return new J_U_F_LongPredicate.LongPredicateAdapter() {
                 @Override
                 public boolean test(long value) {
                     return self.test(value) || other.test(value);
                 }
-
-                @Override
-                public J_U_F_LongPredicate and(J_U_F_LongPredicate other) {
-                    return LongPredicateDefaults.and(this, other);
-                }
-
-                @Override
-                public J_U_F_LongPredicate negate() {
-                    return LongPredicateDefaults.negate(this);
-                }
-
-                @Override
-                public J_U_F_LongPredicate or(J_U_F_LongPredicate other) {
-                    return LongPredicateDefaults.or(this, other);
-                }
             };
+        }
+
+    }
+
+    abstract class LongPredicateAdapter implements J_U_F_LongPredicate {
+
+        @Override
+        public J_U_F_LongPredicate and(J_U_F_LongPredicate other) {
+            return LongPredicateDefaults.and(this, other);
+        }
+
+        @Override
+        public J_U_F_LongPredicate negate() {
+            return LongPredicateDefaults.negate(this);
+        }
+
+        @Override
+        public J_U_F_LongPredicate or(J_U_F_LongPredicate other) {
+            return LongPredicateDefaults.or(this, other);
         }
 
     }

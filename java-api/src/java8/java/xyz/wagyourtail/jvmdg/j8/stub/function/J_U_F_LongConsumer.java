@@ -18,18 +18,22 @@ public interface J_U_F_LongConsumer {
 
         @Stub(abstractDefault = true)
         public static J_U_F_LongConsumer andThen(final J_U_F_LongConsumer self, final J_U_F_LongConsumer after) {
-            return new J_U_F_LongConsumer() {
+            return new J_U_F_LongConsumer.LongConsumerAdapter() {
                 @Override
                 public void accept(long value) {
                     self.accept(value);
                     after.accept(value);
                 }
-
-                @Override
-                public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
-                    return LongConsumerDefaults.andThen(this, after);
-                }
             };
+        }
+
+    }
+
+    abstract class LongConsumerAdapter implements J_U_F_LongConsumer {
+
+        @Override
+        public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
+            return LongConsumerDefaults.andThen(this, after);
         }
 
     }

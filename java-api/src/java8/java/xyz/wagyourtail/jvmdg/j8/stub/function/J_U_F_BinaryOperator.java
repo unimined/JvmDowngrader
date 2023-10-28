@@ -18,15 +18,10 @@ public interface J_U_F_BinaryOperator<T> extends J_U_F_BiFunction<T, T, T> {
         @Stub(ref = @Ref("Ljava/util/function/BinaryOperator;"))
         public static <T> J_U_F_BinaryOperator<T> minBy(final Comparator<? super T> comparator) {
             Objects.requireNonNull(comparator);
-            return new J_U_F_BinaryOperator<T>() {
+            return new J_U_F_BinaryOperator.BinaryOperatorAdapter<T>() {
                 @Override
                 public T apply(T t, T t2) {
                     return comparator.compare(t, t2) <= 0 ? t : t2;
-                }
-
-                @Override
-                public <V> J_U_F_BiFunction<T, T, V> andThen(J_U_F_Function<? super T, ? extends V> after) {
-                    return BiFunctionDefaults.andThen(this, after);
                 }
             };
         }
@@ -34,17 +29,21 @@ public interface J_U_F_BinaryOperator<T> extends J_U_F_BiFunction<T, T, T> {
         @Stub(ref = @Ref("Ljava/util/function/BinaryOperator;"))
         public static <T> J_U_F_BinaryOperator<T> maxBy(final Comparator<? super T> comparator) {
             Objects.requireNonNull(comparator);
-            return new J_U_F_BinaryOperator<T>() {
+            return new J_U_F_BinaryOperator.BinaryOperatorAdapter<T>() {
                 @Override
                 public T apply(T t, T t2) {
                     return comparator.compare(t, t2) >= 0 ? t : t2;
                 }
-
-                @Override
-                public <V> J_U_F_BiFunction<T, T, V> andThen(J_U_F_Function<? super T, ? extends V> after) {
-                    return BiFunctionDefaults.andThen(this, after);
-                }
             };
+        }
+
+    }
+
+    abstract class BinaryOperatorAdapter<T> implements J_U_F_BinaryOperator<T> {
+
+        @Override
+        public <V> J_U_F_BiFunction<T, T, V> andThen(J_U_F_Function<? super T, ? extends V> after) {
+            return BiFunctionDefaults.andThen(this, after);
         }
 
     }

@@ -5,33 +5,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="43d51f9c-2980-4450-a129-074bd2f63b31" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_C_ConcurrentMap.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_DoubleSummaryStatistics.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_IntSummaryStatistics.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_LongSummaryStatistics.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/stream/J_U_S_DoubleStream.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/stream/J_U_S_IntStream.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/stream/J_U_S_LongStream.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/DoubleArraySpliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/DoubleArraySpliterator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/DoubleIteratorSpliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/DoubleIteratorSpliterator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/EmptySpliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/EmptySpliterator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/IntArraySpliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/IntArraySpliterator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/IntIteratorSpliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/IntIteratorSpliterator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_L_CharSequence.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_L_CharSequence.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_L_I_LambdaMetafactory.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_L_I_LambdaMetafactory.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_L_Iterable.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_L_Iterable.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_L_VirtualMachineError.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_L_VirtualMachineError.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Arrays.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Arrays.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Base64.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Base64.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_BitSet.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_BitSet.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/LongArraySpliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/LongArraySpliterator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/LongIteratorSpliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/intl/spliterator/LongIteratorSpliterator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_C_CompletableFuture.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_C_CompletableFuture.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_C_Executors.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_C_Executors.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_C_ForkJoinPool.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_C_ForkJoinPool.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Collections.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Collections.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Map.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Map.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_OptionalDouble.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_OptionalDouble.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_OptionalInt.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_OptionalInt.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_OptionalLong.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_OptionalLong.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_PrimitiveIterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_PrimitiveIterator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_C_ConcurrentMap.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_C_ConcurrentMap.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterators$AbstractDoubleSpliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterators$AbstractDoubleSpliterator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterators$AbstractIntSpliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterators$AbstractIntSpliterator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterators$AbstractLongSpliterator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterators$AbstractLongSpliterator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_BiConsumer.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_BiConsumer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_BiFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_BiFunction.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_BiPredicate.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_BiPredicate.java" afterDir="false" />
@@ -49,14 +37,8 @@
       <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_LongUnaryOperator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_LongUnaryOperator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_Predicate.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_Predicate.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_UnaryOperator.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_UnaryOperator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/stream/J_U_S_Collector.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/stream/J_U_S_Collector.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/stream/J_U_S_Collectors.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/stream/J_U_S_Collectors.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/stream/J_U_S_Stream.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java8/java/xyz/wagyourtail/jvmdg/j8/stub/stream/J_U_S_Stream.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java9/java/xyz/wagyourtail/jvmdg/j9/stub/J_N_F_Path.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java9/java/xyz/wagyourtail/jvmdg/j9/stub/J_N_F_Path.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/main/java/xyz/wagyourtail/jvmdg/providers/Java8Downgrader.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/main/java/xyz/wagyourtail/jvmdg/providers/Java8Downgrader.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/version/Stub.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/version/Stub.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/version/map/ClassMapping.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/version/map/ClassMapping.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/xyz/wagyourtail/jvmdg/internal/JvmDowngraderTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/xyz/wagyourtail/jvmdg/internal/JvmDowngraderTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -106,23 +88,23 @@
     <option name="flattenPackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "feature/java8",
-    "last_opened_file_path": "/home/william/Downloads/EclipseDarkLike.jar",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "reference.settings.ide.settings.new.ui",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/java8&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/william/Downloads/EclipseDarkLike.jar&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.ide.settings.new.ui&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="xyz.wagyourtail.jvmdg.j8.stub" />
@@ -235,6 +217,7 @@
       <option name="presentableId" value="Default" />
       <updated>1698391067066</updated>
       <workItem from="1698391068765" duration="15653000" />
+      <workItem from="1698458323119" duration="2647000" />
     </task>
     <servers />
   </component>

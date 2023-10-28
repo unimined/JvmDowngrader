@@ -22,20 +22,10 @@ public interface J_U_F_Function<T, R> {
         @Stub(abstractDefault = true)
         public static <T, R, V> J_U_F_Function<V, R> compose(final J_U_F_Function<T, R> f1, final J_U_F_Function<? super V, ? extends T> f2) {
             Objects.requireNonNull(f2);
-            return new J_U_F_Function<V, R>() {
+            return new J_U_F_Function.FunctionAdapter<V, R>() {
                 @Override
                 public R apply(V v) {
                     return f1.apply(f2.apply(v));
-                }
-
-                @Override
-                public <V1> J_U_F_Function<V1, R> compose(J_U_F_Function<? super V1, ? extends V> before) {
-                    return FunctionDefaults.compose(this, before);
-                }
-
-                @Override
-                public <V1> J_U_F_Function<V, V1> andThen(J_U_F_Function<? super R, ? extends V1> after) {
-                    return FunctionDefaults.andThen(this, after);
                 }
             };
         }
@@ -52,23 +42,27 @@ public interface J_U_F_Function<T, R> {
 
         @Stub(ref = @Ref("Ljava/util/function/Function;"))
         public static <T> J_U_F_Function<T, T> identity() {
-            return new J_U_F_Function<T, T>() {
+            return new J_U_F_Function.FunctionAdapter<T, T>() {
                 @Override
                 public T apply(T t) {
                     return t;
                 }
-
-                @Override
-                public <V> J_U_F_Function<V, T> compose(J_U_F_Function<? super V, ? extends T> before) {
-                    return FunctionDefaults.compose(this, before);
-                }
-
-                @Override
-                public <V> J_U_F_Function<T, V> andThen(J_U_F_Function<? super T, ? extends V> after) {
-                    return FunctionDefaults.andThen(this, after);
-                }
             };
         }
+    }
+
+    abstract class FunctionAdapter<T, R> implements J_U_F_Function<T, R> {
+
+        @Override
+        public <V> J_U_F_Function<V, R> compose(J_U_F_Function<? super V, ? extends T> before) {
+            return FunctionDefaults.compose(this, before);
+        }
+
+        @Override
+        public <V> J_U_F_Function<T, V> andThen(J_U_F_Function<? super R, ? extends V> after) {
+            return FunctionDefaults.andThen(this, after);
+        }
+
     }
 
 }

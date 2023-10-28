@@ -85,15 +85,10 @@ public abstract class J_U_Spliterators$AbstractLongSpliterator implements J_U_Sp
         if (action instanceof J_U_F_LongConsumer) {
             forEachRemaining((J_U_F_LongConsumer) action);
         } else {
-            forEachRemaining(new J_U_F_LongConsumer() {
+            forEachRemaining(new J_U_F_LongConsumer.LongConsumerAdapter() {
                 @Override
                 public void accept(long value) {
                     action.accept(value);
-                }
-
-                @Override
-                public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
-                    return LongConsumerDefaults.andThen(this, after);
                 }
             });
         }

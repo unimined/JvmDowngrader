@@ -121,15 +121,10 @@ public interface J_U_Spliterator<T> {
                     return spliterator.tryAdvance((J_U_F_IntConsumer) action);
                 } else {
                     java.util.Objects.requireNonNull(action);
-                    return spliterator.tryAdvance(new J_U_F_IntConsumer() {
+                    return spliterator.tryAdvance(new J_U_F_IntConsumer.IntConsumerAdapter() {
                         @Override
                         public void accept(int value) {
                             action.accept(value);
-                        }
-
-                        @Override
-                        public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-                            return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
                         }
                     });
                 }
@@ -140,15 +135,10 @@ public interface J_U_Spliterator<T> {
                 if (action instanceof J_U_F_IntConsumer) {
                     forEachRemaining(spliterator, (J_U_F_IntConsumer) action);
                 } else {
-                    forEachRemaining(spliterator, new J_U_F_IntConsumer() {
+                    forEachRemaining(spliterator, new J_U_F_IntConsumer.IntConsumerAdapter() {
                         @Override
                         public void accept(int value) {
                             action.accept(value);
-                        }
-
-                        @Override
-                        public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-                            return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
                         }
                     });
                 }
@@ -189,15 +179,10 @@ public interface J_U_Spliterator<T> {
                     return spliterator.tryAdvance((J_U_F_LongConsumer) action);
                 } else {
                     java.util.Objects.requireNonNull(action);
-                    return spliterator.tryAdvance(new J_U_F_LongConsumer() {
+                    return spliterator.tryAdvance(new J_U_F_LongConsumer.LongConsumerAdapter() {
                         @Override
                         public void accept(long value) {
                             action.accept(value);
-                        }
-
-                        @Override
-                        public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
-                            return J_U_F_LongConsumer.LongConsumerDefaults.andThen(this, after);
                         }
                     });
                 }
@@ -208,15 +193,10 @@ public interface J_U_Spliterator<T> {
                 if (action instanceof J_U_F_LongConsumer) {
                     forEachRemaining(spliterator, (J_U_F_LongConsumer) action);
                 } else {
-                    forEachRemaining(spliterator, new J_U_F_LongConsumer() {
+                    forEachRemaining(spliterator, new J_U_F_LongConsumer.LongConsumerAdapter() {
                         @Override
                         public void accept(long value) {
                             action.accept(value);
-                        }
-
-                        @Override
-                        public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
-                            return J_U_F_LongConsumer.LongConsumerDefaults.andThen(this, after);
                         }
                     });
                 }
@@ -257,15 +237,10 @@ public interface J_U_Spliterator<T> {
                     return spliterator.tryAdvance((J_U_F_DoubleConsumer) action);
                 } else {
                     java.util.Objects.requireNonNull(action);
-                    return spliterator.tryAdvance(new J_U_F_DoubleConsumer() {
+                    return spliterator.tryAdvance(new J_U_F_DoubleConsumer.DoubleConsumerAdapter() {
                         @Override
                         public void accept(double value) {
                             action.accept(value);
-                        }
-
-                        @Override
-                        public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
-                            return J_U_F_DoubleConsumer.DoubleConsumerDefaults.andThen(this, after);
                         }
                     });
                 }
@@ -276,15 +251,10 @@ public interface J_U_Spliterator<T> {
                 if (action instanceof J_U_F_DoubleConsumer) {
                     forEachRemaining(spliterator, (J_U_F_DoubleConsumer) action);
                 } else {
-                    forEachRemaining(spliterator, new J_U_F_DoubleConsumer() {
+                    forEachRemaining(spliterator, new J_U_F_DoubleConsumer.DoubleConsumerAdapter() {
                         @Override
                         public void accept(double value) {
                             action.accept(value);
-                        }
-
-                        @Override
-                        public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
-                            return J_U_F_DoubleConsumer.DoubleConsumerDefaults.andThen(this, after);
                         }
                     });
                 }

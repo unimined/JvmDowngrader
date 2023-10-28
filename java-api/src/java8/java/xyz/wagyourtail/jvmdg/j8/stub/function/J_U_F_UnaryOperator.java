@@ -14,24 +14,25 @@ public interface J_U_F_UnaryOperator<T> extends J_U_F_Function<T, T>  {
 
         @Stub(ref = @Ref("Ljava/util/function/UnaryOperator;"))
         public static <T> J_U_F_UnaryOperator<T> identity() {
-            return new J_U_F_UnaryOperator<T>() {
+            return new J_U_F_UnaryOperator.UnaryOperatorAdapter<T>() {
                 @Override
                 public T apply(T t) {
                     return t;
-                }
-
-                @Override
-                public <V> J_U_F_Function<V, T> compose(J_U_F_Function<? super V, ? extends T> before) {
-                    return FunctionDefaults.compose(this, before);
-                }
-
-                @Override
-                public <V> J_U_F_Function<T, V> andThen(J_U_F_Function<? super T, ? extends V> after) {
-                    return FunctionDefaults.andThen(this, after);
                 }
             };
         }
 
     }
 
+    abstract class UnaryOperatorAdapter<T> implements J_U_F_UnaryOperator<T> {
+        @Override
+        public <V> J_U_F_Function<V, T> compose(J_U_F_Function<? super V, ? extends T> before) {
+            return FunctionDefaults.compose(this, before);
+        }
+
+        @Override
+        public <V> J_U_F_Function<T, V> andThen(J_U_F_Function<? super T, ? extends V> after) {
+            return FunctionDefaults.andThen(this, after);
+        }
+    }
 }

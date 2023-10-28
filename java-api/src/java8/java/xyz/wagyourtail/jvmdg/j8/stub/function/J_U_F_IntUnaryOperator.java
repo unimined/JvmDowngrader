@@ -22,20 +22,10 @@ public interface J_U_F_IntUnaryOperator {
         @Stub(abstractDefault = true)
         public static J_U_F_IntUnaryOperator compose(final J_U_F_IntUnaryOperator f1, final J_U_F_IntUnaryOperator f2) {
             Objects.requireNonNull(f2);
-            return new J_U_F_IntUnaryOperator() {
+            return new J_U_F_IntUnaryOperator.IntUnaryOperatorAdapter() {
                 @Override
                 public int applyAsInt(int operand) {
                     return f1.applyAsInt(f2.applyAsInt(operand));
-                }
-
-                @Override
-                public J_U_F_IntUnaryOperator compose(J_U_F_IntUnaryOperator before) {
-                    return IntUnaryOperatorDefaults.compose(this, before);
-                }
-
-                @Override
-                public J_U_F_IntUnaryOperator andThen(J_U_F_IntUnaryOperator after) {
-                    return IntUnaryOperatorDefaults.andThen(this, after);
                 }
             };
         }
@@ -51,22 +41,26 @@ public interface J_U_F_IntUnaryOperator {
 
         @Stub(ref = @Ref("Ljava/util/function/IntUnaryOperator;"))
         public static J_U_F_IntUnaryOperator identity() {
-            return new J_U_F_IntUnaryOperator() {
+            return new J_U_F_IntUnaryOperator.IntUnaryOperatorAdapter() {
                 @Override
                 public int applyAsInt(int operand) {
                     return operand;
                 }
-
-                @Override
-                public J_U_F_IntUnaryOperator compose(J_U_F_IntUnaryOperator before) {
-                    return IntUnaryOperatorDefaults.compose(this, before);
-                }
-
-                @Override
-                public J_U_F_IntUnaryOperator andThen(J_U_F_IntUnaryOperator after) {
-                    return IntUnaryOperatorDefaults.andThen(this, after);
-                }
             };
+        }
+
+    }
+
+    abstract class IntUnaryOperatorAdapter implements J_U_F_IntUnaryOperator {
+
+        @Override
+        public J_U_F_IntUnaryOperator compose(J_U_F_IntUnaryOperator before) {
+            return IntUnaryOperatorDefaults.compose(this, before);
+        }
+
+        @Override
+        public J_U_F_IntUnaryOperator andThen(J_U_F_IntUnaryOperator after) {
+            return IntUnaryOperatorDefaults.andThen(this, after);
         }
 
     }
