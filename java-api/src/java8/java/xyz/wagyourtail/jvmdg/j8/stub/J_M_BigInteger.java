@@ -23,7 +23,7 @@ public class J_M_BigInteger {
         if (self.bitLength() <= 31) {
             return self.intValue();
         } else {
-            throw new ArithmeticException("BigInteger out of long range");
+            throw new ArithmeticException("BigInteger out of int range");
         }
     }
 
