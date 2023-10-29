@@ -28,7 +28,7 @@ abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngrad
 
     @TaskAction
     fun doDowngrade() {
-        val tempOutput = project.buildDir.resolve("tmp").resolve(name).resolve("downgradedInput.jar")
+        val tempOutput = project.projectDir.resolve("build/tmp").resolve(name).resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
         val result = project.javaexec {
             it.mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
@@ -37,7 +37,7 @@ abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngrad
                 inputFile.get().asFile.absolutePath,
                 tempOutput.absolutePath
             )
-            it.workingDir = project.buildDir
+            it.workingDir = project.projectDir.resolve("build/tmp").resolve(name)
             it.classpath = jvmdg.core
             it.jvmArgs = listOf("-Djvmdg.java-api=${jvmdg.api.resolve().first { it.extension == "jar" }.absolutePath}")
         }

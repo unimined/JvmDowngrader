@@ -50,7 +50,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
 
     @TaskAction
     fun doShade() {
-        val tempOutput = project.buildDir.resolve("tmp").resolve(name).resolve("shaded.jar")
+        val tempOutput = project.projectDir.resolve("build/tmp").resolve(name).resolve("shaded.jar")
         tempOutput.deleteIfExists()
         val dependencies = URLClassLoader((sourceSet.compileClasspath.files.map { it.toURI().toURL() } + inputFile.get().asFile.toURI().toURL()).toTypedArray())
         val downgradedApi = jvmdg.downgradedApi[downgradeTo]
