@@ -79,7 +79,7 @@ public class J_L_Class {
                 try {
                     List<Method> targets = vp.getStubMapper(target, new IOFunction<Type, List<Type>>() {
                         @Override
-                        public List<Type> apply(Type type) throws IOException {
+                        public List<Type> apply(Type type) {
                             try {
                                 Class<?> clazz = Class.forName(type.getClassName());
                                 List<Type> parents = new ArrayList<>();

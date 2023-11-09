@@ -48,10 +48,20 @@ sourceSets {
     }
 }
 
+val coverage by sourceSets.creating {
+    inputOf(sourceSets.main.get())
+    outputOf(sourceSets.main.get())
+    for (vers in fromVersion..toVersion) {
+        outputOf(sourceSets["java${vers.ordinal + 1}"])
+    }
+}
+
 dependencies {
     implementation(project(":")) {
         isTransitive = false
     }
+
+    "coverageImplementation"("org.eclipse.jdt:org.eclipse.jdt.core:3.35.0")
 }
 
 for (vers in fromVersion..toVersion) {

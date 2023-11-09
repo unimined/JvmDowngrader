@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j8.intl.spliterator.IteratorSpliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Predicate;
 import xyz.wagyourtail.jvmdg.j8.stub.stream.J_U_S_Stream;
@@ -12,8 +13,7 @@ public class J_U_Collection {
 
     @Stub
     public static <T> boolean removeIf(Collection<T> collection, J_U_F_Predicate<T> filter) {
-        //TODO
-        return false;
+        throw MissingStubError.create();
     }
 
     @Stub
@@ -23,12 +23,12 @@ public class J_U_Collection {
 
     @Stub
     public static <T> J_U_S_Stream<T> stream(Collection<T> collection) {
-        //TODO
+        throw MissingStubError.create();
     }
 
     @Stub
     public static <T> J_U_S_Stream<T> parallelStream(Collection<T> collection) {
-        //TODO
+        throw MissingStubError.create();
     }
 
 }

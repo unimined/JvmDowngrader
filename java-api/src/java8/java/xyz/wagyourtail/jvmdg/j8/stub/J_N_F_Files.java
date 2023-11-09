@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j8.stub.stream.J_U_S_Stream;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiPredicate;
@@ -42,12 +43,12 @@ public class J_N_F_Files {
 
     @Stub(ref = @Ref("java/nio/file/Files"))
     public static J_U_S_Stream<Path> list(Path dir) throws IOException {
-        //TODO
+        throw MissingStubError.create();
     }
 
     @Stub(ref = @Ref("java/nio/file/Files"))
     public static J_U_S_Stream<Path> walk(Path start, int maxDepth, FileVisitOption... options) {
-        //TODO
+        throw MissingStubError.create();
     }
 
     @Stub(ref = @Ref("java/nio/file/Files"))
@@ -57,12 +58,12 @@ public class J_N_F_Files {
 
     @Stub(ref = @Ref("java/nio/file/Files"))
     public static J_U_S_Stream<Path> find(Path start, int maxDepth, J_U_F_BiPredicate<Path, BasicFileAttributes> matcher, FileVisitOption... options) {
-        //TODO
+        throw MissingStubError.create();
     }
 
     @Stub(ref = @Ref("java/nio/file/Files"))
     public static J_U_S_Stream<String> lines(Path path, Charset charset) throws IOException {
-        //TODO
+        throw MissingStubError.create();
     }
 
     @Stub(ref = @Ref("java/nio/file/Files"))

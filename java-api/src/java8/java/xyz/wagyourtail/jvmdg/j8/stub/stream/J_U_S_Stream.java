@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.j8.stub.stream;
 
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_Optional;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
 import xyz.wagyourtail.jvmdg.version.Ref;
@@ -78,47 +79,47 @@ public interface J_U_S_Stream<T> extends J_U_S_BaseStream<T, J_U_S_Stream<T>> {
 
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
         public static <T> Builder<T> builder() {
-            //TODO
+            throw MissingStubError.create();
         }
 
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
         public static <T> J_U_S_Stream<T> empty() {
-            //TODO
+            throw MissingStubError.create();
         }
 
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
         public static <T> J_U_S_Stream<T> of(T t) {
-            //TODO
+            throw MissingStubError.create();
         }
 
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
         public static <T> J_U_S_Stream<T> ofNullable(T t) {
-            //TODO
+            throw MissingStubError.create();
         }
 
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
         public static <T> J_U_S_Stream<T> of(T... values) {
-            //TODO
+            throw MissingStubError.create();
         }
 
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
         public static <T> J_U_S_Stream<T> iterate(final T seed, final J_U_F_UnaryOperator<T> f) {
-            //TODO
+            throw MissingStubError.create();
         }
 
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
         public static <T> J_U_S_Stream<T> iterate(final T seed, J_U_F_Predicate<? super T> hasNext, J_U_F_UnaryOperator<T> next) {
-            //TODO
+            throw MissingStubError.create();
         }
 
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
         public static <T> J_U_S_Stream<T> generate(J_U_F_Supplier<T> s) {
-            //TODO
+            throw MissingStubError.create();
         }
 
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
         public static <T> J_U_S_Stream<T> concat(J_U_S_Stream<? extends T> a, J_U_S_Stream<? extends T> b) {
-            //TODO
+            throw MissingStubError.create();
         }
 
 
