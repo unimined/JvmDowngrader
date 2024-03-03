@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg;
 
+import org.jetbrains.annotations.VisibleForTesting;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
@@ -304,6 +305,15 @@ public class ClassDowngrader {
 
     public void stub(int versionOpcode, Class<?> clazz) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         downgraders.get(versionOpcode).stub(clazz);
+    }
+
+    @VisibleForTesting
+    public VersionProvider getVersionProviderFor(int version) {
+        // This is not true for java 1
+        VersionProvider vp = downgraders.get(version + 44);
+        if (vp == null) return null;
+        vp.ensureInit();
+        return vp;
     }
 
     public static void main(String[] args) {

@@ -2,8 +2,7 @@ package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.RecordComponentNode;
-import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.j16.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.j16.stub.*;
 

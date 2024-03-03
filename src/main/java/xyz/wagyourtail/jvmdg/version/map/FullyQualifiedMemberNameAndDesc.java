@@ -32,6 +32,16 @@ public class FullyQualifiedMemberNameAndDesc {
     }
 
     @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(owner.getDescriptor());
+        if (name != null) {
+            sb.append(name).append(";").append(desc.getDescriptor());
+        }
+        return sb.toString();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

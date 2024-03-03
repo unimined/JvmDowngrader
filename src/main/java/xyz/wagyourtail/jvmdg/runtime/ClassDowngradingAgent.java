@@ -29,7 +29,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
     public static final boolean DUMP_CLASSES = Boolean.parseBoolean(System.getProperty("jvmdg.dump", "false"));
 
     static {
-        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "false")) ? Level.WARNING : Level.OFF);
+        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "false")) ? Level.ALL : Level.OFF);
     }
 
     static {

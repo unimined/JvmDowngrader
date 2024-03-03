@@ -16,10 +16,8 @@ import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.Callable;
 
 public abstract class VersionProvider {
 
@@ -41,9 +39,8 @@ public abstract class VersionProvider {
                 System.out.println(stub.getKey().getInternalName() + " -> " + stub.getValue().getInternalName());
             }
             for (Map.Entry<Type, ClassMapping> entry : stubMappings.entrySet()) {
-                for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> member : entry.getValue().getMethodStub().entrySet()) {
-                    System.out.println(entry.getKey().getInternalName() + "." + member.getKey().getName() + member.getKey().getDesc() + " -> " + member.getValue().getFirst().getDeclaringClass().getCanonicalName().replace('.', '/') + ";" + member.getValue().getFirst().getName() + Type.getMethodDescriptor(member.getValue()
-                        .getFirst()));
+                for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> member : entry.getValue().getMethodStubMap().entrySet()) {
+                    System.out.println(entry.getKey().getInternalName() + "." + member.getKey().getName() + member.getKey().getDesc() + " -> " + member.getValue().getFirst().getDeclaringClass().getCanonicalName().replace('.', '/') + ";" + member.getValue().getFirst().getName() + Type.getMethodDescriptor(member.getValue().getFirst()));
                 }
             }
 //            for (Map.Entry<Type, Pair<Type, Stub>> entry : classStubs.entrySet()) {
@@ -111,9 +108,7 @@ public abstract class VersionProvider {
                 try {
                     List<Type> types = superTypeResolver.apply(type);
                     if (types == null) {
-    //            throw new IllegalArgumentException("Could not find class " + type.getInternalName());
                         System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
-//                        Thread.dumpStack();
                         types = Collections.emptyList();
                     }
                     List<ClassMapping> superTypes = new ArrayList<>();
