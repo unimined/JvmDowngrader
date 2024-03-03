@@ -63,6 +63,15 @@ public class ZipDowngrader {
                         try {
                             byte[] bytes = Utils.readAllBytes(Files.newInputStream(file));
                             if (file.getFileName().toString().endsWith(".class")) {
+                                if (file.toString().startsWith("/META-INF/versions")) {
+                                    ZipEntry newEntry = new ZipEntry(file.toString());
+                                    newEntry.setTime(attrs.lastModifiedTime().toMillis());
+                                    zos.putNextEntry(newEntry);
+                                    zos.write(bytes);
+                                    zos.flush();
+                                    zos.closeEntry();
+                                    return FileVisitResult.CONTINUE;
+                                }
                                 try {
                                     String internalName = file.toString().substring(1, file.toString().length() - 6);
                                     Map<String, byte[]> outputs = downgrader.downgrade(new AtomicReference<>(internalName), bytes, false, new Function<String, byte[]>() {

@@ -2,8 +2,8 @@ package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
-import xyz.wagyourtail.jvmdg.j13.stub.J_N_Buffer;
-import xyz.wagyourtail.jvmdg.j13.stub.J_N_F_FileSystems;
+import xyz.wagyourtail.jvmdg.j13.stub.java_base.J_N_Buffer;
+import xyz.wagyourtail.jvmdg.j13.stub.java_base.J_N_F_FileSystems;
 
 public class Java13Downgrader extends VersionProvider {
     public Java13Downgrader() {

@@ -3,7 +3,7 @@ package xyz.wagyourtail.jvmdg.providers;
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j8.stub.*;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
-import xyz.wagyourtail.jvmdg.j9.stub.J_U_C_CompletableFuture;
+import xyz.wagyourtail.jvmdg.j9.stub.java_base.J_U_C_CompletableFuture;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java8Downgrader extends VersionProvider {

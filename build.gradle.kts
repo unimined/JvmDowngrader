@@ -23,6 +23,8 @@ allprojects {
     }
 
     dependencies {
+        implementation("org.jetbrains:annotations-java5:24.1.0")
+
         implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
         implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
         implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
@@ -158,9 +160,6 @@ publishing {
             version = rootProject.version as String
 
             artifact(project.tasks.jar) {}
-//            artifact(project.tasks.shadowJar) {
-//                classifier = "all"
-//            }
             artifact(project.tasks["jarInJar"]) {
                 classifier = "all"
             }

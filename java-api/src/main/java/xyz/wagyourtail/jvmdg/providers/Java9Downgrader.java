@@ -2,15 +2,12 @@ package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.j9.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
-import xyz.wagyourtail.jvmdg.j9.stub.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 public class Java9Downgrader extends VersionProvider {
 

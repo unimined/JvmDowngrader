@@ -1,8 +1,8 @@
 package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.j15.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
-import xyz.wagyourtail.jvmdg.j15.stub.*;
 
 public class Java15Downgrader extends VersionProvider {
     public Java15Downgrader() {

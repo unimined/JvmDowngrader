@@ -2,9 +2,9 @@ package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
-import xyz.wagyourtail.jvmdg.j14.stub.J_I_PrintStream;
-import xyz.wagyourtail.jvmdg.j14.stub.J_L_StrictMath;
-import xyz.wagyourtail.jvmdg.j14.stub.J_U_C_L_LockSupport;
+import xyz.wagyourtail.jvmdg.j14.stub.java_base.J_I_PrintStream;
+import xyz.wagyourtail.jvmdg.j14.stub.java_base.J_L_StrictMath;
+import xyz.wagyourtail.jvmdg.j14.stub.java_base.J_U_C_L_LockSupport;
 
 public class Java14Downgrader extends VersionProvider {
     public Java14Downgrader() {

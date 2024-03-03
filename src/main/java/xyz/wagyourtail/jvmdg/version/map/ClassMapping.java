@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.version.map;
 
+import org.jetbrains.annotations.VisibleForTesting;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
@@ -111,16 +112,16 @@ public class ClassMapping {
 
     public InsnList getStubFor(MemberNameAndDesc member, boolean invoke_static, boolean runtimeAvailable) {
         try {
-            if (!invoke_static) {
-                for (ClassMapping parent : parents.get()) {
-                    InsnList node = parent.getStubFor(member, false, runtimeAvailable);
-                    if (node != null) {
-                        return node;
-                    }
-                }
-            }
             Pair<Method, Stub> pair = methodStub.get(member);
             if (pair == null) {
+                if (!invoke_static) {
+                    for (ClassMapping parent : parents.get()) {
+                        InsnList node = parent.getStubFor(member, false, runtimeAvailable);
+                        if (node != null) {
+                            return node;
+                        }
+                    }
+                }
                 return null;
             }
             Method m = pair.getFirst();
@@ -129,6 +130,14 @@ public class ClassMapping {
             }
             if (pair.getSecond().wasAbstract()) {
                 // these are special and should be treated differently, as we will implement them on the newer classes in a seperate transform
+                if (!invoke_static) {
+                    for (ClassMapping parent : parents.get()) {
+                        InsnList node = parent.getStubFor(member, false, runtimeAvailable);
+                        if (node != null) {
+                            return node;
+                        }
+                    }
+                }
                 return null;
             }
             int modifiers = m.getModifiers();
@@ -152,12 +161,17 @@ public class ClassMapping {
         }
     }
 
-    public Map<MemberNameAndDesc, Pair<Method, Stub>> getMethodStub() {
+    public Map<MemberNameAndDesc, Pair<Method, Stub>> getMethodStubMap() {
         return methodStub;
     }
 
-    public Map<MemberNameAndDesc, Pair<Method, Modify>> getMethodModify() {
+    public Map<MemberNameAndDesc, Pair<Method, Modify>> getMethodModifyMap() {
         return methodModify;
+    }
+
+    @VisibleForTesting
+    public List<ClassMapping> getParents() {
+        return parents.get();
     }
 
     public List<Method> getStubTargets() {

@@ -22,12 +22,21 @@ public class MemberNameAndDesc {
         return desc;
     }
 
+    public FullyQualifiedMemberNameAndDesc toFullyQualified(Type owner) {
+        return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MemberNameAndDesc that = (MemberNameAndDesc) o;
         return Objects.equals(name, that.name) && Arrays.equals(desc.getArgumentTypes(), that.desc.getArgumentTypes());
+    }
+
+    @Override
+    public String toString() {
+        return name + ";" + desc.getDescriptor();
     }
 
     @Override

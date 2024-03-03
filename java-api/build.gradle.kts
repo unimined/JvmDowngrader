@@ -48,6 +48,14 @@ sourceSets {
     }
 }
 
+val coverage by sourceSets.creating {
+    inputOf(sourceSets.main.get())
+    outputOf(sourceSets.main.get())
+    for (vers in fromVersion..toVersion) {
+        outputOf(sourceSets["java${vers.ordinal + 1}"])
+    }
+}
+
 dependencies {
     implementation(project(":")) {
         isTransitive = false
@@ -169,7 +177,7 @@ val downgradeJar11 by tasks.registering(Jar::class) {
         val result = javaexec {
             mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
             classpath = sourceSets.main.get().compileClasspath
-            workingDir = project.buildDir
+            workingDir = project.layout.buildDirectory.get().asFile
             jvmArgs = listOf("-Djvmdg.java-api=$apiJar")
             args = listOf(
                 jvToOpc(JavaVersion.VERSION_11).toString(),
@@ -194,7 +202,7 @@ val downgradeJar8 by tasks.registering(Jar::class) {
         javaexec {
             mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
             classpath = sourceSets.main.get().compileClasspath
-            workingDir = project.buildDir
+            workingDir = project.layout.buildDirectory.get().asFile
             jvmArgs = listOf("-Djvmdg.java-api=$apiJar")
             args = listOf(
                 jvToOpc(JavaVersion.VERSION_1_8).toString(),
@@ -203,6 +211,15 @@ val downgradeJar8 by tasks.registering(Jar::class) {
             )
         }
     }
+}
+
+val coverageReport by tasks.registering(JavaExec::class) {
+    group = "jvmdg"
+    dependsOn(tasks.jar)
+    mainClass = "xyz.wagyourtail.jvmdg.coverage.CoverageChecker"
+    classpath = coverage.runtimeClasspath
+    jvmArgs("-Djvmdg.java-api=${tasks.jar.get().archiveFile.get().asFile.absolutePath}")
+    workingDir = project.layout.buildDirectory.get().asFile
 }
 
 
