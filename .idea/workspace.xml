@@ -7,8 +7,7 @@
     <list default="true" id="43d51f9c-2980-4450-a129-074bd2f63b31" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/exc/MissingStubError.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/exc/MissingStubError.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/JVMDowngraderExtension.kt" beforeDir="false" afterPath="$PROJECT_DIR$/gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/JVMDowngraderExtension.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

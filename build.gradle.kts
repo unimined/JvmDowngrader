@@ -160,11 +160,8 @@ publishing {
             version = rootProject.version as String
 
             artifact(project.tasks.jar) {}
-            artifact(project.tasks.shadowJar) {
-                classifier = "all"
-            }
             artifact(project.tasks["jarInJar"]) {
-                classifier = "all-java-api"
+                classifier = "all"
             }
         }
     }

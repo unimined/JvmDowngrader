@@ -13,6 +13,8 @@ abstract class JVMDowngraderExtension(val project: Project) {
 
     var version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.0.1")
 
+    var asmVersion by FinalizeOnRead("9.6")
+
     val defaultTask = project.tasks.register("downgradeJar", DowngradeJar::class.java, this).apply {
         configure {
             val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
@@ -28,7 +30,13 @@ abstract class JVMDowngraderExtension(val project: Project) {
         }
     }
 
-    val core = project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader:${version}:all"))
+    val core = project.configurations.detachedConfiguration(
+        project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader:${version}"),
+        project.dependencies.create("org.ow2.asm:asm:$asmVersion"),
+        project.dependencies.create("org.ow2.asm:asm-commons:$asmVersion"),
+        project.dependencies.create("org.ow2.asm:asm-tree:$asmVersion"),
+        project.dependencies.create("org.ow2.asm:asm-util:$asmVersion"),
+    )
 
     val api = project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${version}"))
 
