@@ -168,6 +168,7 @@ public class CoverageChecker {
                         if (cn.name.startsWith("sun/")) {
                             if (!cn.name.equals("sun/misc/Unsafe")) return;
                         }
+                        if ((cn.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) return;
                         newClasses.put(cn.name, new Pair<>(modName, cn));
                         if (currentVersion.containsKey(cn.name)) {
                             // check to see what was "removed"
