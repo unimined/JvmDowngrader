@@ -120,11 +120,11 @@ tasks.compileTestJava {
 }
 
 tasks.jar {
-    from(*sourceSets.toList().map { it.output }.toTypedArray())
+    from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output } + sourceSets.main.get().output).toTypedArray())
 }
 
 tasks.shadowJar {
-    from(*sourceSets.toList().map { it.output }.toTypedArray())
+    from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output } + sourceSets.main.get().output).toTypedArray())
     archiveClassifier.set("jij")
     relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
     configurations = listOf()

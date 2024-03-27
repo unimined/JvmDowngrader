@@ -219,4 +219,10 @@ public class JvmDowngraderTest {
     public void testVersion() throws Exception {
         testDowngrade("xyz.wagyourtail.downgradetest.TestVersion", false);
     }
+
+    @Test
+    public void testWasAbstract() throws Exception {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestWasAbstract");
+    }
+
 }

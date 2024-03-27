@@ -5,11 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="43d51f9c-2980-4450-a129-074bd2f63b31" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java-api/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/build.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/java-api/src/coverage/java/xyz/wagyourtail/jvmdg/coverage/CoverageChecker.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/coverage/java/xyz/wagyourtail/jvmdg/coverage/CoverageChecker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java-api/src/java9/java/xyz/wagyourtail/jvmdg/j9/stub/java_base/J_L_ModuleLayer.java" beforeDir="false" afterPath="$PROJECT_DIR$/java-api/src/java9/java/xyz/wagyourtail/jvmdg/j9/stub/java_base/J_L_ModuleLayer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/version/map/ClassMapping.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/xyz/wagyourtail/jvmdg/version/map/ClassMapping.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,18 +47,6 @@
                 <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
                 <item name="JvmDowngrader" type="f1a62948:ProjectNode" />
                 <item name="Tasks" type="e4a08cd1:TasksNode" />
-                <item name="jvmdg" type="c8890929:TasksNode$1" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="JvmDowngrader" type="f1a62948:ProjectNode" />
-                <item name="Tasks" type="e4a08cd1:TasksNode" />
-                <item name="publishing" type="c8890929:TasksNode$1" />
-              </path>
-              <path>
-                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
-                <item name="JvmDowngrader" type="f1a62948:ProjectNode" />
-                <item name="Tasks" type="e4a08cd1:TasksNode" />
                 <item name="verification" type="c8890929:TasksNode$1" />
               </path>
             </expand>
@@ -92,27 +78,23 @@
     <option name="flattenPackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Gradle.JvmDowngrader [clean] (1).executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JvmDowngrader [coverageReport].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JvmDowngrader [publishToMavenLocal].executor&quot;: &quot;Run&quot;,
-    &quot;Gradle.JvmDowngrader:java-api [:java-api:CoverageChecker.main()].executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;ToolWindowRun.ShowToolbar&quot;: &quot;false&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/mnt/d422463e-6d7f-42b2-b45d-50ba56464d4b/Projects/Other People's Stuff/ktsmc&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.ide.settings.new.ui&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.JvmDowngrader [coverageReport].executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "ToolWindowRun.ShowToolbar": "false",
+    "WebServerToolWindowFactoryState": "false",
+    "git-widget-placeholder": "feature/java8",
+    "last_opened_file_path": "/home/william/Downloads/EclipseDarkLike.jar",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "reference.settings.ide.settings.new.ui",
+    "vue.rearranger.settings.migration": "true"
   }
 }</component>
   <component name="RecentsManager">

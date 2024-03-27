@@ -25,6 +25,6 @@ public @interface Stub {
     /**
      * if was abstract/default and need to insert as default implementation while downgrading.
      */
-    boolean wasAbstract() default false;
+    boolean abstractDefault() default false;
 
 }
