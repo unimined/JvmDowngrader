@@ -3,14 +3,17 @@ package xyz.wagyourtail.jvmdg;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
+import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.beans.XMLDecoder;
 import java.io.*;
@@ -19,6 +22,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -27,9 +31,14 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ClassDowngrader {
     public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(Utils.getCurrentClassVersion());
+
+    // because parent is null, this is (essentially) a wrapper around the bootstrap classloader
+    public static final ClassLoader bootstrapClassLoader = new URLClassLoader(new URL[0], null);
+
     public static final URL javaApi = findJavaApi();
     public static final DowngradingClassLoader classLoader = new DowngradingClassLoader(new URL[]{javaApi}, ClassDowngrader.class.getClassLoader());
     private static final Map<Integer, VersionProvider> downgraders = collectProviders();
+
     public final int target;
 
     protected ClassDowngrader(int versionTarget) {
@@ -117,6 +126,47 @@ public class ClassDowngrader {
             return tmp.toUri().toURL();
         } catch (IOException e) {
             throw new RuntimeException("Failed to find java api", e);
+        }
+    }
+
+    public Set<MemberNameAndDesc> getMembers(int version, Type type) throws IOException {
+        for (int vers = version; vers > target; vers--) {
+            VersionProvider downgrader = downgraders.get(vers);
+            if (downgrader == null) {
+                throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
+            }
+            downgrader.ensureInit();
+            Type stubbed = downgrader.stubClass(type);
+            if (!stubbed.equals(type)) {
+                try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
+                    if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
+                    ClassReader reader = new ClassReader(stream);
+                    ClassNode node = new ClassNode();
+                    reader.accept(node, ClassReader.SKIP_CODE);
+                    Set<MemberNameAndDesc> members = new HashSet<>();
+                    for (MethodNode o : node.methods) {
+                        if ((o.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
+                        members.add(new MemberNameAndDesc(o.name, Type.getMethodType(o.desc)));
+                    }
+                    return members;
+                }
+            }
+        }
+        try (InputStream stream = classLoader.getResourceAsStream(type.getInternalName() + ".class")) {
+            if (bootstrapClassLoader.getResource(type.getInternalName() + ".class") != null) {
+                // assume all java api classes are... "empty". this makes parentOnly stubs work properly.
+                return new HashSet<>();
+            }
+            if (stream == null) return null;
+            ClassReader reader = new ClassReader(stream);
+            ClassNode node = new ClassNode();
+            reader.accept(node, ClassReader.SKIP_CODE);
+            Set<MemberNameAndDesc> members = new HashSet<>();
+            for (MethodNode o : node.methods) {
+                if ((o.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
+                members.add(new MemberNameAndDesc(o.name, Type.getMethodType(o.desc)));
+            }
+            return members;
         }
     }
 

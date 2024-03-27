@@ -3,16 +3,17 @@ package xyz.wagyourtail.jvmdg.version.all.stub;
 import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
+import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.lang.reflect.Modifier;
+import java.util.*;
 
 public class J_L_Class {
 
@@ -64,6 +65,41 @@ public class J_L_Class {
 
     //TODO: FIELD STUBS
 
+    static final IOFunction<Type, Set<MemberNameAndDesc>> getMethods = new IOFunction<Type, Set<MemberNameAndDesc>>() {
+        @Override
+        public Set<MemberNameAndDesc> apply(Type type) throws IOException {
+            try {
+                Class<?> clazz = Class.forName(type.getClassName());
+                Set<MemberNameAndDesc> methods = new HashSet<>();
+                for (Method declaredMethod : clazz.getDeclaredMethods()) {
+                    if (Modifier.isAbstract(declaredMethod.getModifiers()) || Modifier.isPrivate(declaredMethod.getModifiers())) continue;
+                    MemberNameAndDesc member = new MemberNameAndDesc(declaredMethod.getName(), Type.getType(declaredMethod));
+                    methods.add(member);
+                }
+                return methods;
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+
+    static final IOFunction<Type, List<Type>> getSuperTypes = new IOFunction<Type, List<Type>>() {
+        @Override
+        public List<Type> apply(Type type) throws IOException {
+            try {
+                Class<?> clazz = Class.forName(type.getClassName());
+                List<Type> parents = new ArrayList<>();
+                parents.add(Type.getType(clazz.getSuperclass()));
+                for (Class<?> i : clazz.getInterfaces()) {
+                    parents.add(Type.getType(i));
+                }
+                return parents;
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+
     @Stub(requiresRuntime = true, downgradeVersion = true)
     public static Method[] getMethods(Class<?> clazz, int origVersion) {
         Type target;
@@ -77,23 +113,12 @@ public class J_L_Class {
         for (VersionProvider vp : versionProviders) {
             if (vp.classStubs.containsKey(target)) {
                 try {
-                    List<Method> targets = vp.getStubMapper(target, new IOFunction<Type, List<Type>>() {
-                        @Override
-                        public List<Type> apply(Type type) {
-                            try {
-                                Class<?> clazz = Class.forName(type.getClassName());
-                                List<Type> parents = new ArrayList<>();
-                                parents.add(Type.getType(clazz.getSuperclass()));
-                                for (Class<?> i : clazz.getInterfaces()) {
-                                    parents.add(Type.getType(i));
-                                }
-                                return parents;
-                            } catch (ClassNotFoundException e) {
-                                throw new RuntimeException(e);
-                            }
+                    List<Pair<Method, Stub>> targets = vp.getStubMapper(target, getMethods, getSuperTypes).getStubTargets();
+                    for (Pair<Method, Stub> t : targets) {
+                        if (!methods.contains(t.getFirst())) {
+                            methods.add(t.getFirst());
                         }
-                    }).getStubTargets();
-                    methods.addAll(targets);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

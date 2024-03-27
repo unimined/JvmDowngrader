@@ -8,7 +8,6 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
-import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -50,8 +49,8 @@ public class CoverageChecker {
             compare(versions.get(current), classes, new ArrayList<>());
 
             versions.keySet().stream().sorted((a, b) -> -a.compareTo(b)).forEach(v -> {
-                var missingStubs = new ArrayList<Pair<Pair<String, FullyQualifiedMemberNameAndDesc>, Boolean>>();
-                var parentOnlyStubs = new ArrayList<Pair<Pair<String, FullyQualifiedMemberNameAndDesc>, Boolean>>();
+                var missingStubs = new ArrayList<MemberInfo>();
+                var parentOnlyStubs = new ArrayList<MemberInfo>();
 
                 var stubVersion = v + 1;
                 var availableStubCount = 0;
@@ -66,13 +65,14 @@ public class CoverageChecker {
                 System.out.println("Checking version " + stubVersion);
 
                 try {
-                    var requiredStubs = new ArrayList<Pair<Boolean, Pair<String, FullyQualifiedMemberNameAndDesc>>>();
+                    var requiredStubs = new ArrayList<MemberInfo>();
                     compare(versions.get(v), classes, requiredStubs);
 
                     outer:for (var staticAndStub : requiredStubs) {
-                        var isStatic = staticAndStub.getFirst();
-                        var modName = staticAndStub.getSecond().getFirst();
-                        var stub = staticAndStub.getSecond().getSecond();
+                        var isStatic = staticAndStub.isStatic();
+                        var isAbstract = staticAndStub.isAbstract();
+                        var modName = staticAndStub.module();
+                        var stub = staticAndStub.fqm();
 
                         if (stub.getName() != null) {
                             var stubProvider = versionProvider.getStubMapper(stub.getOwner());
@@ -87,7 +87,7 @@ public class CoverageChecker {
                                 if (parent.getMethodStubMap().containsKey(stub.toMemberNameAndDesc()) || parent.getMethodModifyMap().containsKey(member)) {
 
                                     onlyOnParentStubCount++;
-                                    parentOnlyStubs.add(new Pair<>(new Pair<>(modName, stub), isStatic));
+                                    parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
 
                                     continue outer;
                                 }
@@ -100,7 +100,7 @@ public class CoverageChecker {
                         }
 
                         missingStubCount++;
-                        missingStubs.add(new Pair<>(new Pair<>(modName, stub), isStatic));
+                        missingStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
 
                     }
 
@@ -125,12 +125,16 @@ public class CoverageChecker {
         }
     }
 
-    private static void writeList(List<Pair<Pair<String, FullyQualifiedMemberNameAndDesc>, Boolean>> missing, Path outputFile) throws IOException {
+    public record MemberInfo(String module, FullyQualifiedMemberNameAndDesc fqm, boolean isAbstract, boolean isStatic) {}
+
+    private static void writeList(List<MemberInfo> missing, Path outputFile) throws IOException {
         Files.createDirectories(outputFile.getParent());
         Files.deleteIfExists(outputFile);
         var byModule = new HashMap<String, List<String>>();
         for (var stub : missing) {
-            byModule.computeIfAbsent(stub.getFirst().getFirst(), k -> new ArrayList<>()).add(stub.getFirst().getSecond().toString() + (stub.getSecond() ? "; static" : ";"));
+            String sta = stub.isStatic() ? "; static" : ";";
+            sta = stub.isAbstract() ? "; abstract" : sta;
+            byModule.computeIfAbsent(stub.module(), k -> new ArrayList<>()).add(stub.fqm().toString() + sta);
         }
         try (var writer = Files.newBufferedWriter(outputFile)) {
             for (var entry : byModule.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
@@ -145,7 +149,7 @@ public class CoverageChecker {
         }
     }
 
-    public static void compare(List<Path> moduleHolders, Map<String, Pair<String, ClassNode>> currentVersion, List<Pair<Boolean, Pair<String, FullyQualifiedMemberNameAndDesc>>> removed) throws IOException {
+    public static void compare(List<Path> moduleHolders, Map<String, Pair<String, ClassNode>> currentVersion, List<MemberInfo> removed) throws IOException {
         var mods = new ArrayList<Path>();
         for (var mod : moduleHolders) {
             try (var folders = Files.newDirectoryStream(mod)) {
@@ -168,25 +172,53 @@ public class CoverageChecker {
                         if (cn.name.startsWith("sun/")) {
                             if (!cn.name.equals("sun/misc/Unsafe")) return;
                         }
+                        if ((cn.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) return;
                         newClasses.put(cn.name, new Pair<>(modName, cn));
                         if (currentVersion.containsKey(cn.name)) {
                             // check to see what was "removed"
                             var old = currentVersion.get(cn.name);
                             var oldCls = old.getSecond();
-                            var methods = new HashSet<MemberNameAndDesc>();
+                            var methods = new HashSet<MemberInfo>();
+                            var ct = Type.getObjectType(cn.name);
                             for (var m : oldCls.methods) {
                                 if ((m.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) continue;
                                 if (m.name.equals("<clinit>")) continue;
-                                methods.add(new MemberNameAndDesc(m.name, Type.getMethodType(m.desc)));
+                                var isStatic = (m.access & Opcodes.ACC_STATIC) != 0;
+                                var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
+                                var fqn = new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc));
+                                methods.add(new MemberInfo(modName, fqn, isAbstract, isStatic));
                             }
                             for (var m : cn.methods) {
-                                var md = new MemberNameAndDesc(m.name, Type.getMethodType(m.desc));
-                                methods.remove(md);
+                                var isStatic = (m.access & Opcodes.ACC_STATIC) != 0;
+                                var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
+                                methods.remove(new MemberInfo(modName, new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc)), isAbstract, isStatic));
                             }
-                            var ct = Type.getObjectType(cn.name);
-                            for (var m : methods) {
-                                removed.add(new Pair<>(false, new Pair<>(modName, m.toFullyQualified(ct))));
+
+                            // check if method(s) still exist on parent
+                            while (!cn.name.equals("java/lang/Object")) {
+                                Path superCn = null;
+                                for (Path path : mods) {
+                                    var scn = path.resolve(cn.superName + ".sig");
+                                    if (Files.exists(scn)) {
+                                        superCn = scn;
+                                        break;
+                                    }
+                                }
+                                if (superCn == null) {
+                                    break;
+                                }
+                                var superCls = ClassDowngrader.bytesToClassNode(Files.readAllBytes(superCn), ClassReader.SKIP_CODE);
+                                for (var m : superCls.methods) {
+                                    if (m.name.equals("<clinit>")) continue;
+                                    var isStatic = (m.access & Opcodes.ACC_STATIC) != 0;
+                                    if (isStatic) continue;
+                                    var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
+                                    var fqn = new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc));
+                                    methods.remove(new MemberInfo(modName, fqn, isAbstract, false));
+                                }
+                                cn = superCls;
                             }
+                            removed.addAll(methods);
                         }
                     } catch (IOException e) {
                         throw new UncheckedIOException("Failed to read " + p.toAbsolutePath(), e);
@@ -195,10 +227,10 @@ public class CoverageChecker {
             }
         }
         // find classes that were "removed"
-        for (var cls : currentVersion.keySet()) {
-            if (!newClasses.containsKey(cls)) {
-                if (removedClasses.add(cls)) {
-                    removed.add(new Pair<>(false, new Pair<>(currentVersion.get(cls).getFirst(), new FullyQualifiedMemberNameAndDesc(Type.getObjectType(cls), null, null))));
+        for (var cls : currentVersion.entrySet()) {
+            if (!newClasses.containsKey(cls.getKey())) {
+                if (removedClasses.add(cls.getKey())) {
+                    removed.add(new MemberInfo(cls.getValue().getFirst(), new FullyQualifiedMemberNameAndDesc(Type.getObjectType(cls.getKey()), null, null), false, false));
                 }
             }
         }
