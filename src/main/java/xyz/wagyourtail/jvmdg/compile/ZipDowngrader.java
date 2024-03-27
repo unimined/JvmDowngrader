@@ -50,6 +50,18 @@ public class ZipDowngrader {
         final URLClassLoader extraClasspath = new URLClassLoader(classpath.toArray(new URL[0]), ZipDowngrader.class.getClassLoader());
         try (final FileSystem zipfs = Utils.openZipFileSystem(zip, new HashMap<String, Object>())) {
             try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(output))) {
+                // write manifest seperately, since it's supposed to be first
+                Path manifest = zipfs.getPath("META-INF/MANIFEST.MF");
+                if (Files.exists(manifest)) {
+                    byte[] bytes = Utils.readAllBytes(Files.newInputStream(manifest));
+                    ZipEntry newEntry = new ZipEntry("META-INF/MANIFEST.MF");
+                    newEntry.setTime(Files.getLastModifiedTime(manifest).toMillis());
+                    zos.putNextEntry(newEntry);
+                    zos.write(bytes);
+                    zos.flush();
+                    zos.closeEntry();
+                }
+
                 Files.walkFileTree(zipfs.getPath("/"), new FileVisitor<Path>() {
                     @Override
                     public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
@@ -115,13 +127,8 @@ public class ZipDowngrader {
                                 } catch (IllegalClassFormatException e) {
                                     throw new IOException("Failed to downgrade class", e);
                                 }
-                            } else {
-                                String fileName = file.getFileName().toString();
-                                // remove leading /
-                                if (fileName.startsWith("/")) {
-                                    fileName = fileName.substring(1);
-                                }
-                                ZipEntry newEntry = new ZipEntry(fileName);
+                            } else if (!file.toString().equals("/META-INF/MANIFEST.MF")) {
+                                ZipEntry newEntry = new ZipEntry(file.toString().substring(1));
                                 newEntry.setTime(attrs.lastModifiedTime().toMillis());
                                 zos.putNextEntry(newEntry);
                                 zos.write(bytes);
