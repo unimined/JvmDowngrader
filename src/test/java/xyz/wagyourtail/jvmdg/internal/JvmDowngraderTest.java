@@ -156,6 +156,10 @@ public class JvmDowngraderTest {
     }
 
     @Test
+    public void testBuffer() throws Exception {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestBuffer");
+    }
+    @Test
     public void testDowngradeRecord() throws Exception {
         testDowngrade("xyz.wagyourtail.downgradetest.TestRecord");
     }

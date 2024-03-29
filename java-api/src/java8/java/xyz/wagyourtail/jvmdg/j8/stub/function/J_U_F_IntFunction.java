@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 @J_L_FunctionalInterface
-@Stub(ref = @Ref("Ljava/util/function/IntFunction"))
+@Stub(ref = @Ref("Ljava/util/function/IntFunction;"))
 public interface J_U_F_IntFunction<R> {
 
     R apply(int value);

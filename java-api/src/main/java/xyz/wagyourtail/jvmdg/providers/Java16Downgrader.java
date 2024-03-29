@@ -31,11 +31,8 @@ public class Java16Downgrader extends VersionProvider {
             // IllegalFormatArgumentIndexException
             stub(J_U_Objects.class);
             stub(J_U_S_DoubleStream.class);
-            stub(J_U_S_DoubleStream.DoubleMapMultiConsumer.class);
             stub(J_U_S_IntStream.class);
-            stub(J_U_S_IntStream.IntMapMultiConsumer.class);
             stub(J_U_S_LongStream.class);
-            stub(J_U_S_LongStream.LongMapMultiConsumer.class);
             stub(J_U_S_Stream.class);
             // ValueBased
             // Preconditions // same exact as J_U_Objects, but it's internal here... jdk package

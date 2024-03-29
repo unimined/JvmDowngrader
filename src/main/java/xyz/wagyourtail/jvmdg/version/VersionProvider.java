@@ -119,7 +119,7 @@ public abstract class VersionProvider {
                 try {
                     List<Type> types = superTypeResolver.apply(type);
                     if (types == null) {
-                        System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
+//                        System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
                         types = Collections.emptyList();
                     }
                     List<ClassMapping> superTypes = new ArrayList<>();
@@ -180,12 +180,19 @@ public abstract class VersionProvider {
                     getStubMapper(owner).addModify(member, method, modify);
                 }
             }
-        } catch (Exception e) {
-            throw new RuntimeException("failed to create stub " + clazz.getName(), e);
+        } catch (Throwable e) {
+//            throw new RuntimeException("failed to create stub " + clazz.getName(), e);
+//            System.out.println("ERROR: failed to create stub for " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
+//            e.printStackTrace(System.err);
         }
-        // inner classes
-        for (Class<?> inner : clazz.getDeclaredClasses()) {
-            stub(inner);
+        try {
+            // inner classes
+            for (Class<?> inner : clazz.getDeclaredClasses()) {
+                stub(inner);
+            }
+        } catch (Throwable e) {
+//            throw new RuntimeException("failed to create stub for inner classes of " + clazz.getName(), e);
+//            System.out.println("ERROR: failed to create stub for inner classes of " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
         }
     }
 

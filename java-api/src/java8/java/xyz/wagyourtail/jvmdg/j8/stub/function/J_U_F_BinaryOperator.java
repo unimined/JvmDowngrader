@@ -9,7 +9,7 @@ import java.util.Comparator;
 import java.util.Objects;
 
 @J_L_FunctionalInterface
-@Stub(ref = @Ref("Ljava/util/function/BinaryOperator"))
+@Stub(ref = @Ref("Ljava/util/function/BinaryOperator;"))
 public interface J_U_F_BinaryOperator<T> extends J_U_F_BiFunction<T, T, T> {
 
 

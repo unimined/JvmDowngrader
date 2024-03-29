@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 @J_L_FunctionalInterface
-@Stub(ref = @Ref("Ljava/util/function/IntConsumer"))
+@Stub(ref = @Ref("Ljava/util/function/IntConsumer;"))
 public interface J_U_F_IntConsumer {
 
     void accept(int value);

@@ -66,7 +66,7 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
 
         class OfLongDefaults {
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong"), abstractDefault = true)
+            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"), abstractDefault = true)
             public static void forEachRemaining(J_U_PrimitiveIterator.OfLong it, J_U_F_Consumer<? super Long> action) {
                 if (action instanceof J_U_F_LongConsumer) {
                     forEachRemaining(it, (J_U_F_LongConsumer) action);
@@ -77,12 +77,12 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
                 }
             }
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong"), abstractDefault = true)
+            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"), abstractDefault = true)
             public static void forEachRemaining(J_U_PrimitiveIterator.OfLong it, J_U_F_LongConsumer action) {
                 it.forEachRemaining(action);
             }
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong"), abstractDefault = true)
+            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"), abstractDefault = true)
             public static Long next(J_U_PrimitiveIterator.OfLong it) {
                 return it.nextLong();
             }
@@ -103,7 +103,7 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
 
         class OfDoubleDefaults {
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble"), abstractDefault = true)
+            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"), abstractDefault = true)
             public static void forEachRemaining(J_U_PrimitiveIterator.OfDouble it, J_U_F_Consumer<? super Double> action) {
                 if (action instanceof J_U_F_DoubleConsumer) {
                     forEachRemaining(it, (J_U_F_DoubleConsumer) action);
@@ -114,12 +114,12 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
                 }
             }
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble"), abstractDefault = true)
+            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"), abstractDefault = true)
             public static void forEachRemaining(J_U_PrimitiveIterator.OfDouble it, J_U_F_DoubleConsumer action) {
                 it.forEachRemaining(action);
             }
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble"), abstractDefault = true)
+            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"), abstractDefault = true)
             public static Double next(J_U_PrimitiveIterator.OfDouble it) {
                 return it.nextDouble();
             }

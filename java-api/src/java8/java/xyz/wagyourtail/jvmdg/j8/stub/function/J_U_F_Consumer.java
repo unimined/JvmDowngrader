@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.util.Objects;
 
 @J_L_FunctionalInterface
-@Stub(ref = @Ref("Ljava/util/function/Consumer"))
+@Stub(ref = @Ref("Ljava/util/function/Consumer;"))
 public interface J_U_F_Consumer<T> {
 
     void accept(T t);

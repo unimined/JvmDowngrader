@@ -10,6 +10,7 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class J_L_I_LambdaMetafactory {
 
@@ -24,7 +25,7 @@ public class J_L_I_LambdaMetafactory {
         int nextAnonymous = 1;
         // find next anonymous class number
         for (InnerClassNode icn : cnode.innerClasses) {
-            if (icn.name.matches("^" + cnode.name + "\\$\\d+$")) {
+            if (icn.name.matches("^" + Pattern.quote(cnode.name) + "\\$\\d+$")) {
                 int num = Integer.parseInt(icn.name.substring(icn.name.lastIndexOf('$') + 1));
                 if (num >= nextAnonymous) {
                     nextAnonymous = num + 1;
@@ -43,14 +44,24 @@ public class J_L_I_LambdaMetafactory {
             }
         }
         // add child as inner class
-        cnode.innerClasses.add(new InnerClassNode(child.name, null, null, 0));
-        // construct new class
-        InsnList il = new InsnList();
-        il.add(new TypeInsnNode(Opcodes.NEW, child.name));
-        il.add(new InsnNode(Opcodes.DUP));
-        il.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, child.name, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, constructor.getArgumentTypes()), false));
-        mnode.instructions.insertBefore(indy, il);
-        mnode.instructions.remove(indy);
+        cnode.innerClasses.add(new InnerClassNode(child.name, null, null, Opcodes.ACC_STATIC));
+        // create method for constructing child
+        MethodVisitor mv = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, "jvmdowngrader$construct$" + nextAnonymous, constructor.getDescriptor(), null, null);
+        mv.visitCode();
+        mv.visitTypeInsn(Opcodes.NEW, child.name);
+        mv.visitInsn(Opcodes.DUP);
+        int j = 0;
+        for (Type t : constructor.getArgumentTypes()) {
+            mv.visitVarInsn(t.getOpcode(Opcodes.ILOAD), j);
+            j += t.getSize();
+        }
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, child.name, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, constructor.getArgumentTypes()), false);
+        mv.visitInsn(Opcodes.ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+
+        // replace invokedynamic with method call
+        mnode.instructions.set(indy, new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, "jvmdowngrader$construct$" + nextAnonymous, constructor.getDescriptor(), false));
     }
 
     @Stub(ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "altMetafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
@@ -75,6 +86,8 @@ public class J_L_I_LambdaMetafactory {
         // create constructor writing fields
         MethodVisitor mv = cn.visitMethod(Opcodes.ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, constructor.getArgumentTypes()), "()V", null);
         mv.visitCode();
+        mv.visitVarInsn(Opcodes.ALOAD, 0);
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
         for (int i = 0, j = 1; i < constructor.getArgumentTypes().length; i++) {
             Type t = constructor.getArgumentTypes()[i];
             mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -82,8 +95,6 @@ public class J_L_I_LambdaMetafactory {
             j += t.getSize();
             mv.visitFieldInsn(Opcodes.PUTFIELD, cn.name, "arg$$" + i, t.getDescriptor());
         }
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
         mv.visitInsn(Opcodes.RETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
@@ -91,16 +102,38 @@ public class J_L_I_LambdaMetafactory {
         // create interf method
         mv = cn.visitMethod(Opcodes.ACC_PUBLIC, ifName, invokedType.getDescriptor(), null, null);
         mv.visitCode();
+
+        if (invokedMethod.getTag() == Opcodes.H_NEWINVOKESPECIAL) {
+            // newinvokespecial is a constructor, so we need to create a new instance
+            mv.visitTypeInsn(Opcodes.NEW, invokedMethod.getOwner());
+            mv.visitInsn(Opcodes.DUP);
+        }
+
+        Type[] args;
+        if (invokedMethod.getTag() == Opcodes.H_INVOKESTATIC) {
+            args = Type.getArgumentTypes(invokedMethod.getDesc());
+        } else {
+            Type[] virtArgs = Type.getArgumentTypes(invokedMethod.getDesc());
+            args = new Type[virtArgs.length + 1];
+            args[0] = Type.getObjectType(invokedMethod.getOwner());
+            System.arraycopy(virtArgs, 0, args, 1, virtArgs.length);
+        }
+
+        int n = 0;
         // load fields back into stack
         for (int i = 0; i < constructor.getArgumentTypes().length; i++) {
             Type t = constructor.getArgumentTypes()[i];
             mv.visitVarInsn(Opcodes.ALOAD, 0);
             mv.visitFieldInsn(Opcodes.GETFIELD, cn.name, "arg$$" + i, t.getDescriptor());
+            doCast(mv, args[n], t);
+            n++;
         }
         // load rest of args
         for (int i = 0, j = 1; i < invokedType.getArgumentTypes().length; i++) {
             Type t = invokedType.getArgumentTypes()[i];
             mv.visitVarInsn(t.getOpcode(Opcodes.ILOAD), j);
+            doCast(mv, args[n], t);
+            n++;
             j += t.getSize();
         }
         int opcode;
@@ -112,6 +145,7 @@ public class J_L_I_LambdaMetafactory {
                 opcode = Opcodes.INVOKESTATIC;
                 break;
             case Opcodes.H_INVOKESPECIAL:
+            case Opcodes.H_NEWINVOKESPECIAL:
                 opcode = Opcodes.INVOKESPECIAL;
                 break;
             case Opcodes.H_INVOKEVIRTUAL:
@@ -127,24 +161,96 @@ public class J_L_I_LambdaMetafactory {
         mv.visitEnd();
 
         // visit bridge
-        mv = cn.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_BRIDGE, ifName, bridge.getDescriptor(), null, null);
-        mv.visitCode();
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        // load args
-        for (int i = 0, j = 1; i < bridge.getArgumentTypes().length; i++) {
-            Type t = bridge.getArgumentTypes()[i];
-            mv.visitVarInsn(t.getOpcode(Opcodes.ILOAD), j);
-            j += t.getSize();
-            mv.visitTypeInsn(Opcodes.CHECKCAST, invokedType.getArgumentTypes()[i].getInternalName());
+        if (!bridge.equals(invokedType)) {
+            mv = cn.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC | Opcodes.ACC_BRIDGE, ifName, bridge.getDescriptor(), null, null);
+            mv.visitCode();
+            mv.visitVarInsn(Opcodes.ALOAD, 0);
+            // load args
+            for (int i = 0, j = 1; i < bridge.getArgumentTypes().length; i++) {
+                Type t = bridge.getArgumentTypes()[i];
+                mv.visitVarInsn(t.getOpcode(Opcodes.ILOAD), j);
+                j += t.getSize();
+                doCast(mv, invokedType.getArgumentTypes()[i], t);
+            }
+            // invoke interf method
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cn.name, ifName, invokedType.getDescriptor(), false);
+            doCast(mv, bridge.getReturnType(), invokedType.getReturnType());
+            mv.visitInsn(bridge.getReturnType().getOpcode(Opcodes.IRETURN));
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
         }
-        // invoke interf method
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, cn.name, ifName, invokedType.getDescriptor(), false);
-        mv.visitTypeInsn(Opcodes.CHECKCAST, bridge.getReturnType().getInternalName());
-        mv.visitInsn(bridge.getReturnType().getOpcode(Opcodes.IRETURN));
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
+
         cn.visitEnd();
         return cn;
+    }
+
+    private static void doCast(MethodVisitor mv, Type expected, Type actual) {
+        if (expected.equals(actual)) {
+            return;
+        }
+        // is primitive
+        if (expected.getSort() < 9) {
+            if (actual.getSort() == Type.OBJECT) {
+                switch (expected.getSort()) {
+                    case Type.BOOLEAN:
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "booleanValue", "()Z", false);
+                        break;
+                    case Type.BYTE:
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "byteValue", "()B", false);
+                        break;
+                    case Type.CHAR:
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
+                        break;
+                    case Type.SHORT:
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "shortValue", "()S", false);
+                        break;
+                    case Type.INT:
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "intValue", "()I", false);
+                        break;
+                    case Type.LONG:
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "longValue", "()J", false);
+                        break;
+                    case Type.FLOAT:
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "floatValue", "()F", false);
+                        break;
+                    case Type.DOUBLE:
+                        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "doubleValue", "()D", false);
+                        break;
+                }
+            }
+        } else {
+            // is object
+            if (actual.getSort() < 9) {
+                switch (expected.getInternalName()) {
+                    case "java/lang/Boolean":
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
+                        break;
+                    case "java/lang/Byte":
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false);
+                        break;
+                    case "java/lang/Character":
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false);
+                        break;
+                    case "java/lang/Short":
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false);
+                        break;
+                    case "java/lang/Integer":
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
+                        break;
+                    case "java/lang/Long":
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false);
+                        break;
+                    case "java/lang/Float":
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false);
+                        break;
+                    case "java/lang/Double":
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false);
+                        break;
+                }
+            } else {
+                mv.visitTypeInsn(Opcodes.CHECKCAST, expected.getInternalName());
+            }
+        }
     }
 
 

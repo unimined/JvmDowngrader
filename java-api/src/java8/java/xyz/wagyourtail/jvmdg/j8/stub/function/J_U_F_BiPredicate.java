@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.util.Objects;
 
 @J_L_FunctionalInterface
-@Stub(ref = @Ref("Ljava/util/function/BiPredicate"))
+@Stub(ref = @Ref("Ljava/util/function/BiPredicate;"))
 public interface J_U_F_BiPredicate<T, U> {
 
     boolean test(T t, U u);

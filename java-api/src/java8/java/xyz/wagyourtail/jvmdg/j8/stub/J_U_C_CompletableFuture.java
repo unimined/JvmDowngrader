@@ -13,6 +13,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.util.*;
 import java.util.concurrent.*;
 
+@Stub(ref = @Ref("java/util/concurrent/CompletableFuture"))
 public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionStage<T> {
     private static final boolean USE_COMMON_POOL = J_U_C_ForkJoinPool.getCommonPoolParallelism() > 1;
     private static final Executor ASYNC_POOL = USE_COMMON_POOL ? J_U_C_ForkJoinPool.commonPool() : new ThreadPerTaskExecutor();

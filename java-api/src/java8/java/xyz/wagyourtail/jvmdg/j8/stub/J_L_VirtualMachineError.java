@@ -10,22 +10,26 @@ public class J_L_VirtualMachineError {
     @Modify(javaVersion = Opcodes.V1_8, ref = @Ref(value = "java/lang/VirtualMachineError", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V"))
     public static void init(MethodNode mnode, int i) {
         // stack: VirtualMachineError, String, Throwable
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         list.add(new InsnNode(Opcodes.DUP2_X1));
-        // stack: VirtualMachineError, String, Throwable, VirtualMachineError, String, Throwable
+        // stack: String, Throwable, VirtualMachineError, String, Throwable
         list.add(new InsnNode(Opcodes.POP));
-        // stack: VirtualMachineError, String, Throwable, VirtualMachineError, String
+        // stack: String, Throwable, VirtualMachineError, String
+        list.add(new InsnNode(Opcodes.DUP2));
+        // stack: String, Throwable, VirtualMachineError, String, VirtualMachineError, String
         // call init
         list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/VirtualMachineError", "<init>", "(Ljava/lang/String;)V", false));
-        // stack: VirtualMachineError, String, Throwable
+        // stack: String, Throwable, VirtualMachineError, String
         // remove the string
-        list.add(new InsnNode(Opcodes.SWAP));
-        // stack: VirtualMachineError, Throwable, String
         list.add(new InsnNode(Opcodes.POP));
-        // stack: VirtualMachineError, Throwable
+        // stack: String, Throwable, VirtualMachineError
+        list.add(new InsnNode(Opcodes.SWAP));
+        // stack: String, VirtualMachineError, Throwable
         // call initCause
         list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/VirtualMachineError", "initCause", "(Ljava/lang/Throwable;)Ljava/lang/Throwable;", false));
+        // stack: String
+        list.add(new InsnNode(Opcodes.POP));
         mnode.instructions.insert(node, list);
         mnode.instructions.remove(node);
     }

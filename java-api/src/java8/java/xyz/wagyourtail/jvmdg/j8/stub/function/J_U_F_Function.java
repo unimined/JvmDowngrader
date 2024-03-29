@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.util.Objects;
 
 @J_L_FunctionalInterface
-@Stub(ref = @Ref("Ljava/util/function/Function"))
+@Stub(ref = @Ref("Ljava/util/function/Function;"))
 public interface J_U_F_Function<T, R> {
 
     R apply(T t);
@@ -40,7 +40,7 @@ public interface J_U_F_Function<T, R> {
 
     class FunctionStatic {
 
-        @Stub(ref = @Ref("Ljava/util/function/Function;"))
+        @Stub(ref = @Ref("xyz/wagyourtail/jvmdg/j8/stub/function/J_U_F_Function"))
         public static <T> J_U_F_Function<T, T> identity() {
             return new J_U_F_Function.FunctionAdapter<T, T>() {
                 @Override

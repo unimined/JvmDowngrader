@@ -47,7 +47,7 @@ public class DowngradingClassLoader extends ClassLoader {
         if (url == null) {
             return super.findClass(name);
         }
-        byte[] bytes;
+        byte[] bytes = null;
         try {
             bytes = Utils.readAllBytes(url.openStream());
             Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), bytes, true, new Function<String, byte[]>() {
@@ -82,8 +82,15 @@ public class DowngradingClassLoader extends ClassLoader {
                 return defineClass(name, bytes, 0, bytes.length);
             } catch (ClassFormatError e) {
                 ClassDowngrader.currentVersionDowngrader.writeBytesToDebug(name, bytes);
-                throw e;
+//                System.err.println("Failed to load class " + name + " with downgraded bytes, writing to debug folder.");
+//                throw e;
+                throw new ClassNotFoundException(name, e);
             }
+        } catch (ClassFormatError e) {
+            ClassDowngrader.currentVersionDowngrader.writeBytesToDebug(name, bytes);
+//           System.err.println("Failed to load class " + name + " with original bytes, writing to debug folder.");
+//           throw e;
+            throw new ClassNotFoundException(name, e);
         } catch (Exception e) {
             throw new ClassNotFoundException(name, e);
         }
