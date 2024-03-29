@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     kotlin("jvm") version "1.8.0"
     `java-gradle-plugin`
@@ -20,6 +22,13 @@ dependencies {
     testImplementation(kotlin("test"))
 }
 
+tasks.withType<KotlinCompile> {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+tasks.withType<JavaCompile> {
+    options.release = 8
+}
 
 tasks.jar {
     manifest {

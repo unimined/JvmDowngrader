@@ -7,25 +7,34 @@ import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class CoverageChecker {
 
-    public static void main(String[] args) throws IOException {
-        var home = Path.of(System.getProperty("java.home")).resolve("lib/ct.sym");
-        if (!Files.exists(home)) {
-            System.err.println("Failed to find \"" + home + "\" for coverage. Please ensure you are using a JDK and not a JRE.");
-            System.exit(1);
-        }
+    public static void main(String[] args) throws IOException, URISyntaxException {
+//        var home = Path.of(System.getProperty("java.home")).resolve("lib/ct.sym");
+//        if (!Files.exists(home)) {
+//            System.err.println("Failed to find \"" + home + "\" for coverage. Please ensure you are using a JDK and not a JRE.");
+//            System.exit(1);
+//        }
+//
+//        System.out.println("Found \"" + home + "\" for coverage.");
 
-        System.out.println("Found \"" + home + "\" for coverage.");
+        URL sym = CoverageChecker.class.getResource("/ct.sym");
+        System.out.println("Found \"" + sym + "\" for coverage.");
+
+        Path home = Paths.get(sym.toURI());
 
         try (var fs = Utils.openZipFileSystem(home, new HashMap<>())) {
             System.out.println("Successfully opened \"" + home + "\" for coverage.");
@@ -39,16 +48,16 @@ public class CoverageChecker {
                 }
             }
 
-            var current = Runtime.version().feature();
-            var currentModules = Path.of(URI.create("jrt:/"));
-            versions.computeIfAbsent(current, k -> new ArrayList<>()).add(currentModules);
+//            var current = Runtime.version().feature();
+//            var currentModules = Path.of(URI.create("jrt:/"));
+//            versions.computeIfAbsent(current, k -> new ArrayList<>()).add(currentModules);
 
             var classes = new HashMap<String, Pair<String, ClassNode>>();
 
             // load initial classes
-            compare(versions.get(current), classes, new ArrayList<>());
+            compare(versions.get(21), classes, new ArrayList<>());
 
-            versions.keySet().stream().sorted((a, b) -> -a.compareTo(b)).forEach(v -> {
+            versions.keySet().stream().sorted((a, b) -> -a.compareTo(b)).skip(1).forEach(v -> {
                 var missingStubs = new ArrayList<MemberInfo>();
                 var parentOnlyStubs = new ArrayList<MemberInfo>();
 
@@ -60,6 +69,11 @@ public class CoverageChecker {
 
                 if (versionProvider == null) {
                     System.out.println("No version provider for " + stubVersion);
+                    try {
+                        compare(versions.get(v), classes, new ArrayList<>());
+                    } catch (IOException e) {
+                        throw new UncheckedIOException("Failed to compare version " + v, e);
+                    }
                     return;
                 }
                 System.out.println("Checking version " + stubVersion);
@@ -83,13 +97,18 @@ public class CoverageChecker {
                                 continue;
                             }
 
-                            for (var parent : stubProvider.getParents()) {
+                            Deque<ClassMapping> parents = new ArrayDeque<>(stubProvider.getParents());
+                            while (!parents.isEmpty()) {
+                                ClassMapping parent = parents.pollFirst();
                                 if (parent.getMethodStubMap().containsKey(stub.toMemberNameAndDesc()) || parent.getMethodModifyMap().containsKey(member)) {
 
                                     onlyOnParentStubCount++;
                                     parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
 
                                     continue outer;
+                                }
+                                for (ClassMapping par : parent.getParents()) {
+                                    parents.addFirst(par);
                                 }
                             }
                         } else {
@@ -149,6 +168,16 @@ public class CoverageChecker {
         }
     }
 
+    public static ClassNode findClass(String name, List<Path> mods) throws IOException {
+        for (Path path : mods) {
+            var scn = path.resolve(name + ".sig");
+            if (Files.exists(scn)) {
+                return ClassDowngrader.bytesToClassNode(Files.readAllBytes(scn), ClassReader.SKIP_CODE);
+            }
+        }
+        return null;
+    }
+
     public static void compare(List<Path> moduleHolders, Map<String, Pair<String, ClassNode>> currentVersion, List<MemberInfo> removed) throws IOException {
         var mods = new ArrayList<Path>();
         for (var mod : moduleHolders) {
@@ -163,10 +192,13 @@ public class CoverageChecker {
                 continue;
             }
             var modName = mod.getFileName().toString();
-            try (var files = Files.find(mod, Integer.MAX_VALUE, (p, a) -> a.isRegularFile())) {
+            try (var files = Files.find(mod, Integer.MAX_VALUE, (p, a) -> !a.isDirectory())) {
                 files.forEach(p -> {
                     try {
-                        if (!p.toString().endsWith(".class") && !p.toString().endsWith(".sig")) return;
+                        if (!p.toString().endsWith(".class") && !p.toString().endsWith(".sig")) {
+                            System.err.println("Skipping " + p.toAbsolutePath());
+                            return;
+                        }
                         var cn = ClassDowngrader.bytesToClassNode(Files.readAllBytes(p), ClassReader.SKIP_CODE);
                         if (cn.name.startsWith("jdk/")) return;
                         if (cn.name.startsWith("sun/")) {
@@ -194,29 +226,29 @@ public class CoverageChecker {
                                 methods.remove(new MemberInfo(modName, new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc)), isAbstract, isStatic));
                             }
 
-                            // check if method(s) still exist on parent
-                            while (!cn.name.equals("java/lang/Object")) {
-                                Path superCn = null;
-                                for (Path path : mods) {
-                                    var scn = path.resolve(cn.superName + ".sig");
-                                    if (Files.exists(scn)) {
-                                        superCn = scn;
-                                        break;
-                                    }
-                                }
-                                if (superCn == null) {
-                                    break;
-                                }
-                                var superCls = ClassDowngrader.bytesToClassNode(Files.readAllBytes(superCn), ClassReader.SKIP_CODE);
+                            // check if method(s) still exist on parent (include interfaces in traversal)
+                            Deque<ClassNode> parents = new ArrayDeque<>();
+                            for (var iface : cn.interfaces) {
+                                parents.add(findClass(iface, mods));
+                            }
+                            parents.add(findClass(cn.superName, mods));
+                            while (!parents.isEmpty()) {
+                                var superCls = parents.pollFirst();
+                                if (superCls == null) continue;
                                 for (var m : superCls.methods) {
-                                    if (m.name.equals("<clinit>")) continue;
+                                    if (m.name.equals("<clinit>") || m.name.equals("<init>")) continue;
                                     var isStatic = (m.access & Opcodes.ACC_STATIC) != 0;
                                     if (isStatic) continue;
                                     var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
                                     var fqn = new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc));
                                     methods.remove(new MemberInfo(modName, fqn, isAbstract, false));
                                 }
-                                cn = superCls;
+                                if (!superCls.name.equals("java/lang/Object")) {
+                                    for (var iface : superCls.interfaces) {
+                                        parents.add(findClass(iface, mods));
+                                    }
+                                    parents.add(findClass(superCls.superName, mods));
+                                }
                             }
                             removed.addAll(methods);
                         }
