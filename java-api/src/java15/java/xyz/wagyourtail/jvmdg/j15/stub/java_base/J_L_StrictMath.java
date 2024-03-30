@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 public class J_L_StrictMath {
 
     @Stub(ref = @Ref("Ljava/lang/StrictMath;"))
-    public static int absEaxct(int a) {
+    public static int absExact(int a) {
         return J_L_Math.absExact(a);
     }
 

@@ -9,9 +9,11 @@ import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
+import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -19,6 +21,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CoverageChecker {
 
@@ -78,9 +85,12 @@ public class CoverageChecker {
                 }
                 System.out.println("Checking version " + stubVersion);
 
+                var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(value -> Stream.of(value.getMethodStubMap().values().stream(), value.getMethodModifyMap().values().stream()).flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
+
                 try {
                     var requiredStubs = new ArrayList<MemberInfo>();
                     compare(versions.get(v), classes, requiredStubs);
+                    Map<Type, Type> stubClasses = versionProvider.classStubs;
 
                     outer:for (var staticAndStub : requiredStubs) {
                         var isStatic = staticAndStub.isStatic();
@@ -90,21 +100,68 @@ public class CoverageChecker {
 
                         if (stub.getName() != null) {
                             var stubProvider = versionProvider.getStubMapper(stub.getOwner());
-                            var member = stub.toMemberNameAndDesc();
-
-                            if (stubProvider.getMethodStubMap().containsKey(stub.toMemberNameAndDesc()) || stubProvider.getMethodModifyMap().containsKey(member)) {
+                            // map classes in desc
+                            var desc = stub.getDesc();
+                            var descArgs = desc.getArgumentTypes();
+                            for (int i = 0; i < descArgs.length; i++) {
+                                var arg = descArgs[i];
+                                if (arg.getSort() == Type.OBJECT) {
+                                    var stubCls = stubClasses.get(arg);
+                                    if (stubCls != null) {
+                                        descArgs[i] = stubCls;
+                                    }
+                                } else if (arg.getSort() == Type.ARRAY) {
+                                    var dims = arg.getDimensions();
+                                    var elem = arg.getElementType();
+                                    if (elem.getSort() == Type.OBJECT) {
+                                        var stubCls = stubClasses.get(elem);
+                                        if (stubCls != null) {
+                                            descArgs[i] = Type.getType("[".repeat(dims) + "L" + stubCls.getInternalName() + ";");
+                                        }
+                                    }
+                                }
+                            }
+                            var ret = desc.getReturnType();
+                            if (ret.getSort() == Type.OBJECT) {
+                                var stubCls = stubClasses.get(ret);
+                                if (stubCls != null) {
+                                    desc = Type.getMethodType(ret, descArgs);
+                                }
+                            } else if (ret.getSort() == Type.ARRAY) {
+                                var dims = ret.getDimensions();
+                                var elem = ret.getElementType();
+                                if (elem.getSort() == Type.OBJECT) {
+                                    var stubCls = stubClasses.get(elem);
+                                    if (stubCls != null) {
+                                        desc = Type.getMethodType(Type.getType("[".repeat(dims) + "L" + stubCls.getInternalName() + ";"), descArgs);
+                                    }
+                                }
+                            }
+                            var member = new MemberNameAndDesc(stub.getName(), Type.getMethodType(ret, descArgs));
+                            if (stubProvider.getMethodStubMap().containsKey(member)) {
                                 availableStubCount++;
+                                unmatchedStubs.remove(stubProvider.getMethodStubMap().get(member).getFirst());
+                                continue;
+                            }
+
+                            if (stubProvider.getMethodModifyMap().containsKey(member)) {
+                                availableStubCount++;
+                                unmatchedStubs.remove(stubProvider.getMethodModifyMap().get(member).getFirst());
                                 continue;
                             }
 
                             Deque<ClassMapping> parents = new ArrayDeque<>(stubProvider.getParents());
                             while (!parents.isEmpty()) {
                                 ClassMapping parent = parents.pollFirst();
-                                if (parent.getMethodStubMap().containsKey(stub.toMemberNameAndDesc()) || parent.getMethodModifyMap().containsKey(member)) {
-
+                                if (parent.getMethodStubMap().containsKey(member)) {
                                     onlyOnParentStubCount++;
+                                    unmatchedStubs.remove(parent.getMethodStubMap().get(member).getFirst());
                                     parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
-
+                                    continue outer;
+                                } else if (parent.getMethodModifyMap().containsKey(member)) {
+                                    onlyOnParentStubCount++;
+                                    unmatchedStubs.remove(parent.getMethodModifyMap().get(member).getFirst());
+                                    parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                     continue outer;
                                 }
                                 for (ClassMapping par : parent.getParents()) {
@@ -134,6 +191,10 @@ public class CoverageChecker {
                     if (!parentOnlyStubs.isEmpty()) {
                         var parentOnly = Path.of("./coverage/" + stubVersion + "/parentOnly.txt");
                         writeList(parentOnlyStubs, parentOnly);
+                    }
+                    if (!unmatchedStubs.isEmpty()) {
+                        var unmatched = Path.of("./coverage/" + stubVersion + "/unmatched.txt");
+                        writeList(unmatchedStubs.stream().map(methodStubPair -> new MemberInfo("unknown", FullyQualifiedMemberNameAndDesc.fromMethod(methodStubPair), false, false)).collect(Collectors.toList()), unmatched);
                     }
 
                 } catch (IOException e) {
@@ -185,15 +246,16 @@ public class CoverageChecker {
                 folders.forEach(mods::add);
             }
         }
-        var newClasses = new HashMap<String, Pair<String, ClassNode>>();
-        var removedClasses = new HashSet<String>();
-        for (var mod : mods) {
+        var newClasses = new ConcurrentHashMap<String, Pair<String, ClassNode>>();
+        var removedClasses = new ConcurrentSkipListSet<String>();
+        var removedList = new ConcurrentLinkedQueue<MemberInfo>();
+        mods.parallelStream().forEach(mod -> {
             if (!Files.isDirectory(mod)) {
-                continue;
+                return;
             }
             var modName = mod.getFileName().toString();
             try (var files = Files.find(mod, Integer.MAX_VALUE, (p, a) -> !a.isDirectory())) {
-                files.forEach(p -> {
+                files.parallel().forEach(p -> {
                     try {
                         if (!p.toString().endsWith(".class") && !p.toString().endsWith(".sig")) {
                             System.err.println("Skipping " + p.toAbsolutePath());
@@ -212,15 +274,30 @@ public class CoverageChecker {
                             var oldCls = old.getSecond();
                             var methods = new HashSet<MemberInfo>();
                             var ct = Type.getObjectType(cn.name);
-                            for (var m : oldCls.methods) {
+                            outerA:for (var m : oldCls.methods) {
                                 if ((m.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) continue;
                                 if (m.name.equals("<clinit>")) continue;
+                                if (m.invisibleAnnotations != null) {
+                                    for (var a : m.invisibleAnnotations) {
+                                        if (a.desc.equals("Ljdk/internal/PreviewFeature;")) {
+                                            continue outerA;
+                                        }
+                                    }
+                                }
                                 var isStatic = (m.access & Opcodes.ACC_STATIC) != 0;
                                 var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
                                 var fqn = new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc));
                                 methods.add(new MemberInfo(modName, fqn, isAbstract, isStatic));
                             }
-                            for (var m : cn.methods) {
+                            outerB:for (var m : cn.methods) {
+                                // is preview feature?
+                                if (m.invisibleAnnotations != null) {
+                                    for (var a : m.invisibleAnnotations) {
+                                        if (a.desc.equals("Ljdk/internal/PreviewFeature;")) {
+                                            continue outerB;
+                                        }
+                                    }
+                                }
                                 var isStatic = (m.access & Opcodes.ACC_STATIC) != 0;
                                 var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
                                 methods.remove(new MemberInfo(modName, new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc)), isAbstract, isStatic));
@@ -229,9 +306,17 @@ public class CoverageChecker {
                             // check if method(s) still exist on parent (include interfaces in traversal)
                             Deque<ClassNode> parents = new ArrayDeque<>();
                             for (var iface : cn.interfaces) {
-                                parents.add(findClass(iface, mods));
+                                var cls = findClass(iface, mods);
+                                if (cls != null) {
+                                    parents.add(cls);
+                                }
                             }
-                            parents.add(findClass(cn.superName, mods));
+                            {
+                                var cls = findClass(cn.superName, mods);
+                                if (cls != null) {
+                                    parents.add(cls);
+                                }
+                            }
                             while (!parents.isEmpty()) {
                                 var superCls = parents.pollFirst();
                                 if (superCls == null) continue;
@@ -245,19 +330,28 @@ public class CoverageChecker {
                                 }
                                 if (!superCls.name.equals("java/lang/Object")) {
                                     for (var iface : superCls.interfaces) {
-                                        parents.add(findClass(iface, mods));
+                                        var cls = findClass(iface, mods);
+                                        if (cls != null) {
+                                            parents.add(cls);
+                                        }
                                     }
-                                    parents.add(findClass(superCls.superName, mods));
+                                    var cls = findClass(superCls.superName, mods);
+                                    if (cls != null) {
+                                        parents.add(cls);
+                                    }
                                 }
                             }
-                            removed.addAll(methods);
+                            removedList.addAll(methods);
                         }
                     } catch (IOException e) {
                         throw new UncheckedIOException("Failed to read " + p.toAbsolutePath(), e);
                     }
                 });
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to list " + mod, e);
             }
-        }
+        });
+        removed.addAll(removedList);
         // find classes that were "removed"
         for (var cls : currentVersion.entrySet()) {
             if (!newClasses.containsKey(cls.getKey())) {

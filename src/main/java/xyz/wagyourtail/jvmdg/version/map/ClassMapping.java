@@ -27,7 +27,7 @@ public class ClassMapping {
     protected final Lazy<Set<MemberNameAndDesc>> members;
 
     protected final Lazy<List<ClassMapping>> parents;
-    protected final Type current;
+    public final Type current;
     protected final VersionProvider vp;
 
     public ClassMapping(final Lazy<List<ClassMapping>> parents, final Type current, final IOFunction<Type, Set<MemberNameAndDesc>> members, VersionProvider vp) {

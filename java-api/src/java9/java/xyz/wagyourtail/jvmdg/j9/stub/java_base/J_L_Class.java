@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 public class J_L_Class {
 
     @Stub(ref = @Ref("Ljava/lang/Class;"))
-    public static Class<?> forName(String name, J_L_Module module) throws ClassNotFoundException {
+    public static Class<?> forName(J_L_Module module, String name) throws ClassNotFoundException {
         return Class.forName(name, true, module.getClassLoader());
     }
 

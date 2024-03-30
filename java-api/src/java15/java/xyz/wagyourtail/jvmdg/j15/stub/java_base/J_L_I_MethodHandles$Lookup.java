@@ -30,7 +30,7 @@ public class J_L_I_MethodHandles$Lookup {
     }
 
     @Stub
-    public static Class<?> ensureInitialized(Class<?> c) {
+    public static Class<?> ensureInitialized(MethodHandles.Lookup lookup, Class<?> c) {
         if (c.isPrimitive()) {
             throw new IllegalArgumentException(c + " is a primitive class");
         } else if (c.isArray()) {
