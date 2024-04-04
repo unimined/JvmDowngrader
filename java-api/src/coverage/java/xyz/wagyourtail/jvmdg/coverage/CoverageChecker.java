@@ -219,7 +219,7 @@ public class CoverageChecker {
         try (var writer = Files.newBufferedWriter(outputFile)) {
             for (var entry : byModule.entrySet().stream().sorted(Map.Entry.comparingByKey()).toList()) {
                 var mod = entry.getKey();
-                for (var stub : entry.getValue()) {
+                for (var stub : entry.getValue().stream().sorted().toList()) {
                     writer.write(mod);
                     writer.write(';');
                     writer.write(stub);
@@ -266,6 +266,14 @@ public class CoverageChecker {
                         if (cn.name.startsWith("sun/")) {
                             if (!cn.name.equals("sun/misc/Unsafe")) return;
                         }
+                        // if class is annotated with @PreviewFeature, skip
+                        if (cn.invisibleAnnotations != null) {
+                            for (var a : cn.invisibleAnnotations) {
+                                if (a.desc.equals("Ljdk/internal/javac/PreviewFeature;") || a.desc.equals("Ljdk/internal/PreviewFeature;")) {
+                                    return;
+                                }
+                            }
+                        }
                         if ((cn.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) return;
                         newClasses.put(cn.name, new Pair<>(modName, cn));
                         if (currentVersion.containsKey(cn.name)) {
@@ -279,7 +287,7 @@ public class CoverageChecker {
                                 if (m.name.equals("<clinit>")) continue;
                                 if (m.invisibleAnnotations != null) {
                                     for (var a : m.invisibleAnnotations) {
-                                        if (a.desc.equals("Ljdk/internal/PreviewFeature;")) {
+                                        if (a.desc.equals("Ljdk/internal/javac/PreviewFeature;") || a.desc.equals("Ljdk/internal/PreviewFeature;")) {
                                             continue outerA;
                                         }
                                     }
@@ -293,7 +301,7 @@ public class CoverageChecker {
                                 // is preview feature?
                                 if (m.invisibleAnnotations != null) {
                                     for (var a : m.invisibleAnnotations) {
-                                        if (a.desc.equals("Ljdk/internal/PreviewFeature;")) {
+                                        if (a.desc.equals("Ljdk/internal/javac/PreviewFeature;") || a.desc.equals("Ljdk/internal/PreviewFeature;")) {
                                             continue outerB;
                                         }
                                     }

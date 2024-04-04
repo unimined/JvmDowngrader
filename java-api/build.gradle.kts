@@ -119,6 +119,10 @@ tasks.compileTestJava {
     configCompile(testVersion)
 }
 
+tasks.getByName<JavaCompile>("compileCoverageJava") {
+    configCompile(toVersion)
+}
+
 tasks.jar {
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output } + sourceSets.main.get().output).toTypedArray())
 }
@@ -216,6 +220,9 @@ val downgradeJar8 by tasks.registering(Jar::class) {
 val coverageReport by tasks.registering(JavaExec::class) {
     group = "jvmdg"
     dependsOn(tasks.jar)
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(toVersion.majorVersion))
+    })
     mainClass = "xyz.wagyourtail.jvmdg.coverage.CoverageChecker"
     classpath = coverage.runtimeClasspath
     jvmArgs("-Djvmdg.java-api=${tasks.jar.get().archiveFile.get().asFile.absolutePath}")
