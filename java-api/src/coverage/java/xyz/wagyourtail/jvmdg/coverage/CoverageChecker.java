@@ -90,7 +90,7 @@ public class CoverageChecker {
                 try {
                     var requiredStubs = new ArrayList<MemberInfo>();
                     compare(versions.get(v), classes, requiredStubs);
-                    Map<Type, Type> stubClasses = versionProvider.classStubs;
+                    Map<Type, Class<?>> stubClasses = versionProvider.classStubs;
 
                     outer:for (var staticAndStub : requiredStubs) {
                         var isStatic = staticAndStub.isStatic();
@@ -108,7 +108,7 @@ public class CoverageChecker {
                                 if (arg.getSort() == Type.OBJECT) {
                                     var stubCls = stubClasses.get(arg);
                                     if (stubCls != null) {
-                                        descArgs[i] = stubCls;
+                                        descArgs[i] = Type.getType(stubCls);
                                     }
                                 } else if (arg.getSort() == Type.ARRAY) {
                                     var dims = arg.getDimensions();
@@ -116,7 +116,7 @@ public class CoverageChecker {
                                     if (elem.getSort() == Type.OBJECT) {
                                         var stubCls = stubClasses.get(elem);
                                         if (stubCls != null) {
-                                            descArgs[i] = Type.getType("[".repeat(dims) + "L" + stubCls.getInternalName() + ";");
+                                            descArgs[i] = Type.getType("[".repeat(dims) + "L" + Type.getInternalName(stubCls) + ";");
                                         }
                                     }
                                 }
@@ -125,7 +125,7 @@ public class CoverageChecker {
                             if (ret.getSort() == Type.OBJECT) {
                                 var stubCls = stubClasses.get(ret);
                                 if (stubCls != null) {
-                                    desc = Type.getMethodType(ret, descArgs);
+                                    ret = Type.getType(stubCls);
                                 }
                             } else if (ret.getSort() == Type.ARRAY) {
                                 var dims = ret.getDimensions();
@@ -133,7 +133,7 @@ public class CoverageChecker {
                                 if (elem.getSort() == Type.OBJECT) {
                                     var stubCls = stubClasses.get(elem);
                                     if (stubCls != null) {
-                                        desc = Type.getMethodType(Type.getType("[".repeat(dims) + "L" + stubCls.getInternalName() + ";"), descArgs);
+                                        ret = Type.getType("[".repeat(dims) + "L" + Type.getInternalName(stubCls) + ";");
                                     }
                                 }
                             }
