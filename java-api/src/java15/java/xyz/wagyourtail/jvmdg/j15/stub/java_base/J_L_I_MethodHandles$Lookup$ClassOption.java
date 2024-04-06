@@ -1,11 +1,12 @@
 package xyz.wagyourtail.jvmdg.j15.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Set;
 
-@Stub(ref = @Ref("Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;"))
+@Adapter("Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;")
 public enum J_L_I_MethodHandles$Lookup$ClassOption {
     NESTMATE(0x00000001),
     STRONG(0x00000004);

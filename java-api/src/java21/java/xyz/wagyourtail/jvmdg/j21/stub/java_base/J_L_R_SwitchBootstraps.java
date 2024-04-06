@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
+import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
@@ -8,10 +9,7 @@ import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
 public class J_L_R_SwitchBootstraps {
 
@@ -120,26 +118,35 @@ public class J_L_R_SwitchBootstraps {
                 k--;
                 if (k != j) {
                     var lastCaseLabels = labels.get(k);
-                    // check if is of type
-                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                    smnode.visitTypeInsn(Opcodes.INSTANCEOF, et.type.getInternalName());
-                    smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
-                    // cast
-                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                    smnode.visitTypeInsn(Opcodes.CHECKCAST, et.type.getInternalName());
-                    // get name
-                    smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, et.type.getInternalName(), "name", "()Ljava/lang/String;", false);
-                    // hashCode
-                    smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "hashCode", "()I", false);
 
-                    int[] hashCodes = new int[k - j + 1];
-                    Label[] tableLabels = new Label[k - j + 1];
+                    Set<HashWithLabel> hashWithLabels = new TreeSet<>();
                     for (int l = j; l <= k; l++) {
-                        hashCodes[l - j] = ((EnumType) types.get(l)).value.hashCode();
-                        tableLabels[l - j] = labels.get(l).afterTypeCheck;
+                        EnumType ket = (EnumType) types.get(l);
+                        hashWithLabels.add(new HashWithLabel(ket.value.hashCode(), labels.get(l).afterTypeCheck));
                     }
 
-                    smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
+                    if (hashWithLabels.size() > 1) {
+                        // check if is of type
+                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                        smnode.visitTypeInsn(Opcodes.INSTANCEOF, et.type.getInternalName());
+                        smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
+                        // cast
+                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                        smnode.visitTypeInsn(Opcodes.CHECKCAST, et.type.getInternalName());
+                        // get name
+                        smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, et.type.getInternalName(), "name", "()Ljava/lang/String;", false);
+                        // hashCode
+                        smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "hashCode", "()I", false);
+
+                        HashWithLabel[] hashWithLabelsArr = hashWithLabels.toArray(new HashWithLabel[0]);
+                        int[] hashCodes = new int[hashWithLabels.size()];
+                        Label[] tableLabels = new Label[hashWithLabels.size()];
+                        for (int l = 0; l < hashWithLabelsArr.length; l++) {
+                            hashCodes[l] = hashWithLabelsArr[l].hash;
+                            tableLabels[l] = hashWithLabelsArr[l].label;
+                        }
+                        smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
+                    }
                 }
                 // load enum value
                 smnode.visitLabel(caseLabels.afterTypeCheck);
@@ -160,22 +167,31 @@ public class J_L_R_SwitchBootstraps {
                 k--;
                 if (k != j) {
                     var lastCaseLabels = labels.get(k);
-                    // check if is of type
-                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                    smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/String");
-                    smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
-                    // hashCode
-                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                    smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
 
-                    int[] hashCodes = new int[k - j + 1];
-                    Label[] tableLabels = new Label[k - j + 1];
+                    Set<HashWithLabel> hashWithLabels = new TreeSet<>();
                     for (int l = j; l <= k; l++) {
-                        hashCodes[l - j] = ((String) types.get(l)).hashCode();
-                        tableLabels[l - j] = labels.get(l).afterTypeCheck;
+                        hashWithLabels.add(new HashWithLabel(types.get(l).hashCode(), labels.get(l).afterTypeCheck));
                     }
+                    if (hashWithLabels.size() > 1) {
 
-                    smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
+                        // check if is of type
+                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                        smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/String");
+                        smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
+                        // hashCode
+                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                        smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
+
+                        HashWithLabel[] hashWithLabelsArr = hashWithLabels.toArray(new HashWithLabel[0]);
+                        int[] hashCodes = new int[hashWithLabels.size()];
+                        Label[] tableLabels = new Label[hashWithLabels.size()];
+                        for (int l = 0; l < hashWithLabelsArr.length; l++) {
+                            hashCodes[l] = hashWithLabelsArr[l].hash;
+                            tableLabels[l] = hashWithLabelsArr[l].label;
+                        }
+
+                        smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
+                    }
                 }
                 smnode.visitLabel(caseLabels.afterTypeCheck);
                 // load string
@@ -196,25 +212,35 @@ public class J_L_R_SwitchBootstraps {
                 k--;
                 if (k != j) {
                     var lastCaseLabels = labels.get(k);
-                    // check if is of type
-                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                    smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Number");
-                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                    smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Character");
-                    smnode.visitInsn(Opcodes.IOR);
-                    smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
-                    // hashCode
-                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                    smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
 
-                    int[] hashCodes = new int[k - j + 1];
-                    Label[] tableLabels = new Label[k - j + 1];
+                    Set<HashWithLabel> hashWithLabels = new TreeSet<>();
                     for (int l = j; l <= k; l++) {
-                        hashCodes[l - j] = ((Integer) types.get(l)).hashCode();
-                        tableLabels[l - j] = labels.get(l).afterTypeCheck;
+                        hashWithLabels.add(new HashWithLabel(types.get(l).hashCode(), labels.get(l).afterTypeCheck));
                     }
 
-                    smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
+                    if (hashWithLabels.size() > 1) {
+
+                        // check if is of type
+                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                        smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Number");
+                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                        smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Character");
+                        smnode.visitInsn(Opcodes.IOR);
+                        smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
+                        // hashCode
+                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                        smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
+
+                        HashWithLabel[] hashWithLabelsArr = hashWithLabels.toArray(new HashWithLabel[0]);
+                        int[] hashCodes = new int[hashWithLabels.size()];
+                        Label[] tableLabels = new Label[hashWithLabels.size()];
+                        for (int l = 0; l < hashWithLabelsArr.length; l++) {
+                            hashCodes[l] = hashWithLabelsArr[l].hash;
+                            tableLabels[l] = hashWithLabelsArr[l].label;
+                        }
+
+                        smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
+                    }
                 }
 
                 smnode.visitLabel(caseLabels.afterTypeCheck);
@@ -281,6 +307,25 @@ public class J_L_R_SwitchBootstraps {
         public SwitchMethodNode(int access, String name, String descriptor, List<Object> types) {
             super(Opcodes.ASM9, access, name, descriptor, null, null);
             this.types = types;
+        }
+    }
+
+    private record HashWithLabel(int hash, Label label) implements Comparable<HashWithLabel> {
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof HashWithLabel hwl && hwl.hash == hash;
+        }
+
+
+        @Override
+        public int compareTo(@NotNull HashWithLabel o) {
+            return Integer.compare(hash, o.hash);
         }
     }
 

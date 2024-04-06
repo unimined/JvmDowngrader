@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -13,10 +14,10 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-@Stub(ref = @Ref("java/lang/StackWalker"))
+@Adapter("java/lang/StackWalker")
 public class J_L_StackWalker {
 
-    @Stub(ref = @Ref("java/lang/StackWalker$StackFrame"))
+    @Adapter("java/lang/StackWalker$StackFrame")
     public interface StackFrame {
         String getClassName();
         String getMethodName();
@@ -28,7 +29,7 @@ public class J_L_StackWalker {
         StackTraceElement toStackTraceElement();
     }
 
-    @Stub(ref = @Ref("java/lang/StackWalker$Option"))
+    @Adapter("java/lang/StackWalker$Option")
     public enum Option {
         RETAIN_CLASS_REFERENCE,
         SHOW_REFLECT_FRAMES,

@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j20.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -11,7 +12,7 @@ import java.util.Set;
 
 import static xyz.wagyourtail.jvmdg.j20.stub.java_base.J_L_R_AccessFlag.Location.*;
 
-@Stub(ref = @Ref("java/lang/reflect/AccessFlag"))
+@Adapter("java/lang/reflect/AccessFlag")
 public enum J_L_R_AccessFlag {
     PUBLIC(
         Modifier.PUBLIC, true, Set.of(CLASS, FIELD, METHOD, INNER_CLASS),
@@ -264,7 +265,7 @@ public enum J_L_R_AccessFlag {
         return Collections.unmodifiableSet(result);
     }
 
-    @Stub(ref = @Ref("java/lang/reflect/AccessFlag$Location"))
+    @Adapter("java/lang/reflect/AccessFlag$Location")
     public enum Location {
         CLASS,
         FIELD,

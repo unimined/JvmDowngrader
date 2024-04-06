@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.j19.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -63,7 +64,7 @@ public class J_U_C_Future {
     }
 
 
-    @Stub(ref = @Ref("java/util/concurrent/Future$State"))
+    @Adapter("java/util/concurrent/Future$State")
     public enum State {
         RUNNING,
         SUCCESS,

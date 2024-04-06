@@ -147,6 +147,7 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_U_ServiceLoader.class);
         stub(J_U_ServiceLoader.Provider.class);
         stub(J_U_Set.class);
+        stub(J_U_C_A_AtomicReference.class);
         stub(J_U_C_CompletableFuture.class);
         stub(J_U_C_Flow.class);
         stub(J_U_C_Flow.Publisher.class);

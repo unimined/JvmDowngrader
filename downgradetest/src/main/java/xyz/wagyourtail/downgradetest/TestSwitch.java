@@ -19,6 +19,8 @@ public class TestSwitch {
         switch ("test") {
             case "a" -> System.out.println("A");
             case "test" -> System.out.println("B");
+            case "c" -> System.out.println("C");
+            case "d" -> System.out.println("D");
             case String s -> System.out.println(s);
         }
 

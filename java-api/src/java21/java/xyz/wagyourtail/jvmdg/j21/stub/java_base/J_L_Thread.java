@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.j21.impl.FakeVirtualThread;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -31,7 +32,7 @@ public class J_L_Thread {
     }
 
 
-    @Stub(ref = @Ref("java/lang/Thread$Builder"))
+    @Adapter("java/lang/Thread$Builder")
     public interface Builder {
 
         ThreadFactory factory();
@@ -48,7 +49,7 @@ public class J_L_Thread {
 
         Thread unstarted(Runnable task);
 
-        @Stub(ref = @Ref("java/lang/Thread$Builder$OfPlatform"))
+        @Adapter("java/lang/Thread$Builder$OfPlatform")
         interface OfPlatform extends Builder {
             default OfPlatform daemon() {
                 return this.daemon(true);
@@ -76,7 +77,7 @@ public class J_L_Thread {
 
         }
 
-        @Stub(ref = @Ref("java/lang/Thread$Builder$OfVirtual"))
+        @Adapter("java/lang/Thread$Builder$OfVirtual")
         interface OfVirtual extends Builder {
 
             @Override

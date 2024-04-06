@@ -1,9 +1,10 @@
 package xyz.wagyourtail.jvmdg.j20.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-@Stub(ref = @Ref("java/lang/reflect/ClassFileFormatVersion"))
+@Adapter("java/lang/reflect/ClassFileFormatVersion")
 public enum J_L_R_ClassFileFormatVersion {
     RELEASE_0(45),
     RELEASE_1(45),

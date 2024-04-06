@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -9,7 +10,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.regex.Pattern;
 
-@Stub(ref = @Ref("Ljava/lang/reflect/RecordComponent;"))
+@Adapter("Ljava/lang/reflect/RecordComponent;")
 public class J_L_R_RecordComponent {
 
     private final Class<?> declaring;

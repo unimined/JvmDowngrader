@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -14,7 +15,7 @@ import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 
-@Stub(ref = @Ref("Ljava/net/http/HttpRequest;"))
+@Adapter("Ljava/net/http/HttpRequest;")
 public abstract class J_N_H_HttpRequest {
     public J_N_H_HttpRequest() {
         throw new UnsupportedOperationException("TODO");
@@ -55,12 +56,12 @@ public abstract class J_N_H_HttpRequest {
         return method().hashCode() + uri().hashCode(); // + headers().hashCode();
     }
 
-    @Stub(ref = @Ref("Ljava/net/http/HttpRequest$BodyPublisher;"))
+    @Adapter("Ljava/net/http/HttpRequest$BodyPublisher;")
     public interface BodyPublisher extends Flow.Publisher<ByteBuffer> {
         long contentLength();
     }
 
-    @Stub(ref = @Ref("Ljava/net/http/HttpRequest$Builder;"))
+    @Adapter("Ljava/net/http/HttpRequest$Builder;")
     public interface Builder {
         Builder uri(URI uri);
         Builder expectContinue(boolean expectContinue);
@@ -78,7 +79,7 @@ public abstract class J_N_H_HttpRequest {
         Builder copy();
     }
 
-    @Stub(ref = @Ref("Ljava/net/http/HttpRequest$BodyPublishers;"))
+    @Adapter("Ljava/net/http/HttpRequest$BodyPublishers;")
     public static class BodyPublishers {
         private BodyPublishers() {
         }

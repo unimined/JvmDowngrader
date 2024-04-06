@@ -32,7 +32,10 @@ public class Java21Downgrader extends VersionProvider {
         // PackageDesc
         stub(J_L_R_SwitchBootstraps.class);
 
+
         stub(J_U_R_Pattern.class);
 
+        stub(J_U_SequencedCollection.class);
+        stub(J_U_SequencedSet.class);
     }
 }

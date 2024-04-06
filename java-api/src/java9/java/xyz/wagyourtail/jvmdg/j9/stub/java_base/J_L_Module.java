@@ -1,10 +1,11 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-@Stub(ref = @Ref("Ljava/lang/Module;"))
+@Adapter("Ljava/lang/Module;")
 public class J_L_Module {
 
     private final ClassLoader classLoader;

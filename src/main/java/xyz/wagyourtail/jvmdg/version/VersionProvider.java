@@ -21,7 +21,7 @@ import java.util.*;
 
 public abstract class VersionProvider {
 
-    public final Map<Type, Type> classStubs = new HashMap<>();
+    public final Map<Type, Class<?>> classStubs = new HashMap<>();
     public final Map<Type, ClassMapping> stubMappings = new HashMap<>();
     public final int inputVersion;
     public final int outputVersion;
@@ -35,8 +35,8 @@ public abstract class VersionProvider {
 
     public void afterInit() {
         if (Constants.DEBUG) {
-            for (Map.Entry<Type, Type> stub : classStubs.entrySet()) {
-                System.out.println(stub.getKey().getInternalName() + " -> " + stub.getValue().getInternalName());
+            for (Map.Entry<Type, Class<?>> stub : classStubs.entrySet()) {
+                System.out.println(stub.getKey().getInternalName() + " -> " + Type.getInternalName(stub.getValue()));
             }
             for (Map.Entry<Type, ClassMapping> entry : stubMappings.entrySet()) {
                 for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> member : entry.getValue().getMethodStubMap().entrySet()) {
@@ -137,21 +137,21 @@ public abstract class VersionProvider {
     }
 
     public void stub(Class<?> clazz) {
-        if (clazz.isAnnotationPresent(Stub.class)) {
-            Stub stub = clazz.getAnnotation(Stub.class);
-            if (stub.ref().value().isEmpty()) {
-                throw new IllegalArgumentException("Class " + clazz.getName() + ", @Stub must have a ref");
+        if (clazz.isAnnotationPresent(Adapter.class)) {
+            Adapter stub = clazz.getAnnotation(Adapter.class);
+            if (stub.value().isEmpty()) {
+                throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter must have a ref");
             } else {
-                Type type;
-                if (stub.ref().value().startsWith("L") && stub.ref().value().endsWith(";")) {
-                    type = Type.getType(stub.ref().value());
+                Type value;
+                if (stub.value().startsWith("L") && stub.value().endsWith(";")) {
+                    value = Type.getType(stub.value());
                 } else {
-                    type = Type.getObjectType(stub.ref().value());
+                    value = Type.getObjectType(stub.value());
                 }
 //                if (classStubs.containsKey(type)) {
-//                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Stub ref " + type.getInternalName() + " already exists");
+//                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter ref " + type.getInternalName() + " already exists");
 //                }
-                classStubs.put(type, Type.getType(clazz));
+                classStubs.put(value, clazz);
             }
         }
         try {
@@ -180,13 +180,58 @@ public abstract class VersionProvider {
                     getStubMapper(owner).addModify(member, method, modify);
                 }
             }
-        } catch (Exception e) {
-            throw new RuntimeException("failed to create stub " + clazz.getName(), e);
+        } catch (Throwable e) {
+//            throw new RuntimeException("failed to create stub " + clazz.getName(), e);
+//            System.out.println("ERROR: failed to create stub for " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
+//            e.printStackTrace(System.err);
         }
-        // inner classes
-        for (Class<?> inner : clazz.getDeclaredClasses()) {
-            stub(inner);
+        try {
+            // inner classes
+            for (Class<?> inner : clazz.getDeclaredClasses()) {
+                stub(inner);
+            }
+        } catch (Throwable e) {
+//            throw new RuntimeException("failed to create stub for inner classes of " + clazz.getName(), e);
+//            System.out.println("ERROR: failed to create stub for inner classes of " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
         }
+    }
+
+    public MethodInsnNode stubTypeInsnNode(TypeInsnNode insn) {
+        Type desc = Type.getObjectType(insn.desc);
+        switch (desc.getSort()) {
+            case Type.ARRAY:
+                Type type = desc.getElementType();
+                if (classStubs.containsKey(type)) {
+                    type = Type.getType(classStubs.get(type));
+                }
+                insn.desc = Type.getType(desc.getDescriptor().substring(0, desc.getDimensions()) + type.getDescriptor()).getInternalName();
+                return null;
+            case Type.OBJECT:
+                if (classStubs.containsKey(Type.getObjectType(insn.desc))) {
+                    Class<?> clazz = classStubs.get(Type.getObjectType(insn.desc));
+                    // check if clazz has method `jvmdg$opcode
+                    switch (insn.getOpcode()) {
+                        case Opcodes.INSTANCEOF:
+                            for (Method declaredMethod : clazz.getDeclaredMethods()) {
+                                if (declaredMethod.getName().equals("jvmdg$instanceof")) {
+                                    return new MethodInsnNode(Opcodes.INVOKESTATIC, Type.getType(clazz).getInternalName(), "jvmdg$instanceof", Type.getMethodDescriptor(declaredMethod), false);
+                                }
+                            }
+                            break;
+                        case Opcodes.CHECKCAST:
+                            for (Method declaredMethod : clazz.getDeclaredMethods()) {
+                                if (declaredMethod.getName().equals("jvmdg$checkcast")) {
+                                    return new MethodInsnNode(Opcodes.INVOKESTATIC, Type.getType(clazz).getInternalName(), "jvmdg$checkcast", Type.getMethodDescriptor(declaredMethod), false);
+                                }
+                            }
+                            break;
+                        default:
+                            insn.desc = Type.getType(clazz).getInternalName();
+                    }
+                }
+                break;
+        }
+        return null;
     }
 
     public Type stubClass(Type desc) {
@@ -202,12 +247,12 @@ public abstract class VersionProvider {
             case Type.ARRAY:
                 Type type = desc.getElementType();
                 if (classStubs.containsKey(type)) {
-                    type = classStubs.get(type);
+                    type = Type.getType(classStubs.get(type));
                 }
                 return Type.getType(desc.getDescriptor().substring(0, desc.getDimensions()) + type.getDescriptor());
             case Type.OBJECT:
                 if (classStubs.containsKey(desc)) {
-                    return classStubs.get(desc);
+                    return Type.getType(classStubs.get(desc));
                 }
                 return desc;
             default:
@@ -235,7 +280,10 @@ public abstract class VersionProvider {
                 getStubMapper(Type.getObjectType(min.owner), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
             } else if (insn instanceof TypeInsnNode) {
                 TypeInsnNode tin = (TypeInsnNode) insn;
-                tin.desc = stubClass(Type.getObjectType(tin.desc)).getInternalName();
+                MethodInsnNode min = stubTypeInsnNode(tin);
+                if (min != null) {
+                    method.instructions.set(tin, min);
+                }
             } else if (insn instanceof FieldInsnNode) {
                 FieldInsnNode fin = (FieldInsnNode) insn;
                 fin.owner = stubClass(Type.getObjectType(fin.owner)).getInternalName();
@@ -559,7 +607,7 @@ public abstract class VersionProvider {
         // super
         Type type = Type.getObjectType(clazz.superName);
         if (classStubs.containsKey(type)) {
-            clazz.superName = classStubs.get(type).getInternalName();
+            clazz.superName = Type.getInternalName(classStubs.get(type));
         }
 
         // interface
@@ -567,7 +615,7 @@ public abstract class VersionProvider {
             for (int i = 0; i < clazz.interfaces.size(); i++) {
                 type = Type.getObjectType(clazz.interfaces.get(i));
                 if (classStubs.containsKey(type)) {
-                    clazz.interfaces.set(i, classStubs.get(type).getInternalName());
+                    clazz.interfaces.set(i, Type.getInternalName(classStubs.get(type)));
                 }
             }
         }
