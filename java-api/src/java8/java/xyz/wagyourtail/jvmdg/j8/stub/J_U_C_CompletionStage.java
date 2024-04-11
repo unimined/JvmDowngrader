@@ -4,12 +4,13 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiFunction;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Function;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.concurrent.Executor;
 
-@Stub(ref = @Ref("java/util/concurrent/CompletionStage"))
+@Adapter("java/util/concurrent/CompletionStage")
 public interface J_U_C_CompletionStage<T> {
 
     <U> J_U_C_CompletionStage<U> thenApply(J_U_F_Function<? super T, ? extends U> fn);

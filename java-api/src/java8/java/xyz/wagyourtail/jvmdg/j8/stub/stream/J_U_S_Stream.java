@@ -3,12 +3,13 @@ package xyz.wagyourtail.jvmdg.j8.stub.stream;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_Optional;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Comparator;
 
-@Stub(ref = @Ref("java/util/stream/Stream"))
+@Adapter("java/util/stream/Stream")
 public interface J_U_S_Stream<T> extends J_U_S_BaseStream<T, J_U_S_Stream<T>> {
 
     J_U_S_Stream<T> filter(J_U_F_Predicate<? super T> predicate);
@@ -126,7 +127,7 @@ public interface J_U_S_Stream<T> extends J_U_S_BaseStream<T, J_U_S_Stream<T>> {
 
     }
 
-    @Stub(ref = @Ref("Ljava/util/stream/Stream$Builder;"))
+    @Adapter("Ljava/util/stream/Stream$Builder;")
     interface Builder<T> extends J_U_F_Consumer<T> {
 
         @Override

@@ -6,6 +6,7 @@ import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BinaryOperator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Function;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
 import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -14,7 +15,7 @@ import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Set;
 
-@Stub(ref = @Ref("java/util/stream/Collector"))
+@Adapter("java/util/stream/Collector")
 public interface J_U_S_Collector<T, A, R> {
 
     J_U_F_Supplier<A> supplier();
@@ -28,7 +29,7 @@ public interface J_U_S_Collector<T, A, R> {
     Set<Characteristics> characteristics();
 
 
-    @Stub(ref = @Ref("java/util/stream/Collector$Characteristics"))
+    @Adapter("java/util/stream/Collector$Characteristics")
     enum Characteristics {
         CONCURRENT,
         UNORDERED,

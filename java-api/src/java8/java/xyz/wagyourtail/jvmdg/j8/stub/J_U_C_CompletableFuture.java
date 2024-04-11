@@ -7,13 +7,14 @@ import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiFunction;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Function;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
 import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.*;
 import java.util.concurrent.*;
 
-@Stub(ref = @Ref("java/util/concurrent/CompletableFuture"))
+@Adapter("java/util/concurrent/CompletableFuture")
 public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionStage<T> {
     private static final boolean USE_COMMON_POOL = J_U_C_ForkJoinPool.getCommonPoolParallelism() > 1;
     private static final Executor ASYNC_POOL = USE_COMMON_POOL ? J_U_C_ForkJoinPool.commonPool() : new ThreadPerTaskExecutor();
@@ -622,7 +623,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
         return this;
     }
 
-    @Stub(ref = @Ref("java/util/concurrent/CompletableFuture$AsynchronousCompletionTask"))
+    @Adapter("java/util/concurrent/CompletableFuture$AsynchronousCompletionTask")
     public interface AsynchronousCompletionTask {
     }
 

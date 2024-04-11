@@ -2,10 +2,11 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongConsumer;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-@Stub(ref = @Ref("java/util/LongSummaryStatistics"))
+@Adapter("java/util/LongSummaryStatistics")
 public class J_U_LongSummaryStatistics implements J_U_F_IntConsumer, J_U_F_LongConsumer {
 
     private long count;

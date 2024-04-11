@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -13,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 
-@Stub(ref = @Ref("java/util/Base64"))
+@Adapter("java/util/Base64")
 public class J_U_Base64 {
 
     private J_U_Base64() {}
@@ -58,7 +59,7 @@ public class J_U_Base64 {
         return Decoder.RFC2045;
     }
 
-    @Stub(ref = @Ref("java/util/Base64$Encoder"))
+    @Adapter("java/util/Base64$Encoder")
     public static class Encoder {
         private final byte[] newline;
         private final int linemax;
@@ -213,7 +214,7 @@ public class J_U_Base64 {
 
     }
 
-    @Stub(ref = @Ref("java/util/Base64$Decoder"))
+    @Adapter("java/util/Base64$Decoder")
     public static class Decoder {
         private final boolean isURL;
         private final boolean isMIME;

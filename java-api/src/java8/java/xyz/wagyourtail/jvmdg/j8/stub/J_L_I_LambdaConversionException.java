@@ -1,10 +1,11 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-@Stub(ref = @Ref("Ljava/lang/invoke/LambdaConversionException;"))
+@Adapter("Ljava/lang/invoke/LambdaConversionException;")
 public class J_L_I_LambdaConversionException extends Exception {
 
     public J_L_I_LambdaConversionException() {

@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.intl.spliterator.*;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -9,7 +10,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
 
-@Stub(ref = @Ref("Ljava/util/Spliterators;"))
+@Adapter("Ljava/util/Spliterators;")
 public class J_U_Spliterators {
 
     private static final J_U_Spliterator<Object> EMPTY_SPLITERATOR = new EmptySpliterator.OfRef<>();

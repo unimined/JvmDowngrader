@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntSupplier;
@@ -8,7 +9,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.NoSuchElementException;
 
-@Stub(ref = @Ref("java/util/OptionalInt"))
+@Adapter("java/util/OptionalInt")
 public class J_U_OptionalInt {
 
     private static final J_U_OptionalInt EMPTY = new J_U_OptionalInt();

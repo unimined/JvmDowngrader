@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.j8.stub.function;
 
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -7,7 +8,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.util.Objects;
 
 @J_L_FunctionalInterface
-@Stub(ref = @Ref("Ljava/util/function/Consumer;"))
+@Adapter("Ljava/util/function/Consumer;")
 public interface J_U_F_Consumer<T> {
 
     void accept(T t);

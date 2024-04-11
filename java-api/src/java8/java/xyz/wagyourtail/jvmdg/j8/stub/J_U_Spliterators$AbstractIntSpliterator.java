@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.intl.spliterator.IntArraySpliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
@@ -9,7 +10,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Comparator;
 
-@Stub(ref = @Ref(value = "java/util/Spliterators$AbstractIntSpliterator"))
+@Adapter(value = "java/util/Spliterators$AbstractIntSpliterator")
 public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spliterator.OfInt {
     static final int MAX_BATCH = J_U_Spliterators$AbstractSpliterator.MAX_BATCH;
     static final int BATCH_UNIT = J_U_Spliterators$AbstractSpliterator.BATCH_UNIT;

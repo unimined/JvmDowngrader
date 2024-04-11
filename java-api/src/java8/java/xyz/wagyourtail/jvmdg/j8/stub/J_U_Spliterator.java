@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_DoubleConsumer;
@@ -10,7 +11,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Comparator;
 
-@Stub(ref = @Ref("java/util/Spliterator"))
+@Adapter("java/util/Spliterator")
 public interface J_U_Spliterator<T> {
 
     int ORDERED = 0x00000010;
@@ -90,7 +91,7 @@ public interface J_U_Spliterator<T> {
 
 
 
-    @Stub(ref = @Ref("java/util/Spliterator$OfInt"))
+    @Adapter("java/util/Spliterator$OfInt")
     interface OfInt extends OfPrimitive<Integer, J_U_F_IntConsumer, OfInt> {
 
         @Override
@@ -148,7 +149,7 @@ public interface J_U_Spliterator<T> {
 
     }
 
-    @Stub(ref = @Ref("java/util/Spliterator$OfLong"))
+    @Adapter("java/util/Spliterator$OfLong")
     interface OfLong extends OfPrimitive<Long, J_U_F_LongConsumer, OfLong> {
 
         @Override
@@ -205,7 +206,7 @@ public interface J_U_Spliterator<T> {
 
     }
 
-    @Stub(ref = @Ref("java/util/Spliterator$OfDouble"))
+    @Adapter("java/util/Spliterator$OfDouble")
     interface OfDouble extends OfPrimitive<Double, J_U_F_DoubleConsumer, OfDouble> {
 
         @Override
