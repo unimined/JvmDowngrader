@@ -23,7 +23,9 @@ public class J_L_R_Cleaner {
             while (true) {
                 try {
                     PhantomCleanable<?> ref = (PhantomCleanable<?>) queue.remove();
-                    ref.clean();
+                    if (ref != null) {
+                        ref.clean();
+                    }
                 } catch (Throwable e) {
                     System.err.println("Error in Cleaner thread");
                     e.printStackTrace();
