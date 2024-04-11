@@ -229,4 +229,9 @@ public class JvmDowngraderTest {
         testDowngrade("xyz.wagyourtail.downgradetest.TestWasAbstract");
     }
 
+    @Test
+    public void testSwitch() throws Exception {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestSwitch");
+    }
+
 }

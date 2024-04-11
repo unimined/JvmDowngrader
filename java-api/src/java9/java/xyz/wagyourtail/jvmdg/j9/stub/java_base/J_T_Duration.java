@@ -28,13 +28,6 @@ public class J_T_Duration {
     }
 
     @Stub
-    public static long toMillis(Duration self) {
-        long time = TimeUnit.SECONDS.toMillis(self.getSeconds());
-        time += TimeUnit.NANOSECONDS.toMillis(self.getNano());
-        return time;
-    }
-
-    @Stub
     public static long toDaysPart(Duration self) {
         return self.toDays();
     }
@@ -64,7 +57,7 @@ public class J_T_Duration {
     }
 
     @Stub
-    public static Duration truncateTo(Duration self, TemporalUnit unit) {
+    public static Duration truncatedTo(Duration self, TemporalUnit unit) {
         if (unit == ChronoUnit.SECONDS && (self.getSeconds() >= 0 || self.getNano() == 0)) {
             return Duration.of(self.getSeconds(), ChronoUnit.SECONDS);
         } else if (unit == ChronoUnit.NANOS) {

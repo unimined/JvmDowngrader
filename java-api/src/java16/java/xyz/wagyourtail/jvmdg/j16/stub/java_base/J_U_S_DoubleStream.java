@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -18,7 +19,7 @@ public class J_U_S_DoubleStream {
     }
 
     @FunctionalInterface
-    @Stub(ref = @Ref("Ljava/util/stream/DoubleStream$DoubleMapMultiConsumer;"))
+    @Adapter("Ljava/util/stream/DoubleStream$DoubleMapMultiConsumer;")
     public interface DoubleMapMultiConsumer {
 
         default DoubleStream of(double d) {

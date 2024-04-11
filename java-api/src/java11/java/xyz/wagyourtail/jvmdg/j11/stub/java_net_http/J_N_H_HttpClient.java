@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -13,7 +14,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 
-@Stub(ref = @Ref("Ljava/net/http/HttpClient;"))
+@Adapter("Ljava/net/http/HttpClient;")
 public abstract class J_N_H_HttpClient {
 
 
@@ -43,20 +44,20 @@ public abstract class J_N_H_HttpClient {
 
     public abstract Optional<Executor> executor();
 
-    @Stub(ref = @Ref("Ljava/net/http/HttpClient$Redirect;"))
+    @Adapter("Ljava/net/http/HttpClient$Redirect;")
     public enum Redirect {
         NEVER,
         ALWAYS,
         NORMAL
     }
 
-    @Stub(ref = @Ref("Ljava/net/http/HttpClient$Version;"))
+    @Adapter("Ljava/net/http/HttpClient$Version;")
     public enum Version {
         HTTP_1_1,
         HTTP_2
     }
 
-    @Stub(ref = @Ref("Ljava/net/http/HttpClient$Builder;"))
+    @Adapter("Ljava/net/http/HttpClient$Builder;")
     public interface Builder {
         Builder cookieHandler(CookieHandler handler);
 

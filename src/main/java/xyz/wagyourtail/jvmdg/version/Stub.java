@@ -3,7 +3,7 @@ package xyz.wagyourtail.jvmdg.version;
 
 import java.lang.annotation.*;
 
-@Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
+@Target({ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Stub {
 

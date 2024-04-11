@@ -43,8 +43,7 @@ public class J_L_Class {
         Class<?> caller = getCaller();
         for (VersionProvider vp : versionProviders) {
             if (vp.classStubs.containsKey(classType)) {
-                String target = vp.classStubs.get(classType).getClassName();
-                return Class.forName(target, true, caller.getClassLoader());
+                return vp.classStubs.get(classType);
             }
         }
         return Class.forName(className);
@@ -56,8 +55,7 @@ public class J_L_Class {
         Type classType = Type.getObjectType(className.replace('.', '/'));
         for (VersionProvider vp : versionProviders) {
             if (vp.classStubs.containsKey(classType)) {
-                String target = vp.classStubs.get(classType).getClassName();
-                return Class.forName(target, initialize, loader);
+                return vp.classStubs.get(classType);
             }
         }
         return Class.forName(className, initialize, loader);

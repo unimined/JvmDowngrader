@@ -22,8 +22,7 @@ public class J_L_Class {
     }
 
     @Stub
-    public static boolean isNestmateOf(Class<?> clazz) throws ClassNotFoundException, IllegalAccessException {
-        Class<?> host = getNestHost(clazz);
+    public static boolean isNestmateOf(Class<?> host, Class<?> clazz) throws ClassNotFoundException, IllegalAccessException {
         if (host == clazz) {
             return true;
         }

@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.version.map;
 
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Method;
 import java.util.Objects;
 
 public class FullyQualifiedMemberNameAndDesc {
@@ -13,6 +14,10 @@ public class FullyQualifiedMemberNameAndDesc {
         this.owner = owner;
         this.name = name;
         this.desc = desc;
+    }
+
+    public static FullyQualifiedMemberNameAndDesc fromMethod(Method method) {
+        return new FullyQualifiedMemberNameAndDesc(Type.getType(method.getDeclaringClass()), method.getName(), Type.getType(method));
     }
 
     public Type getOwner() {

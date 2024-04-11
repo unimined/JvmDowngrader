@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -19,7 +20,7 @@ public class J_U_S_LongStream {
     }
 
     @FunctionalInterface
-    @Stub(ref = @Ref("Ljava/util/stream/LongStream$LongMapMultiConsumer;"))
+    @Adapter("Ljava/util/stream/LongStream$LongMapMultiConsumer;")
     public interface LongMapMultiConsumer {
 
         default LongStream of(long d) {

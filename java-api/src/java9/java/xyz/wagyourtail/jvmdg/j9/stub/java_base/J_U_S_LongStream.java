@@ -10,6 +10,7 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.LongPredicate;
 import java.util.function.IntUnaryOperator;
+import java.util.function.LongUnaryOperator;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;
 
@@ -38,7 +39,7 @@ public class J_U_S_LongStream {
     }
 
     @Stub(ref = @Ref("Ljava/util/stream/LongStream;"))
-    public static LongStream iterate(int seed, LongPredicate hasNext, IntUnaryOperator next) {
+    public static LongStream iterate(long seed, LongPredicate hasNext, LongUnaryOperator next) {
         return new LongIterator(seed, hasNext, next).stream();
     }
 
@@ -75,10 +76,10 @@ public class J_U_S_LongStream {
 
     public static class LongIterator implements PrimitiveIterator.OfLong {
         private final LongPredicate hasNext;
-        private final IntUnaryOperator computeNext;
-        private int prev;
+        private final LongUnaryOperator computeNext;
+        private long prev;
 
-        public LongIterator(int seed, LongPredicate hasNext, IntUnaryOperator computeNext) {
+        public LongIterator(long seed, LongPredicate hasNext, LongUnaryOperator computeNext) {
             this.prev = seed;
             this.hasNext = hasNext;
             this.computeNext = computeNext;
@@ -91,7 +92,7 @@ public class J_U_S_LongStream {
         @Override
         public long nextLong() {
             long next = prev;
-            prev = computeNext.applyAsInt(prev);
+            prev = computeNext.applyAsLong(prev);
             return next;
         }
 

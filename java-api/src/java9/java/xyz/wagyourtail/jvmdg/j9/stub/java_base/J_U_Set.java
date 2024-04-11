@@ -40,6 +40,11 @@ public class J_U_Set {
     }
 
     @Stub(ref = @Ref("Ljava/util/Set;"))
+    public static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6) {
+        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(e1, e2, e3, e4, e5, e6)));
+    }
+
+    @Stub(ref = @Ref("Ljava/util/Set;"))
     public static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7) {
         return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(e1, e2, e3, e4, e5, e6, e7)));
     }

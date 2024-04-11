@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import org.objectweb.asm.Opcodes;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -20,7 +21,7 @@ public class J_L_Runtime {
         return Version.INSTANCE;
     }
 
-    @Stub(ref = @Ref("java/lang/Runtime$Version"))
+    @Adapter("java/lang/Runtime$Version")
     public static final class Version implements Comparable<Version> {
         public static final Version INSTANCE = Version.parse(System.getProperty("java.runtime.version"));
         private final List<Integer> version;
