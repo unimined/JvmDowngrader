@@ -77,7 +77,7 @@ public class Java9Downgrader extends VersionProvider {
         // ModuleReference
         // ResolutionException
         // ResolvedModule
-        // Cleaner
+        stub(J_L_R_Cleaner.class);
         // Reference
         stub(J_L_R_AccessibleObject.class);
         // AnnotatedArrayType
