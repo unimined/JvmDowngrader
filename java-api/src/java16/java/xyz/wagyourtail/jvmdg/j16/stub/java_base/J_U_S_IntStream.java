@@ -1,9 +1,7 @@
 package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.function.IntConsumer;
@@ -33,7 +31,7 @@ public class J_U_S_IntStream {
          * values to the {@code dc} consumer.
          *
          * @param value the double value coming from upstream
-         * @param dc a {@code DoubleConsumer} accepting the mapped values
+         * @param dc    a {@code DoubleConsumer} accepting the mapped values
          */
         void accept(int value, IntConsumer dc);
 

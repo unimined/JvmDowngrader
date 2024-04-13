@@ -16,7 +16,8 @@ import java.util.Objects;
 @Stub(ref = @Ref("java/util/Base64"))
 public class J_U_Base64 {
 
-    private J_U_Base64() {}
+    private J_U_Base64() {
+    }
 
     public static Encoder getEncoder() {
         return Encoder.RFC4648;
@@ -60,29 +61,23 @@ public class J_U_Base64 {
 
     @Stub(ref = @Ref("java/util/Base64$Encoder"))
     public static class Encoder {
+        static final Encoder RFC4648 = new Encoder(false, null, -1, true);
+        static final Encoder RFC4648_URLSAFE = new Encoder(true, null, -1, true);
+        private static final char[] toBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
+        private static final char[] toBase64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_".toCharArray();
+        private static final int MIMELINEMAX = 76;
+        private static final byte[] CRLF = new byte[]{'\r', '\n'};
+        static final Encoder RFC2045 = new Encoder(false, CRLF, MIMELINEMAX, true);
         private final byte[] newline;
         private final int linemax;
         private final boolean isURL;
         private final boolean doPadding;
-
         private Encoder(boolean isURL, byte[] newline, int linemax, boolean doPadding) {
             this.isURL = isURL;
             this.newline = newline;
             this.linemax = linemax;
             this.doPadding = doPadding;
         }
-
-        private static final char[] toBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
-
-        private static final char[] toBase64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_".toCharArray();
-
-        private static final int MIMELINEMAX = 76;
-
-        private static final byte[] CRLF = new byte[] {'\r', '\n'};
-
-        static final Encoder RFC4648 = new Encoder(false, null, -1, true);
-        static final Encoder RFC4648_URLSAFE = new Encoder(true, null, -1, true);
-        static final Encoder RFC2045 = new Encoder(false, CRLF, MIMELINEMAX, true);
 
         private final int encodedOutLength(int srclen, boolean throwOOME) {
             int len = 0;
@@ -133,9 +128,9 @@ public class J_U_Base64 {
             int ret = 0;
             if (buffer.hasArray()) {
                 ret = encode0(buffer.array(),
-                              buffer.arrayOffset() + buffer.position(),
-                              buffer.arrayOffset() + buffer.limit(),
-                              dst);
+                    buffer.arrayOffset() + buffer.position(),
+                    buffer.arrayOffset() + buffer.limit(),
+                    dst);
                 buffer.position(buffer.limit());
             } else {
                 byte[] src = new byte[buffer.remaining()];
@@ -161,12 +156,12 @@ public class J_U_Base64 {
 
         private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
             char[] base64 = isURL ? toBase64URL : toBase64;
-            for (int sp0 = sp, dp0 = dp ; sp0 < sl; ) {
-                int bits = (src[sp0++] & 0xff) << 16 | (src[sp0++] & 0xff) <<  8 | (src[sp0++] & 0xff);
-                dst[dp0++] = (byte)base64[(bits >>> 18) & 0x3f];
-                dst[dp0++] = (byte)base64[(bits >>> 12) & 0x3f];
-                dst[dp0++] = (byte)base64[(bits >>> 6)  & 0x3f];
-                dst[dp0++] = (byte)base64[bits & 0x3f];
+            for (int sp0 = sp, dp0 = dp; sp0 < sl; ) {
+                int bits = (src[sp0++] & 0xff) << 16 | (src[sp0++] & 0xff) << 8 | (src[sp0++] & 0xff);
+                dst[dp0++] = (byte) base64[(bits >>> 18) & 0x3f];
+                dst[dp0++] = (byte) base64[(bits >>> 12) & 0x3f];
+                dst[dp0++] = (byte) base64[(bits >>> 6) & 0x3f];
+                dst[dp0++] = (byte) base64[bits & 0x3f];
             }
         }
 
@@ -175,7 +170,7 @@ public class J_U_Base64 {
             int sp = off;
             int slen = (end - off) / 3 * 3;
             int sl = off + slen;
-            if (linemax > 0 && slen  > linemax / 4 * 3)
+            if (linemax > 0 && slen > linemax / 4 * 3)
                 slen = linemax / 4 * 3;
             int dp = 0;
             while (sp < sl) {
@@ -185,24 +180,24 @@ public class J_U_Base64 {
                 dp += dlen;
                 sp = sl0;
                 if (dlen == linemax && sp < end) {
-                    for (byte b : newline){
+                    for (byte b : newline) {
                         dst[dp++] = b;
                     }
                 }
             }
             if (sp < end) {               // 1 or 2 leftover bytes
                 int b0 = src[sp++] & 0xff;
-                dst[dp++] = (byte)base64[b0 >> 2];
+                dst[dp++] = (byte) base64[b0 >> 2];
                 if (sp == end) {
-                    dst[dp++] = (byte)base64[(b0 << 4) & 0x3f];
+                    dst[dp++] = (byte) base64[(b0 << 4) & 0x3f];
                     if (doPadding) {
                         dst[dp++] = '=';
                         dst[dp++] = '=';
                     }
                 } else {
                     int b1 = src[sp++] & 0xff;
-                    dst[dp++] = (byte)base64[(b0 << 4) & 0x3f | (b1 >> 4)];
-                    dst[dp++] = (byte)base64[(b1 << 2) & 0x3f];
+                    dst[dp++] = (byte) base64[(b0 << 4) & 0x3f | (b1 >> 4)];
+                    dst[dp++] = (byte) base64[(b1 << 2) & 0x3f];
                     if (doPadding) {
                         dst[dp++] = '=';
                     }
@@ -215,23 +210,18 @@ public class J_U_Base64 {
 
     @Stub(ref = @Ref("java/util/Base64$Decoder"))
     public static class Decoder {
-        private final boolean isURL;
-        private final boolean isMIME;
-
-        private Decoder(boolean isURL, boolean isMIME) {
-            this.isURL = isURL;
-            this.isMIME = isMIME;
-        }
-
+        static final Decoder RFC4648 = new Decoder(false, false);
+        static final Decoder RFC4648_URLSAFE = new Decoder(true, false);
+        static final Decoder RFC2045 = new Decoder(false, true);
         private static final int[] fromBase64 = new int[256];
+        private static final int[] fromBase64URL = new int[256];
+
         static {
             Arrays.fill(fromBase64, -1);
             for (int i = 0; i < Encoder.toBase64.length; i++)
                 fromBase64[Encoder.toBase64[i]] = i;
             fromBase64['='] = -2;
         }
-
-        private static final int[] fromBase64URL = new int[256];
 
         static {
             Arrays.fill(fromBase64URL, -1);
@@ -240,9 +230,12 @@ public class J_U_Base64 {
             fromBase64URL['='] = -2;
         }
 
-        static final Decoder RFC4648 = new Decoder(false, false);
-        static final Decoder RFC4648_URLSAFE = new Decoder(true, false);
-        static final Decoder RFC2045 = new Decoder(false, true);
+        private final boolean isURL;
+        private final boolean isMIME;
+        private Decoder(boolean isURL, boolean isMIME) {
+            this.isURL = isURL;
+            this.isMIME = isMIME;
+        }
 
         public byte[] decode(byte[] src) {
             int len = decodedOutLength(src, 0, src.length);
@@ -324,7 +317,7 @@ public class J_U_Base64 {
                         paddings++;
                 }
             }
-            if (paddings == 0 && (len & 0x3) !=  0)
+            if (paddings == 0 && (len & 0x3) != 0)
                 paddings = 4 - (len & 0x3);
             return 3 * (int) ((len + 3L) / 4) - paddings;
         }
@@ -343,9 +336,9 @@ public class J_U_Base64 {
                     return new_dp - dp;
                 }
                 int bits0 = b1 << 18 | b2 << 12 | b3 << 6 | b4;
-                dst[new_dp++] = (byte)(bits0 >> 16);
-                dst[new_dp++] = (byte)(bits0 >>  8);
-                dst[new_dp++] = (byte)(bits0);
+                dst[new_dp++] = (byte) (bits0 >> 16);
+                dst[new_dp++] = (byte) (bits0 >> 8);
+                dst[new_dp++] = (byte) (bits0);
             }
             return new_dp - dp;
         }
@@ -387,18 +380,18 @@ public class J_U_Base64 {
                 bits |= (b << shiftto);
                 shiftto -= 6;
                 if (shiftto < 0) {
-                    dst[dp++] = (byte)(bits >> 16);
-                    dst[dp++] = (byte)(bits >>  8);
-                    dst[dp++] = (byte)(bits);
+                    dst[dp++] = (byte) (bits >> 16);
+                    dst[dp++] = (byte) (bits >> 8);
+                    dst[dp++] = (byte) (bits);
                     shiftto = 18;
                     bits = 0;
                 }
             }
             if (shiftto == 6) {
-                dst[dp++] = (byte)(bits >> 16);
+                dst[dp++] = (byte) (bits >> 16);
             } else if (shiftto == 0) {
-                dst[dp++] = (byte)(bits >> 16);
-                dst[dp++] = (byte)(bits >>  8);
+                dst[dp++] = (byte) (bits >> 16);
+                dst[dp++] = (byte) (bits >> 8);
             } else if (shiftto == 12) {
                 throw new IllegalArgumentException(
                     "Last unit does not have enough valid bits");
@@ -415,14 +408,13 @@ public class J_U_Base64 {
 
     private static class EncOutputStream extends FilterOutputStream {
 
-        private int leftover = 0;
-        private int b0, b1, b2;
-        private boolean closed = false;
-
         private final char[] base64;    // byte->base64 mapping
         private final byte[] newline;   // line separator, if needed
         private final int linemax;
         private final boolean doPadding;// whether or not to pad
+        private int leftover = 0;
+        private int b0, b1, b2;
+        private boolean closed = false;
         private int linepos = 0;
         private byte[] buf;
 
@@ -439,7 +431,7 @@ public class J_U_Base64 {
         @Override
         public void write(int b) throws IOException {
             byte[] buf = new byte[1];
-            buf[0] = (byte)(b & 0xff);
+            buf[0] = (byte) (b & 0xff);
             write(buf, 0, 1);
         }
 
@@ -451,10 +443,10 @@ public class J_U_Base64 {
         }
 
         private void writeb4(char b1, char b2, char b3, char b4) throws IOException {
-            buf[0] = (byte)b1;
-            buf[1] = (byte)b2;
-            buf[2] = (byte)b3;
-            buf[3] = (byte)b4;
+            buf[0] = (byte) b1;
+            buf[1] = (byte) b2;
+            buf[2] = (byte) b3;
+            buf[3] = (byte) b4;
             out.write(buf, 0, 4);
         }
 
@@ -492,12 +484,12 @@ public class J_U_Base64 {
                 int dp = 0;
                 for (int sp = off; sp < sl; ) {
                     int bits = (b[sp++] & 0xff) << 16 |
-                        (b[sp++] & 0xff) <<  8 |
+                        (b[sp++] & 0xff) << 8 |
                         (b[sp++] & 0xff);
-                    buf[dp++] = (byte)base64[(bits >>> 18) & 0x3f];
-                    buf[dp++] = (byte)base64[(bits >>> 12) & 0x3f];
-                    buf[dp++] = (byte)base64[(bits >>> 6)  & 0x3f];
-                    buf[dp++] = (byte)base64[bits & 0x3f];
+                    buf[dp++] = (byte) base64[(bits >>> 18) & 0x3f];
+                    buf[dp++] = (byte) base64[(bits >>> 12) & 0x3f];
+                    buf[dp++] = (byte) base64[(bits >>> 6) & 0x3f];
+                    buf[dp++] = (byte) base64[bits & 0x3f];
                 }
                 out.write(buf, 0, dp);
                 off = sl;
@@ -553,14 +545,13 @@ public class J_U_Base64 {
 
         private boolean eof = false;
         private boolean closed = false;
+        private byte[] sbBuf = new byte[1];
 
         DecInputStream(InputStream is, int[] base64, boolean isMIME) {
             this.is = is;
             this.base64 = base64;
             this.isMIME = isMIME;
         }
-
-        private byte[] sbBuf = new byte[1];
 
         @Override
         public int read() throws IOException {

@@ -1,12 +1,13 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 @Adapter("java/util/concurrent/Flow")
 public class J_U_C_Flow {
+
+    public static int defaultBufferSize() {
+        return 256;
+    }
 
     @Adapter("java/util/concurrent/Flow$Publisher")
     @FunctionalInterface
@@ -34,10 +35,6 @@ public class J_U_C_Flow {
 
     @Adapter("java/util/concurrent/Flow$Processor")
     public interface Processor<T, R> extends Subscriber<T>, Publisher<R> {
-    }
-
-    public static int defaultBufferSize() {
-        return 256;
     }
 
 }

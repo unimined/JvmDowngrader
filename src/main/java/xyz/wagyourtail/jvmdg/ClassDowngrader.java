@@ -9,10 +9,10 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
+import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
-import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.beans.XMLDecoder;
@@ -127,6 +127,22 @@ public class ClassDowngrader {
         } catch (IOException e) {
             throw new RuntimeException("Failed to find java api", e);
         }
+    }
+
+    public static ClassNode bytesToClassNode(byte[] bytes) {
+        ClassNode node = new ClassNode();
+        new ClassReader(bytes).accept(node, 0);
+        return node;
+    }
+
+    public static ClassNode bytesToClassNode(byte[] bytes, int flags) {
+        ClassNode node = new ClassNode();
+        new ClassReader(bytes).accept(node, flags);
+        return node;
+    }
+
+    public static void main(String[] args) {
+        //TODO
     }
 
     public Set<MemberNameAndDesc> getMembers(int version, Type type) throws IOException {
@@ -332,18 +348,6 @@ public class ClassDowngrader {
         return cw.toByteArray();
     }
 
-    public static ClassNode bytesToClassNode(byte[] bytes) {
-        ClassNode node = new ClassNode();
-        new ClassReader(bytes).accept(node, 0);
-        return node;
-    }
-
-    public static ClassNode bytesToClassNode(byte[] bytes, int flags) {
-        ClassNode node = new ClassNode();
-        new ClassReader(bytes).accept(node, flags);
-        return node;
-    }
-
     public void writeBytesToDebug(String name, byte[] bytes) {
         File f = new File(Constants.DEBUG_DIR, name.replace('.', '/') + ".class");
         f.getParentFile().mkdirs();
@@ -364,10 +368,6 @@ public class ClassDowngrader {
         if (vp == null) return null;
         vp.ensureInit();
         return vp;
-    }
-
-    public static void main(String[] args) {
-        //TODO
     }
 
 }

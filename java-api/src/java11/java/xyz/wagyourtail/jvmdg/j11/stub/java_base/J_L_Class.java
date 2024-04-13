@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_base;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.reflect.Field;
@@ -38,7 +37,7 @@ public class J_L_Class {
     @Stub
     public static Class<?>[] getNestMembers(Class<?> clazz) throws IllegalAccessException, ClassNotFoundException {
         if (clazz.isPrimitive() || clazz.isArray()) {
-            return new Class<?>[] { clazz };
+            return new Class<?>[]{clazz};
         }
         try {
             Class<?> host = getNestHost(clazz);
@@ -51,7 +50,7 @@ public class J_L_Class {
             }
             return classes;
         } catch (NoSuchFieldException e) {
-            return new Class<?>[] { clazz };
+            return new Class<?>[]{clazz};
         }
     }
 

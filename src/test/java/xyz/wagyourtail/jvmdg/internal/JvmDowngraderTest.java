@@ -2,9 +2,9 @@ package xyz.wagyourtail.jvmdg.internal;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.test.JavaRunner;
+import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,7 +14,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 
 public class JvmDowngraderTest {
@@ -56,6 +57,7 @@ public class JvmDowngraderTest {
         }
         return path;
     }
+
     private void testDowngrade(String mainClass) throws Exception {
         testDowngrade(mainClass, true);
     }
@@ -68,7 +70,7 @@ public class JvmDowngraderTest {
 
         Integer ret2 = JavaRunner.runJarInSubprocess(
             original,
-            new String[] {},
+            new String[]{},
             mainClass,
             Set.of(),
             Path.of("."),
@@ -92,7 +94,7 @@ public class JvmDowngraderTest {
         StringBuilder downgradedLog = new StringBuilder();
         Integer ret = JavaRunner.runJarInSubprocess(
             downgraded,
-            new String[] {},
+            new String[]{},
             mainClass,
             Set.of(downgradedJavaApi),
             Path.of("."),
@@ -118,7 +120,7 @@ public class JvmDowngraderTest {
 
         Integer ret3 = JavaRunner.runJarInSubprocess(
             null,
-            new String[] {downgraded.toString(), mainClass},
+            new String[]{downgraded.toString(), mainClass},
             "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             classpathJars,
             Path.of("."),

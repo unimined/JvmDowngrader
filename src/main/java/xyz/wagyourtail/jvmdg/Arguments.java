@@ -165,6 +165,10 @@ public class Arguments {
         }
     }
 
+    public interface ArgSupplier {
+        String get();
+    }
+
     public static class Argument<T> {
         public final String name;
         public final String shortName;
@@ -192,9 +196,5 @@ public class Arguments {
                 }
             });
         }
-    }
-
-    public interface ArgSupplier {
-        String get();
     }
 }

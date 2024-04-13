@@ -1,12 +1,10 @@
 package xyz.wagyourtail.jvmdg.j20.stub.java_base;
 
-import xyz.wagyourtail.jvmdg.exc.PartialStubError;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.invoke.MethodType;
 import java.util.Map;
-import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

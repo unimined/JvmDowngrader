@@ -61,7 +61,7 @@ public class J_L_I_LambdaMetafactory {
     public static ClassNode lambdaMetafactoryCreatorInternal(String parentName, Type constructor, int nextAvailableAnonymous, String mname, String mdesc, String ifName, Type bridge, Handle invokedMethod, Type invokedType) {
         ClassNode cn = new ClassNode(Opcodes.ASM9);
         // class name and metadata
-        cn.visit(Opcodes.V1_7, Opcodes.ACC_SUPER, parentName + "$" + nextAvailableAnonymous, null, "java/lang/Object", new String[] { constructor.getReturnType().getInternalName() });
+        cn.visit(Opcodes.V1_7, Opcodes.ACC_SUPER, parentName + "$" + nextAvailableAnonymous, null, "java/lang/Object", new String[]{constructor.getReturnType().getInternalName()});
         cn.visitOuterClass(parentName, mname, mdesc);
         cn.visitInnerClass(cn.name, parentName, "$" + nextAvailableAnonymous, 0);
 

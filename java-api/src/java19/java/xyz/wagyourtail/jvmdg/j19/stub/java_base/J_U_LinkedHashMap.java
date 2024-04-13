@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.j19.stub.java_base;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 
 public class J_U_LinkedHashMap {

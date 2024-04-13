@@ -21,13 +21,13 @@ public class J_U_OptionalLong {
         this.value = 0;
     }
 
-    public static J_U_OptionalLong empty() {
-        return EMPTY;
-    }
-
     private J_U_OptionalLong(long value) {
         this.isPresent = true;
         this.value = value;
+    }
+
+    public static J_U_OptionalLong empty() {
+        return EMPTY;
     }
 
     public static J_U_OptionalLong of(long value) {
@@ -70,7 +70,7 @@ public class J_U_OptionalLong {
         return value;
     }
 
-    public<X extends Throwable> long orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
+    public <X extends Throwable> long orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         if (isPresent) {
             return value;
         } else {

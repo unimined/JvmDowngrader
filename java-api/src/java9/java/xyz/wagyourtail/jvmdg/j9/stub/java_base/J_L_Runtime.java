@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -30,10 +29,9 @@ public class J_L_Runtime {
         private final Optional<String> optional;
 
         private Version(List<Integer> unmodifiableListOfVersions,
-            Optional<String> pre,
-            Optional<Integer> build,
-            Optional<String> optional)
-        {
+                        Optional<String> pre,
+                        Optional<Integer> build,
+                        Optional<String> optional) {
             this.version = unmodifiableListOfVersions;
             this.pre = pre;
             this.build = build;
@@ -197,12 +195,12 @@ public class J_L_Runtime {
                 String oVal = oPre.get();
                 if (val.matches("\\d+")) {
                     return (oVal.matches("\\d+")
-                                ? (new BigInteger(val)).compareTo(new BigInteger(oVal))
-                                : -1);
+                        ? (new BigInteger(val)).compareTo(new BigInteger(oVal))
+                        : -1);
                 } else {
                     return (oVal.matches("\\d+")
-                                ? 1
-                                : val.compareTo(oVal));
+                        ? 1
+                        : val.compareTo(oVal));
                 }
             }
             return 0;
@@ -212,8 +210,8 @@ public class J_L_Runtime {
             Optional<Integer> oBuild = obj.build();
             if (oBuild.isPresent()) {
                 return (build.isPresent()
-                            ? build.get().compareTo(oBuild.get())
-                            : -1);
+                    ? build.get().compareTo(oBuild.get())
+                    : -1);
             } else if (build.isPresent()) {
                 return 1;
             }
@@ -262,7 +260,7 @@ public class J_L_Runtime {
             if (!ret)
                 return false;
 
-            Version that = (Version)obj;
+            Version that = (Version) obj;
             return (this.optional().equals(that.optional()));
         }
 
@@ -270,10 +268,10 @@ public class J_L_Runtime {
             if (this == obj)
                 return true;
             if (obj instanceof Version) {
-                Version that = (Version)obj;
+                Version that = (Version) obj;
                 return (this.version().equals(that.version())
-                        && this.pre().equals(that.pre())
-                        && this.build().equals(that.build()));
+                    && this.pre().equals(that.pre())
+                    && this.build().equals(that.build()));
             }
             return false;
         }
@@ -296,21 +294,19 @@ public class J_L_Runtime {
             // RE limits the format of version strings
             // ([1-9][0-9]*(?:(?:\.0)*\.[1-9][0-9]*)*)(?:-([a-zA-Z0-9]+))?(?:(\+)(0|[1-9][0-9]*)?)?(?:-([-a-zA-Z0-9.]+))?
 
+            static final String VNUM_GROUP = "VNUM";
+            static final String PRE_GROUP = "PRE";
+            static final String PLUS_GROUP = "PLUS";
+            static final String BUILD_GROUP = "BUILD";
+            static final String OPT_GROUP = "OPT";
             private static final String VNUM
                 = "(?:1\\.)?(?<VNUM>[1-9][0-9]*(?:(?:\\.0)*[._][1-9][0-9]*)*)";
-            private static final String PRE      = "(?:-(?<PRE>[a-zA-Z0-9]+))?";
+            private static final String PRE = "(?:-(?<PRE>[a-zA-Z0-9]+))?";
             private static final String BUILD
                 = "(?:(?<PLUS>\\+|-b)(?<BUILD>[0-9]+)?)?";
-            private static final String OPT      = "(?:-(?<OPT>[-a-zA-Z0-9.]+))?";
+            private static final String OPT = "(?:-(?<OPT>[-a-zA-Z0-9.]+))?";
             private static final String VSTR_FORMAT = VNUM + PRE + BUILD + OPT;
-
             static final Pattern VSTR_PATTERN = Pattern.compile(VSTR_FORMAT);
-
-            static final String VNUM_GROUP  = "VNUM";
-            static final String PRE_GROUP   = "PRE";
-            static final String PLUS_GROUP  = "PLUS";
-            static final String BUILD_GROUP = "BUILD";
-            static final String OPT_GROUP   = "OPT";
         }
     }
 }

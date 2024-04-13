@@ -9,6 +9,10 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 @Stub(ref = @Ref("Ljava/util/function/Function"))
 public interface J_U_F_Function<T, R> {
 
+    static <T> J_U_F_Function<T, T> identity() {
+        return t -> t;
+    }
+
     R apply(T t);
 
     default <V> J_U_F_Function<V, R> compose(J_U_F_Function<? super V, ? extends T> before) {
@@ -17,10 +21,6 @@ public interface J_U_F_Function<T, R> {
 
     default <V> J_U_F_Function<T, V> andThen(J_U_F_Function<? super R, ? extends V> after) {
         return (T t) -> after.apply(apply(t));
-    }
-
-    static <T> J_U_F_Function<T, T> identity() {
-        return t -> t;
     }
 
 }

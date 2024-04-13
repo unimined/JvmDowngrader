@@ -9,7 +9,7 @@ import java.util.Objects;
 
 @J_L_FunctionalInterface
 @Stub(ref = @Ref("Ljava/util/function/BiConsumer"))
-    public interface J_U_F_BiFunction<T, U, R> {
+public interface J_U_F_BiFunction<T, U, R> {
 
     R apply(T t, U u);
 

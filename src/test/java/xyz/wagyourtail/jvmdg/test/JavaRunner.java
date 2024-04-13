@@ -130,8 +130,8 @@ public class JavaRunner {
     }
 
     public static Integer runJarInSubprocess(Path jar, String[] args, String mainClass, Set<Path> classPath,
-        Path workingDir, Map<String, String> env, boolean wait, List<String> jvmArgs, int javaVersion,
-        Consumer<String> output, Consumer<String> error) throws IOException, InterruptedException {
+                                             Path workingDir, Map<String, String> env, boolean wait, List<String> jvmArgs, int javaVersion,
+                                             Consumer<String> output, Consumer<String> error) throws IOException, InterruptedException {
 
         Path javaBin = getJava(javaVersion);
         if (!javaBin.toFile().exists()) {
@@ -238,16 +238,16 @@ public class JavaRunner {
         V21,
         V22;
 
-        public int getMajorVersion() {
-            return this.ordinal() + 1;
-        }
-
         public static JavaVersion fromClassVers(int vers) {
             return JavaVersion.values()[vers - 45];
+        }
+
+        public int getMajorVersion() {
+            return this.ordinal() + 1;
         }
 
         public int toOpcode() {
             return this.ordinal() + 45;
         }
     }
-    }
+}

@@ -35,7 +35,7 @@ public class CheckedNavigableMap<K, V> extends BackingMap<K, V> implements Navig
 
     @Override
     public Entry<K, V> lowerEntry(K key) {
-        Entry<K,V> lower = backing.lowerEntry(key);
+        Entry<K, V> lower = backing.lowerEntry(key);
         return (null != lower) ? new CheckedEntry<>(lower, valueType) : null;
     }
 
@@ -46,7 +46,7 @@ public class CheckedNavigableMap<K, V> extends BackingMap<K, V> implements Navig
 
     @Override
     public Entry<K, V> floorEntry(K key) {
-        Entry<K,V> floor = backing.floorEntry(key);
+        Entry<K, V> floor = backing.floorEntry(key);
         return (null != floor) ? new CheckedEntry<>(floor, valueType) : null;
     }
 
@@ -57,7 +57,7 @@ public class CheckedNavigableMap<K, V> extends BackingMap<K, V> implements Navig
 
     @Override
     public Entry<K, V> ceilingEntry(K key) {
-        Entry<K,V> ceiling = backing.ceilingEntry(key);
+        Entry<K, V> ceiling = backing.ceilingEntry(key);
         return (null != ceiling) ? new CheckedEntry<>(ceiling, valueType) : null;
     }
 
@@ -68,7 +68,7 @@ public class CheckedNavigableMap<K, V> extends BackingMap<K, V> implements Navig
 
     @Override
     public Entry<K, V> higherEntry(K key) {
-        Entry<K,V> higher = backing.higherEntry(key);
+        Entry<K, V> higher = backing.higherEntry(key);
         return (null != higher) ? new CheckedEntry<>(higher, valueType) : null;
     }
 
@@ -79,25 +79,25 @@ public class CheckedNavigableMap<K, V> extends BackingMap<K, V> implements Navig
 
     @Override
     public Entry<K, V> firstEntry() {
-        Entry<K,V> first = backing.firstEntry();
+        Entry<K, V> first = backing.firstEntry();
         return (null != first) ? new CheckedEntry<>(first, valueType) : null;
     }
 
     @Override
     public Entry<K, V> lastEntry() {
-        Entry<K,V> last = backing.lastEntry();
+        Entry<K, V> last = backing.lastEntry();
         return (null != last) ? new CheckedEntry<>(last, valueType) : null;
     }
 
     @Override
     public Entry<K, V> pollFirstEntry() {
-        Entry<K,V> first = backing.pollFirstEntry();
+        Entry<K, V> first = backing.pollFirstEntry();
         return (null != first) ? new CheckedEntry<>(first, valueType) : null;
     }
 
     @Override
     public Entry<K, V> pollLastEntry() {
-        Entry<K,V> last = backing.pollLastEntry();
+        Entry<K, V> last = backing.pollLastEntry();
         return (null != last) ? new CheckedEntry<>(last, valueType) : null;
     }
 
@@ -161,7 +161,7 @@ public class CheckedNavigableMap<K, V> extends BackingMap<K, V> implements Navig
         return backing.lastKey();
     }
 
-    private static class CheckedEntry<K,V,T> implements Map.Entry<K,V> {
+    private static class CheckedEntry<K, V, T> implements Map.Entry<K, V> {
         private final Map.Entry<K, V> e;
         private final Class<T> valueType;
 
@@ -173,12 +173,15 @@ public class CheckedNavigableMap<K, V> extends BackingMap<K, V> implements Navig
         public K getKey() {
             return e.getKey();
         }
+
         public V getValue() {
             return e.getValue();
         }
+
         public int hashCode() {
             return e.hashCode();
         }
+
         public String toString() {
             return e.toString();
         }
@@ -198,7 +201,7 @@ public class CheckedNavigableMap<K, V> extends BackingMap<K, V> implements Navig
                 return true;
             if (!(o instanceof Map.Entry))
                 return false;
-            return e.equals(new AbstractMap.SimpleImmutableEntry<>((Map.Entry<?,?>)o));
+            return e.equals(new AbstractMap.SimpleImmutableEntry<>((Map.Entry<?, ?>) o));
         }
     }
 }

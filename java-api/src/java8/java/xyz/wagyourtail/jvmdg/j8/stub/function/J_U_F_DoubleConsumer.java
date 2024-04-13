@@ -12,7 +12,10 @@ public interface J_U_F_DoubleConsumer {
     void accept(double value);
 
     default J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
-        return (double t) -> { accept(t); after.accept(t); };
+        return (double t) -> {
+            accept(t);
+            after.accept(t);
+        };
     }
 
 }

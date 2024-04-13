@@ -1,11 +1,14 @@
 package xyz.wagyourtail.jvmdg.version;
 
-import org.objectweb.asm.*;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
-import xyz.wagyourtail.jvmdg.*;
+import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Lazy;
@@ -16,7 +19,9 @@ import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.util.*;
 
 public abstract class VersionProvider {
@@ -31,6 +36,81 @@ public abstract class VersionProvider {
     protected VersionProvider(int inputVersion, int outputVersion) {
         this.inputVersion = inputVersion;
         this.outputVersion = outputVersion;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(Type.getType(boolean.class).getDescriptor());
+    }
+
+    public static FullyQualifiedMemberNameAndDesc resolveStubTarget(Member member, Ref ref) {
+        if (member instanceof Method) {
+            Method method = (Method) member;
+            Type owner;
+            String name;
+            List<Type> params = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(method)));
+            Type ret = Type.getReturnType(method);
+            if (ref.value().isEmpty()) {
+                owner = params.remove(0);
+            } else {
+                if (ref.value().startsWith("L") && ref.value().endsWith(";")) {
+                    owner = Type.getType(ref.value());
+                } else {
+                    owner = Type.getObjectType(ref.value());
+                }
+            }
+            if (ref.member().isEmpty()) {
+                name = method.getName();
+            } else {
+                name = ref.member();
+            }
+            Type desc;
+            if (ref.desc().isEmpty()) {
+                if (name.equals("<init>")) {
+                    ret = Type.VOID_TYPE;
+                }
+                desc = Type.getMethodType(ret, params.toArray(new Type[0]));
+            } else {
+                desc = Type.getMethodType(ref.desc());
+            }
+            // re-assemble desc
+            return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
+        } else if (member instanceof Field) {
+//            Field field = (Field) member;
+            throw new UnsupportedOperationException("Not implemented yet");
+        } else {
+            throw new IllegalArgumentException("member must be a method or field");
+        }
+    }
+
+    public static FullyQualifiedMemberNameAndDesc resolveModifyTarget(Member member, Ref ref) {
+        if (member instanceof Method) {
+            Method method = (Method) member;
+            Type owner;
+            String name;
+            Type desc;
+            if (ref.value().isEmpty()) {
+                throw new IllegalArgumentException("ref must have a value");
+            } else {
+                if (ref.value().startsWith("L") && ref.value().endsWith(";")) {
+                    owner = Type.getType(ref.value());
+                } else {
+                    owner = Type.getObjectType(ref.value());
+                }
+            }
+            if (ref.member().isEmpty()) {
+                throw new IllegalArgumentException("ref must have a member");
+            } else {
+                name = ref.member();
+            }
+            if (ref.desc().isEmpty()) {
+                throw new IllegalArgumentException("ref must have a desc");
+            } else {
+                desc = Type.getMethodType(ref.desc());
+            }
+            return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
+        } else {
+            throw new IllegalArgumentException("member must be a method");
+        }
     }
 
     public void afterInit() {
@@ -60,10 +140,6 @@ public abstract class VersionProvider {
     }
 
     public abstract void init();
-
-    public static void main(String[] args) {
-        System.out.println(Type.getType(boolean.class).getDescriptor());
-    }
 
     public synchronized ClassMapping getStubMapper(Type type) throws IOException {
         return getStubMapper(type, new IOFunction<Type, Set<MemberNameAndDesc>>() {
@@ -95,16 +171,16 @@ public abstract class VersionProvider {
             return new ClassMapping(new Lazy<List<ClassMapping>>() {
                 @Override
                 public List<ClassMapping> init() {
-                     try {
-                         return Collections.singletonList(getStubMapper(Type.getObjectType("java/lang/Object"), memberResolver, superTypeResolver));
-                     } catch (IOException e) {
-                         throw new RuntimeException(e);
-                     }
-                 }
+                    try {
+                        return Collections.singletonList(getStubMapper(Type.getObjectType("java/lang/Object"), memberResolver, superTypeResolver));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }, type, memberResolver, this);
         }
         if (type.getInternalName().equals("java/lang/Object")) {
-            ClassMapping mapping = new ClassMapping(new Lazy <List<ClassMapping>>() {
+            ClassMapping mapping = new ClassMapping(new Lazy<List<ClassMapping>>() {
                 @Override
                 public List<ClassMapping> init() {
                     return Collections.emptyList();
@@ -303,22 +379,22 @@ public abstract class VersionProvider {
                 InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
                 indy.desc = stubClass(Type.getMethodType(indy.desc)).getDescriptor();
                 indy.bsm = new Handle(
-                        indy.bsm.getTag(),
-                        stubClass(Type.getObjectType(indy.bsm.getOwner())).getInternalName(),
-                        indy.bsm.getName(),
-                        stubClass(Type.getMethodType(indy.bsm.getDesc())).getDescriptor(),
-                        indy.bsm.isInterface()
+                    indy.bsm.getTag(),
+                    stubClass(Type.getObjectType(indy.bsm.getOwner())).getInternalName(),
+                    indy.bsm.getName(),
+                    stubClass(Type.getMethodType(indy.bsm.getDesc())).getDescriptor(),
+                    indy.bsm.isInterface()
                 );
                 for (int j = 0; j < indy.bsmArgs.length; j++) {
                     Object arg = indy.bsmArgs[j];
                     if (arg instanceof Handle) {
                         Handle handle = (Handle) arg;
                         handle = new Handle(
-                                handle.getTag(),
-                                stubClass(Type.getObjectType(handle.getOwner())).getInternalName(),
-                                handle.getName(),
-                                stubClass(Type.getType(handle.getDesc())).getDescriptor(),
-                                handle.isInterface()
+                            handle.getTag(),
+                            stubClass(Type.getObjectType(handle.getOwner())).getInternalName(),
+                            handle.getName(),
+                            stubClass(Type.getType(handle.getDesc())).getDescriptor(),
+                            handle.isInterface()
                         );
                         indy.bsmArgs[j] = handle;
                         switch (handle.getTag()) {
@@ -388,7 +464,7 @@ public abstract class VersionProvider {
                                                     mv.visitVarInsn(argument.getOpcode(Opcodes.ILOAD), k);
                                                     k += argument.getSize();
                                                 }
-                                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getType(m.getDeclaringClass()).getInternalName(), m.getName(), Type.getMethodDescriptor(m),false);
+                                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getType(m.getDeclaringClass()).getInternalName(), m.getName(), Type.getMethodDescriptor(m), false);
                                                 if (!actualReturnType.equals(returnType)) {
                                                     mv.visitTypeInsn(Opcodes.CHECKCAST, returnType.getInternalName());
                                                 }
@@ -399,11 +475,11 @@ public abstract class VersionProvider {
                                             }
                                         }
                                         indy.bsmArgs[j] = new Handle(
-                                                Opcodes.H_INVOKESTATIC,
-                                                newOwner,
-                                                name,
-                                                desc,
-                                                false
+                                            Opcodes.H_INVOKESTATIC,
+                                            newOwner,
+                                            name,
+                                            desc,
+                                            false
                                         );
                                     }
                                 }
@@ -427,77 +503,6 @@ public abstract class VersionProvider {
             }
         }
         return method;
-    }
-
-    public static FullyQualifiedMemberNameAndDesc resolveStubTarget(Member member, Ref ref) {
-        if (member instanceof Method) {
-            Method method = (Method) member;
-            Type owner;
-            String name;
-            List<Type> params = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(method)));
-            Type ret = Type.getReturnType(method);
-            if (ref.value().isEmpty()) {
-                owner = params.remove(0);
-            } else {
-                if (ref.value().startsWith("L") && ref.value().endsWith(";")) {
-                    owner = Type.getType(ref.value());
-                } else {
-                    owner = Type.getObjectType(ref.value());
-                }
-            }
-            if (ref.member().isEmpty()) {
-                name = method.getName();
-            } else {
-                name = ref.member();
-            }
-            Type desc;
-            if (ref.desc().isEmpty()) {
-                if (name.equals("<init>")) {
-                    ret = Type.VOID_TYPE;
-                }
-                desc = Type.getMethodType(ret, params.toArray(new Type[0]));
-            } else {
-                desc = Type.getMethodType(ref.desc());
-            }
-            // re-assemble desc
-            return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
-        } else if (member instanceof Field) {
-//            Field field = (Field) member;
-            throw new UnsupportedOperationException("Not implemented yet");
-        } else {
-            throw new IllegalArgumentException("member must be a method or field");
-        }
-    }
-
-    public static FullyQualifiedMemberNameAndDesc resolveModifyTarget(Member member, Ref ref) {
-        if (member instanceof Method) {
-            Method method = (Method) member;
-            Type owner;
-            String name;
-            Type desc;
-            if (ref.value().isEmpty()) {
-                throw new IllegalArgumentException("ref must have a value");
-            } else {
-                if (ref.value().startsWith("L") && ref.value().endsWith(";")) {
-                    owner = Type.getType(ref.value());
-                } else {
-                    owner = Type.getObjectType(ref.value());
-                }
-            }
-            if (ref.member().isEmpty()) {
-                throw new IllegalArgumentException("ref must have a member");
-            } else {
-                name = ref.member();
-            }
-            if (ref.desc().isEmpty()) {
-                throw new IllegalArgumentException("ref must have a desc");
-            } else {
-                desc = Type.getMethodType(ref.desc());
-            }
-            return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
-        } else {
-            throw new IllegalArgumentException("member must be a method");
-        }
     }
 
     public void ensureInit() {

@@ -1,10 +1,12 @@
 package xyz.wagyourtail.jvmdg.j17.stub.java_base;
 
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 
 public class J_L_Process {

@@ -41,7 +41,7 @@ public class J_L_Class {
                 } else {
                     if (clazz.isEnum())
                         sb.append("enum");
-                    //TODO: record case in java 16
+                        //TODO: record case in java 16
                     else
                         sb.append("class");
                 }
@@ -101,7 +101,8 @@ public class J_L_Class {
                     sb.append("[]");
                 }
                 return sb.toString();
-            } catch (Throwable ignored) {  }
+            } catch (Throwable ignored) {
+            }
         }
         return clazz.getName();
     }

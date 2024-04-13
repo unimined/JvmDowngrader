@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -68,6 +67,10 @@ public class J_T_LocalDate {
             start = from.toEpochDay();
         }
 
+        public static long getProlepticMonth(LocalDate date) {
+            return (date.getYear() * 12L + date.getMonthValue() - 1);
+        }
+
         public Stream<LocalDate> dateStream() {
             long until = end - start;
             if (until == 0) {
@@ -99,10 +102,6 @@ public class J_T_LocalDate {
                 }
             }
             return LongStream.rangeClosed(0, steps).mapToObj(this::map);
-        }
-
-        public static long getProlepticMonth(LocalDate date) {
-            return (date.getYear() * 12L + date.getMonthValue() - 1);
         }
 
         public LocalDate mapWithinMonth(long n) {

@@ -25,16 +25,6 @@ public abstract class J_U_Spliterators$AbstractSpliterator<T> implements J_U_Spl
         }
     }
 
-    static final class Holder<T> implements J_U_F_Consumer<T> {
-        T value;
-
-
-        @Override
-        public void accept(T t) {
-            value = t;
-        }
-    }
-
     @Override
     public J_U_Spliterator<T> trySplit() {
         Holder<T> holder = new Holder<>();
@@ -92,5 +82,15 @@ public abstract class J_U_Spliterators$AbstractSpliterator<T> implements J_U_Spl
     @Override
     public Comparator<? super T> getComparator() {
         throw new IllegalStateException();
+    }
+
+    static final class Holder<T> implements J_U_F_Consumer<T> {
+        T value;
+
+
+        @Override
+        public void accept(T t) {
+            value = t;
+        }
     }
 }

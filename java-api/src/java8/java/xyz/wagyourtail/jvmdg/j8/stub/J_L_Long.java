@@ -45,7 +45,7 @@ public class J_L_Long {
 
             // return (upper << 32) + lower
             return (BigInteger.valueOf(J_L_Integer.toUnsignedLong(upper))).shiftLeft(32).
-                    add(BigInteger.valueOf(J_L_Integer.toUnsignedLong(lower)));
+                add(BigInteger.valueOf(J_L_Integer.toUnsignedLong(lower)));
         }
     }
 
@@ -101,7 +101,7 @@ public class J_L_Long {
 
     @Stub(ref = @Ref("java/lang/Long"))
     public static int hashCode(long value) {
-        return (int)(value ^ (value >>> 32));
+        return (int) (value ^ (value >>> 32));
     }
 
     @Stub(ref = @Ref("java/lang/Long"))

@@ -26,16 +26,6 @@ public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spl
         }
     }
 
-    static final class Holder implements J_U_F_IntConsumer {
-        int value;
-
-
-        @Override
-        public void accept(int t) {
-            value = t;
-        }
-    }
-
     @Override
     public OfInt trySplit() {
         Holder holder = new Holder();
@@ -74,7 +64,6 @@ public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spl
         return characteristics;
     }
 
-
     @Override
     public void forEachRemaining(final J_U_F_Consumer<? super Integer> action) {
         if (action instanceof J_U_F_IntConsumer) {
@@ -108,5 +97,15 @@ public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spl
     @Override
     public Comparator<? super Integer> getComparator() {
         throw new IllegalStateException();
+    }
+
+    static final class Holder implements J_U_F_IntConsumer {
+        int value;
+
+
+        @Override
+        public void accept(int t) {
+            value = t;
+        }
     }
 }

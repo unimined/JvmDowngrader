@@ -1,8 +1,6 @@
 package xyz.wagyourtail.jvmdg.j15.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Set;
 

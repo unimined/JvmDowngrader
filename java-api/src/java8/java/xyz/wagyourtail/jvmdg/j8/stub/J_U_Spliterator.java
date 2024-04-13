@@ -52,7 +52,6 @@ public interface J_U_Spliterator<T> {
     }
 
 
-
     @Stub(ref = @Ref("java/util/Spliterator$OfInt"))
     interface OfInt extends OfPrimitive<Integer, J_U_F_IntConsumer, OfInt> {
 

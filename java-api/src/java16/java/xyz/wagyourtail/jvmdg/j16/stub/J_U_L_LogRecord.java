@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.j16.stub;
 
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.logging.LogRecord;

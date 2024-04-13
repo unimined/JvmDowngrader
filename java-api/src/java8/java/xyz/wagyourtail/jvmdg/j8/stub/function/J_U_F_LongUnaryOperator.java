@@ -9,6 +9,10 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 @Stub(ref = @Ref("Ljava/util/function/LongUnaryOperator;"))
 public interface J_U_F_LongUnaryOperator {
 
+    static J_U_F_LongUnaryOperator identity() {
+        return t -> t;
+    }
+
     long applyAsLong(long operand);
 
     default J_U_F_LongUnaryOperator compose(J_U_F_LongUnaryOperator before) {
@@ -16,11 +20,9 @@ public interface J_U_F_LongUnaryOperator {
     }
 
     default J_U_F_LongUnaryOperator andThen(J_U_F_LongUnaryOperator after) {
-        return (long t) -> { return after.applyAsLong(applyAsLong(t)); };
-    }
-
-    static J_U_F_LongUnaryOperator identity() {
-        return t -> t;
+        return (long t) -> {
+            return after.applyAsLong(applyAsLong(t));
+        };
     }
 
 }

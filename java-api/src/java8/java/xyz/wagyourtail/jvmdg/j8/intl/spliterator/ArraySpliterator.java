@@ -8,9 +8,9 @@ import java.util.Comparator;
 public class ArraySpliterator<T> implements J_U_Spliterator<T> {
 
     private final T[] array;
-    private int index;
     private final int fence;
     private final int characteristics;
+    private int index;
     private long estimatedSize;
 
     public ArraySpliterator(T[] array, int additionalCharacteristics) {
@@ -49,7 +49,8 @@ public class ArraySpliterator<T> implements J_U_Spliterator<T> {
 
     @Override
     public void forEachRemaining(J_U_F_Consumer<? super T> action) {
-        T[] a; int i, hi;
+        T[] a;
+        int i, hi;
         if (action == null) {
             throw new NullPointerException();
         }

@@ -9,9 +9,9 @@ import java.util.Comparator;
 public class LongArraySpliterator implements J_U_Spliterator.OfLong {
 
     private final long[] array;
-    private int index;
     private final int fence;
     private final int characteristics;
+    private int index;
     private long estimatedSize;
 
     public LongArraySpliterator(long[] array, int additionalCharacteristics) {
@@ -107,7 +107,8 @@ public class LongArraySpliterator implements J_U_Spliterator.OfLong {
     @Override
     public void forEachRemaining(J_U_F_LongConsumer action) {
         if (action == null) throw new NullPointerException();
-        long[] a; int i, hi; // hoist accesses and checks from loop
+        long[] a;
+        int i, hi; // hoist accesses and checks from loop
         if ((a = array).length >= (hi = fence) && (i = index) >= 0 && i < (index = hi)) {
             do {
                 action.accept(a[i]);

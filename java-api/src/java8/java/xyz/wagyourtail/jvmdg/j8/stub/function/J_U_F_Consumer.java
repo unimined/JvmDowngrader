@@ -15,7 +15,10 @@ public interface J_U_F_Consumer<T> {
 
     default J_U_F_Consumer<T> andThen(J_U_F_Consumer<? super T> after) {
         Objects.requireNonNull(after);
-        return (T t) -> { accept(t); after.accept(t); };
+        return (T t) -> {
+            accept(t);
+            after.accept(t);
+        };
     }
 
 }

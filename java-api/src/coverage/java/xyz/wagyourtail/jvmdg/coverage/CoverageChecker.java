@@ -13,8 +13,6 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Method;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -92,7 +90,8 @@ public class CoverageChecker {
                     compare(versions.get(v), classes, requiredStubs);
                     Map<Type, Class<?>> stubClasses = versionProvider.classStubs;
 
-                    outer:for (var staticAndStub : requiredStubs) {
+                    outer:
+                    for (var staticAndStub : requiredStubs) {
                         var isStatic = staticAndStub.isStatic();
                         var isAbstract = staticAndStub.isAbstract();
                         var modName = staticAndStub.module();
@@ -205,8 +204,6 @@ public class CoverageChecker {
         }
     }
 
-    public record MemberInfo(String module, FullyQualifiedMemberNameAndDesc fqm, boolean isAbstract, boolean isStatic) {}
-
     private static void writeList(List<MemberInfo> missing, Path outputFile) throws IOException {
         Files.createDirectories(outputFile.getParent());
         Files.deleteIfExists(outputFile);
@@ -282,7 +279,8 @@ public class CoverageChecker {
                             var oldCls = old.getSecond();
                             var methods = new HashSet<MemberInfo>();
                             var ct = Type.getObjectType(cn.name);
-                            outerA:for (var m : oldCls.methods) {
+                            outerA:
+                            for (var m : oldCls.methods) {
                                 if ((m.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) continue;
                                 if (m.name.equals("<clinit>")) continue;
                                 if (m.invisibleAnnotations != null) {
@@ -297,7 +295,8 @@ public class CoverageChecker {
                                 var fqn = new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc));
                                 methods.add(new MemberInfo(modName, fqn, isAbstract, isStatic));
                             }
-                            outerB:for (var m : cn.methods) {
+                            outerB:
+                            for (var m : cn.methods) {
                                 // is preview feature?
                                 if (m.invisibleAnnotations != null) {
                                     for (var a : m.invisibleAnnotations) {
@@ -371,6 +370,9 @@ public class CoverageChecker {
         // add new classes
         currentVersion.clear();
         currentVersion.putAll(newClasses);
+    }
+
+    public record MemberInfo(String module, FullyQualifiedMemberNameAndDesc fqm, boolean isAbstract, boolean isStatic) {
     }
 
 }

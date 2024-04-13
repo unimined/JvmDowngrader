@@ -7,7 +7,9 @@ import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.LinkedList;
 
 public class J_L_I_StringConcatFactory {
 
@@ -207,39 +209,39 @@ public class J_L_I_StringConcatFactory {
     }
 
     /*
-    * This method makes the following code:
-    * LDC "A"
-    * LDC 0L
-    * LDC 1.0D
-    * INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;JD)Ljava/lang/String; [
-    *   java/lang/invoke/StringConcatFactory,
-    *   "\u0001concat\u0001\u0001",
-    * ]
-    * ARETURN
-    *
-    * into:
-    * LDC "A"
-    * LDC 0L
-    * LDC 1.0D
-    * NEW java/lang/StringBuilder
-    * DUP
-    * INVOKESPECIAL java/lang/StringBuilder.<init> ()V
-    * DUP_X2
-    * POP
-    * INVOKEVIRTUAL java/lang/StringBuilder.append (D)Ljava/lang/StringBuilder;
-    * ICONST_0
-    * DUP2_X2
-    * POP2
-    * INVOKEVIRTUAL java/lang/StringBuilder.insert (IJ)Ljava/lang/StringBuilder;
-    * ICONST_0
-    * LDC "concat"
-    * INVOKEVIRTUAL java/lang/StringBuilder.insert (ILjava/lang/String;)Ljava/lang/StringBuilder;
-    * ICONST_0
-    * DUP2_X1
-    * INVOKEVIRTUAL java/lang/StringBuilder.insert (ILjava/lang/String;)Ljava/lang/StringBuilder;
-    * INVOKEVIRTUAL java/lang/StringBuilder.toString ()Ljava/lang/String;
-    * ARETURN
-    */
+     * This method makes the following code:
+     * LDC "A"
+     * LDC 0L
+     * LDC 1.0D
+     * INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;JD)Ljava/lang/String; [
+     *   java/lang/invoke/StringConcatFactory,
+     *   "\u0001concat\u0001\u0001",
+     * ]
+     * ARETURN
+     *
+     * into:
+     * LDC "A"
+     * LDC 0L
+     * LDC 1.0D
+     * NEW java/lang/StringBuilder
+     * DUP
+     * INVOKESPECIAL java/lang/StringBuilder.<init> ()V
+     * DUP_X2
+     * POP
+     * INVOKEVIRTUAL java/lang/StringBuilder.append (D)Ljava/lang/StringBuilder;
+     * ICONST_0
+     * DUP2_X2
+     * POP2
+     * INVOKEVIRTUAL java/lang/StringBuilder.insert (IJ)Ljava/lang/StringBuilder;
+     * ICONST_0
+     * LDC "concat"
+     * INVOKEVIRTUAL java/lang/StringBuilder.insert (ILjava/lang/String;)Ljava/lang/StringBuilder;
+     * ICONST_0
+     * DUP2_X1
+     * INVOKEVIRTUAL java/lang/StringBuilder.insert (ILjava/lang/String;)Ljava/lang/StringBuilder;
+     * INVOKEVIRTUAL java/lang/StringBuilder.toString ()Ljava/lang/String;
+     * ARETURN
+     */
     private static InsnList makeConcatInternal2(String args, Deque<Type> types) {
         InsnList list = new InsnList();
         if (types.isEmpty()) {

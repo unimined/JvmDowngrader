@@ -9,6 +9,10 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 @Stub(ref = @Ref("Ljava/util/function/IntUnaryOperator;"))
 public interface J_U_F_IntUnaryOperator {
 
+    static J_U_F_IntUnaryOperator identity() {
+        return t -> t;
+    }
+
     int applyAsInt(int operand);
 
     default J_U_F_IntUnaryOperator compose(J_U_F_IntUnaryOperator before) {
@@ -17,10 +21,6 @@ public interface J_U_F_IntUnaryOperator {
 
     default J_U_F_IntUnaryOperator andThen(J_U_F_IntUnaryOperator after) {
         return (int t) -> after.applyAsInt(applyAsInt(t));
-    }
-
-    static J_U_F_IntUnaryOperator identity() {
-        return t -> t;
     }
 
 }

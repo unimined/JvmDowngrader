@@ -1,12 +1,9 @@
 package xyz.wagyourtail.jvmdg.version.map;
 
 import org.jetbrains.annotations.VisibleForTesting;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Lazy;
 import xyz.wagyourtail.jvmdg.util.Pair;
@@ -15,20 +12,18 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.io.IOException;
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
 public class ClassMapping {
 
+    public final Type current;
+    protected final Lazy<Set<MemberNameAndDesc>> members;
+    protected final Lazy<List<ClassMapping>> parents;
+    protected final VersionProvider vp;
     private final Map<MemberNameAndDesc, Pair<Method, Stub>> methodStub = new HashMap<>();
     private final Map<MemberNameAndDesc, Pair<Method, Modify>> methodModify = new HashMap<>();
-    protected final Lazy<Set<MemberNameAndDesc>> members;
-
-    protected final Lazy<List<ClassMapping>> parents;
-    public final Type current;
-    protected final VersionProvider vp;
 
     public ClassMapping(final Lazy<List<ClassMapping>> parents, final Type current, final IOFunction<Type, Set<MemberNameAndDesc>> members, VersionProvider vp) {
         this.parents = parents;
@@ -51,7 +46,9 @@ public class ClassMapping {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-            };
+            }
+
+            ;
 
         };
         this.vp = vp;

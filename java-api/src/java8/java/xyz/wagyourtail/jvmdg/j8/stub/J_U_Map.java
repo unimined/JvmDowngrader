@@ -54,8 +54,8 @@ public class J_U_Map {
     public <K, V> V getOrDefault(Map<K, V> self, Object key, V defaultValue) {
         V v;
         return (((v = self.get(key)) != null) || self.containsKey(key))
-                ? v
-                : defaultValue;
+            ? v
+            : defaultValue;
     }
 
     @Stub
@@ -89,7 +89,7 @@ public class J_U_Map {
     public <K, V> boolean remove(Map<K, V> self, Object key, Object value) {
         Object curValue = self.get(key);
         if (!Objects.equals(curValue, value) ||
-                (curValue == null && !self.containsKey(key))) {
+            (curValue == null && !self.containsKey(key))) {
             return false;
         }
         self.remove(key);
@@ -100,7 +100,7 @@ public class J_U_Map {
     public <K, V> boolean replace(Map<K, V> self, K key, V oldValue, V newValue) {
         Object curValue = self.get(key);
         if (!Objects.equals(curValue, oldValue) ||
-                (curValue == null && !self.containsKey(key))) {
+            (curValue == null && !self.containsKey(key))) {
             return false;
         }
         self.put(key, newValue);
@@ -167,7 +167,7 @@ public class J_U_Map {
     public <K, V> V merge(Map<K, V> self, K key, V value, J_U_BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         V oldValue = self.get(key);
         V newValue = (oldValue == null) ? value :
-                remappingFunction.apply(oldValue, value);
+            remappingFunction.apply(oldValue, value);
         if (newValue == null) {
             self.remove(key);
         } else {

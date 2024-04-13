@@ -1,8 +1,6 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -30,8 +28,11 @@ public abstract class J_N_H_HttpRequest {
     public abstract String method();
 
     public abstract Optional<Duration> timeout();
+
     public abstract boolean expectContinue();
+
     public abstract URI uri();
+
     public abstract Optional<J_N_H_HttpClient.Version> version();
 //    public abstract HttpHeaders headers();
 
@@ -64,18 +65,31 @@ public abstract class J_N_H_HttpRequest {
     @Adapter("Ljava/net/http/HttpRequest$Builder;")
     public interface Builder {
         Builder uri(URI uri);
+
         Builder expectContinue(boolean expectContinue);
+
         Builder version(J_N_H_HttpClient.Version version);
+
         Builder header(String name, String value);
+
         Builder headers(String... headers);
+
         Builder timeout(Duration duration);
+
         Builder setHeader(String name, String value);
+
         Builder GET();
+
         Builder POST(BodyPublisher publisher);
+
         Builder PUT(BodyPublisher publisher);
+
         Builder DELETE();
+
         Builder method(String name, BodyPublisher publisher);
+
         J_N_H_HttpRequest build();
+
         Builder copy();
     }
 

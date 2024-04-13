@@ -17,12 +17,12 @@ public class J_U_Optional<T> {
 
     private final T value;
 
-    public static <T> J_U_Optional<T> empty() {
-        return EMPTY;
-    }
-
     private J_U_Optional(T value) {
         this.value = value;
+    }
+
+    public static <T> J_U_Optional<T> empty() {
+        return EMPTY;
     }
 
     public static <T> J_U_Optional<T> of(T value) {

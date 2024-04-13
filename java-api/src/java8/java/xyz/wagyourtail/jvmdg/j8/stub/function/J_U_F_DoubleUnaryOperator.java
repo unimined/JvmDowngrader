@@ -11,6 +11,10 @@ import java.util.Objects;
 @Stub(ref = @Ref("Ljava/util/function/DoubleUnaryOperator;"))
 public interface J_U_F_DoubleUnaryOperator {
 
+    static J_U_F_DoubleUnaryOperator identity() {
+        return t -> t;
+    }
+
     double applyAsDouble(double operand);
 
     default J_U_F_DoubleUnaryOperator compose(J_U_F_DoubleUnaryOperator before) {
@@ -21,10 +25,6 @@ public interface J_U_F_DoubleUnaryOperator {
     default J_U_F_DoubleUnaryOperator andThen(J_U_F_DoubleUnaryOperator after) {
         Objects.requireNonNull(after);
         return (double t) -> after.applyAsDouble(applyAsDouble(t));
-    }
-
-    static J_U_F_DoubleUnaryOperator identity() {
-        return t -> t;
     }
 
 }

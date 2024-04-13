@@ -4,10 +4,13 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Modify;
+import xyz.wagyourtail.jvmdg.version.Ref;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -284,7 +287,7 @@ public class J_L_R_ObjectMethods {
                         Opcodes.INVOKEVIRTUAL,
                         "java/lang/StringBuilder",
                         "append",
-                        "(" +tdesc + ")Ljava/lang/StringBuilder;",
+                        "(" + tdesc + ")Ljava/lang/StringBuilder;",
                         false
                     );
                     break;

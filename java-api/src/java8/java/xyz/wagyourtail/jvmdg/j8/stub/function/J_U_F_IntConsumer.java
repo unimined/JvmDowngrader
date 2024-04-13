@@ -12,7 +12,10 @@ public interface J_U_F_IntConsumer {
     void accept(int value);
 
     default J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-        return (int t) -> { accept(t); after.accept(t); };
+        return (int t) -> {
+            accept(t);
+            after.accept(t);
+        };
     }
 
 }

@@ -2,8 +2,6 @@ package xyz.wagyourtail.jvmdg.j20.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.reflect.Modifier;
 import java.util.Collections;
@@ -230,6 +228,21 @@ public enum J_L_R_AccessFlag {
         this.locationsFunction = locationsFunction;
     }
 
+    public static Set<J_L_R_AccessFlag> maskToAccessFlags(int mask, Location location) {
+        Set<J_L_R_AccessFlag> result = EnumSet.noneOf(J_L_R_AccessFlag.class);
+        for (J_L_R_AccessFlag flag : values()) {
+            if (!flag.locations.contains(location)) continue;
+            if ((mask & flag.mask) != 0) {
+                result.add(flag);
+                mask &= ~flag.mask;
+            }
+        }
+        if (mask != 0) {
+            throw new IllegalArgumentException("Unmatched bit position 0x" + Integer.toHexString(mask) + " for location " + location);
+        }
+        return Collections.unmodifiableSet(result);
+    }
+
     public int mask() {
         return mask;
     }
@@ -250,21 +263,6 @@ public enum J_L_R_AccessFlag {
         }
     }
 
-    public static Set<J_L_R_AccessFlag> maskToAccessFlags(int mask, Location location) {
-        Set<J_L_R_AccessFlag> result = EnumSet.noneOf(J_L_R_AccessFlag.class);
-        for (J_L_R_AccessFlag flag : values()) {
-            if (!flag.locations.contains(location)) continue;
-            if ((mask & flag.mask) != 0) {
-                result.add(flag);
-                mask &= ~flag.mask;
-            }
-        }
-        if (mask != 0) {
-            throw new IllegalArgumentException("Unmatched bit position 0x" + Integer.toHexString(mask) + " for location " + location);
-        }
-        return Collections.unmodifiableSet(result);
-    }
-
     @Adapter("java/lang/reflect/AccessFlag$Location")
     public enum Location {
         CLASS,
@@ -275,8 +273,7 @@ public enum J_L_R_AccessFlag {
         MODULE,
         MODULE_REQUIRES,
         MODULE_EXPORTS,
-        MODULE_OPENS
-        ;
+        MODULE_OPENS;
 
 
     }

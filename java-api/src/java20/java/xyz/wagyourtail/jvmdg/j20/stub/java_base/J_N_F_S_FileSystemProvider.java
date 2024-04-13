@@ -13,7 +13,7 @@ public class J_N_F_S_FileSystemProvider {
 
     private static boolean followLinks(LinkOption... options) {
         boolean followLinks = true;
-        for (LinkOption opt: options) {
+        for (LinkOption opt : options) {
             if (opt == LinkOption.NOFOLLOW_LINKS) {
                 followLinks = false;
                 continue;

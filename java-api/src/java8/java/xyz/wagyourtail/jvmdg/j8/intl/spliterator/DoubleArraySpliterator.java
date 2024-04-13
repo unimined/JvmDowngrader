@@ -9,9 +9,9 @@ import java.util.Comparator;
 public class DoubleArraySpliterator implements J_U_Spliterator.OfDouble {
 
     private final double[] array;
-    private int index;
     private final int fence;
     private final int characteristics;
+    private int index;
     private long estimatedSize;
 
     public DoubleArraySpliterator(double[] array, int additionalCharacteristics) {
@@ -97,7 +97,8 @@ public class DoubleArraySpliterator implements J_U_Spliterator.OfDouble {
     @Override
     public void forEachRemaining(J_U_F_DoubleConsumer action) {
         if (action == null) throw new NullPointerException();
-        double[] a; int i, hi; // hoist accesses and checks from loop
+        double[] a;
+        int i, hi; // hoist accesses and checks from loop
         if ((a = array).length >= (hi = fence) && (i = index) >= 0 && i < (index = hi)) {
             do {
                 action.accept(a[i]);

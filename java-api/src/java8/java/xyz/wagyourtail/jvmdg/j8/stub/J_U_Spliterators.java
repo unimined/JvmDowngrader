@@ -17,7 +17,8 @@ public class J_U_Spliterators {
     private static final J_U_Spliterator.OfLong EMPTY_LONG_SPLITERATOR = new EmptySpliterator.OfLong();
     private static final J_U_Spliterator.OfDouble EMPTY_DOUBLE_SPLITERATOR = new EmptySpliterator.OfDouble();
 
-    private J_U_Spliterators() {}
+    private J_U_Spliterators() {
+    }
 
     public static <T> J_U_Spliterator<T> emptySpliterator() {
         return (J_U_Spliterator<T>) EMPTY_SPLITERATOR;

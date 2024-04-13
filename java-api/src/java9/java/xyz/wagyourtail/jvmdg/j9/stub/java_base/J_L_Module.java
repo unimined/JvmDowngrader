@@ -2,8 +2,6 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 @Adapter("Ljava/lang/Module;")
 public class J_L_Module {
@@ -37,7 +35,7 @@ public class J_L_Module {
         return classLoader;
     }
 
-//    public ModuleDescriptor getDescriptor() {
+    //    public ModuleDescriptor getDescriptor() {
 //        // TODO
 //    }
 //

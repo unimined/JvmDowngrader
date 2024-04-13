@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Double {
 
-     @Stub(ref = @Ref("java/lang/Double"))
+    @Stub(ref = @Ref("java/lang/Double"))
     public static final int BYTES = Double.SIZE / Byte.SIZE;
 
     @Stub(ref = @Ref("java/lang/Double"))

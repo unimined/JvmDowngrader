@@ -3,7 +3,9 @@ package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
 
 public class J_L_Character {

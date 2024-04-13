@@ -6,7 +6,6 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.concurrent.ThreadFactory;
-import java.util.function.LongFunction;
 import java.util.function.Supplier;
 
 public class J_L_Thread {

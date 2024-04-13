@@ -64,7 +64,6 @@ public class J_U_C_ConcurrentHashMap {
     }
 
 
-
     @Stub(ref = @Ref("java/util/concurrent/ConcurrentHashMap$KeySetView"))
     public static class KeySetView<K, V> implements Set<K> {
         private final ConcurrentHashMap<K, V> map;

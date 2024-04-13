@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.math.BigDecimal;
@@ -17,13 +16,13 @@ public class J_M_BigDecimal {
     public static BigDecimal sqrt(BigDecimal x, MathContext mc) {
         int signum = x.signum();
         if (signum == 1) {
-            int preferredScale = x.scale()/2;
+            int preferredScale = x.scale() / 2;
             BigDecimal zeroWithFinalPreferredScale = BigDecimal.valueOf(0L, preferredScale);
             BigDecimal stripped = x.stripTrailingZeros();
             int strippedScale = stripped.scale();
             if (BigInteger.ONE.equals(x.unscaledValue()) &&
                 strippedScale % 2 == 0) {
-                BigDecimal result = BigDecimal.valueOf(1L, strippedScale/2);
+                BigDecimal result = BigDecimal.valueOf(1L, strippedScale / 2);
                 if (result.scale() != preferredScale) {
                     result = result.add(zeroWithFinalPreferredScale, mc);
                 }
@@ -43,7 +42,7 @@ public class J_M_BigDecimal {
             int originalPrecision = mc.getPrecision();
             int targetPrecision;
             if (originalPrecision == 0) {
-                targetPrecision = stripped.precision()/2 + 1;
+                targetPrecision = stripped.precision() / 2 + 1;
             } else {
                 switch (mc.getRoundingMode()) {
                     case HALF_UP:
@@ -76,12 +75,12 @@ public class J_M_BigDecimal {
                 RoundingMode tmpRm =
                     (targetRm == RoundingMode.UNNECESSARY) ? RoundingMode.DOWN : targetRm;
                 MathContext mcTmp = new MathContext(targetPrecision, tmpRm);
-                result = approx.scaleByPowerOfTen(-scaleAdjust/2).round(mcTmp);
+                result = approx.scaleByPowerOfTen(-scaleAdjust / 2).round(mcTmp);
                 if (x.subtract(result.multiply(result)).compareTo(ZERO) != 0) {
                     throw new ArithmeticException("Computed square root not exact.");
                 }
             } else {
-                result = approx.scaleByPowerOfTen(-scaleAdjust/2).round(mc);
+                result = approx.scaleByPowerOfTen(-scaleAdjust / 2).round(mc);
                 int i = result.multiply(result).compareTo(x);
                 switch (targetRm) {
                     case DOWN:
@@ -118,7 +117,7 @@ public class J_M_BigDecimal {
                     throw new ArithmeticException("Attempted square root " +
                         "of negative BigDecimal");
                 case 0:
-                    result = BigDecimal.valueOf(0L, x.scale()/2);
+                    result = BigDecimal.valueOf(0L, x.scale() / 2);
                     return result;
                 default:
                     throw new AssertionError("Bad value from signum");

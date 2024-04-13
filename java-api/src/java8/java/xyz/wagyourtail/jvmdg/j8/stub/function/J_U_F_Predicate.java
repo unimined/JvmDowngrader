@@ -11,6 +11,16 @@ import java.util.Objects;
 @Stub(ref = @Ref("Ljava/util/function/Predicate"))
 public interface J_U_F_Predicate<T> {
 
+    static <T> J_U_F_Predicate<T> isEqual(Object targetRef) {
+        return (null == targetRef)
+            ? Objects::isNull
+            : object -> targetRef.equals(object);
+    }
+
+    static <T> J_U_F_Predicate<T> not(J_U_F_Predicate<? super T> target) {
+        return target.negate();
+    }
+
     boolean test(T t);
 
     default J_U_F_Predicate<T> and(J_U_F_Predicate<? super T> other) {
@@ -23,15 +33,5 @@ public interface J_U_F_Predicate<T> {
 
     default J_U_F_Predicate<T> or(J_U_F_Predicate<? super T> other) {
         return (t) -> test(t) || other.test(t);
-    }
-
-    static <T> J_U_F_Predicate<T> isEqual(Object targetRef) {
-        return (null == targetRef)
-                ? Objects::isNull
-                : object -> targetRef.equals(object);
-    }
-
-    static <T> J_U_F_Predicate<T> not(J_U_F_Predicate<? super T> target) {
-        return target.negate();
     }
 }
