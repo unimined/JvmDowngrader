@@ -21,7 +21,7 @@ import java.util.*;
 
 public abstract class VersionProvider {
 
-    public final Map<Type, Class<?>> classStubs = new HashMap<>();
+    public final Map<Type, Pair<Type, Pair<Class<?>, Adapter>>> classStubs = new HashMap<>();
     public final Map<Type, ClassMapping> stubMappings = new HashMap<>();
     public final int inputVersion;
     public final int outputVersion;
@@ -35,8 +35,8 @@ public abstract class VersionProvider {
 
     public void afterInit() {
         if (Constants.DEBUG) {
-            for (Map.Entry<Type, Class<?>> stub : classStubs.entrySet()) {
-                System.out.println(stub.getKey().getInternalName() + " -> " + Type.getInternalName(stub.getValue()));
+            for (Map.Entry<Type, Pair<Type, Pair<Class<?>, Adapter>>> stub : classStubs.entrySet()) {
+                System.out.println(stub.getKey().getInternalName() + " -> " + stub.getValue().getFirst());
             }
             for (Map.Entry<Type, ClassMapping> entry : stubMappings.entrySet()) {
                 for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> member : entry.getValue().getMethodStubMap().entrySet()) {
@@ -151,7 +151,17 @@ public abstract class VersionProvider {
 //                if (classStubs.containsKey(type)) {
 //                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter ref " + type.getInternalName() + " already exists");
 //                }
-                classStubs.put(value, clazz);
+                Type target;
+                if (stub.target().isEmpty()) {
+                    target = Type.getType(clazz);
+                } else {
+                    if (stub.target().startsWith("L") && stub.target().endsWith(";")) {
+                        target = Type.getType(stub.target());
+                    } else {
+                        target = Type.getObjectType(stub.target());
+                    }
+                }
+                classStubs.put(value, new Pair<Type, Pair<Class<?>, Adapter>>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
             }
         }
         try {
@@ -202,31 +212,31 @@ public abstract class VersionProvider {
             case Type.ARRAY:
                 Type type = desc.getElementType();
                 if (classStubs.containsKey(type)) {
-                    type = Type.getType(classStubs.get(type));
+                    type = classStubs.get(type).getFirst();
                 }
                 insn.desc = Type.getType(desc.getDescriptor().substring(0, desc.getDimensions()) + type.getDescriptor()).getInternalName();
                 return null;
             case Type.OBJECT:
                 if (classStubs.containsKey(Type.getObjectType(insn.desc))) {
-                    Class<?> clazz = classStubs.get(Type.getObjectType(insn.desc));
+                    Pair<Type, Pair<Class<?>, Adapter>> stub = classStubs.get(Type.getObjectType(insn.desc));
                     // check if clazz has method `jvmdg$opcode
                     switch (insn.getOpcode()) {
                         case Opcodes.INSTANCEOF:
-                            for (Method declaredMethod : clazz.getDeclaredMethods()) {
+                            for (Method declaredMethod : stub.getSecond().getFirst().getDeclaredMethods()) {
                                 if (declaredMethod.getName().equals("jvmdg$instanceof")) {
-                                    return new MethodInsnNode(Opcodes.INVOKESTATIC, Type.getType(clazz).getInternalName(), "jvmdg$instanceof", Type.getMethodDescriptor(declaredMethod), false);
+                                    return new MethodInsnNode(Opcodes.INVOKESTATIC, Type.getType(stub.getSecond().getFirst()).getInternalName(), "jvmdg$instanceof", Type.getMethodDescriptor(declaredMethod), false);
                                 }
                             }
                             break;
                         case Opcodes.CHECKCAST:
-                            for (Method declaredMethod : clazz.getDeclaredMethods()) {
+                            for (Method declaredMethod : stub.getSecond().getFirst().getDeclaredMethods()) {
                                 if (declaredMethod.getName().equals("jvmdg$checkcast")) {
-                                    return new MethodInsnNode(Opcodes.INVOKESTATIC, Type.getType(clazz).getInternalName(), "jvmdg$checkcast", Type.getMethodDescriptor(declaredMethod), false);
+                                    return new MethodInsnNode(Opcodes.INVOKESTATIC, Type.getType(stub.getSecond().getFirst()).getInternalName(), "jvmdg$checkcast", Type.getMethodDescriptor(declaredMethod), false);
                                 }
                             }
                             break;
                         default:
-                            insn.desc = Type.getType(clazz).getInternalName();
+                            insn.desc = stub.getFirst().getInternalName();
                     }
                 }
                 break;
@@ -247,12 +257,12 @@ public abstract class VersionProvider {
             case Type.ARRAY:
                 Type type = desc.getElementType();
                 if (classStubs.containsKey(type)) {
-                    type = Type.getType(classStubs.get(type));
+                    type = classStubs.get(type).getFirst();
                 }
                 return Type.getType(desc.getDescriptor().substring(0, desc.getDimensions()) + type.getDescriptor());
             case Type.OBJECT:
                 if (classStubs.containsKey(desc)) {
-                    return Type.getType(classStubs.get(desc));
+                    return classStubs.get(desc).getFirst();
                 }
                 return desc;
             default:
@@ -503,7 +513,7 @@ public abstract class VersionProvider {
         }
     }
 
-    public ClassNode downgrade(ClassNode clazz, Set<ClassNode> extra, boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws InvocationTargetException, IllegalAccessException, IOException {
+    public ClassNode downgrade(ClassNode clazz, Set<ClassNode> extra, boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws IOException {
         if (clazz.version != inputVersion)
             throw new IllegalArgumentException("Class " + clazz.name + " is not version " + inputVersion);
 
@@ -607,17 +617,32 @@ public abstract class VersionProvider {
         // super
         Type type = Type.getObjectType(clazz.superName);
         if (classStubs.containsKey(type)) {
-            clazz.superName = Type.getInternalName(classStubs.get(type));
+            clazz.superName = classStubs.get(type).getFirst().getInternalName();
         }
 
+        List<String> removedInterfaces = new ArrayList<>();
         // interface
         if (clazz.interfaces != null) {
             for (int i = 0; i < clazz.interfaces.size(); i++) {
                 type = Type.getObjectType(clazz.interfaces.get(i));
                 if (classStubs.containsKey(type)) {
-                    clazz.interfaces.set(i, Type.getInternalName(classStubs.get(type)));
+                    Pair<Type, Pair<Class<?>, Adapter>> stub = classStubs.get(type);
+                    if (stub.getSecond().getSecond().keepInterface()) {
+                        clazz.interfaces.set(i, stub.getFirst().getInternalName());
+                    } else {
+                        removedInterfaces.add(clazz.interfaces.remove(i));
+                        i--;
+                    }
                 }
             }
+        }
+
+        if (!removedInterfaces.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (String removedInterface : removedInterfaces) {
+                sb.append(removedInterface).append(";");
+            }
+            clazz.visitField(Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL), "jvmdg$removedInterfaces", "Ljava/lang/String;", null, sb.toString()).visitEnd();
         }
 
         // signature

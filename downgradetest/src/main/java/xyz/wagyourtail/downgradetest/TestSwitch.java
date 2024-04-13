@@ -24,6 +24,13 @@ public class TestSwitch {
             case String s -> System.out.println(s);
         }
 
+        switch ("test") {
+            case "a" -> System.out.println("A");
+            case "test" -> System.out.println("B");
+            case "c" -> System.out.println("C");
+            case "d" -> System.out.println("D");
+        }
+
         switch ((TestInterface) TestEnum.B) {
             case TestEnum.A -> System.out.println("A");
             case TestEnum ignored -> System.out.println("B");

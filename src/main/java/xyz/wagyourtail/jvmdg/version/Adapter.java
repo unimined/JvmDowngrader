@@ -12,4 +12,8 @@ public @interface Adapter {
 
     String value();
 
+    String target() default "";
+
+    boolean keepInterface() default true;
+
 }

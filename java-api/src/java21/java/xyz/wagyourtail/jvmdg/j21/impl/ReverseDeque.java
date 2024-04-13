@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 
 public class ReverseDeque<E> implements Deque<E> {
-    final Deque<E> original;
+    public final Deque<E> original;
 
     public ReverseDeque(Deque<E> original) {
         this.original = original;
