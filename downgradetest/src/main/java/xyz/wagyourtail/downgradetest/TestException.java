@@ -10,9 +10,11 @@ public class TestException {
             System.out.println(e);
         }
 
-        new VirtualMachineError("test", new IndexOutOfBoundsException(1L)) {};
+        new VirtualMachineError("test", new IndexOutOfBoundsException(1L)) {
+        };
         try {
-            throw new VirtualMachineError("test", new IndexOutOfBoundsException(1L)) {};
+            throw new VirtualMachineError("test", new IndexOutOfBoundsException(1L)) {
+            };
         } catch (VirtualMachineError e) {
             System.out.println(e);
         }

@@ -38,17 +38,20 @@ abstract class JVMDowngraderExtension(val project: Project) {
         project.dependencies.create("org.ow2.asm:asm-util:$asmVersion"),
     )
 
-    val api = project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${version}"))
+    val api =
+        project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${version}"))
 
     val downgradedApi = defaultedMapOf<JavaVersion, File> { version ->
         // if it's 8 or 11, premade exists, grab off maven
         if (version.isJava8 || version.isJava11) {
             project.logger.lifecycle("Using pre-downgraded api for ${version.majorVersion}")
-            return@defaultedMapOf project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${this.version}:downgraded-${version.majorVersion}")).resolve().first { it.extension == "jar" }
+            return@defaultedMapOf project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${this.version}:downgraded-${version.majorVersion}"))
+                .resolve().first { it.extension == "jar" }
         }
         project.logger.lifecycle("Generating downgraded api for ${version.majorVersion}")
         // else, generate it
-        val downgradedApi = project.buildDir.resolve("jvmdg").resolve("java-api-${this.version}-downgraded-${version.majorVersion}.jar")
+        val downgradedApi =
+            project.buildDir.resolve("jvmdg").resolve("java-api-${this.version}-downgraded-${version.majorVersion}.jar")
         if (!downgradedApi.exists()) {
             val result = project.javaexec {
                 it.mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")

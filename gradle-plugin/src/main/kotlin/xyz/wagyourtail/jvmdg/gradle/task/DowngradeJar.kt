@@ -12,7 +12,7 @@ import xyz.wagyourtail.jvmdg.gradle.jvToOpc
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import javax.inject.Inject
 
-abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngraderExtension) : Jar() {
+abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngraderExtension): Jar() {
 
     @get:Input
     @get:Optional

@@ -15,8 +15,6 @@ public @interface Modify {
 
     Class<?>[] MODIFY_SIG = new Class<?>[]{MethodNode.class, int.class, ClassNode.class, Set.class};
 
-    int javaVersion();
-
     Ref ref() default @Ref("");
 
 }

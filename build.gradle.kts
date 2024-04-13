@@ -11,7 +11,8 @@ allprojects {
         apply(plugin = "com.github.johnrengelman.shadow")
     }
 
-    version = if (project.hasProperty("version_snapshot")) "${project.properties["version"]}-SNAPSHOT" else project.properties["version"] as String
+    version =
+        if (project.hasProperty("version_snapshot")) "${project.properties["version"]}-SNAPSHOT" else project.properties["version"] as String
     group = project.properties["maven_group"] as String
 
     base {
@@ -34,9 +35,9 @@ allprojects {
     tasks.jar {
         manifest {
             attributes(
-                    "Manifest-Version" to "1.0",
-                    "Implementation-Title" to project.name,
-                    "Implementation-Version" to project.version,
+                "Manifest-Version" to "1.0",
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to project.version,
             )
         }
     }
@@ -65,13 +66,13 @@ java {
 tasks.jar {
     manifest {
         attributes(
-                "Manifest-Version" to "1.0",
-                "Implementation-Title" to project.name,
-                "Implementation-Version" to project.version,
-                "Main-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
-                "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
-                "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
-                "Can-Retransform-Classes" to "true",
+            "Manifest-Version" to "1.0",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version,
+            "Main-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            "Can-Retransform-Classes" to "true",
         )
     }
 }
@@ -89,8 +90,8 @@ tasks.compileTestJava {
 tasks.test {
     useJUnitPlatform()
     dependsOn(
-            project(":downgradetest").tasks.build,
-            project(":java-api").tasks.build
+        project(":downgradetest").tasks.build,
+        project(":java-api").tasks.build
     )
     jvmArgs("-Djvmdg.debug=true")
     javaLauncher = javaToolchains.launcherFor {

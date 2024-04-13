@@ -10,7 +10,6 @@ public class TestStackWalker {
     }
 
 
-
     public static void test() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         StackWalker walker = StackWalker.getInstance();
         walker.forEach(System.out::println);

@@ -24,7 +24,7 @@ public class J_L_Thread {
         Thread.yield();
     }
 
-    @Modify(javaVersion = Opcodes.V9, ref = @Ref(value = "java/lang/Thread", member = "<init>", desc = "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;JZ)V"))
+    @Modify(ref = @Ref(value = "java/lang/Thread", member = "<init>", desc = "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;JZ)V"))
     public static void init(MethodNode mnode, int i) {
         AbstractInsnNode node = mnode.instructions.get(i);
         InsnList list = new InsnList();

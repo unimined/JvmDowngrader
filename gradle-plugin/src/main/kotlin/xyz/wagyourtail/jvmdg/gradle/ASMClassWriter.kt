@@ -1,9 +1,8 @@
 package xyz.wagyourtail.jvmdg.gradle
 
 import org.objectweb.asm.ClassWriter
-import java.util.function.Function
 
-class ASMClassWriter(flags: Int, private val getSuperType: (String) -> String?) : ClassWriter(flags) {
+class ASMClassWriter(flags: Int, private val getSuperType: (String) -> String?): ClassWriter(flags) {
     override fun getCommonSuperClass(type1: String, type2: String): String {
         val l1 = getSuperTypes(type1)
         val l2 = getSuperTypes(type2)

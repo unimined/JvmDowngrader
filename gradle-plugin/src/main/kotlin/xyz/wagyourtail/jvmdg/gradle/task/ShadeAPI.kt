@@ -23,7 +23,7 @@ import javax.inject.Inject
 import kotlin.io.path.createDirectories
 import kotlin.io.path.outputStream
 
-abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderExtension) : Jar() {
+abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderExtension): Jar() {
 
     @get:Input
     @get:Optional
@@ -31,7 +31,9 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
 
 
     @get:Internal
-    var sourceSet: SourceSet by FinalizeOnRead(LazyMutable { project.extensions.getByType(SourceSetContainer::class.java).getByName("main") })
+    var sourceSet: SourceSet by FinalizeOnRead(LazyMutable {
+        project.extensions.getByType(SourceSetContainer::class.java).getByName("main")
+    })
 
     @get:Input
     @get:Optional
@@ -52,7 +54,9 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
     fun doShade() {
         val tempOutput = project.projectDir.resolve("build/tmp").resolve(name).resolve("shaded.jar")
         tempOutput.deleteIfExists()
-        val dependencies = URLClassLoader((sourceSet.compileClasspath.files.map { it.toURI().toURL() } + inputFile.get().asFile.toURI().toURL()).toTypedArray())
+        val dependencies =
+            URLClassLoader((sourceSet.compileClasspath.files.map { it.toURI().toURL() } + inputFile.get().asFile.toURI()
+                .toURL()).toTypedArray())
         val downgradedApi = jvmdg.downgradedApi[downgradeTo]
         val apiClasses = mutableMapOf<Type, ClassNode>()
         forEachInZip(downgradedApi.toPath()) { name, stream ->
@@ -83,9 +87,11 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                         in apiClasses -> {
                             apiClasses[it]!!
                         }
+
                         in inputNodes -> {
                             inputNodes[it]!!
                         }
+
                         else -> {
                             val path = it.internalName + ".class"
                             val url = dependencies.getResource(path)!!
@@ -195,7 +201,12 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
         part.dependencies.forEach { printPart(it, depth + 1) }
     }
 
-    private fun getApiParts(node: ClassNode, apiClasses: Map<Type, ClassNode>, apiParts: MutableMap<ExtendedType, ApiPart>, getNode: (Type) -> ClassNode): Set<ApiPart> {
+    private fun getApiParts(
+        node: ClassNode,
+        apiClasses: Map<Type, ClassNode>,
+        apiParts: MutableMap<ExtendedType, ApiPart>,
+        getNode: (Type) -> ClassNode
+    ): Set<ApiPart> {
         project.logger.info("Getting api parts for ${node.name}")
         val thisClassParts = mutableSetOf<ApiPart>()
         val classPart = ApiPart(node.name, mutableSetOf())
@@ -250,7 +261,8 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
         // methods
         for (method in node.methods) {
             if (method.access and Opcodes.ACC_STATIC != 0) {
-                apiParts[ExtendedType(type, method.name + method.desc)] = ApiPart("${node.name}.${method.name}${method.desc}", mutableSetOf())
+                apiParts[ExtendedType(type, method.name + method.desc)] =
+                    ApiPart("${node.name}.${method.name}${method.desc}", mutableSetOf())
                 thisClassParts.add(apiParts[ExtendedType(type, method.name + method.desc)]!!)
             }
         }
@@ -351,6 +363,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                                             deps.add(apiParts[ExtendedType(ownerType)]!!)
                                         }
                                     }
+
                                     Opcodes.H_INVOKEINTERFACE, Opcodes.H_INVOKESPECIAL, Opcodes.H_INVOKESTATIC, Opcodes.H_INVOKEVIRTUAL -> {
                                         if (apiParts.containsKey(ExtendedType(ownerType, arg.name + arg.desc))) {
                                             deps.add(apiParts[ExtendedType(ownerType, arg.name + arg.desc)]!!)
@@ -389,7 +402,5 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
     }
 
     data class ExtendedType(val type: Type, val fieldOrMethodName: String? = null)
-
-
 
 }
