@@ -37,5 +37,7 @@ public class Java21Downgrader extends VersionProvider {
 
         stub(J_U_SequencedCollection.class);
         stub(J_U_SequencedSet.class);
+        stub(J_U_List.class);
+        stub(J_U_Deque.class);
     }
 }

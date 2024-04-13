@@ -16,7 +16,8 @@ public class J_U_SequencedCollection {
         return obj instanceof List<?> ||
             obj instanceof LinkedHashSet<?> ||
             obj instanceof Deque<?> ||
-            obj instanceof SortedSet<?>;
+            obj instanceof SortedSet<?> ||
+            obj instanceof ReverseSet<?>;
     }
 
     public static <E> Collection<E> jvmdg$checkcast(Object obj) {
@@ -51,34 +52,72 @@ public class J_U_SequencedCollection {
 
     @Stub
     public static <E> void addFirst(Collection<E> self, E e) {
-        throw new UnsupportedOperationException();
+        if (self instanceof List<E> list) {
+            list.add(0, e);
+            return;
+        } else if (self instanceof Deque<E> deque) {
+            deque.addFirst(e);
+            return;
+        }
+        throw new UnsupportedOperationException("java.util.SequencedCollection.addFirst not implemented for " + self.getClass().getName());
     }
 
+    @Stub
     public static <E> void addLast(Collection<E> self, E e) {
-        throw new UnsupportedOperationException();
+        if (self instanceof List<E> list) {
+            list.add(e);
+            return;
+        } else if (self instanceof Deque<E> deque) {
+            deque.addLast(e);
+            return;
+        }
+        throw new UnsupportedOperationException("java.util.SequencedCollection.addLast not implemented for " + self.getClass().getName());
     }
 
+    @Stub
     public static <E> E getFirst(Collection<E> self) {
+        if (self instanceof List<E> list) {
+            return list.get(0);
+        } else if (self instanceof Deque<E> deque) {
+            return deque.getFirst();
+        }
         return self.iterator().next();
     }
 
+    @Stub
     public static <E> E getLast(Collection<E> self) {
+        if (self instanceof List<E> list) {
+            return list.get(list.size() - 1);
+        } else if (self instanceof Deque<E> deque) {
+            return deque.getLast();
+        }
         return reversed(self).iterator().next();
     }
 
+    @Stub
     public static <E> E removeFirst(Collection<E> self) {
+        if (self instanceof List<E> list) {
+            return list.remove(0);
+        } else if (self instanceof Deque<E> deque) {
+            return deque.removeFirst();
+        }
         Iterator<E> it = self.iterator();
         E e = it.next();
         it.remove();
         return e;
     }
 
+    @Stub
     public static <E> E removeLast(Collection<E> self) {
+        if (self instanceof List<E> list) {
+            return list.remove(list.size() - 1);
+        } else if (self instanceof Deque<E> deque) {
+            return deque.removeLast();
+        }
         Iterator<E> it = reversed(self).iterator();
         E e = it.next();
         it.remove();
         return e;
     }
-
 
 }

@@ -42,6 +42,12 @@ public class ReverseList<E> implements List<E> {
             public E next() {
                 return original.get(--pos);
             }
+
+            @Override
+            public void remove() {
+                original.remove(pos);
+            }
+
         };
     }
 
