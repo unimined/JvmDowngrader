@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.j21.impl.ReverseCollection;
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseDeque;
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseList;
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseSet;
@@ -17,7 +18,8 @@ public class J_U_SequencedCollection {
             obj instanceof LinkedHashSet<?> ||
             obj instanceof Deque<?> ||
             obj instanceof SortedSet<?> ||
-            obj instanceof ReverseSet<?>;
+            obj instanceof ReverseSet<?> ||
+            obj instanceof ReverseCollection<?>;
     }
 
     public static <E> Collection<E> jvmdg$checkcast(Object obj) {
@@ -47,7 +49,10 @@ public class J_U_SequencedCollection {
             }
             return new ReverseSet<>(set);
         }
-        throw new MissingStubError("java.util.SequencedCollection.reversed not implemented for " + self.getClass().getName());
+        if (self != null) {
+            return new ReverseCollection<>(self);
+        }
+        throw new NullPointerException();
     }
 
     @Stub

@@ -8,15 +8,15 @@ import java.util.Set;
 import java.util.SortedSet;
 
 @Adapter(value = "java/util/SequencedSet", target = "java/util/Set")
-public class J_U_SequencedSet<E> {
+public class J_U_SequencedSet {
 
-    static boolean jvmdg$instanceof(Object obj) {
-        return obj instanceof J_U_SequencedSet<?> ||
-            obj instanceof LinkedHashSet<?> ||
-            obj instanceof SortedSet<?>;
+    public static boolean jvmdg$instanceof(Object obj) {
+        return obj instanceof LinkedHashSet<?> ||
+            obj instanceof SortedSet<?> ||
+            obj instanceof ReverseSet<?>;
     }
 
-    static <E> Set<E> jvmdg$checkcast(Object obj) {
+    public static <E> Set<E> jvmdg$checkcast(Object obj) {
         if (!jvmdg$instanceof(obj)) {
             throw new ClassCastException();
         }

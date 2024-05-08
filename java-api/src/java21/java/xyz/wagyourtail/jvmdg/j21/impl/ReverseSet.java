@@ -16,15 +16,33 @@ public class ReverseSet<E> extends AbstractSet<E> {
         throw new UnsupportedOperationException("JVMDG.ReverseSet cannot call add currently.");
     }
 
-    /**
-     * TODO: somehow have concurrent modification checks
-     */
+    @Override
+    public boolean remove(Object o) {
+        return original.remove(o);
+    }
+
     @NotNull
     @Override
     public Iterator<E> iterator() {
-        List<E> elements = new ArrayList<>(original);
-        Collections.reverse(elements);
-        return elements.iterator();
+        Object[] obj = original.toArray();
+        return new Iterator<>() {
+            int pos = original.size();
+
+            @Override
+            public boolean hasNext() {
+                return pos >= 1;
+            }
+
+            @Override
+            public void remove() {
+                original.remove(obj[pos]);
+            }
+
+            @Override
+            public E next() {
+                return (E) obj[--pos];
+            }
+        };
     }
 
     @Override

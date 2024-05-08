@@ -7,6 +7,7 @@ import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
@@ -88,7 +89,7 @@ public class CoverageChecker {
                 try {
                     var requiredStubs = new ArrayList<MemberInfo>();
                     compare(versions.get(v), classes, requiredStubs);
-                    Map<Type, Class<?>> stubClasses = versionProvider.classStubs;
+                    Map<Type, Pair<Type, Pair<Class<?>, Adapter>>> stubClasses = versionProvider.classStubs;
 
                     outer:
                     for (var staticAndStub : requiredStubs) {
@@ -107,7 +108,7 @@ public class CoverageChecker {
                                 if (arg.getSort() == Type.OBJECT) {
                                     var stubCls = stubClasses.get(arg);
                                     if (stubCls != null) {
-                                        descArgs[i] = Type.getType(stubCls);
+                                        descArgs[i] = stubCls.getFirst();
                                     }
                                 } else if (arg.getSort() == Type.ARRAY) {
                                     var dims = arg.getDimensions();
@@ -115,7 +116,7 @@ public class CoverageChecker {
                                     if (elem.getSort() == Type.OBJECT) {
                                         var stubCls = stubClasses.get(elem);
                                         if (stubCls != null) {
-                                            descArgs[i] = Type.getType("[".repeat(dims) + "L" + Type.getInternalName(stubCls) + ";");
+                                            descArgs[i] = Type.getType("[".repeat(dims) + stubCls.getFirst().getDescriptor());
                                         }
                                     }
                                 }
@@ -124,7 +125,7 @@ public class CoverageChecker {
                             if (ret.getSort() == Type.OBJECT) {
                                 var stubCls = stubClasses.get(ret);
                                 if (stubCls != null) {
-                                    ret = Type.getType(stubCls);
+                                    ret = stubCls.getFirst();
                                 }
                             } else if (ret.getSort() == Type.ARRAY) {
                                 var dims = ret.getDimensions();
@@ -132,11 +133,28 @@ public class CoverageChecker {
                                 if (elem.getSort() == Type.OBJECT) {
                                     var stubCls = stubClasses.get(elem);
                                     if (stubCls != null) {
-                                        ret = Type.getType("[".repeat(dims) + "L" + Type.getInternalName(stubCls) + ";");
+                                        ret = Type.getType("[".repeat(dims) + stubCls.getFirst().getDescriptor());
                                     }
                                 }
                             }
                             var member = new MemberNameAndDesc(stub.getName(), Type.getMethodType(ret, descArgs));
+
+                            if (versionProvider.classStubs.containsKey(stub.getOwner())) {
+                                var clsStub = versionProvider.classStubs.get(stub.getOwner());
+                                try {
+                                    Class<?> cls = Class.forName(clsStub.getFirst().getInternalName().replace('/', '.'), true, ClassDowngrader.classLoader);
+                                    // check if has matching method
+                                    for (var m : cls.getMethods()) {
+                                        if (m.getName().equals(member.getName()) && Type.getType(m).equals(member.getDesc())) {
+                                            availableStubCount++;
+                                            continue outer;
+                                        }
+                                    }
+                                } catch (ClassNotFoundException e) {
+                                    System.err.println("Failed to load class " + clsStub.getFirst().getInternalName());
+                                }
+                            }
+
                             if (stubProvider.getMethodStubMap().containsKey(member)) {
                                 availableStubCount++;
                                 unmatchedStubs.remove(stubProvider.getMethodStubMap().get(member).getFirst());
@@ -168,7 +186,7 @@ public class CoverageChecker {
                                 }
                             }
                         } else {
-                            if (versionProvider.stubMappings.containsKey(stub.getOwner())) {
+                            if (versionProvider.classStubs.containsKey(stub.getOwner())) {
                                 availableStubCount++;
                                 continue;
                             }
@@ -364,6 +382,22 @@ public class CoverageChecker {
             if (!newClasses.containsKey(cls.getKey())) {
                 if (removedClasses.add(cls.getKey())) {
                     removed.add(new MemberInfo(cls.getValue().getFirst(), new FullyQualifiedMemberNameAndDesc(Type.getObjectType(cls.getKey()), null, null), false, false));
+                    // add all methods
+                    var oldCls = cls.getValue().getSecond();
+                    for (var method : oldCls.methods) {
+                        if ((method.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) continue;
+                        if (method.name.equals("<clinit>")) continue;
+                        if (method.invisibleAnnotations != null) {
+                            for (var a : method.invisibleAnnotations) {
+                                if (a.desc.equals("Ljdk/internal/javac/PreviewFeature;") || a.desc.equals("Ljdk/internal/PreviewFeature;")) {
+                                    continue;
+                                }
+                            }
+                        }
+                        var isStatic = (method.access & Opcodes.ACC_STATIC) != 0;
+                        var isAbstract = (method.access & Opcodes.ACC_ABSTRACT) != 0;
+                        removed.add(new MemberInfo(cls.getValue().getFirst(), new FullyQualifiedMemberNameAndDesc(Type.getObjectType(cls.getKey()), method.name, Type.getMethodType(method.desc)), isAbstract, isStatic));
+                    }
                 }
             }
         }
