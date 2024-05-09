@@ -19,27 +19,32 @@ abstract class JVMDowngraderExtension(val project: Project) {
         configure {
             val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
             it.inputFile.set(jar.archiveFile)
-            it.archiveClassifier.set("downgraded-${it.downgradeTo.majorVersion}")
+            it.archiveClassifier.set("downgraded-8")
         }
     }
 
     val defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeAPI::class.java, this).apply {
         configure {
             it.inputFile.set(defaultTask.get().archiveFile)
-            it.archiveClassifier.set("downgraded-${it.downgradeTo.majorVersion}-shaded")
+            it.archiveClassifier.set("downgraded-8-shaded")
         }
     }
 
-    val core = project.configurations.detachedConfiguration(
-        project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader:${version}"),
-        project.dependencies.create("org.ow2.asm:asm:$asmVersion"),
-        project.dependencies.create("org.ow2.asm:asm-commons:$asmVersion"),
-        project.dependencies.create("org.ow2.asm:asm-tree:$asmVersion"),
-        project.dependencies.create("org.ow2.asm:asm-util:$asmVersion"),
-    )
+    val core by lazy {
+        project.configurations.detachedConfiguration(
+            project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader:${version}"),
+            project.dependencies.create("org.ow2.asm:asm:$asmVersion"),
+            project.dependencies.create("org.ow2.asm:asm-commons:$asmVersion"),
+            project.dependencies.create("org.ow2.asm:asm-tree:$asmVersion"),
+            project.dependencies.create("org.ow2.asm:asm-util:$asmVersion"),
+        )
+    }
 
-    val api =
-        project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${version}"))
+    val api by lazy {
+        project.configurations.detachedConfiguration(
+            project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${version}")
+        )
+    }
 
     val downgradedApi = defaultedMapOf<JavaVersion, File> { version ->
         // if it's 8 or 11, premade exists, grab off maven

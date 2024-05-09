@@ -6,7 +6,7 @@ import kotlin.reflect.KProperty
 @Suppress("UNCHECKED_CAST")
 class FinalizeOnRead<T>(value: T): ReadWriteProperty<Any?, T> {
     companion object {
-        val FINALIZED_DEBUG = System.getenv("FINALIZED_DEBUG")?.toBoolean() ?: false
+        val FINALIZED_DEBUG = System.getProperty("FINALIZED_DEBUG")?.toBoolean() ?: false
     }
     var finalized = false
     var value: Any? = value
