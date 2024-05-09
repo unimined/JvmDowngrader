@@ -38,6 +38,7 @@ public class ZipDowngrader {
 
     public static void downgradeZip(final ClassDowngrader downgrader, Path zip, Set<URL> classpath, final Path output) throws IOException {
         try (final FileSystem zipfs = Utils.openZipFileSystem(zip, new HashMap<String, Object>())) {
+            Files.createDirectories(output.getParent());
             Files.deleteIfExists(output);
             Map<String, Object> map = new HashMap<>();
             map.put("create", "true");

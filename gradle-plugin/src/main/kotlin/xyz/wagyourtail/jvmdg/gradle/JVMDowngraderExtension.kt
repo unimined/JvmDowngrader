@@ -55,8 +55,9 @@ abstract class JVMDowngraderExtension(val project: Project) {
         }
         project.logger.lifecycle("Generating downgraded api for ${version.majorVersion}")
         // else, generate it
-        val downgradedApi =
-            project.buildDir.resolve("jvmdg").resolve("java-api-${this.version}-downgraded-${version.majorVersion}.jar")
+        val jvmdg = project.layout.buildDirectory.get().asFile.resolve("jvmdg")
+        jvmdg.mkdirs()
+        val downgradedApi = jvmdg.resolve("java-api-${this.version}-downgraded-${version.majorVersion}.jar")
         if (!downgradedApi.exists()) {
             val result = project.javaexec {
                 it.mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
