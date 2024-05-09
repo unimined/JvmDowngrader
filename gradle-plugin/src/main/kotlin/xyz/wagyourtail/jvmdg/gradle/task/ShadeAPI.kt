@@ -191,6 +191,15 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                     os.write(writer.toByteArray())
                 }
             }
+            forEachInZip(inputFile.get().asFile.toPath()) { name, stream ->
+                if (!name.endsWith(".class")) {
+                    val path = fs.getPath(name)
+                    path.parent?.createDirectories()
+                    path.outputStream(StandardOpenOption.CREATE).use { os ->
+                        stream.copyTo(os)
+                    }
+                }
+            }
         }
         from(project.zipTree(tempOutput))
         copy()

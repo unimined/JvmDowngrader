@@ -9,12 +9,12 @@ import java.util.Random;
 @Adapter(value = "java/util/random/RandomGenerator")
 public interface J_U_R_RandomGenerator {
 
-    public static boolean jvmdg$instanceof(Object obj) {
+    static boolean jvmdg$instanceof(Object obj) {
         return obj instanceof J_U_R_RandomGenerator ||
                 obj instanceof java.util.Random;
     }
 
-    public static J_U_R_RandomGenerator jvmdg$checkcast(Object obj) {
+    static J_U_R_RandomGenerator jvmdg$checkcast(Object obj) {
         if (obj instanceof Random) {
             throw MissingStubError.create();
         }
