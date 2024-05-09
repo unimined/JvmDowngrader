@@ -6,6 +6,10 @@ plugins {
     `maven-publish`
 }
 
+java {
+    withSourcesJar()
+}
+
 repositories {
     mavenCentral()
 }
@@ -63,6 +67,16 @@ publishing {
             credentials {
                 username = project.findProperty("mvn.user") as String? ?: System.getenv("USERNAME")
                 password = project.findProperty("mvn.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
+    }
+    publishing {
+        publications {
+            create<MavenPublication>("maven") {
+                groupId = project.group as String
+                artifactId = project.properties["archives_base_name"] as String? ?: project.name
+                version = project.version as String
+                from(components["java"])
             }
         }
     }
