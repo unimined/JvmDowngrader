@@ -5,6 +5,7 @@ package xyz.wagyourtail.jvmdg.gradle.task
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Optional
 import org.gradle.jvm.tasks.Jar
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Handle
@@ -19,6 +20,7 @@ import xyz.wagyourtail.jvmdg.util.LazyMutable
 import xyz.wagyourtail.jvmdg.util.defaultedMapOf
 import java.net.URLClassLoader
 import java.nio.file.StandardOpenOption
+import java.util.*
 import javax.inject.Inject
 import kotlin.io.path.createDirectories
 import kotlin.io.path.outputStream
@@ -406,6 +408,18 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 all.addAll(dep.getAll())
             }
             return all
+        }
+
+        override fun hashCode(): Int {
+            return desc.hashCode()
+        }
+
+        override fun equals(other: Any?): Boolean {
+            return other is ApiPart && other.desc == desc
+        }
+
+        override fun toString(): String {
+            return "ApiPart(desc='$desc')"
         }
 
     }
