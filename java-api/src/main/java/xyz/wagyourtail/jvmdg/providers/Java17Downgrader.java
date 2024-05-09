@@ -3,10 +3,7 @@ package xyz.wagyourtail.jvmdg.providers;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.j17.stub.java_base.J_I_Console;
-import xyz.wagyourtail.jvmdg.j17.stub.java_base.J_L_Class;
-import xyz.wagyourtail.jvmdg.j17.stub.java_base.J_L_Process;
-import xyz.wagyourtail.jvmdg.j17.stub.java_base.J_U_Map$Entry;
+import xyz.wagyourtail.jvmdg.j17.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.j17.stub.jdk_httpserver.C_S_N_H_Filter;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
@@ -27,7 +24,7 @@ public class Java17Downgrader extends VersionProvider {
         stub(J_U_Map$Entry.class);
         // SplittableRandom
         // ForkJoinPool
-        // RandomGenerator
+        stub(J_U_R_RandomGenerator.class);
         // RandomGeneratorFactory
 
         // -- java.compiler --
