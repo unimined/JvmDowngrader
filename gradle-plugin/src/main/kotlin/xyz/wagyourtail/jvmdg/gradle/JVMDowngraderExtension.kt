@@ -19,14 +19,14 @@ abstract class JVMDowngraderExtension(val project: Project) {
         configure {
             val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
             it.inputFile.set(jar.archiveFile)
-            it.archiveClassifier.set("downgraded-8")
+            it.archiveClassifier.set("downgraded")
         }
     }
 
     val defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeAPI::class.java, this).apply {
         configure {
             it.inputFile.set(defaultTask.get().archiveFile)
-            it.archiveClassifier.set("downgraded-8-shaded")
+            it.archiveClassifier.set("downgraded-shaded")
         }
     }
 
