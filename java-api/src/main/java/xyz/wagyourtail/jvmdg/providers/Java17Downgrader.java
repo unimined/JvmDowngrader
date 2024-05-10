@@ -24,6 +24,8 @@ public class Java17Downgrader extends VersionProvider {
         stub(J_U_Map$Entry.class);
         // SplittableRandom
         // ForkJoinPool
+        stub(J_U_Random.class);
+        stub(J_U_SplittableRandom.class);
         stub(J_U_R_RandomGenerator.class);
         // RandomGeneratorFactory
 

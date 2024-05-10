@@ -79,4 +79,8 @@ public class Utils {
         }
         throw new UnsupportedOperationException("Unable to determine current class version");
     }
+
+    public static <T extends Throwable> void sneakyThrow(Throwable t) throws T {
+        throw (T) t;
+    }
 }
