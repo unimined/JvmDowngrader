@@ -106,7 +106,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 }
             }
         }
-        val flattenedParts = rootParts.flatMap { it.dependencies }.flatMap { it.getAll() }
+        val flattenedParts = rootParts.flatMap { it.dependencies }.flatMap { it.getAll() }.toSet()
         project.logger.lifecycle("Shading ${flattenedParts.size} items")
         // print parts in tree
         rootParts.forEach { printPart(it, 0) }
