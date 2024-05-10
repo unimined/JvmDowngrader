@@ -412,11 +412,14 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
 
     data class ApiPart(val desc: String, val dependencies: MutableSet<ApiPart>) {
 
-        fun getAll(): Set<String> {
+        fun getAll(resolved: Set<String> = emptySet()): Set<String> {
             val all = mutableSetOf<String>()
             all.add(desc)
             for (dep in dependencies) {
-                all.addAll(dep.getAll())
+                if (dep.desc in resolved) {
+                    continue
+                }
+                all.addAll(dep.getAll(all))
             }
             return all
         }
