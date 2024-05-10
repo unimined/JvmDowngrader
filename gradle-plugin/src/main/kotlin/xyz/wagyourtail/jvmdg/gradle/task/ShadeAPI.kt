@@ -275,11 +275,15 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 // do get added as their own
                 apiParts[ExtendedType(type, field.name)] = ApiPart("${node.name}.${field.name}", dep)
                 thisClassParts.add(apiParts.getValue(ExtendedType(type, field.name)))
-                // check if has <clinit> and add that as a dependency
-                if (field.value == null) {
-                    apiParts[ExtendedType(type, "<clinit>()V")]?.dependencies?.add(
-                        apiParts.getValue(ExtendedType(type, field.name))
-                    )
+                // check if has <clinit> and add that as a dependency if in api
+                if (field.value == null && Type.getObjectType(node.name) in apiClasses) {
+                    val clinit = apiParts[ExtendedType(type, "<clinit>()V")]
+                    if (clinit != null) {
+                        clinit.dependencies.add(
+                            apiParts.getValue(ExtendedType(type, field.name))
+                        )
+                        apiParts.getValue(ExtendedType(type, field.name)).dependencies.add(clinit)
+                    }
                 }
 
             }
