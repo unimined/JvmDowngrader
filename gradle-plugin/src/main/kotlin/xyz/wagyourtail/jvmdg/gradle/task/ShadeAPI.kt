@@ -82,16 +82,16 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
         }
         for (node in inputNodes.values) {
             if (apiParts.containsKey(ExtendedType(Type.getObjectType(node.name)))) {
-                rootParts.add(apiParts[ExtendedType(Type.getObjectType(node.name))]!!)
+                rootParts.add(apiParts.getValue(ExtendedType(Type.getObjectType(node.name))))
             } else {
                 rootParts += getApiParts(node, apiClasses, apiParts) {
                     when (it) {
                         in apiClasses -> {
-                            apiClasses[it]!!
+                            apiClasses.getValue(it)
                         }
 
                         in inputNodes -> {
-                            inputNodes[it]!!
+                            inputNodes.getValue(it)
                         }
 
                         else -> {
@@ -112,7 +112,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
         rootParts.forEach { printPart(it, 0) }
         // shade
         val strippedApi = defaultedMapOf<Type, ClassNode> {
-            val inputNode = apiClasses[it]!!
+            val inputNode = apiClasses.getValue(it)
             val outputNode = ClassNode()
             // copy everything but methods/fields
             inputNode.accept(outputNode)
@@ -124,7 +124,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
         for (part in flattenedParts) {
             if (!part.contains(".")) {
                 // class
-                val inputNode = apiClasses[Type.getObjectType(part)]!!
+                val inputNode = apiClasses.getValue(Type.getObjectType(part))
                 val type = Type.getObjectType(part)
                 // copy only non-static methods/fields
                 for (method in inputNode.methods) {
@@ -140,7 +140,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 strippedClasses.add(type)
             } else if (part.contains("(")) {
                 // method
-                val inputNode = apiClasses[Type.getObjectType(part.substringBefore("."))]!!
+                val inputNode = apiClasses.getValue(Type.getObjectType(part.substringBefore(".")))
                 val name = part.substringAfter(".").substringBeforeLast("(")
                 val desc = "(" + part.substringAfterLast("(")
                 // copy this method
@@ -149,7 +149,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 strippedClasses.add(Type.getObjectType(inputNode.name))
             } else {
                 // field
-                val inputNode = apiClasses[Type.getObjectType(part.substringBefore("."))]!!
+                val inputNode = apiClasses.getValue(Type.getObjectType(part.substringBefore(".")))
                 val name = part.substringAfter(".")
                 // copy this field
                 val field = inputNode.fields.first { it.name == name }
@@ -179,7 +179,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 path.outputStream(StandardOpenOption.CREATE).use { os ->
                     val writer = ASMClassWriter(0) {
                         if (outputNodes.containsKey(it)) {
-                            outputNodes[it]!!.superName
+                            outputNodes.getValue(it).superName
                         } else {
                             dependencies.getResource("$it.class")?.openStream().use { stream ->
                                 val reader = ClassReader(stream)
@@ -231,7 +231,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
             if (ExtendedType(superType) !in apiParts) {
                 getApiParts(getNode(superType), apiClasses, apiParts, getNode)
             }
-            classPart.dependencies.add(apiParts[ExtendedType(superType)]!!)
+            classPart.dependencies.add(apiParts.getValue(ExtendedType(superType)))
         }
         // interfaces
         for (intf in node.interfaces) {
@@ -240,7 +240,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 if (ExtendedType(intfType) !in apiParts) {
                     getApiParts(getNode(intfType), apiClasses, apiParts, getNode)
                 }
-                classPart.dependencies.add(apiParts[ExtendedType(intfType)]!!)
+                classPart.dependencies.add(apiParts.getValue(ExtendedType(intfType)))
             }
         }
         // methods
@@ -248,7 +248,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
             if (method.access and Opcodes.ACC_STATIC != 0) {
                 apiParts[ExtendedType(type, method.name + method.desc)] =
                     ApiPart("${node.name}.${method.name}${method.desc}", mutableSetOf())
-                thisClassParts.add(apiParts[ExtendedType(type, method.name + method.desc)]!!)
+                thisClassParts.add(apiParts.getValue(ExtendedType(type, method.name + method.desc)))
             }
         }
         // fields
@@ -260,7 +260,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                     if (ExtendedType(fieldType) !in apiParts) {
                         getApiParts(getNode(fieldType), apiClasses, apiParts, getNode)
                     }
-                    classPart.dependencies.add(apiParts[ExtendedType(fieldType)]!!)
+                    classPart.dependencies.add(apiParts.getValue(ExtendedType(fieldType)))
                 }
             } else {
                 // static fields, (don't get added to classPart)
@@ -268,17 +268,17 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                     if (ExtendedType(fieldType) !in apiParts) {
                         getApiParts(getNode(fieldType), apiClasses, apiParts, getNode)
                     }
-                    mutableSetOf(apiParts[ExtendedType(fieldType)]!!)
+                    mutableSetOf(apiParts.getValue(ExtendedType(fieldType)))
                 } else {
                     mutableSetOf()
                 }
                 // do get added as their own
                 apiParts[ExtendedType(type, field.name)] = ApiPart("${node.name}.${field.name}", dep)
-                thisClassParts.add(apiParts[ExtendedType(type, field.name)]!!)
+                thisClassParts.add(apiParts.getValue(ExtendedType(type, field.name)))
                 // check if has <clinit> and add that as a dependency
                 if (field.value == null) {
                     apiParts[ExtendedType(type, "<clinit>()V")]?.dependencies?.add(
-                        apiParts[ExtendedType(type, field.name)]!!
+                        apiParts.getValue(ExtendedType(type, field.name))
                     )
                 }
 
@@ -293,7 +293,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 if (ExtendedType(methodType.returnType) !in apiParts) {
                     getApiParts(getNode(methodType.returnType), apiClasses, apiParts, getNode)
                 }
-                deps.add(apiParts[ExtendedType(methodType.returnType)]!!)
+                deps.add(apiParts.getValue(ExtendedType(methodType.returnType)))
             }
             // parameters
             for (param in methodType.argumentTypes) {
@@ -301,7 +301,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                     if (ExtendedType(param) !in apiParts) {
                         getApiParts(getNode(param), apiClasses, apiParts, getNode)
                     }
-                    deps.add(apiParts[ExtendedType(param)]!!)
+                    deps.add(apiParts.getValue(ExtendedType(param)))
                 }
             }
             // contents
@@ -312,7 +312,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                         if (ExtendedType(insnType) !in apiParts) {
                             getApiParts(getNode(insnType), apiClasses, apiParts, getNode)
                         }
-                        deps.add(apiParts[ExtendedType(insnType)]!!)
+                        deps.add(apiParts.getValue(ExtendedType(insnType)))
                     }
                 } else if (insn is FieldInsnNode) {
                     val fieldType = Type.getObjectType(insn.owner)
@@ -322,12 +322,12 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                         }
                         // determine if field is static by seeing if it's in the apiParts
                         if (apiParts.containsKey(ExtendedType(fieldType, insn.name))) {
-                            deps.add(apiParts[ExtendedType(fieldType, insn.name)]!!)
+                            deps.add(apiParts.getValue(ExtendedType(fieldType, insn.name)))
                         } else {
                             if (insn.opcode == Opcodes.GETSTATIC || insn.opcode == Opcodes.PUTSTATIC) {
                                 project.logger.warn("Static field ${insn.owner}.${insn.name} is not in the apiParts???")
                             }
-                            deps.add(apiParts[ExtendedType(fieldType)]!!)
+                            deps.add(apiParts.getValue(ExtendedType(fieldType)))
                         }
                     }
                 } else if (insn is MethodInsnNode) {
@@ -338,12 +338,12 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                         }
                         // determine if method is static by seeing if it's in the apiParts
                         if (apiParts.containsKey(ExtendedType(invokeMethodType, insn.name + insn.desc))) {
-                            deps.add(apiParts[ExtendedType(invokeMethodType, insn.name + insn.desc)]!!)
+                            deps.add(apiParts.getValue(ExtendedType(invokeMethodType, insn.name + insn.desc)))
                         } else {
                             if (insn.opcode == Opcodes.INVOKESTATIC) {
                                 project.logger.warn("Static method ${insn.owner}.${insn.name}${insn.desc} is not in the apiParts???")
                             }
-                            deps.add(apiParts[ExtendedType(invokeMethodType)]!!)
+                            deps.add(apiParts.getValue(ExtendedType(invokeMethodType)))
                         }
                     }
                 } else if (insn is InvokeDynamicInsnNode) {
@@ -354,9 +354,9 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                         }
                         // determine if method is static by seeing if it's in the apiParts
                         if (apiParts.containsKey(ExtendedType(bsmType, insn.bsm.name + insn.bsm.desc))) {
-                            deps.add(apiParts[ExtendedType(bsmType, insn.bsm.name + insn.bsm.desc)]!!)
+                            deps.add(apiParts.getValue(ExtendedType(bsmType, insn.bsm.name + insn.bsm.desc)))
                         } else {
-                            deps.add(apiParts[ExtendedType(bsmType)]!!)
+                            deps.add(apiParts.getValue(ExtendedType(bsmType)))
                         }
                     }
                     for (arg in insn.bsmArgs) {
@@ -365,7 +365,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                                 if (ExtendedType(arg) !in apiParts) {
                                     getApiParts(getNode(arg), apiClasses, apiParts, getNode)
                                 }
-                                deps.add(apiParts[ExtendedType(arg)]!!)
+                                deps.add(apiParts.getValue(ExtendedType(arg)))
                             }
                         } else if (arg is Handle) {
                             val ownerType = Type.getObjectType(arg.owner)
@@ -376,17 +376,17 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                                 when (arg.tag) {
                                     Opcodes.H_GETFIELD, Opcodes.H_GETSTATIC, Opcodes.H_PUTFIELD, Opcodes.H_PUTSTATIC -> {
                                         if (apiParts.containsKey(ExtendedType(ownerType, arg.name))) {
-                                            deps.add(apiParts[ExtendedType(ownerType, arg.name)]!!)
+                                            deps.add(apiParts.getValue(ExtendedType(ownerType, arg.name)))
                                         } else {
-                                            deps.add(apiParts[ExtendedType(ownerType)]!!)
+                                            deps.add(apiParts.getValue(ExtendedType(ownerType)))
                                         }
                                     }
 
                                     Opcodes.H_INVOKEINTERFACE, Opcodes.H_INVOKESPECIAL, Opcodes.H_INVOKESTATIC, Opcodes.H_INVOKEVIRTUAL -> {
                                         if (apiParts.containsKey(ExtendedType(ownerType, arg.name + arg.desc))) {
-                                            deps.add(apiParts[ExtendedType(ownerType, arg.name + arg.desc)]!!)
+                                            deps.add(apiParts.getValue(ExtendedType(ownerType, arg.name + arg.desc)))
                                         } else {
-                                            deps.add(apiParts[ExtendedType(ownerType)]!!)
+                                            deps.add(apiParts.getValue(ExtendedType(ownerType)))
                                         }
                                     }
                                 }
@@ -400,7 +400,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 deps.remove(classPart)
                 classPart.dependencies.addAll(deps)
             } else {
-                apiParts[ExtendedType(type, method.name + method.desc)]!!.dependencies.addAll(deps)
+                apiParts.getValue(ExtendedType(type, method.name + method.desc)).dependencies.addAll(deps)
             }
         }
         return thisClassParts
