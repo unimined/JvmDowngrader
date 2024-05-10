@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
-import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseCollection;
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseDeque;
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseList;

@@ -27,6 +27,8 @@ public class JvmDowngraderTest {
 
     private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.V1_8;
 
+    private final Path mainClasses = Path.of("./build/classes/java/main");
+
     private final Path original = Path.of("./downgradetest/build/libs/downgradetest-1.0.0.jar");
 
     private final Path downgraded = getDowngradedPath(original, "-downgraded-" + target.getMajorVersion() + ".jar");
@@ -96,7 +98,7 @@ public class JvmDowngraderTest {
             downgraded,
             new String[]{},
             mainClass,
-            Set.of(downgradedJavaApi),
+            Set.of(downgradedJavaApi, mainClasses),
             Path.of("."),
             Map.of(),
             true,
@@ -230,6 +232,11 @@ public class JvmDowngraderTest {
     @Test
     public void testSwitch() throws Exception {
         testDowngrade("xyz.wagyourtail.downgradetest.TestSwitch");
+    }
+
+    @Test
+    public void testRandom() throws Exception {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestRandom");
     }
 
 }

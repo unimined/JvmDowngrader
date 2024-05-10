@@ -4,6 +4,8 @@ import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j17.impl.random.BasicRandomGeneratorImpl;
 import xyz.wagyourtail.jvmdg.j17.impl.random.SplittableRandomGeneratorImpl;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.Coerce;
+import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Random;
 import java.util.SplittableRandom;
@@ -17,12 +19,16 @@ public interface J_U_R_RandomGenerator {
 
     static boolean jvmdg$instanceof(Object obj) {
         return obj instanceof J_U_R_RandomGenerator ||
-                obj instanceof java.util.Random;
+            obj instanceof Random ||
+            obj instanceof SplittableRandom;
     }
 
     static J_U_R_RandomGenerator jvmdg$checkcast(Object obj) {
         if (obj instanceof Random random) {
             return new BasicRandomGeneratorImpl(random);
+        }
+        if (obj instanceof SplittableRandom random) {
+            return new SplittableRandomGeneratorImpl(random);
         }
         return (J_U_R_RandomGenerator) obj;
     }
@@ -39,8 +45,18 @@ public interface J_U_R_RandomGenerator {
         return false;
     }
 
+    @Stub
+    static boolean isDeprecated(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
+        return jvmdg$checkcast(obj).isDeprecated();
+    }
+
     default DoubleStream doubles() {
         return DoubleStream.generate(this::nextDouble).sequential();
+    }
+
+    @Stub
+    static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
+        return jvmdg$checkcast(obj).doubles();
     }
 
     default DoubleStream doubles(double lower, double upper) {
@@ -50,11 +66,21 @@ public interface J_U_R_RandomGenerator {
         return DoubleStream.generate(() -> nextDouble(lower, upper)).sequential();
     }
 
+    @Stub
+    static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, double lower, double upper) {
+        return jvmdg$checkcast(obj).doubles(lower, upper);
+    }
+
     default DoubleStream doubles(long limit) {
         if (limit < 0) {
             throw new IllegalArgumentException("size must be non-negative");
         }
         return doubles().limit(limit).sequential();
+    }
+
+    @Stub
+    static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
+        return jvmdg$checkcast(obj).doubles(limit);
     }
 
     default DoubleStream doubles(long limit, double origin, double bound) {
@@ -67,8 +93,18 @@ public interface J_U_R_RandomGenerator {
         return DoubleStream.generate(() -> nextDouble(origin, bound)).limit(limit).sequential();
     }
 
+    @Stub
+    static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, double origin, double bound) {
+        return jvmdg$checkcast(obj).doubles(limit, origin, bound);
+    }
+
     default IntStream ints() {
         return IntStream.generate(this::nextInt).sequential();
+    }
+
+    @Stub
+    static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
+        return jvmdg$checkcast(obj).ints();
     }
 
     default IntStream ints(int origin, int bound) {
@@ -78,11 +114,21 @@ public interface J_U_R_RandomGenerator {
         return IntStream.generate(() -> nextInt(origin, bound)).sequential();
     }
 
+    @Stub
+    static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, int origin, int bound) {
+        return jvmdg$checkcast(obj).ints(origin, bound);
+    }
+
     default IntStream ints(long limit) {
         if (limit < 0) {
             throw new IllegalArgumentException("size must be non-negative");
         }
         return ints().limit(limit).sequential();
+    }
+
+    @Stub
+    static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
+        return jvmdg$checkcast(obj).ints(limit);
     }
 
     default IntStream ints(long limit, int origin, int bound) {
@@ -95,8 +141,18 @@ public interface J_U_R_RandomGenerator {
         return ints(origin, bound).limit(limit).sequential();
     }
 
+    @Stub
+    static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, int origin, int bound) {
+        return jvmdg$checkcast(obj).ints(limit, origin, bound);
+    }
+
     default LongStream longs() {
         return LongStream.generate(this::nextLong).sequential();
+    }
+
+    @Stub
+    static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
+        return jvmdg$checkcast(obj).longs();
     }
 
     default LongStream longs(long origin, long bound) {
@@ -106,11 +162,21 @@ public interface J_U_R_RandomGenerator {
         return LongStream.generate(() -> nextLong(origin, bound)).sequential();
     }
 
+    @Stub
+    static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long origin, long bound) {
+        return jvmdg$checkcast(obj).longs(origin, bound);
+    }
+
     default LongStream longs(long limit) {
         if (limit < 0) {
             throw new IllegalArgumentException("size must be non-negative");
         }
         return longs().limit(limit).sequential();
+    }
+
+    @Stub
+    static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
+        return jvmdg$checkcast(obj).longs(limit);
     }
 
     default LongStream longs(long limit, long origin, long bound) {
@@ -123,8 +189,18 @@ public interface J_U_R_RandomGenerator {
         return longs(origin, bound).limit(limit).sequential();
     }
 
+    @Stub
+    static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, long origin, long bound) {
+        return jvmdg$checkcast(obj).longs(limit, origin, bound);
+    }
+
     default boolean nextBoolean() {
         return nextInt() < 0;
+    }
+
+    @Stub
+    static boolean nextBoolean(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
+        return jvmdg$checkcast(obj).nextBoolean();
     }
 
     default void nextBytes(byte[] bytes) {
@@ -147,8 +223,18 @@ public interface J_U_R_RandomGenerator {
         }
     }
 
+    @Stub
+    static void nextBytes(@Coerce(J_U_R_RandomGenerator.class) Object obj, byte[] bytes) {
+        jvmdg$checkcast(obj).nextBytes(bytes);
+    }
+
     default float nextFloat() {
         return (nextInt() >>> 8) * 0x1.0p-24f;
+    }
+
+    @Stub
+    static float nextFloat(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
+        return jvmdg$checkcast(obj).nextFloat();
     }
 
     default float nextFloat(float bound) {
@@ -164,6 +250,11 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
+    @Stub
+    static float nextFloat(@Coerce(J_U_R_RandomGenerator.class) Object obj, float bound) {
+        return jvmdg$checkcast(obj).nextFloat(bound);
+    }
+
     default float nextFloat(float origin, float bound) {
         if (origin >= bound) {
             throw new IllegalArgumentException("bound must be greater than origin");
@@ -176,8 +267,18 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
+    @Stub
+    static float nextFloat(@Coerce(J_U_R_RandomGenerator.class) Object obj, float origin, float bound) {
+        return jvmdg$checkcast(obj).nextFloat(origin, bound);
+    }
+
     default double nextDouble() {
         return (nextLong() >>> 11) * 0x1.0p-53;
+    }
+
+    @Stub
+    static double nextDouble(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
+        return jvmdg$checkcast(obj).nextDouble();
     }
 
     default double nextDouble(double bound) {
@@ -193,6 +294,11 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
+    @Stub
+    static double nextDouble(@Coerce(J_U_R_RandomGenerator.class) Object obj, double bound) {
+        return jvmdg$checkcast(obj).nextDouble(bound);
+    }
+
     default double nextDouble(double origin, double bound) {
         if (origin >= bound) {
             throw new IllegalArgumentException("bound must be greater than origin");
@@ -205,8 +311,18 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
+    @Stub
+    static double nextDouble(@Coerce(J_U_R_RandomGenerator.class) Object obj, double origin, double bound) {
+        return jvmdg$checkcast(obj).nextDouble(origin, bound);
+    }
+
     default int nextInt() {
         return (int) (nextLong() >>> 32);
+    }
+
+    @Stub
+    static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
+        return jvmdg$checkcast(obj).nextInt();
     }
 
     default int nextInt(int bound) {
@@ -224,6 +340,11 @@ public interface J_U_R_RandomGenerator {
             }
         }
         return r;
+    }
+
+    @Stub
+    static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj, int bound) {
+        return jvmdg$checkcast(obj).nextInt(bound);
     }
 
     default int nextInt(int origin, int bound) {
@@ -250,7 +371,17 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
+    @Stub
+    static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj, int origin, int bound) {
+        return jvmdg$checkcast(obj).nextInt(origin, bound);
+    }
+
     long nextLong();
+
+    @Stub
+    static long nextLong(@Coerce(J_U_Random.class) Object obj) {
+        return jvmdg$checkcast(obj).nextLong();
+    }
 
     default long nextLong(long bound) {
         if (bound <= 0) {
@@ -269,6 +400,11 @@ public interface J_U_R_RandomGenerator {
         }
 
         return r;
+    }
+
+    @Stub
+    static long nextLong(@Coerce(J_U_Random.class) Object obj, long bound) {
+        return jvmdg$checkcast(obj).nextLong(bound);
     }
 
     default long nextLong(long origin, long bound) {
@@ -296,20 +432,52 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
+    @Stub
+    static long nextLong(@Coerce(J_U_Random.class) Object obj, long origin, long bound) {
+        return jvmdg$checkcast(obj).nextLong(origin, bound);
+    }
+
     default double nextGaussian() {
         throw MissingStubError.create();
+    }
+
+    @Stub
+    static double nextGaussian(@Coerce(J_U_Random.class) Object obj) {
+        return jvmdg$checkcast(obj).nextGaussian();
     }
 
     default double nextGaussian(double mean, double stdDev) {
         throw MissingStubError.create();
     }
 
+    @Stub
+    static double nextGaussian(@Coerce(J_U_Random.class) Object obj, double mean, double stdDev) {
+        return jvmdg$checkcast(obj).nextGaussian(mean, stdDev);
+    }
+
     default double nextExponential() {
         throw MissingStubError.create();
     }
 
+    @Stub
+    static double nextExponential(@Coerce(J_U_Random.class) Object obj) {
+        return jvmdg$checkcast(obj).nextExponential();
+    }
+
     @Adapter(value = "java/util/random/RandomGenerator$StreamableGenerator")
     interface StreamableGenerator extends J_U_R_RandomGenerator {
+
+        static boolean jvmdg$instanceof(Object obj) {
+            return obj instanceof StreamableGenerator ||
+                obj instanceof SplittableRandom;
+        }
+
+        static StreamableGenerator jvmdg$checkcast(Object obj) {
+            if (obj instanceof SplittableRandom random) {
+                return new SplittableRandomGeneratorImpl(random);
+            }
+            return (StreamableGenerator) obj;
+        }
 
         static StreamableGenerator of(String name) {
             throw MissingStubError.create();
@@ -317,11 +485,21 @@ public interface J_U_R_RandomGenerator {
 
         Stream<J_U_R_RandomGenerator> rngs();
 
+        @Stub
+        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj) {
+            return jvmdg$checkcast(obj).rngs();
+        }
+
         default Stream<J_U_R_RandomGenerator> rngs(long limit) {
             if (limit < 0) {
                 throw new IllegalArgumentException("size must be non-negative");
             }
             return rngs().limit(limit);
+        }
+
+        @Stub
+        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj, long limit) {
+            return jvmdg$checkcast(obj).rngs(limit);
         }
 
     }
@@ -347,17 +525,47 @@ public interface J_U_R_RandomGenerator {
 
         SplittableGenerator split();
 
+        @Stub
+        static SplittableGenerator split(@Coerce(J_U_Random.class) Object obj) {
+            return jvmdg$checkcast(obj).split();
+        }
+
         SplittableGenerator split(SplittableGenerator source);
+
+        @Stub
+        static SplittableGenerator split(@Coerce(J_U_Random.class) Object obj, SplittableGenerator source) {
+            return jvmdg$checkcast(obj).split(source);
+        }
 
         default Stream<SplittableGenerator> splits() {
             return splits(this);
         }
 
+        @Stub
+        static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj) {
+            return jvmdg$checkcast(obj).splits();
+        }
+
         Stream<SplittableGenerator> splits(long size);
+
+        @Stub
+        static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj, long size) {
+            return jvmdg$checkcast(obj).splits(size);
+        }
 
         Stream<SplittableGenerator> splits(SplittableGenerator source);
 
+        @Stub
+        static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj, SplittableGenerator source) {
+            return jvmdg$checkcast(obj).splits(source);
+        }
+
         Stream<SplittableGenerator> splits(long size, SplittableGenerator source);
+
+        @Stub
+        static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj, long size, SplittableGenerator source) {
+            return jvmdg$checkcast(obj).splits(size, source);
+        }
 
         @Override
         @SuppressWarnings({"unchecked", "rawtypes"})
@@ -365,10 +573,20 @@ public interface J_U_R_RandomGenerator {
             return (Stream) splits();
         }
 
+        @Stub
+        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj) {
+            return jvmdg$checkcast(obj).rngs();
+        }
+
         @Override
         @SuppressWarnings({"unchecked", "rawtypes"})
         default Stream<J_U_R_RandomGenerator> rngs(long limit) {
             return (Stream) splits(limit);
+        }
+
+        @Stub
+        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj, long limit) {
+            return jvmdg$checkcast(obj).rngs(limit);
         }
 
     }

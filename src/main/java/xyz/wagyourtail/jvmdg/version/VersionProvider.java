@@ -19,6 +19,7 @@ import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -67,6 +68,16 @@ public abstract class VersionProvider {
             if (ref.desc().isEmpty()) {
                 if (name.equals("<init>")) {
                     ret = Type.VOID_TYPE;
+                }
+                Annotation[][] annotations = method.getParameterAnnotations();
+                for (int i = 0; i < params.size(); i++) {
+                    Annotation[] param = annotations[i];
+                    for (Annotation a : param) {
+                        if (a instanceof Coerce) {
+                            Coerce c = (Coerce) a;
+                            params.set(i, Type.getType(c.value()));
+                        }
+                    }
                 }
                 desc = Type.getMethodType(ret, params.toArray(new Type[0]));
             } else {
@@ -280,6 +291,28 @@ public abstract class VersionProvider {
 //            throw new RuntimeException("failed to create stub for inner classes of " + clazz.getName(), e);
 //            System.out.println("ERROR: failed to create stub for inner classes of " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
         }
+    }
+
+    private MethodInsnNode boxPrimitive(Type type) {
+        switch (type.getSort()) {
+            case Type.BOOLEAN:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
+            case Type.CHAR:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false);
+            case Type.BYTE:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false);
+            case Type.SHORT:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false);
+            case Type.INT:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
+            case Type.FLOAT:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false);
+            case Type.LONG:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false);
+            case Type.DOUBLE:
+                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false);
+        }
+        return null;
     }
 
     public MethodInsnNode stubTypeInsnNode(TypeInsnNode insn) {

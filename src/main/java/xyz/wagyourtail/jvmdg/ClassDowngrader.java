@@ -173,6 +173,10 @@ public class ClassDowngrader {
                 // assume all java api classes are... "empty". this makes parentOnly stubs work properly.
                 return new HashSet<>();
             }
+            if (type.getInternalName().startsWith("xyz/wagyourtail/jvmdg")) {
+                // also all jvmdg classes are "empty"
+                return new HashSet<>();
+            }
             if (stream == null) return null;
             ClassReader reader = new ClassReader(stream);
             ClassNode node = new ClassNode();
