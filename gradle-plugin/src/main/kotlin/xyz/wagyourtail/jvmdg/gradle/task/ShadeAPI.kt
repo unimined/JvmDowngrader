@@ -243,6 +243,14 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 classPart.dependencies.add(apiParts[ExtendedType(intfType)]!!)
             }
         }
+        // methods
+        for (method in node.methods) {
+            if (method.access and Opcodes.ACC_STATIC != 0) {
+                apiParts[ExtendedType(type, method.name + method.desc)] =
+                    ApiPart("${node.name}.${method.name}${method.desc}", mutableSetOf())
+                thisClassParts.add(apiParts[ExtendedType(type, method.name + method.desc)]!!)
+            }
+        }
         // fields
         for (field in node.fields) {
             val fieldType = Type.getType(field.desc)
@@ -267,14 +275,12 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 // do get added as their own
                 apiParts[ExtendedType(type, field.name)] = ApiPart("${node.name}.${field.name}", dep)
                 thisClassParts.add(apiParts[ExtendedType(type, field.name)]!!)
-            }
-        }
-        // methods
-        for (method in node.methods) {
-            if (method.access and Opcodes.ACC_STATIC != 0) {
-                apiParts[ExtendedType(type, method.name + method.desc)] =
-                    ApiPart("${node.name}.${method.name}${method.desc}", mutableSetOf())
-                thisClassParts.add(apiParts[ExtendedType(type, method.name + method.desc)]!!)
+                // check if has <clinit> and add that as a dependency
+                val clinit = node.methods.firstOrNull { it.name == "<clinit>" }
+                if (clinit != null || field.value != null) {
+                    apiParts[ExtendedType(type, field.name)]!!.dependencies.add(apiParts[ExtendedType(type, "<clinit>()V")]!!)
+                }
+
             }
         }
         // method contents
