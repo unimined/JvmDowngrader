@@ -149,7 +149,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 strippedClasses.add(Type.getObjectType(inputNode.name))
             } else {
                 // field
-                val inputNode = apiClasses[Type.getType(part.substringBefore("."))]!!
+                val inputNode = apiClasses[Type.getObjectType(part.substringBefore("."))]!!
                 val name = part.substringAfter(".")
                 // copy this field
                 val field = inputNode.fields.first { it.name == name }
