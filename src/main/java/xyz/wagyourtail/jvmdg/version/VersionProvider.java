@@ -450,13 +450,15 @@ public abstract class VersionProvider {
                                 Type hDesc = Type.getMethodType(handle.getDesc());
                                 MemberNameAndDesc member = new MemberNameAndDesc(handle.getName(), hDesc);
                                 ClassMapping stubMapper = getStubMapper(hOwner, memberResolver, superTypeResolver);
-                                Pair<Method, Stub> min = stubMapper.getStubFor(member, handle.getTag() == Opcodes.H_INVOKESTATIC, enableRuntime);
+                                boolean isStatic = handle.getTag() == Opcodes.H_INVOKESTATIC;
+                                boolean isSpecial = handle.getTag() == Opcodes.H_INVOKESPECIAL || handle.getTag() == Opcodes.H_NEWINVOKESPECIAL;
+                                Pair<Method, Stub> min = stubMapper.getStubFor(member, isStatic, enableRuntime, isSpecial);
                                 if (min != null) {
                                     if (min.getSecond().downgradeVersion()) {
                                         System.err.println("Invalid stub for indy handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
                                     } else if (!min.getSecond().abstractDefault()) {
                                         Type hStaticDesc;
-                                        if (handle.getTag() == Opcodes.H_INVOKESTATIC) {
+                                        if (isStatic) {
                                             hStaticDesc = hDesc;
                                         } else {
                                             Type[] params = new Type[hDesc.getArgumentCount() + 1];

@@ -30,4 +30,6 @@ public @interface Stub {
      */
     boolean abstractDefault() default false;
 
+    boolean noSpecial() default false;
+
 }

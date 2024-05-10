@@ -45,7 +45,7 @@ public interface J_U_R_RandomGenerator {
         return false;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static boolean isDeprecated(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).isDeprecated();
     }
@@ -54,7 +54,7 @@ public interface J_U_R_RandomGenerator {
         return DoubleStream.generate(this::nextDouble).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).doubles();
     }
@@ -66,7 +66,7 @@ public interface J_U_R_RandomGenerator {
         return DoubleStream.generate(() -> nextDouble(lower, upper)).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, double lower, double upper) {
         return jvmdg$checkcast(obj).doubles(lower, upper);
     }
@@ -78,7 +78,7 @@ public interface J_U_R_RandomGenerator {
         return doubles().limit(limit).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
         return jvmdg$checkcast(obj).doubles(limit);
     }
@@ -93,7 +93,7 @@ public interface J_U_R_RandomGenerator {
         return DoubleStream.generate(() -> nextDouble(origin, bound)).limit(limit).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, double origin, double bound) {
         return jvmdg$checkcast(obj).doubles(limit, origin, bound);
     }
@@ -102,7 +102,7 @@ public interface J_U_R_RandomGenerator {
         return IntStream.generate(this::nextInt).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).ints();
     }
@@ -114,7 +114,7 @@ public interface J_U_R_RandomGenerator {
         return IntStream.generate(() -> nextInt(origin, bound)).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, int origin, int bound) {
         return jvmdg$checkcast(obj).ints(origin, bound);
     }
@@ -126,7 +126,7 @@ public interface J_U_R_RandomGenerator {
         return ints().limit(limit).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
         return jvmdg$checkcast(obj).ints(limit);
     }
@@ -141,7 +141,7 @@ public interface J_U_R_RandomGenerator {
         return ints(origin, bound).limit(limit).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, int origin, int bound) {
         return jvmdg$checkcast(obj).ints(limit, origin, bound);
     }
@@ -150,7 +150,7 @@ public interface J_U_R_RandomGenerator {
         return LongStream.generate(this::nextLong).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).longs();
     }
@@ -162,7 +162,7 @@ public interface J_U_R_RandomGenerator {
         return LongStream.generate(() -> nextLong(origin, bound)).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long origin, long bound) {
         return jvmdg$checkcast(obj).longs(origin, bound);
     }
@@ -174,7 +174,7 @@ public interface J_U_R_RandomGenerator {
         return longs().limit(limit).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
         return jvmdg$checkcast(obj).longs(limit);
     }
@@ -189,7 +189,7 @@ public interface J_U_R_RandomGenerator {
         return longs(origin, bound).limit(limit).sequential();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, long origin, long bound) {
         return jvmdg$checkcast(obj).longs(limit, origin, bound);
     }
@@ -198,7 +198,7 @@ public interface J_U_R_RandomGenerator {
         return nextInt() < 0;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static boolean nextBoolean(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextBoolean();
     }
@@ -223,7 +223,7 @@ public interface J_U_R_RandomGenerator {
         }
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static void nextBytes(@Coerce(J_U_R_RandomGenerator.class) Object obj, byte[] bytes) {
         jvmdg$checkcast(obj).nextBytes(bytes);
     }
@@ -232,7 +232,7 @@ public interface J_U_R_RandomGenerator {
         return (nextInt() >>> 8) * 0x1.0p-24f;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static float nextFloat(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextFloat();
     }
@@ -250,7 +250,7 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static float nextFloat(@Coerce(J_U_R_RandomGenerator.class) Object obj, float bound) {
         return jvmdg$checkcast(obj).nextFloat(bound);
     }
@@ -267,7 +267,7 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static float nextFloat(@Coerce(J_U_R_RandomGenerator.class) Object obj, float origin, float bound) {
         return jvmdg$checkcast(obj).nextFloat(origin, bound);
     }
@@ -276,7 +276,7 @@ public interface J_U_R_RandomGenerator {
         return (nextLong() >>> 11) * 0x1.0p-53;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static double nextDouble(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextDouble();
     }
@@ -294,7 +294,7 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static double nextDouble(@Coerce(J_U_R_RandomGenerator.class) Object obj, double bound) {
         return jvmdg$checkcast(obj).nextDouble(bound);
     }
@@ -311,7 +311,7 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static double nextDouble(@Coerce(J_U_R_RandomGenerator.class) Object obj, double origin, double bound) {
         return jvmdg$checkcast(obj).nextDouble(origin, bound);
     }
@@ -320,7 +320,7 @@ public interface J_U_R_RandomGenerator {
         return (int) (nextLong() >>> 32);
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextInt();
     }
@@ -342,7 +342,7 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj, int bound) {
         return jvmdg$checkcast(obj).nextInt(bound);
     }
@@ -371,14 +371,14 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj, int origin, int bound) {
         return jvmdg$checkcast(obj).nextInt(origin, bound);
     }
 
     long nextLong();
 
-    @Stub
+    @Stub(noSpecial = true)
     static long nextLong(@Coerce(J_U_Random.class) Object obj) {
         return jvmdg$checkcast(obj).nextLong();
     }
@@ -402,7 +402,7 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static long nextLong(@Coerce(J_U_Random.class) Object obj, long bound) {
         return jvmdg$checkcast(obj).nextLong(bound);
     }
@@ -432,7 +432,7 @@ public interface J_U_R_RandomGenerator {
         return r;
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static long nextLong(@Coerce(J_U_Random.class) Object obj, long origin, long bound) {
         return jvmdg$checkcast(obj).nextLong(origin, bound);
     }
@@ -441,7 +441,7 @@ public interface J_U_R_RandomGenerator {
         throw MissingStubError.create();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static double nextGaussian(@Coerce(J_U_Random.class) Object obj) {
         return jvmdg$checkcast(obj).nextGaussian();
     }
@@ -450,7 +450,7 @@ public interface J_U_R_RandomGenerator {
         throw MissingStubError.create();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static double nextGaussian(@Coerce(J_U_Random.class) Object obj, double mean, double stdDev) {
         return jvmdg$checkcast(obj).nextGaussian(mean, stdDev);
     }
@@ -459,7 +459,7 @@ public interface J_U_R_RandomGenerator {
         throw MissingStubError.create();
     }
 
-    @Stub
+    @Stub(noSpecial = true)
     static double nextExponential(@Coerce(J_U_Random.class) Object obj) {
         return jvmdg$checkcast(obj).nextExponential();
     }
@@ -485,7 +485,7 @@ public interface J_U_R_RandomGenerator {
 
         Stream<J_U_R_RandomGenerator> rngs();
 
-        @Stub
+        @Stub(noSpecial = true)
         static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj) {
             return jvmdg$checkcast(obj).rngs();
         }
@@ -497,7 +497,7 @@ public interface J_U_R_RandomGenerator {
             return rngs().limit(limit);
         }
 
-        @Stub
+        @Stub(noSpecial = true)
         static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj, long limit) {
             return jvmdg$checkcast(obj).rngs(limit);
         }
@@ -525,14 +525,14 @@ public interface J_U_R_RandomGenerator {
 
         SplittableGenerator split();
 
-        @Stub
+        @Stub(noSpecial = true)
         static SplittableGenerator split(@Coerce(J_U_Random.class) Object obj) {
             return jvmdg$checkcast(obj).split();
         }
 
         SplittableGenerator split(SplittableGenerator source);
 
-        @Stub
+        @Stub(noSpecial = true)
         static SplittableGenerator split(@Coerce(J_U_Random.class) Object obj, SplittableGenerator source) {
             return jvmdg$checkcast(obj).split(source);
         }
@@ -541,28 +541,28 @@ public interface J_U_R_RandomGenerator {
             return splits(this);
         }
 
-        @Stub
+        @Stub(noSpecial = true)
         static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj) {
             return jvmdg$checkcast(obj).splits();
         }
 
         Stream<SplittableGenerator> splits(long size);
 
-        @Stub
+        @Stub(noSpecial = true)
         static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj, long size) {
             return jvmdg$checkcast(obj).splits(size);
         }
 
         Stream<SplittableGenerator> splits(SplittableGenerator source);
 
-        @Stub
+        @Stub(noSpecial = true)
         static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj, SplittableGenerator source) {
             return jvmdg$checkcast(obj).splits(source);
         }
 
         Stream<SplittableGenerator> splits(long size, SplittableGenerator source);
 
-        @Stub
+        @Stub(noSpecial = true)
         static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj, long size, SplittableGenerator source) {
             return jvmdg$checkcast(obj).splits(size, source);
         }
@@ -573,7 +573,7 @@ public interface J_U_R_RandomGenerator {
             return (Stream) splits();
         }
 
-        @Stub
+        @Stub(noSpecial = true)
         static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj) {
             return jvmdg$checkcast(obj).rngs();
         }
@@ -584,7 +584,7 @@ public interface J_U_R_RandomGenerator {
             return (Stream) splits(limit);
         }
 
-        @Stub
+        @Stub(noSpecial = true)
         static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj, long limit) {
             return jvmdg$checkcast(obj).rngs(limit);
         }
