@@ -207,9 +207,15 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
         copy()
     }
 
-    private fun printPart(part: ApiPart, depth: Int) {
+    private fun printPart(part: ApiPart, depth: Int, resolved: Set<String> = emptySet()) {
         project.logger.debug(" ".repeat(depth) + part.desc)
-        part.dependencies.forEach { printPart(it, depth + 1) }
+        if (part.desc in resolved) {
+            return
+        }
+        val res = resolved + part.desc
+        part.dependencies.forEach {
+            printPart(it, depth + 1, res)
+        }
     }
 
     private fun getApiParts(
