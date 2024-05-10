@@ -266,7 +266,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
                 }
                 // do get added as their own
                 apiParts[ExtendedType(type, field.name)] = ApiPart("${node.name}.${field.name}", dep)
-                thisClassParts.add(apiParts[ExtendedType(fieldType, field.name)]!!)
+                thisClassParts.add(apiParts[ExtendedType(type, field.name)]!!)
             }
         }
         // methods
