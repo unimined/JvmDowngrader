@@ -1,4 +1,4 @@
-name: Build Snapshot
+name: Build
 
 on:
   release:
@@ -26,7 +26,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Publish
-        run: ./gradlew publish -Pversion_snapshot -Pmvn.user=${{ secrets.MAVEN_USER }} -Pmvn.key=${{ secrets.MAVEN_TOKEN }}
+        run: ./gradlew publish -Pmvn.user=${{ secrets.MAVEN_USER }} -Pmvn.key=${{ secrets.MAVEN_TOKEN }}
 
       - uses: actions/upload-artifact@v2
         with:
