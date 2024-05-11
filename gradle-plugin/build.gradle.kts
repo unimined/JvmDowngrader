@@ -16,7 +16,7 @@ repositories {
 
 dependencies {
     // commons compress
-    implementation("org.apache.commons:commons-compress:1.21")
+    implementation("org.apache.commons:commons-compress:1.26.1")
 
     // asm
     implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")

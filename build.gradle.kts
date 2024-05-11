@@ -44,11 +44,11 @@ allprojects {
 }
 
 dependencies {
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
-    testImplementation("com.google.code.gson:gson:2.9.0")
-    testImplementation("org.apache.commons:commons-compress:1.21")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+    testImplementation("com.google.code.gson:gson:2.10")
+    testImplementation("org.apache.commons:commons-compress:1.26.1")
 
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
 }
 
 base {
