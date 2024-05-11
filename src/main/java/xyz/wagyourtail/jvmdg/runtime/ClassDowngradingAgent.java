@@ -108,7 +108,8 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                 }
             });
             LOGGER.fine("transform size: " + (outputs == null ? null : outputs.size()));
-            if (outputs == null || outputs.isEmpty()) return bytes;
+            if (outputs == null) return bytes;
+            bytes = null;
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 LOGGER.fine("Loading " + entry.getKey() + " into " + loader);
                 if (DUMP_CLASSES) {

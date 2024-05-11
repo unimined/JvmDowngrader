@@ -380,6 +380,10 @@ public abstract class VersionProvider {
     }
 
     public ClassNode stubMethods(ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Type>> superTypeResolver) throws IOException {
+        if (owner.name.equals("module-info")) {
+            return owner;
+        }
+
         for (MethodNode method : new ArrayList<>(owner.methods)) {
             MethodNode newMethod = stubMethods(method, owner, extra, enableRuntime, memberResolver, superTypeResolver);
             if (newMethod != method) {
@@ -599,14 +603,22 @@ public abstract class VersionProvider {
         };
 
         clazz = stubClasses(clazz, enableRuntime);
+        if (clazz == null) return null;
         clazz = stubMethods(clazz, extra, enableRuntime, getMembers, getSuperTypes);
+        if (clazz == null) return null;
         clazz = insertAbstractMethods(clazz, extra, getMembers, getSuperTypes);
+        if (clazz == null) return null;
         clazz = otherTransforms(clazz, extra, getReadOnly);
+        if (clazz == null) return null;
         clazz.version = inputVersion - 1;
         return clazz;
     }
 
     public ClassNode insertAbstractMethods(ClassNode clazz, Set<ClassNode> extra, IOFunction<Type, Set<MemberNameAndDesc>> getMembers, IOFunction<Type, List<Type>> getSuperTypes) throws IOException {
+        if (clazz.name.equals("module-info")) {
+            return clazz;
+        }
+
         Map<MemberNameAndDesc, Pair<Method, Stub>> members = getStubMapper(Type.getObjectType(clazz.name), getMembers, getSuperTypes).getAbstracts();
         for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> member : members.entrySet()) {
             boolean contains = false;
@@ -654,6 +666,10 @@ public abstract class VersionProvider {
     }
 
     public ClassNode stubClasses(ClassNode clazz, boolean enableRuntime) {
+        if (clazz.name.equals("module-info")) {
+            return clazz;
+        }
+
         // super
         Type type = Type.getObjectType(clazz.superName);
         if (classStubs.containsKey(type)) {
