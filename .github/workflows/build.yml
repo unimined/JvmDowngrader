@@ -43,9 +43,16 @@ jobs:
           name: gradle
           path: gradle-plugin/build/libs
 
+      - name: Load Gradle Properties
+        uses: christian-draeger/read-properties@1.1.1
+        id: gradle_properties
+        with:
+          path: './gradle.properties'
+          properties: 'version'
+
       - name: Upload to Release
         uses: JasonEtco/upload-to-release@v0.1.1
         with:
-          args: ./build/libs/*-all.jar application/jar
+          args: ./build/libs/jvmdowngrader-${{ steps.gradle_properties.outputs.version }}-jij.jar application/jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
