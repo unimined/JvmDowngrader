@@ -14,6 +14,9 @@ pluginManagement {
     repositories {
         mavenLocal()
         maven {
+            url = "https://maven.wagyourtail.xyz/releases"
+        }
+        maven {
             url = "https://maven.wagyourtail.xyz/snapshots"
         }
         mavenCentral()
@@ -26,7 +29,7 @@ in `build.gradle`:
 ```gradle
 // add the plugin
 plugins {
-    id 'xyz.wagyourtail.jvmdowngrader' version '0.0.1-SNAPSHOT'
+    id 'xyz.wagyourtail.jvmdowngrader' version '0.1.0'
 }
 ```
 

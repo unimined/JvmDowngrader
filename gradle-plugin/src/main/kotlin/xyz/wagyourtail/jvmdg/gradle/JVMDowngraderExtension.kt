@@ -13,7 +13,7 @@ abstract class JVMDowngraderExtension(val project: Project) {
 
     var version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.0.1")
 
-    var asmVersion by FinalizeOnRead("9.6")
+    var asmVersion by FinalizeOnRead("9.7")
 
     val defaultTask = project.tasks.register("downgradeJar", DowngradeJar::class.java, this).apply {
         configure {
