@@ -194,7 +194,7 @@ val downgradeJar11 by tasks.registering(Jar::class) {
     group = "jvmdg"
     dependsOn(downgradeJar11Exec)
     archiveClassifier.set("downgraded-11")
-    from(tempFile11)
+    from(zipTree(tempFile11))
 }
 
 val tempFile8 = project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("java-api-${project.version}-downgraded-8.jar")
@@ -222,7 +222,7 @@ val downgradeJar8 by tasks.registering(Jar::class) {
     group = "jvmdg"
     dependsOn(tasks.jar)
     archiveClassifier.set("downgraded-8")
-    from(tempFile8)
+    from(zipTree(tempFile8))
 }
 
 val coverageReport by tasks.registering(JavaExec::class) {
