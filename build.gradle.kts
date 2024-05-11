@@ -25,11 +25,6 @@ allprojects {
 
     dependencies {
         implementation("org.jetbrains:annotations-java5:24.1.0")
-
-        implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
     }
 
     tasks.jar {
@@ -43,12 +38,28 @@ allprojects {
     }
 }
 
+subprojects {
+    dependencies {
+        implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
+        implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
+        implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
+        implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
+    }
+}
+
 dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
     testImplementation("com.google.code.gson:gson:2.10")
     testImplementation("org.apache.commons:commons-compress:1.26.1")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+
+    val api by configurations.getting
+
+    api("org.ow2.asm:asm:${project.properties["asm_version"]}")
+    api("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
+    api("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
+    api("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
 }
 
 base {

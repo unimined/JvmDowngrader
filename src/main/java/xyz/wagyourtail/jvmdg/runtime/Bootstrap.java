@@ -26,7 +26,7 @@ public class Bootstrap {
     private static final Logger LOGGER = Logger.getLogger("JVMDowngrader");
 
     static {
-        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "true")) ? Level.ALL : Level.WARNING);
+        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "false")) ? Level.ALL : Level.WARNING);
     }
 
     public static void main(String[] args) {
