@@ -1,14 +1,12 @@
 package xyz.wagyourtail.jvmdg.version;
 
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Lazy;
@@ -398,9 +396,11 @@ public abstract class VersionProvider {
             AbstractInsnNode insn = method.instructions.get(i);
             if (insn instanceof MethodInsnNode) {
                 MethodInsnNode min = (MethodInsnNode) insn;
-                min.owner = stubClass(Type.getObjectType(min.owner)).getInternalName();
-                min.desc = stubClass(Type.getMethodType(min.desc)).getDescriptor();
-                getStubMapper(Type.getObjectType(min.owner), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
+                if (!min.owner.startsWith("[")) {
+                    min.owner = stubClass(Type.getObjectType(min.owner)).getInternalName();
+                    min.desc = stubClass(Type.getMethodType(min.desc)).getDescriptor();
+                    getStubMapper(Type.getObjectType(min.owner), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
+                }
             } else if (insn instanceof TypeInsnNode) {
                 TypeInsnNode tin = (TypeInsnNode) insn;
                 MethodInsnNode min = stubTypeInsnNode(tin);
@@ -451,6 +451,9 @@ public abstract class VersionProvider {
                                     captured = Type.getMethodType(indy.desc).getArgumentTypes();
                                 }
                                 Type hOwner = Type.getObjectType(handle.getOwner());
+                                if (hOwner.getSort() == Type.ARRAY) {
+                                    continue;
+                                }
                                 Type hDesc = Type.getMethodType(handle.getDesc());
                                 MemberNameAndDesc member = new MemberNameAndDesc(handle.getName(), hDesc);
                                 ClassMapping stubMapper = getStubMapper(hOwner, memberResolver, superTypeResolver);
@@ -538,6 +541,10 @@ public abstract class VersionProvider {
                 LdcInsnNode ldc = (LdcInsnNode) insn;
                 if (ldc.cst instanceof Type) {
                     ldc.cst = stubClass((Type) ldc.cst);
+                } else if (ldc.cst instanceof ConstantDynamic) {
+                    ConstantDynamic condy = (ConstantDynamic) ldc.cst;
+                    Handle bsm = condy.getBootstrapMethod();
+                    throw MissingStubError.create(Type.getObjectType(bsm.getOwner()), bsm.getName(), Type.getType(bsm.getDesc()));
                 }
             }
         }
