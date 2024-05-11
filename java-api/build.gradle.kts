@@ -201,7 +201,7 @@ val tempFile8 = project.layout.buildDirectory.get().asFile.resolve("jvmdg").reso
 
 val downgradeJar8Exec by tasks.registering(JavaExec::class) {
     group = "jvmdg"
-    dependsOn(tasks.jar)
+    dependsOn(downgradeJar8Exec)
     val apiJar = tasks.jar.get().archiveFile.get().asFile.absolutePath
 
     val rootMain = project(":").sourceSets.main.get()
