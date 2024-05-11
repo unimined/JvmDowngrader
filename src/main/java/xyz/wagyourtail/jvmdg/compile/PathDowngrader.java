@@ -86,7 +86,7 @@ public class PathDowngrader {
                                         }
                                     }
                                 });
-                                if (outputs == null || outputs.isEmpty()) {
+                                if (outputs == null) {
                                     Files.copy(file, outFile, StandardCopyOption.REPLACE_EXISTING);
                                 } else {
                                     for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {

@@ -84,6 +84,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
             if (apiParts.containsKey(ExtendedType(Type.getObjectType(node.name)))) {
                 rootParts.add(apiParts.getValue(ExtendedType(Type.getObjectType(node.name))))
             } else {
+                if (node.name.equals("module-info")) continue;
                 rootParts += getApiParts(node, apiClasses, apiParts) {
                     when (it) {
                         in apiClasses -> {
@@ -175,7 +176,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
         openZipFileSystem(tempOutput.toPath(), mapOf("create" to true)).use { fs ->
             for (node in outputNodes.values) {
                 val path = fs.getPath(node.name + ".class")
-                path.parent.createDirectories()
+                path.parent?.createDirectories()
                 path.outputStream(StandardOpenOption.CREATE).use { os ->
                     val writer = ASMClassWriter(0) {
                         if (outputNodes.containsKey(it)) {

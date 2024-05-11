@@ -249,7 +249,10 @@ public class ClassDowngrader {
             }
             Set<ClassNode> newClasses = new HashSet<>();
             for (ClassNode c : classes) {
-                newClasses.add(downgrader.downgrade(c, newClasses, enableRuntime, getReadOnly));
+                ClassNode downgraded = downgrader.downgrade(c, newClasses, enableRuntime, getReadOnly);
+                if (downgraded != null) {
+                    newClasses.add(downgraded);
+                }
             }
             classes = newClasses;
             version = downgrader.outputVersion;
@@ -321,9 +324,8 @@ public class ClassDowngrader {
                 }
                 outputs.put(c.name, classNodeToBytes(c, getExtraRead));
             }
-        } catch (InvocationTargetException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException |
-                 InstantiationException | IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to downgrade " + name.get(), e);
         }
         if (Constants.DEBUG) {
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
