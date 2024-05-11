@@ -4,11 +4,10 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_I_InvalidObjectException {
 
-    @Modify(javaVersion = Opcodes.V19, ref = @Ref(value = "Ljava/io/InvalidObjectException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
+    @Modify(ref = @Ref(value = "Ljava/io/InvalidObjectException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
     public static void init(MethodNode mnode, int i) {
         AbstractInsnNode node = mnode.instructions.get(i);
         InsnList list = new InsnList();

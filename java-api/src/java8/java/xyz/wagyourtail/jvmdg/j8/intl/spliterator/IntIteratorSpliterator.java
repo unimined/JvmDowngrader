@@ -10,8 +10,8 @@ import java.util.Comparator;
 public class IntIteratorSpliterator implements J_U_Spliterator.OfInt {
     static final int BATCH_UNIT = 1 << 10;
     static final int MAX_BATCH = 1 << 25;
-    private J_U_PrimitiveIterator.OfInt it;
     private final int characteristics;
+    private J_U_PrimitiveIterator.OfInt it;
     private long est;
     private int batch;
 

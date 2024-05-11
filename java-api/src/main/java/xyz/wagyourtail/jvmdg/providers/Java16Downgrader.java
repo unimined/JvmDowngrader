@@ -2,14 +2,14 @@ package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
+import xyz.wagyourtail.jvmdg.j16.stub.J_U_L_LogRecord;
 import xyz.wagyourtail.jvmdg.j16.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
-import xyz.wagyourtail.jvmdg.j16.stub.*;
 
 public class Java16Downgrader extends VersionProvider {
-        public Java16Downgrader() {
-            super(Opcodes.V16, Opcodes.V15);
-        }
+    public Java16Downgrader() {
+        super(Opcodes.V16, Opcodes.V15);
+    }
 
         public void init() {
             // -- java.base --
@@ -39,49 +39,49 @@ public class Java16Downgrader extends VersionProvider {
             // IntrinsicCandidate
             // TypeAnnotation
 
-            // -- java.compiler --
-            // SourceVersion
-            // ElementKind
-            // ElementVisitor
-            // RecordComponentElement
-            // TypeElement
-            // AbstractElementVisitor14
-            // ElementFilter
-            // ElementKindVisitor14
-            // ElementKindVisitor6
-            // Elements
-            // ElementScanner14
-            // SimpleElementVisitor14
+        // -- java.compiler --
+        // SourceVersion
+        // ElementKind
+        // ElementVisitor
+        // RecordComponentElement
+        // TypeElement
+        // AbstractElementVisitor14
+        // ElementFilter
+        // ElementKindVisitor14
+        // ElementKindVisitor6
+        // Elements
+        // ElementScanner14
+        // SimpleElementVisitor14
 
-            // -- java.logging --
-            stub(J_U_L_LogRecord.class);
+        // -- java.logging --
+        stub(J_U_L_LogRecord.class);
 
-            // -- java.net.http --
-            // TODO:
+        // -- java.net.http --
+        // TODO:
 //            stub(J_N_H_HttpRequest.class);
 
-            // -- jdk.compiler --
-            // ReturnTree
-            // BindingPatternTree
-            // InstanceOfTree
-            // PatternTree
-            // Tree
-            // TreeVisitor
-            // DocTreeFactory
+        // -- jdk.compiler --
+        // ReturnTree
+        // BindingPatternTree
+        // InstanceOfTree
+        // PatternTree
+        // Tree
+        // TreeVisitor
+        // DocTreeFactory
 
-            // -- jdk.jfr --
-            // MetadataEvent
-            // Throttle
+        // -- jdk.jfr --
+        // MetadataEvent
+        // Throttle
 
-            // -- jdk.jshell --
-            // Selector
+        // -- jdk.jshell --
+        // Selector
 
-            // -- jdk.management.jfr --
-            // RemoteRecordingStream
+        // -- jdk.management.jfr --
+        // RemoteRecordingStream
 
-            // -- jdk.net --
-            // ExtendedSocketOptions
-            // UnixDomainPrincipal
+        // -- jdk.net --
+        // ExtendedSocketOptions
+        // UnixDomainPrincipal
     }
 
     @Override

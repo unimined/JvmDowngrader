@@ -114,4 +114,14 @@ public abstract class J_U_Spliterators$AbstractDoubleSpliterator implements J_U_
     public Comparator<? super Double> getComparator() {
         throw new IllegalStateException();
     }
+
+    static final class Holder implements J_U_F_DoubleConsumer {
+        double value;
+
+
+        @Override
+        public void accept(double t) {
+            value = t;
+        }
+    }
 }

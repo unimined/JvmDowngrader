@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -9,7 +8,6 @@ import java.util.PrimitiveIterator;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.LongPredicate;
-import java.util.function.IntUnaryOperator;
 import java.util.function.LongUnaryOperator;
 import java.util.stream.LongStream;
 import java.util.stream.StreamSupport;

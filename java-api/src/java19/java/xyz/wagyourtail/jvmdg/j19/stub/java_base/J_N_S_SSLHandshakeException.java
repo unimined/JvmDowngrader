@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 
 public class J_N_S_SSLHandshakeException {
 
-    @Modify(javaVersion = Opcodes.V19, ref = @Ref(value = "Ljavax/net/ssl/SSLHandshakeException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
+    @Modify(ref = @Ref(value = "Ljavax/net/ssl/SSLHandshakeException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
     public static void init(MethodNode mnode, int i) {
         AbstractInsnNode node = mnode.instructions.get(i);
         InsnList list = new InsnList();

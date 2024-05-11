@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 public class TestLambda {
 
     public static String test9 = "test9";
+    public String test11 = "test11";
 
     public static void main(String[] args) {
         Supplier<String> provider = () -> "test";
@@ -33,7 +34,13 @@ public class TestLambda {
         System.out.println(test8.apply("test8"));
     }
 
-    public String test11 = "test11";
+    public static String test2() {
+        return "test2";
+    }
+
+    public static void testSupplier(Supplier<String> supplier) {
+        System.out.println(supplier.get());
+    }
 
     public void test10() {
         Function<String, String> test10 = new Function<String, String>() {
@@ -50,10 +57,6 @@ public class TestLambda {
         System.out.println(test13.apply("test20"));
     }
 
-    public static String test2() {
-        return "test2";
-    }
-
     public String test3() {
         return "test3";
     }
@@ -62,10 +65,6 @@ public class TestLambda {
         public String get() {
             return "test4";
         }
-    }
-
-    public static void testSupplier(Supplier<String> supplier) {
-        System.out.println(supplier.get());
     }
 
 }

@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.j15.stub.java_base;
 
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.io.IOException;

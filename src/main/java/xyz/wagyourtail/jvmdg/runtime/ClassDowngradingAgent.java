@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
 import org.objectweb.asm.*;
-import sun.misc.Unsafe;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
@@ -10,23 +9,19 @@ import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.ProtectionDomain;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ClassDowngradingAgent implements ClassFileTransformer {
     public static final MethodHandle defineClass;
-    private static final Logger LOGGER = Logger.getLogger("JVMDowngrader/Agent");
     public static final boolean DUMP_CLASSES = Boolean.parseBoolean(System.getProperty("jvmdg.dump", "false"));
+    private static final Logger LOGGER = Logger.getLogger("JVMDowngrader/Agent");
+    private static final int currentVersion;
 
     static {
         LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "false")) ? Level.ALL : Level.OFF);
@@ -41,8 +36,6 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             throw new RuntimeException(e);
         }
     }
-
-    private static final int currentVersion;
 
     static {
         String version = System.getProperty("java.class.version");
@@ -89,7 +82,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             }
             // check magic
             if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
-                    bytes[3] != (byte) 0xBE) {
+                bytes[3] != (byte) 0xBE) {
                 throw new IllegalClassFormatException(className);
             }
             // ignore minor version
@@ -97,7 +90,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             int version = ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF);
             if (version <= currentVersion) {
                 // already at or below the target version
-            LOGGER.finer("Ignoring " + className + " as it is already at or below the target version");
+                LOGGER.finer("Ignoring " + className + " as it is already at or below the target version");
                 return null;
             }
             LOGGER.fine("Transforming " + className + " from " + version + " to " + currentVersion);

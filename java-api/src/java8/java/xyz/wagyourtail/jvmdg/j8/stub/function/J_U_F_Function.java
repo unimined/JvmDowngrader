@@ -12,6 +12,10 @@ import java.util.Objects;
 @Adapter("Ljava/util/function/Function;")
 public interface J_U_F_Function<T, R> {
 
+    static <T> J_U_F_Function<T, T> identity() {
+        return t -> t;
+    }
+
     R apply(T t);
 
     <V> J_U_F_Function<V, R> compose(J_U_F_Function<? super V, ? extends T> before);

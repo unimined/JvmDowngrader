@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.j20.stub.java_base;
 
-import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.exc.PartialStubError;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Stub;

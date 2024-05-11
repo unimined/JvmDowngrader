@@ -80,7 +80,6 @@ public abstract class J_U_Spliterators$AbstractLongSpliterator implements J_U_Sp
         return characteristics;
     }
 
-
     @Override
     public void forEachRemaining(final J_U_F_Consumer<? super Long> action) {
         if (action instanceof J_U_F_LongConsumer) {
@@ -114,5 +113,15 @@ public abstract class J_U_Spliterators$AbstractLongSpliterator implements J_U_Sp
     @Override
     public Comparator<? super Long> getComparator() {
         throw new IllegalStateException();
+    }
+
+    static final class Holder implements J_U_F_LongConsumer {
+        long value;
+
+
+        @Override
+        public void accept(long t) {
+            value = t;
+        }
     }
 }

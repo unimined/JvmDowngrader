@@ -1,14 +1,13 @@
 package xyz.wagyourtail.jvmdg.j19.stub.java_base;
 
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
 public class J_I_ObjectStreamException {
 
-    @Modify(javaVersion = Opcodes.V19, ref = @Ref(value = "Ljava/io/ObjectStreamException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
+    @Modify(ref = @Ref(value = "Ljava/io/ObjectStreamException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
     public static void init(MethodNode mnode, int i) {
         AbstractInsnNode node = mnode.instructions.get(i);
         InsnList list = new InsnList();
@@ -35,7 +34,7 @@ public class J_I_ObjectStreamException {
         mnode.instructions.remove(node);
     }
 
-    @Modify(javaVersion = Opcodes.V19, ref = @Ref(value = "Ljava/io/ObjectStreamException;", member = "<init>", desc = "(Ljava/lang/Throwable;)V;"))
+    @Modify(ref = @Ref(value = "Ljava/io/ObjectStreamException;", member = "<init>", desc = "(Ljava/lang/Throwable;)V;"))
     public static void init2(MethodNode mnode, int i) {
         AbstractInsnNode node = mnode.instructions.get(i);
         InsnList list = new InsnList();

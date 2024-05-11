@@ -2,8 +2,6 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 @Adapter("Ljava/lang/Module;")
 public class J_L_Module {
@@ -12,14 +10,13 @@ public class J_L_Module {
     private final J_L_ModuleLayer layer = new J_L_ModuleLayer();
 
     public J_L_Module() {
-        // TODO: determine better way to get classloader, caller.getClass().getClassLoader()?
         J_L_StackWalker walker = J_L_StackWalker.getInstance(J_L_StackWalker.Option.RETAIN_CLASS_REFERENCE);
         J_L_StackWalker.StackFrame sf = walker.walk(stream -> stream.skip(2).findFirst().get());
         // require caller to be <clinit> of a class
         if (!sf.getMethodName().equals("<clinit>")) {
             throw new IllegalStateException("Module must be created from a class <clinit>");
         }
-        this.classLoader = sf.getClass().getClassLoader();
+        this.classLoader = sf.getDeclaringClass().getClassLoader();
     }
 
     public J_L_Module(ClassLoader classLoader) {
@@ -38,7 +35,7 @@ public class J_L_Module {
         return classLoader;
     }
 
-//    public ModuleDescriptor getDescriptor() {
+    //    public ModuleDescriptor getDescriptor() {
 //        // TODO
 //    }
 //

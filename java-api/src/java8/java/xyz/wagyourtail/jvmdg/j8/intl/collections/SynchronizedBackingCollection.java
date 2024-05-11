@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.Iterator;
 
 public class SynchronizedBackingCollection<E> implements Collection<E> {
-    private final Collection<E> backing;
     protected final Object mutex;
+    private final Collection<E> backing;
 
     public SynchronizedBackingCollection(Collection<E> backing) {
         this.backing = backing;

@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -14,6 +13,7 @@ public class J_M_BigInteger {
 
     @Stub(ref = @Ref("java/lang/Integer"))
     public static final BigInteger TWO = BigInteger.valueOf(2);
+    static final long LONG_MASK = 0xffffffffL;
 
     @Stub(ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>"))
     public static BigInteger init(byte[] val, int off, int len) {
@@ -24,8 +24,6 @@ public class J_M_BigInteger {
     public static BigInteger init(int signum, byte[] magnitude, int off, int len) {
         return new BigInteger(signum, Arrays.copyOfRange(magnitude, off, off + len));
     }
-
-    static final long LONG_MASK = 0xffffffffL;
 
     @Stub
     public static BigInteger sqrt(BigInteger x) {
@@ -39,11 +37,11 @@ public class J_M_BigInteger {
             return BigInteger.ONE;
         }
 
-        BigInteger div = BigInteger.ZERO.setBit(x.bitLength()/2);
+        BigInteger div = BigInteger.ZERO.setBit(x.bitLength() / 2);
         BigInteger div2 = div;
         // Loop until we hit the same value twice in a row, or wind
         // up alternating.
-        for(;;) {
+        for (; ; ) {
             BigInteger y = div.add(x.divide(div)).shiftRight(1);
             if (y.equals(div) || y.equals(div2))
                 return y;
@@ -56,7 +54,7 @@ public class J_M_BigInteger {
     public static BigInteger[] sqrtAndRemainder(BigInteger x) {
         BigInteger s = sqrt(x);
         BigInteger r = x.subtract(s.multiply(s));
-        return new BigInteger[] {s, r};
+        return new BigInteger[]{s, r};
     }
 
 }

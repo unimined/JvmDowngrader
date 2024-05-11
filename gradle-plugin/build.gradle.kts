@@ -6,13 +6,17 @@ plugins {
     `maven-publish`
 }
 
+java {
+    withSourcesJar()
+}
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
     // commons compress
-    implementation("org.apache.commons:commons-compress:1.21")
+    implementation("org.apache.commons:commons-compress:1.26.1")
 
     // asm
     implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
@@ -63,6 +67,16 @@ publishing {
             credentials {
                 username = project.findProperty("mvn.user") as String? ?: System.getenv("USERNAME")
                 password = project.findProperty("mvn.key") as String? ?: System.getenv("TOKEN")
+            }
+        }
+    }
+    publishing {
+        publications {
+            create<MavenPublication>("maven") {
+                groupId = project.group as String
+                artifactId = project.properties["archives_base_name"] as String? ?: project.name
+                version = project.version as String
+                from(components["java"])
             }
         }
     }

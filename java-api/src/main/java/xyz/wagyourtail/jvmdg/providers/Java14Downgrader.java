@@ -1,10 +1,10 @@
 package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.j14.stub.java_base.J_I_PrintStream;
 import xyz.wagyourtail.jvmdg.j14.stub.java_base.J_L_StrictMath;
 import xyz.wagyourtail.jvmdg.j14.stub.java_base.J_U_C_L_LockSupport;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java14Downgrader extends VersionProvider {
     public Java14Downgrader() {
@@ -12,46 +12,46 @@ public class Java14Downgrader extends VersionProvider {
     }
 
     public void init() {
-            // -- java.base --
-            stub(J_I_PrintStream.class);
-            // Serial
-            stub(J_L_StrictMath.class);
-            // MethodHandles
-            // CompactNumberFormat
-            stub(J_U_C_L_LockSupport.class);
-            // PreviewFeature
-            // Unsafe
+        // -- java.base --
+        stub(J_I_PrintStream.class);
+        // Serial
+        stub(J_L_StrictMath.class);
+        // MethodHandles
+        // CompactNumberFormat
+        stub(J_U_C_L_LockSupport.class);
+        // PreviewFeature
+        // Unsafe
 
-            // -- java.compiler --
-            // SourceVersion
-            // AbstractAnnotationValueVisitor14
-            // AbstractElementVisitor6
-            // AbstractTypeVisitor14
-            // ElementKindVisitor6
-            // SimpleAnnotationValueVisitor14
-            // SimpleTypeVisitor14
-            // TypeKindVisitor14
+        // -- java.compiler --
+        // SourceVersion
+        // AbstractAnnotationValueVisitor14
+        // AbstractElementVisitor6
+        // AbstractTypeVisitor14
+        // ElementKindVisitor6
+        // SimpleAnnotationValueVisitor14
+        // SimpleTypeVisitor14
+        // TypeKindVisitor14
 
-            // -- java.xml --
-            // ContentHandler
+        // -- java.xml --
+        // ContentHandler
 
-            // -- jdk.compiler --
-            // SimpleTreeVisitor
-            // TreeScanner
+        // -- jdk.compiler --
+        // SimpleTreeVisitor
+        // TreeScanner
 
-            // -- jdk.jfr --
-            // Recording
-            // EventStream
-            // RecordingStream
+        // -- jdk.jfr --
+        // Recording
+        // EventStream
+        // RecordingStream
 
-            // -- jdk.jshell --
-            // Snippet
+        // -- jdk.jshell --
+        // Snippet
 
-            // -- jdk.management --
-            // OperatingSystemMXBean
-            // ThreadMXBean
+        // -- jdk.management --
+        // OperatingSystemMXBean
+        // ThreadMXBean
 
-            // -- jdk.nio.mapmode --
-            // ExtendedMapMode
+        // -- jdk.nio.mapmode --
+        // ExtendedMapMode
     }
 }

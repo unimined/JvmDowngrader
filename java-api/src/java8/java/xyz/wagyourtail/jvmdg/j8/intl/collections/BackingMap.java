@@ -11,6 +11,7 @@ public class BackingMap<K, V> implements Map<K, V> {
     public BackingMap(Map<K, V> backing) {
         this.backing = Objects.requireNonNull(backing);
     }
+
     @Override
     public int size() {
         return backing.size();

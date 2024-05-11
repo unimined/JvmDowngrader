@@ -14,16 +14,17 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
 
 public class J_L_Thread {
+
+    private static final ThreadLocal<Object> old = new ThreadLocal<>();
 
     @Stub(ref = @Ref("Ljava/lang/Thread;"))
     public static void onSpinWait() {
         Thread.yield();
     }
 
-    @Modify(javaVersion = Opcodes.V9, ref = @Ref(value = "java/lang/Thread", member = "<init>", desc = "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;JZ)V"))
+    @Modify(ref = @Ref(value = "java/lang/Thread", member = "<init>", desc = "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;JZ)V"))
     public static void init(MethodNode mnode, int i) {
         AbstractInsnNode node = mnode.instructions.get(i);
         InsnList list = new InsnList();
@@ -40,8 +41,6 @@ public class J_L_Thread {
         mnode.instructions.insert(node, list);
         mnode.instructions.remove(node);
     }
-
-    private static final ThreadLocal<Object> old = new ThreadLocal<>();
 
     public static void preInit(boolean inheritThreadLocals) {
         if (!inheritThreadLocals) {

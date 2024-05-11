@@ -9,10 +9,10 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
+import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
-import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.beans.XMLDecoder;
@@ -129,6 +129,22 @@ public class ClassDowngrader {
         }
     }
 
+    public static ClassNode bytesToClassNode(byte[] bytes) {
+        ClassNode node = new ClassNode();
+        new ClassReader(bytes).accept(node, 0);
+        return node;
+    }
+
+    public static ClassNode bytesToClassNode(byte[] bytes, int flags) {
+        ClassNode node = new ClassNode();
+        new ClassReader(bytes).accept(node, flags);
+        return node;
+    }
+
+    public static void main(String[] args) {
+        //TODO
+    }
+
     public Set<MemberNameAndDesc> getMembers(int version, Type type) throws IOException {
         for (int vers = version; vers > target; vers--) {
             VersionProvider downgrader = downgraders.get(vers);
@@ -155,6 +171,10 @@ public class ClassDowngrader {
         try (InputStream stream = classLoader.getResourceAsStream(type.getInternalName() + ".class")) {
             if (bootstrapClassLoader.getResource(type.getInternalName() + ".class") != null) {
                 // assume all java api classes are... "empty". this makes parentOnly stubs work properly.
+                return new HashSet<>();
+            }
+            if (type.getInternalName().startsWith("xyz/wagyourtail/jvmdg")) {
+                // also all jvmdg classes are "empty"
                 return new HashSet<>();
             }
             if (stream == null) return null;
@@ -332,18 +352,6 @@ public class ClassDowngrader {
         return cw.toByteArray();
     }
 
-    public static ClassNode bytesToClassNode(byte[] bytes) {
-        ClassNode node = new ClassNode();
-        new ClassReader(bytes).accept(node, 0);
-        return node;
-    }
-
-    public static ClassNode bytesToClassNode(byte[] bytes, int flags) {
-        ClassNode node = new ClassNode();
-        new ClassReader(bytes).accept(node, flags);
-        return node;
-    }
-
     public void writeBytesToDebug(String name, byte[] bytes) {
         File f = new File(Constants.DEBUG_DIR, name.replace('.', '/') + ".class");
         f.getParentFile().mkdirs();
@@ -364,10 +372,6 @@ public class ClassDowngrader {
         if (vp == null) return null;
         vp.ensureInit();
         return vp;
-    }
-
-    public static void main(String[] args) {
-        //TODO
     }
 
 }

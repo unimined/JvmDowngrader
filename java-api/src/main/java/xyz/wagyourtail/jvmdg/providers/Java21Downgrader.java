@@ -31,11 +31,28 @@ public class Java21Downgrader extends VersionProvider {
         // ModuleDesc
         // PackageDesc
         stub(J_L_R_SwitchBootstraps.class);
-
-
-        stub(J_U_R_Pattern.class);
-
+        stub(J_U_Collections.class);
+        stub(J_U_Deque.class);
+        // LinkedHashMap
+        stub(J_U_List.class);
+        // Locale
+        // NavigableMap
         stub(J_U_SequencedCollection.class);
+        stub(J_U_SequencedMap.class);
         stub(J_U_SequencedSet.class);
+        // SortedMap
+        // TreeMap
+        stub(J_U_R_Pattern.class);
+        // ConcurrentSkipListMap
+        // DelayQueue
+        // Executors
+        // DecapsulateException
+        // KEM
+        // KEMSpi
+
+        // -- java.desktop --
+        // SwingUtilities3
+        // AccessibleHTML$HTMLAccessibleContext
+
     }
 }

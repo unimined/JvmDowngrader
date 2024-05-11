@@ -172,51 +172,59 @@ fun jvToOpc(vers: JavaVersion): Int = when (vers) {
     JavaVersion.VERSION_22 -> Opcodes.V22
     else -> throw IllegalArgumentException("Unsupported Java Version: $vers")
 }
+val tempFile11 = project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("java-api-${project.version}-downgraded-11.jar")
+
+val downgradeJar11Exec by tasks.registering(JavaExec::class) {
+    group = "jvmdg"
+    dependsOn(tasks.jar)
+    val apiJar = tasks.jar.get().archiveFile.get().asFile.absolutePath
+
+    val rootMain = project(":").sourceSets.main.get()
+
+    mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
+    classpath = files(rootMain.output, rootMain.runtimeClasspath)
+    workingDir = project.layout.buildDirectory.get().asFile
+    jvmArgs = listOf("-Djvmdg.java-api=$apiJar")
+    args = listOf(
+        jvToOpc(JavaVersion.VERSION_11).toString(),
+        apiJar,
+        tempFile11.absolutePath
+    )
+}
 
 val downgradeJar11 by tasks.registering(Jar::class) {
-    dependsOn(tasks.jar)
+    group = "jvmdg"
+    dependsOn(downgradeJar11Exec)
     archiveClassifier.set("downgraded-11")
+    from(tempFile11)
+}
 
-    doLast {
-        val apiJar = tasks.jar.get().archiveFile.get().asFile.absolutePath
+val tempFile8 = project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("java-api-${project.version}-downgraded-8.jar")
 
-        val result = javaexec {
-            mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
-            classpath = sourceSets.main.get().compileClasspath
-            workingDir = project.layout.buildDirectory.get().asFile
-            jvmArgs = listOf("-Djvmdg.java-api=$apiJar")
-            args = listOf(
-                jvToOpc(JavaVersion.VERSION_11).toString(),
-                apiJar,
-                archiveFile.get().asFile.absolutePath
-            )
-        }
-        if (result.exitValue != 0) {
-            throw Exception("Failed to downgrade jar")
-        }
-    }
+val downgradeJar8Exec by tasks.registering(JavaExec::class) {
+    group = "jvmdg"
+    dependsOn(tasks.jar)
+    val apiJar = tasks.jar.get().archiveFile.get().asFile.absolutePath
+
+    val rootMain = project(":").sourceSets.main.get()
+
+    mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
+    classpath = files(rootMain.output, rootMain.runtimeClasspath)
+    workingDir = project.layout.buildDirectory.get().asFile
+    jvmArgs = listOf("-Djvmdg.java-api=$apiJar")
+    args = listOf(
+        jvToOpc(JavaVersion.VERSION_1_8).toString(),
+        apiJar,
+        tempFile8.absolutePath
+    )
 }
 
 
 val downgradeJar8 by tasks.registering(Jar::class) {
+    group = "jvmdg"
     dependsOn(tasks.jar)
     archiveClassifier.set("downgraded-8")
-
-    doLast {
-        val apiJar = tasks.jar.get().archiveFile.get().asFile.absolutePath
-
-        javaexec {
-            mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
-            classpath = sourceSets.main.get().compileClasspath
-            workingDir = project.layout.buildDirectory.get().asFile
-            jvmArgs = listOf("-Djvmdg.java-api=$apiJar")
-            args = listOf(
-                jvToOpc(JavaVersion.VERSION_1_8).toString(),
-                apiJar,
-                archiveFile.get().asFile.absolutePath
-            )
-        }
-    }
+    from(tempFile8)
 }
 
 val coverageReport by tasks.registering(JavaExec::class) {

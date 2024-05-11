@@ -1,8 +1,6 @@
 package xyz.wagyourtail.jvmdg.j20.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 @Adapter("java/lang/reflect/ClassFileFormatVersion")
 public enum J_L_R_ClassFileFormatVersion {
@@ -40,12 +38,19 @@ public enum J_L_R_ClassFileFormatVersion {
         return RELEASE_22;
     }
 
-    public int major() {
-        return version;
-    }
-
     public static J_L_R_ClassFileFormatVersion valueOf(Runtime.Version rv) {
         return valueOf("RELEASE_" + rv.feature());
+    }
+
+    public static J_L_R_ClassFileFormatVersion fromMajor(int major) {
+        if (major < 45 || major > latest().major()) {
+            throw new IllegalArgumentException("Out of range major class file vesion " + major);
+        }
+        return values()[major - 44];
+    }
+
+    public int major() {
+        return version;
     }
 
     public Runtime.Version runtimeVersion() {
@@ -54,13 +59,6 @@ public enum J_L_R_ClassFileFormatVersion {
         } else {
             return null;
         }
-    }
-
-    public static J_L_R_ClassFileFormatVersion fromMajor(int major) {
-        if (major < 45 || major > latest().major()) {
-            throw new IllegalArgumentException("Out of range major class file vesion " + major);
-        }
-        return values()[major - 44];
     }
 
 }

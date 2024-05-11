@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class SynchronizedBackingMap<K, V> implements Map<K, V> {
-    private final Map<K, V> backing;
     protected final Object mutex;
+    private final Map<K, V> backing;
 
     public SynchronizedBackingMap(Map<K, V> backing) {
         this.backing = backing;

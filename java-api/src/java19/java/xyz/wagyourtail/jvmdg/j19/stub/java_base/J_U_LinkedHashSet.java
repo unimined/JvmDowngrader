@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.j19.stub.java_base;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 public class J_U_LinkedHashSet {

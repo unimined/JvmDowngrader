@@ -18,7 +18,6 @@ import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;

@@ -22,13 +22,13 @@ public class J_U_OptionalDouble {
         this.value = Double.NaN;
     }
 
-    public static J_U_OptionalDouble empty() {
-        return EMPTY;
-    }
-
     private J_U_OptionalDouble(double value) {
         this.isPresent = true;
         this.value = value;
+    }
+
+    public static J_U_OptionalDouble empty() {
+        return EMPTY;
     }
 
     public static J_U_OptionalDouble of(double value) {

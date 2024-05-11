@@ -1,8 +1,6 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -17,31 +15,15 @@ import java.util.stream.Stream;
 @Adapter("java/lang/StackWalker")
 public class J_L_StackWalker {
 
-    @Adapter("java/lang/StackWalker$StackFrame")
-    public interface StackFrame {
-        String getClassName();
-        String getMethodName();
-        Class<?> getDeclaringClass();
-        int getByteCodeIndex();
-        String getFileName();
-        int getLineNumber();
-        boolean isNativeMethod();
-        StackTraceElement toStackTraceElement();
-    }
-
-    @Adapter("java/lang/StackWalker$Option")
-    public enum Option {
-        RETAIN_CLASS_REFERENCE,
-        SHOW_REFLECT_FRAMES,
-        SHOW_HIDDEN_FRAMES
-    }
-
     static final EnumSet<Option> DEFAULT_EMPTY = EnumSet.noneOf(Option.class);
-
     private static final J_L_StackWalker DEFAULT = new J_L_StackWalker(DEFAULT_EMPTY);
-
     private final EnumSet<Option> options;
     private final boolean retainClassRef;
+
+    private J_L_StackWalker(EnumSet<Option> options) {
+        this.options = options;
+        this.retainClassRef = options.contains(Option.RETAIN_CLASS_REFERENCE);
+    }
 
     public static J_L_StackWalker getInstance() {
         return DEFAULT;
@@ -55,18 +37,13 @@ public class J_L_StackWalker {
         return new J_L_StackWalker(EnumSet.copyOf(options));
     }
 
-    private J_L_StackWalker(EnumSet<Option> options) {
-        this.options = options;
-        this.retainClassRef = options.contains(Option.RETAIN_CLASS_REFERENCE);
+    private static boolean isReflectionFrame(String className) {
+        return className.equals(Method.class.getName()) ||
+            className.equals(Constructor.class.getName()) ||
+            className.startsWith("sun.reflect.") ||
+            className.startsWith("jdk.internal.reflect.") ||
+            className.startsWith("java.lang.invoke.LambdaForm");
     }
-
-     private static boolean isReflectionFrame(String className) {
-            return className.equals(Method.class.getName()) ||
-                    className.equals(Constructor.class.getName()) ||
-                    className.startsWith("sun.reflect.") ||
-                    className.startsWith("jdk.internal.reflect.") ||
-                   className.startsWith("java.lang.invoke.LambdaForm");
-        }
 
     public <T> T walk(Function<? super Stream<StackFrame>, ? extends T> function) {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
@@ -120,6 +97,32 @@ public class J_L_StackWalker {
 
     public Class<?> getCallerClass() {
         return walk(stream -> stream.skip(2).findFirst().get().getDeclaringClass());
+    }
+
+    @Adapter("java/lang/StackWalker$Option")
+    public enum Option {
+        RETAIN_CLASS_REFERENCE,
+        SHOW_REFLECT_FRAMES,
+        SHOW_HIDDEN_FRAMES
+    }
+
+    @Adapter("java/lang/StackWalker$StackFrame")
+    public interface StackFrame {
+        String getClassName();
+
+        String getMethodName();
+
+        Class<?> getDeclaringClass();
+
+        int getByteCodeIndex();
+
+        String getFileName();
+
+        int getLineNumber();
+
+        boolean isNativeMethod();
+
+        StackTraceElement toStackTraceElement();
     }
 
     static class StackFrameImpl implements StackFrame {

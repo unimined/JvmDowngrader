@@ -4,10 +4,13 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Modify;
+import xyz.wagyourtail.jvmdg.version.Ref;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,7 +18,7 @@ import java.util.List;
 
 public class J_L_R_ObjectMethods {
 
-    @Modify(javaVersion = Opcodes.V16, ref = @Ref(value = "java/lang/runtime/ObjectMethods", member = "bootstrap", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"))
+    @Modify(ref = @Ref(value = "java/lang/runtime/ObjectMethods", member = "bootstrap", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"))
     public static void bootstrap(MethodNode mnode, int i, ClassNode cnode) {
         var indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         var recordClass = (Type) indy.bsmArgs[0];
@@ -284,7 +287,7 @@ public class J_L_R_ObjectMethods {
                         Opcodes.INVOKEVIRTUAL,
                         "java/lang/StringBuilder",
                         "append",
-                        "(" +tdesc + ")Ljava/lang/StringBuilder;",
+                        "(" + tdesc + ")Ljava/lang/StringBuilder;",
                         false
                     );
                     break;

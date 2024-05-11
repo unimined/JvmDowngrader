@@ -22,13 +22,13 @@ public class J_U_OptionalInt {
         this.value = 0;
     }
 
-    public static J_U_OptionalInt empty() {
-        return EMPTY;
-    }
-
     private J_U_OptionalInt(int value) {
         this.isPresent = true;
         this.value = value;
+    }
+
+    public static J_U_OptionalInt empty() {
+        return EMPTY;
     }
 
     public static J_U_OptionalInt of(int value) {

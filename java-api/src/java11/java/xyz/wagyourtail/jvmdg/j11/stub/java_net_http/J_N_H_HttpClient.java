@@ -2,8 +2,6 @@ package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;

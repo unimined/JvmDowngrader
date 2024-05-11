@@ -99,4 +99,14 @@ public abstract class J_U_Spliterators$AbstractSpliterator<T> implements J_U_Spl
     public Comparator<? super T> getComparator() {
         throw new IllegalStateException();
     }
+
+    static final class Holder<T> implements J_U_F_Consumer<T> {
+        T value;
+
+
+        @Override
+        public void accept(T t) {
+            value = t;
+        }
+    }
 }

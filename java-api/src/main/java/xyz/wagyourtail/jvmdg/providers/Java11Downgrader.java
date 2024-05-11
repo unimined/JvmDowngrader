@@ -1,113 +1,119 @@
 package xyz.wagyourtail.jvmdg.providers;
 
-import org.objectweb.asm.*;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.j11.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class Java11Downgrader extends VersionProvider {
-        public Java11Downgrader() {
-            super(Opcodes.V11, Opcodes.V10);
-        }
+    public Java11Downgrader() {
+        super(Opcodes.V11, Opcodes.V10);
+    }
 
-        public void init() {
-            // -- java.base --
-            // ChaCha20Cipher
-            stub(J_I_ByteArrayOutputStream.class);
-            stub(J_I_FileReader.class);
-            stub(J_I_FileWriter.class);
-            stub(J_I_InputStream.class);
-            stub(J_I_OutputStream.class);
-            stub(J_I_Reader.class);
-            stub(J_I_Writer.class);
-            // AbstractStringBuilder
-            stub(J_L_Character.class);
-            stub(J_L_CharSequence.class);
-            stub(J_L_Class.class);
-            stub(J_L_String.class);
-            stub(J_L_StringBuffer.class);
-            stub(J_L_StringBuilder.class);
-            // ConstantBootstraps
-            // Reference
-            stub(J_N_C_SelectionKey.class);
-            stub(J_N_C_Selector.class);
-            stub(J_N_F_Files.class);
-            stub(J_N_F_Path.class);
-            // RSAKey
-            // XECKey
-            // XECPrivateKey
-            // XECPublicKey
-            // NamedParameterSpec
-            // PSSParameterSpec
-            // RSAKeyGenParameterSpec
-            // RSAMultiPrimePrivateCrtKeySpec
-            // RSAPrivateCrtKeySpec
-            // RSAPrivateKeySpec
-            // RSAPublicKeySpec
-            // XECPrivateKeySpec
-            // XECPublicKeySpec
-            stub(J_U_Collection.class);
-            stub(J_U_Optional.class);
-            stub(J_U_OptionalDouble.class);
-            stub(J_U_OptionalInt.class);
-            stub(J_U_OptionalLong.class);
-            stub(J_U_C_TimeUnit.class);
-            stub(J_U_F_Predicate.class);
-            stub(J_U_R_Pattern.class);
-            stub(J_U_Z_Deflater.class);
-            stub(J_U_Z_Inflater.class);
-            // ZipInputStream -- handled by InputStream
-            // ChaCha20ParameterSpec
-            // Container
-            // Metrics
-            // MGF1
-            // RSAPSSSignature
-            // RSAUtil
-            // SignatureUtil
+    public void init() {
+        // -- java.base --
+        // ChaCha20Cipher
+        stub(J_I_ByteArrayOutputStream.class);
+        stub(J_I_FileReader.class);
+        stub(J_I_FileWriter.class);
+        stub(J_I_InputStream.class);
+        stub(J_I_OutputStream.class);
+        stub(J_I_Reader.class);
+        stub(J_I_Writer.class);
+        // AbstractStringBuilder
+        stub(J_L_Character.class);
+        stub(J_L_CharSequence.class);
+        stub(J_L_Class.class);
+        stub(J_L_String.class);
+        stub(J_L_StringBuffer.class);
+        stub(J_L_StringBuilder.class);
+        // ConstantBootstraps
+        // Reference
+        stub(J_N_C_SelectionKey.class);
+        stub(J_N_C_Selector.class);
+        stub(J_N_F_Files.class);
+        stub(J_N_F_Path.class);
+        // RSAKey
+        // XECKey
+        // XECPrivateKey
+        // XECPublicKey
+        // NamedParameterSpec
+        // PSSParameterSpec
+        // RSAKeyGenParameterSpec
+        // RSAMultiPrimePrivateCrtKeySpec
+        // RSAPrivateCrtKeySpec
+        // RSAPrivateKeySpec
+        // RSAPublicKeySpec
+        // XECPrivateKeySpec
+        // XECPublicKeySpec
+        stub(J_U_Collection.class);
+        stub(J_U_Optional.class);
+        stub(J_U_OptionalDouble.class);
+        stub(J_U_OptionalInt.class);
+        stub(J_U_OptionalLong.class);
+        stub(J_U_C_TimeUnit.class);
+        stub(J_U_F_Predicate.class);
+        stub(J_U_R_Pattern.class);
+        stub(J_U_Z_Deflater.class);
+        stub(J_U_Z_Inflater.class);
+        // ZipInputStream -- handled by InputStream
+        // ChaCha20ParameterSpec
+        // Container
+        // Metrics
+        // MGF1
+        // RSAPSSSignature
+        // RSAUtil
+        // SignatureUtil
 
-            // -- java.compiler --
-            // SourceVersion
+        // -- java.compiler --
+        // SourceVersion
 
-            // -- java.desktop --
-            // DialogOwner
-            // ListSelectionModel
-            // SwingUtilities2
+        // -- java.desktop --
+        // DialogOwner
+        // ListSelectionModel
+        // SwingUtilities2
 
-            // -- java.net.http --
-            //TODO:
+        // -- java.net.http --
+        //TODO:
 //             stub(J_N_H_HttpClient.class);
-            // HttpConnectTimeoutException
+        // HttpConnectTimeoutException
 //             stub(J_N_H_HttpRequest.class);
 //             stub(J_N_H_HttpRequest.Builder.class);
 //             stub(J_N_H_HttpRequest.BodyPublisher.class);
-            // HttpResponse
-            // HttpTimeoutException
-            // WebSocket
-            // WebSocketHandshakeException
+        // HttpResponse
+        // HttpTimeoutException
+        // WebSocket
+        // WebSocketHandshakeException
 
-            // -- java.xml.crypto --
-            // DigestMethod
-            // SignatureMethod
+        // -- java.xml.crypto --
+        // DigestMethod
+        // SignatureMethod
 
-            // -- jdk.jshell --
-            // EvalException
-            // RemoteCodes
+        // -- jdk.jshell --
+        // EvalException
+        // RemoteCodes
 
-            // -- jdk.net --
-            // ExtendedSocketOptions
-            // Channels
+        // -- jdk.net --
+        // ExtendedSocketOptions
+        // Channels
 
-            // -- jdk.unsupported.desktop --
-            // DispatcherWrapper
-            // DragSourceContextWrapper
-            // DropTargetContextWrapper
-            // LightweightContentWrapper
-            // SwingInterOpUtils
-            // InteropProviderImpl
+        // -- jdk.unsupported.desktop --
+        // DispatcherWrapper
+        // DragSourceContextWrapper
+        // DropTargetContextWrapper
+        // LightweightContentWrapper
+        // SwingInterOpUtils
+        // InteropProviderImpl
     }
 
     @Override
@@ -461,11 +467,11 @@ public class Java11Downgrader extends VersionProvider {
         sb.deleteCharAt(sb.length() - 1);
 
         clazz.visitField(
-                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
-                "jvmdowngrader$nestMembers",
-                "Ljava/lang/String;",
-                null,
-                sb.toString()
+            Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
+            "jvmdowngrader$nestMembers",
+            "Ljava/lang/String;",
+            null,
+            sb.toString()
         ).visitEnd();
 
         Map<String, ClassNode> nestMembers = new HashMap<>();

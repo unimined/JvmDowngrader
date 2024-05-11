@@ -1,10 +1,8 @@
 package xyz.wagyourtail.jvmdg.j19.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -63,15 +61,6 @@ public class J_U_C_Future {
         }
     }
 
-
-    @Adapter("java/util/concurrent/Future$State")
-    public enum State {
-        RUNNING,
-        SUCCESS,
-        FAILED,
-        CANCELLED
-    }
-
     @Stub
     public static State state(Future<?> future) {
         if (!future.isDone()) {
@@ -97,6 +86,14 @@ public class J_U_C_Future {
                 Thread.currentThread().interrupt();
             }
         }
-     }
+    }
+
+    @Adapter("java/util/concurrent/Future$State")
+    public enum State {
+        RUNNING,
+        SUCCESS,
+        FAILED,
+        CANCELLED
+    }
 
 }

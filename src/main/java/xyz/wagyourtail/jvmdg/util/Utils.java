@@ -7,7 +7,9 @@ import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.net.URI;
-import java.nio.file.*;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.Map;
 
 public class Utils {
@@ -38,7 +40,7 @@ public class Utils {
         throw new UnsupportedOperationException("Unable to get MethodHandles.Lookup.IMPL_LOOKUP");
     }
 
-    public static FileSystem openZipFileSystem(Path path, Map<String,Object> options) throws IOException {
+    public static FileSystem openZipFileSystem(Path path, Map<String, Object> options) throws IOException {
         if (options.containsKey("create")) {
             if (options.get("create") == Boolean.TRUE) {
                 options.put("create", "true");
@@ -76,5 +78,9 @@ public class Utils {
             }
         }
         throw new UnsupportedOperationException("Unable to determine current class version");
+    }
+
+    public static <T extends Throwable> void sneakyThrow(Throwable t) throws T {
+        throw (T) t;
     }
 }

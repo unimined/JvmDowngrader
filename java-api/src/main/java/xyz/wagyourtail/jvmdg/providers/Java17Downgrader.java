@@ -13,64 +13,66 @@ public class Java17Downgrader extends VersionProvider {
     }
 
     public void init() {
-            // -- java.base --
-            stub(J_I_Console.class);
-            // ObjectInputFilter
-            stub(J_L_Class.class);
-            stub(J_L_Process.class);
-            // SwitchBootstraps
-            // InstantSource
-            // HexFormat
-            stub(J_U_Map$Entry.class);
-            // SplittableRandom
-            // ForkJoinPool
-            // RandomGenerator
-            // RandomGeneratorFactory
+        // -- java.base --
+        stub(J_I_Console.class);
+        // ObjectInputFilter
+        stub(J_L_Class.class);
+        stub(J_L_Process.class);
+        // SwitchBootstraps
+        // InstantSource
+        // HexFormat
+        stub(J_U_Map$Entry.class);
+        // SplittableRandom
+        // ForkJoinPool
+        stub(J_U_Random.class);
+        stub(J_U_SplittableRandom.class);
+        stub(J_U_R_RandomGenerator.class);
+        // RandomGeneratorFactory
 
-            // -- java.compiler --
-            // RandomSupport
-            // SourceVersion
-            // Modifier
-            // TypeElement
-            // Elements
+        // -- java.compiler --
+        // RandomSupport
+        // SourceVersion
+        // Modifier
+        // TypeElement
+        // Elements
 
-            // -- java.desktop --
-            // FileSystemView
-            // DMarlinRenderingEngine
-            // RenderingEngine
+        // -- java.desktop --
+        // FileSystemView
+        // DMarlinRenderingEngine
+        // RenderingEngine
 
-            // -- java.xml.crypto --
-            // SignatureMethod
-            // RSAPSSParameterSpec
+        // -- java.xml.crypto --
+        // SignatureMethod
+        // RSAPSSParameterSpec
 
-            // -- jdk.compiler --
-            // CaseLabelTree
-            // CaseTree
-            // ClassTree
-            // CompilationUnitTree
-            // DefaultCaseLabelTree
-            // GuardedPatternTree
-            // ParenthesizedPatternTree
-            // Tree
-            // TreeVisitor
-            // SimpleTreeVisitor
-            // TreeScanner
+        // -- jdk.compiler --
+        // CaseLabelTree
+        // CaseTree
+        // ClassTree
+        // CompilationUnitTree
+        // DefaultCaseLabelTree
+        // GuardedPatternTree
+        // ParenthesizedPatternTree
+        // Tree
+        // TreeVisitor
+        // SimpleTreeVisitor
+        // TreeScanner
 
-            // -- jdk.httpserver --
-            stub(C_S_N_H_Filter.class);
+        // -- jdk.httpserver --
+        stub(C_S_N_H_Filter.class);
 
-            // -- jdk.javadoc --
-            // Reporter
-            // StandardDoclet
+        // -- jdk.javadoc --
+        // Reporter
+        // StandardDoclet
 
-            // -- jdk.jfr --
-            // RecordingStream
+        // -- jdk.jfr --
+        // RecordingStream
 
-            // -- jdk.jshell --
-            // JavaShellToolBuilder
+        // -- jdk.jshell --
+        // JavaShellToolBuilder
 
-            // -- jdk.management.jfr --
-            // RemoteRecordingStream
+        // -- jdk.management.jfr --
+        // RemoteRecordingStream
     }
 
     @Override

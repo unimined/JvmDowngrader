@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -69,6 +68,14 @@ public class J_N_H_HttpRequest {
             this.publishers = publishers;
         }
 
+        private static long reduceLength(long a, long b) {
+            if (a < 0 || b < 0) {
+                return -1;
+            } else {
+                return a + b;
+            }
+        }
+
         @Override
         public long contentLength() {
             long l = Arrays.stream(publishers).mapToLong(HttpRequest.BodyPublisher::contentLength).reduce(
@@ -77,14 +84,6 @@ public class J_N_H_HttpRequest {
                 return -1;
             } else {
                 return l;
-            }
-        }
-
-        private static long reduceLength(long a, long b) {
-            if (a < 0 || b < 0) {
-                return -1;
-            } else {
-                return a + b;
             }
         }
 

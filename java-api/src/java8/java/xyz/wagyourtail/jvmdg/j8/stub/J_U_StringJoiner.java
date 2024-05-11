@@ -12,10 +12,8 @@ public final class J_U_StringJoiner {
     private final String prefix;
     private final String delimiter;
     private final String suffix;
-
-    private String emptyValue;
-
     StringBuilder builder = new StringBuilder();
+    private String emptyValue;
 
     public J_U_StringJoiner(CharSequence delimiter) {
         this(delimiter, "", "");

@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 
 public class J_I_InvalidClassException {
 
-    @Modify(javaVersion = Opcodes.V19, ref = @Ref(value = "Ljava/io/InvalidClassException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V;"))
+    @Modify(ref = @Ref(value = "Ljava/io/InvalidClassException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Throwable;)V;"))
     public static void init(MethodNode mnode, int i) {
         AbstractInsnNode node = mnode.instructions.get(i);
         InsnList list = new InsnList();
@@ -49,7 +49,7 @@ public class J_I_InvalidClassException {
         mnode.instructions.remove(node);
     }
 
-    @Modify(javaVersion = Opcodes.V19, ref = @Ref(value = "Ljava/io/InvalidClassException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
+    @Modify(ref = @Ref(value = "Ljava/io/InvalidClassException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
     public static void init2(MethodNode mnode, int i) {
         AbstractInsnNode node = mnode.instructions.get(i);
         InsnList list = new InsnList();

@@ -61,8 +61,8 @@ public class J_U_Map {
         }
         V v;
         return (((v = self.get(key)) != null) || self.containsKey(key))
-                ? v
-                : defaultValue;
+            ? v
+            : defaultValue;
     }
 
     @Stub
@@ -107,7 +107,7 @@ public class J_U_Map {
         }
         Object curValue = self.get(key);
         if (!Objects.equals(curValue, value) ||
-                (curValue == null && !self.containsKey(key))) {
+            (curValue == null && !self.containsKey(key))) {
             return false;
         }
         self.remove(key);
@@ -121,7 +121,7 @@ public class J_U_Map {
         }
         Object curValue = self.get(key);
         if (!Objects.equals(curValue, oldValue) ||
-                (curValue == null && !self.containsKey(key))) {
+            (curValue == null && !self.containsKey(key))) {
             return false;
         }
         self.put(key, newValue);
@@ -203,7 +203,7 @@ public class J_U_Map {
         }
         V oldValue = self.get(key);
         V newValue = (oldValue == null) ? value :
-                remappingFunction.apply(oldValue, value);
+            remappingFunction.apply(oldValue, value);
         if (newValue == null) {
             self.remove(key);
         } else {

@@ -1,12 +1,9 @@
 package xyz.wagyourtail.jvmdg.version.map;
 
 import org.jetbrains.annotations.VisibleForTesting;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Lazy;
 import xyz.wagyourtail.jvmdg.util.Pair;
@@ -15,20 +12,18 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.io.IOException;
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
 public class ClassMapping {
 
+    public final Type current;
+    protected final Lazy<Set<MemberNameAndDesc>> members;
+    protected final Lazy<List<ClassMapping>> parents;
+    protected final VersionProvider vp;
     private final Map<MemberNameAndDesc, Pair<Method, Stub>> methodStub = new HashMap<>();
     private final Map<MemberNameAndDesc, Pair<Method, Modify>> methodModify = new HashMap<>();
-    protected final Lazy<Set<MemberNameAndDesc>> members;
-
-    protected final Lazy<List<ClassMapping>> parents;
-    public final Type current;
-    protected final VersionProvider vp;
 
     public ClassMapping(final Lazy<List<ClassMapping>> parents, final Type current, final IOFunction<Type, Set<MemberNameAndDesc>> members, VersionProvider vp) {
         this.parents = parents;
@@ -51,7 +46,9 @@ public class ClassMapping {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-            };
+            }
+
+            ;
 
         };
         this.vp = vp;
@@ -70,14 +67,18 @@ public class ClassMapping {
         if (insn instanceof MethodInsnNode) {
             MethodInsnNode min = (MethodInsnNode) insn;
             MemberNameAndDesc member = new MemberNameAndDesc(min.name, Type.getMethodType(min.desc));
-            Pair<Method, Stub> newMin = getStubFor(member, min.getOpcode() == Opcodes.INVOKESTATIC, runtimeAvailable);
+            boolean isStatic = insn.getOpcode() == Opcodes.INVOKESTATIC;
+            boolean isSpecial = insn.getOpcode() == Opcodes.INVOKESPECIAL;
+
+            Pair<Method, Stub> newMin = getStubFor(member, isStatic, runtimeAvailable, isSpecial);
             Type returnType = Type.getReturnType(min.desc);
             if (newMin != null) {
                 // handled specially, by inserting a call to the stub in the implementation if it's missing an implementation.
                 // unless it's invokespecial, then this is a super call, and need to fix it to call the stub.
-                if (newMin.getSecond().abstractDefault() && min.getOpcode() != Opcodes.INVOKESPECIAL) {
+                if (newMin.getSecond().abstractDefault() && !isSpecial) {
                     return;
                 }
+                // TODO: REALLY shouldn't be doing this... should use @Modify now, so super ctor calls work.
                 if (member.getName().equals("<init>")) {
                     returnType = Type.getObjectType(min.owner);
                     int skip = 0;
@@ -150,9 +151,9 @@ public class ClassMapping {
         }
     }
 
-    public Pair<Method, Stub> getParentStubFor(MemberNameAndDesc member, boolean runtimeAvailable) {
+    public Pair<Method, Stub> getParentStubFor(MemberNameAndDesc member, boolean runtimeAvailable, boolean special) {
         for (ClassMapping parent : parents.get()) {
-            Pair<Method, Stub> node = parent.getStubFor(member, false, runtimeAvailable);
+            Pair<Method, Stub> node = parent.getStubFor(member, false, runtimeAvailable, special);
             if (node != null) {
                 return node;
             }
@@ -160,7 +161,7 @@ public class ClassMapping {
         return null;
     }
 
-    public Pair<Method, Stub> getStubFor(MemberNameAndDesc member, boolean invoke_static, boolean runtimeAvailable) {
+    public Pair<Method, Stub> getStubFor(MemberNameAndDesc member, boolean invoke_static, boolean runtimeAvailable, boolean special) {
         try {
             Pair<Method, Stub> pair = methodStub.get(member);
             if (pair == null) {
@@ -172,13 +173,16 @@ public class ClassMapping {
 //                        }
                         return null;
                     }
-                    return getParentStubFor(member, runtimeAvailable);
+                    return getParentStubFor(member, runtimeAvailable, special);
                 }
                 return null;
             }
             Method m = pair.getFirst();
             if (!runtimeAvailable && pair.getSecond().requiresRuntime()) {
                 System.err.println("WARNING: " + m + " requires runtime transformation but runtime is not available...");
+            }
+            if (special && pair.getSecond().noSpecial()) {
+                return null;
             }
             int modifiers = m.getModifiers();
             if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {

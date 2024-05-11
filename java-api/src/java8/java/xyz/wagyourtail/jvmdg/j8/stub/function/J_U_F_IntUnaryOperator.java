@@ -12,6 +12,10 @@ import java.util.Objects;
 @Adapter("Ljava/util/function/IntUnaryOperator;")
 public interface J_U_F_IntUnaryOperator {
 
+    static J_U_F_IntUnaryOperator identity() {
+        return t -> t;
+    }
+
     int applyAsInt(int operand);
 
     J_U_F_IntUnaryOperator compose(J_U_F_IntUnaryOperator before);

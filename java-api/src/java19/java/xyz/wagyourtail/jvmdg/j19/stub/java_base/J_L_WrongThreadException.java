@@ -1,8 +1,6 @@
 package xyz.wagyourtail.jvmdg.j19.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 @Adapter("java/lang/WrongThreadException")
 public class J_L_WrongThreadException extends RuntimeException {
