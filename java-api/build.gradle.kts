@@ -201,7 +201,7 @@ val tempFile8 = project.layout.buildDirectory.get().asFile.resolve("jvmdg").reso
 
 val downgradeJar8Exec by tasks.registering(JavaExec::class) {
     group = "jvmdg"
-    dependsOn(downgradeJar8Exec)
+    dependsOn(tasks.jar)
     val apiJar = tasks.jar.get().archiveFile.get().asFile.absolutePath
 
     val rootMain = project(":").sourceSets.main.get()
@@ -220,7 +220,7 @@ val downgradeJar8Exec by tasks.registering(JavaExec::class) {
 
 val downgradeJar8 by tasks.registering(Jar::class) {
     group = "jvmdg"
-    dependsOn(tasks.jar)
+    dependsOn(downgradeJar8Exec)
     archiveClassifier.set("downgraded-8")
     from(zipTree(tempFile8))
 }
