@@ -31,6 +31,8 @@ public class TestString {
             System.out.print(Character.toChars(i));
         }
         System.out.println();
+
+        System.out.println(Character.isEmoji(0x1F600));
     }
 
 }

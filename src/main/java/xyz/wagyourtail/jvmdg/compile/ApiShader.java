@@ -11,6 +11,7 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.compile.shade.ReferenceGraph;
+import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
@@ -93,7 +94,8 @@ public class ApiShader {
                 try (final FileSystem outputFs = Utils.openZipFileSystem(output, env)) {
                     final Path outputRoot = outputFs.getPath("/");
                     // step 4: create remapper for api classes to prefixed api classes
-                    final Map<Type, Set<MemberNameAndDesc>> byType = byType(refs.recursiveResolveFrom(inputRefs.getAllRefs()));
+                    Pair<Set<FullyQualifiedMemberNameAndDesc>, Set<String>> required = refs.recursiveResolveFrom(inputRefs.getAllRefs());
+                    final Map<Type, Set<MemberNameAndDesc>> byType = byType(required.getFirst());
                     final Map<String, String> remap = new HashMap<>();
                     for (Type type : byType.keySet()) {
                         remap.put(type.getInternalName(), prefix + type.getInternalName());
@@ -134,6 +136,16 @@ public class ApiShader {
                         ClassWriter writer = new ClassWriter(0);
                         node.accept(new ClassRemapper(writer, remapper));
                         Files.write(outPath, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                    }
+
+                    for (String resource : required.getSecond()) {
+                        Path inPath = apiRoot.resolve(resource);
+                        Path outPath = outputRoot.resolve(resource);
+                        Path parent = outPath.getParent();
+                        if (parent != null) {
+                            Files.createDirectories(outputRoot.resolve(parent));
+                        }
+                        Files.copy(inPath, outPath, StandardCopyOption.REPLACE_EXISTING);
                     }
 
                     // step 6: remap references to the api to start with prefix

@@ -6,7 +6,10 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
+import xyz.wagyourtail.jvmdg.asm.AnnotationUtils;
+import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.RequiresResource;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
@@ -89,8 +92,9 @@ public class ReferenceGraph {
         return refs;
     }
 
-    public Set<FullyQualifiedMemberNameAndDesc> recursiveResolveFrom(Set<FullyQualifiedMemberNameAndDesc> starts) {
+    public Pair<Set<FullyQualifiedMemberNameAndDesc>, Set<String>> recursiveResolveFrom(Set<FullyQualifiedMemberNameAndDesc> starts) {
         Set<FullyQualifiedMemberNameAndDesc> refs = new HashSet<>(starts);
+        Set<String> resources = new HashSet<>();
         Queue<FullyQualifiedMemberNameAndDesc> toAdd = new ArrayDeque<>(starts);
         while (!toAdd.isEmpty()) {
             FullyQualifiedMemberNameAndDesc next = toAdd.poll();
@@ -120,7 +124,15 @@ public class ReferenceGraph {
                 }
             }
         }
-        return refs;
+        for (FullyQualifiedMemberNameAndDesc ref : refs) {
+            References refer = references.get(ref.getOwner());
+            if (refer == null) continue;
+            MemberNameAndDesc member = ref.toMemberNameAndDesc();
+            if (refer.resourceList.containsKey(member)) {
+                resources.addAll(Arrays.asList(refer.resourceList.get(member)));
+            }
+        }
+        return new Pair<>(refs, resources);
     }
 
     public interface Filter {
@@ -133,6 +145,7 @@ public class ReferenceGraph {
         private List<Type> requiredInstances = new ArrayList<>();
         private Map<MemberNameAndDesc, List<FullyQualifiedMemberNameAndDesc>> requiredForMembers = new HashMap<>();
         private List<MemberNameAndDesc> instanceMembers = new ArrayList<>();
+        private Map<MemberNameAndDesc, String[]> resourceList = new HashMap<>();
 
         public void scan(ClassNode classNode, Filter filter) {
             Type currentType = Type.getObjectType(classNode.name);
@@ -156,6 +169,7 @@ public class ReferenceGraph {
                     break;
                 }
             }
+
             // fields
             for (FieldNode field : classNode.fields) {
                 MemberNameAndDesc fieldMember = new MemberNameAndDesc(field.name, Type.getType(field.desc));
@@ -166,7 +180,21 @@ public class ReferenceGraph {
                 if (!isStatic(field.access)) {
                     requiresInstance(fieldMember, currentType, filter);
                 }
+
+                if (field.invisibleAnnotations != null) {
+                    for (AnnotationNode annotation : field.invisibleAnnotations) {
+                        if (annotation.desc.equals(Type.getDescriptor(RequiresResource.class))) {
+                            try {
+                                RequiresResource resource = AnnotationUtils.createAnnotation(annotation);
+                                resourceList.put(fieldMember, resource.value());
+                            } catch (ClassNotFoundException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                }
             }
+
             // methods
             for (MethodNode method : classNode.methods) {
                 Type methodType = Type.getMethodType(method.desc);
@@ -175,6 +203,19 @@ public class ReferenceGraph {
                 if (!isStatic(method.access)) {
                     requiresInstance(methodMember, currentType, filter);
                     instanceMembers.add(methodMember);
+                }
+
+                if (method.invisibleAnnotations != null) {
+                    for (AnnotationNode annotation : method.invisibleAnnotations) {
+                        if (annotation.desc.equals(Type.getDescriptor(RequiresResource.class))) {
+                            try {
+                                RequiresResource resource = AnnotationUtils.createAnnotation(annotation);
+                                resourceList.put(methodMember, resource.value());
+                            } catch (ClassNotFoundException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
                 }
 
                 for (AbstractInsnNode insn : method.instructions) {
