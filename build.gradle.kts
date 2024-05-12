@@ -2,6 +2,7 @@ plugins {
     java
     id("com.github.johnrengelman.shadow") version "8.1.1"
     `maven-publish`
+    `java-library`
 }
 
 allprojects {
@@ -60,10 +61,6 @@ dependencies {
     api("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
     api("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
     api("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
-}
-
-base {
-
 }
 
 val mainVersion = project.properties["mainVersion"] as String
