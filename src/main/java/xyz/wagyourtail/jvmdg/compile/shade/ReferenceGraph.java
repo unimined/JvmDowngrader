@@ -34,6 +34,9 @@ public class ReferenceGraph {
         Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                if (file.getFileName().toString().equals("module-info.class")) {
+                    return FileVisitResult.CONTINUE;
+                }
                 String path = root.relativize(file).toString();
                 if (path.endsWith(".class")) {
                     path = path.substring(0, path.length() - 6);

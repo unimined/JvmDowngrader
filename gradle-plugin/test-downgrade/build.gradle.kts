@@ -57,6 +57,7 @@ val downgradeJar9 by tasks.creating(DowngradeJar::class) {
     inputFile.set(tasks.jar.get().archiveFile)
     archiveClassifier.set("downgraded-9")
     downgradeTo = JavaVersion.VERSION_1_9
+    archiveVersion.set(props.getProperty("version") as String)
 }
 
 val shadeDowngradedApi9 by tasks.creating(ShadeAPI::class) {
