@@ -59,28 +59,33 @@ you can create a custom task by doing:
 task customDowngrade(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar) {
     inputFile = tasks.jar.archiveFile
     downgradeTo = JavaVersion.VERSION_1_8 // default
-    sourceSet = sourceSets.main // default
+    sourceSet = sourceSets.main // default, used for classpath
     archiveClassifier = "downgraded-8"
 }
 
-task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeDowngradedApi) {
+task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeApi) {
     inputFile = customDowngrade.archiveFile
     downgradeTo = JavaVersion.VERSION_1_8 // default
-    shadePath = "${archiveBaseName}/jvmdg/api" // default
+    shadePath = "${archiveBaseName}/jvmdg/api" // default, where the shaded classes will be placed
     archiveClassifier = "downgraded-8-shaded"
 }
 ```
 
 ## "Compile" Time Downgrading
 
-Shading the required api is currently only supported in the gradle plugin. 
-So this isn't recommended outside of debugging.
-
 ### Zip Downgrading
 
 Downgrades the contents of a zip file to an older version.
 
 ex. `java -cp JvmDowngrader-all.jar xyz.wagyourtail.jvmdg.compile.ZipDowngrader 52 input.jar output.jar classpath.jar;classpath2.jar`
+
+### Shading Api
+
+Analyze a downgraded zip file for API usages and shade them into the output.
+
+ex. `java -cp JvmDowngrader-all.jar xyz.wagyourtail.jvmdg.compile.ApiShader 52 "shade/prefix" input.jar output.jar`
+
+The class version can be replaced with a path to the pre-downgraded api jar to save time.
 
 ### Path Downgrading
 
