@@ -328,15 +328,54 @@ public class ClassDowngrader {
         return outputs;
     }
 
+    public ASMClassWriter.ClassInfo fromClassNode(ClassNode node) {
+        String superType;
+        if (node.superName == null) {
+            superType = "java/lang/Object";
+        } else {
+            superType = stubClass(node.version, Type.getObjectType(node.superName)).getInternalName();
+        }
+        Set<String> interfaces = new HashSet<>();
+        for (String i : node.interfaces) {
+            interfaces.add(stubClass(node.version, Type.getObjectType(i)).getInternalName());
+        }
+        return new ASMClassWriter.ClassInfo((node.access & Opcodes.ACC_INTERFACE) != 0, node.name, node.superName, node.interfaces);
+    }
+
+    public ASMClassWriter.ClassInfo fromClassLoader(int version, String name) {
+        try (InputStream stream = classLoader.getResourceAsStream(name + ".class")) {
+            if (stream == null) return null;
+            ClassReader reader = new ClassReader(stream);
+            List<String> interfaces = new ArrayList<>();
+            String type = stubClass(version, Type.getObjectType(reader.getClassName())).getInternalName();
+            String superType = reader.getSuperName();
+            if (superType == null) {
+                superType = "java/lang/Object";
+            } else {
+                superType = stubClass(version, Type.getObjectType(superType)).getInternalName();
+            }
+            for (String i : reader.getInterfaces()) {
+                interfaces.add(stubClass(version, Type.getObjectType(i)).getInternalName());
+            }
+            return new ASMClassWriter.ClassInfo((reader.getAccess() & Opcodes.ACC_INTERFACE) != 0, type, superType, interfaces);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public byte[] classNodeToBytes(final ClassNode node, final Function<String, byte[]> getExtraRead) {
         ASMClassWriter cw = new ASMClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS, new Function<String, ASMClassWriter.ClassInfo>() {
             @Override
             public ASMClassWriter.ClassInfo apply(String s) {
-                String target = stubClass(node.version, Type.getObjectType(s)).getInternalName();
-                byte[] b = getExtraRead.apply(target);
+                if (s.equals(node.name)) {
+                    return fromClassNode(node);
+                }
+                ASMClassWriter.ClassInfo ci = fromClassLoader(node.version, s);
+                if (ci != null) return ci;
+                byte[] b = getExtraRead.apply(s);
                 if (b == null) return null;
                 ClassNode cn = ASMUtils.bytesToClassNode(b, ClassReader.SKIP_CODE);
-                return ASMClassWriter.ClassInfo.fromClassNode(cn);
+                return fromClassNode(cn);
             }
         });
         node.accept(cw);

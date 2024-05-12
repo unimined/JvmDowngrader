@@ -67,18 +67,7 @@ public class ASMClassWriter extends ClassWriter {
     public ClassInfo getClassInfo(String name) {
         ClassInfo ci = getType.apply(name);
         if (ci == null) {
-            try {
-                Class<?> c = Class.forName(name.replace('/', '.'));
-                Class<?> s = c.getSuperclass();
-                List<String> interfaces = new ArrayList<>();
-                for (Class<?> i : c.getInterfaces()) {
-                    interfaces.add(i.getName().replace('.', '/'));
-                }
-                return new ClassInfo(c.isInterface(), name, s == null ? null : s.getName().replace('.', '/'), interfaces);
-            } catch (Throwable e) {
-                System.err.println("Failed to get class info for " + name);
-                return null;
-            }
+            System.err.println("Failed to get class info for " + name);
         }
         return ci;
     }
@@ -128,10 +117,6 @@ public class ASMClassWriter extends ClassWriter {
             this.name = name;
             this.superName = superName;
             this.interfaces = interfaces;
-        }
-
-        public static ClassInfo fromClassNode(ClassNode node) {
-            return new ClassInfo((node.access & Opcodes.ACC_INTERFACE) != 0, node.name, node.superName, node.interfaces);
         }
 
         @Override
