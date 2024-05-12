@@ -59,7 +59,7 @@ public class ReferenceGraph {
                 ClassNode node = ASMUtils.bytesToClassNode(Utils.readAllBytes(stream));
                 Type type = Type.getObjectType(node.name);
                 if (!type.equals(newScanTargets.get(path))) {
-                    throw new IllegalStateException("Expected path to match class name");
+                    throw new IllegalStateException("Expected path to match class name: " + path + " != " + type.getInternalName());
                 }
                 references.get(type).scan(node, filter);
             }
