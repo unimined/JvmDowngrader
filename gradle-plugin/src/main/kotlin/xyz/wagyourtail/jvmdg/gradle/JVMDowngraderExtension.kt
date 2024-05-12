@@ -15,7 +15,7 @@ abstract class JVMDowngraderExtension(val project: Project) {
 
     var asmVersion by FinalizeOnRead("9.7")
 
-    val defaultTask = project.tasks.register("downgradeJar", DowngradeJar::class.java, this).apply {
+    val defaultTask = project.tasks.register("downgradeJar", DowngradeJar::class.java).apply {
         configure {
             val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
             it.inputFile.set(jar.archiveFile)
@@ -23,7 +23,7 @@ abstract class JVMDowngraderExtension(val project: Project) {
         }
     }
 
-    val defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeAPI::class.java, this).apply {
+    val defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeAPI::class.java).apply {
         configure {
             it.inputFile.set(defaultTask.get().archiveFile)
             it.archiveClassifier.set("downgraded-shaded")

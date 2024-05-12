@@ -1,3 +1,4 @@
+import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
 import java.util.*
 
 plugins {

@@ -4,15 +4,22 @@ package xyz.wagyourtail.jvmdg.gradle.task
 
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.tasks.Jar
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.deleteIfExists
+import xyz.wagyourtail.jvmdg.gradle.readZipInputStreamFor
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.LazyMutable
-import javax.inject.Inject
+import java.nio.file.StandardOpenOption
+import kotlin.io.path.outputStream
 
-abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderExtension): Jar() {
+abstract class ShadeAPI : Jar() {
+
+    private val jvmdg = project.extensions.getByType(JVMDowngraderExtension::class.java)
 
     @get:Input
     @get:Optional
@@ -41,7 +48,7 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
         project.javaexec {
             it.mainClass.set("xyz.wagyourtail.jvmdg.compile.ApiShader")
             it.args = listOf(
-                jvmdg.api.resolve().first { it.extension == "jar" }.absolutePath,
+                jvmdg.downgradedApi[downgradeTo].absolutePath,
                 shadePath,
                 inputFile.get().asFile.absolutePath,
                 tempOutput.absolutePath,
@@ -49,6 +56,17 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
             it.workingDir = temporaryDir
             it.classpath = jvmdg.core
         }.assertNormalExitValue().rethrowFailure()
+
+        inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->
+            // write to temp file
+            val inpTmp = temporaryDir.toPath().resolve("input-manifest.MF")
+            inpTmp.outputStream(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use { out ->
+                inp.copyTo(out)
+            }
+            this.manifest {
+                it.from(inpTmp)
+            }
+        }
 
         from(project.zipTree(tempOutput))
         copy()
