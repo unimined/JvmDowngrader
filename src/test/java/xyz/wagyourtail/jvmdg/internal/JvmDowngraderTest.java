@@ -184,7 +184,7 @@ public class JvmDowngraderTest {
             Path.of("."),
             Map.of(),
             true,
-            List.of(/*"-Djvmdg.debug=true", */"-Djvmdg.java-api=" + javaApi, "-Djvmdg.log=false"),
+            List.of(/*"-Djvmdg.debug=true", */"-Djvmdg.java-api=" + javaApi, "-Djvmdg.log=false", "-Djvmdg.quiet=true"),
             target.toOpcode(),
             (String it) -> {
                 runtimeDowngradeLog.append(it).append("\n");

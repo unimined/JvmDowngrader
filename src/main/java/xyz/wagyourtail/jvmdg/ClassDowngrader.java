@@ -32,6 +32,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ClassDowngrader {
+    public static final boolean QUIET = Boolean.getBoolean("jvmdg.quiet");
+
     public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(Utils.getCurrentClassVersion());
 
     // because parent is null, this is (essentially) a wrapper around the bootstrap classloader

@@ -204,7 +204,7 @@ public abstract class VersionProvider {
                 try {
                     List<Type> types = superTypeResolver.apply(type);
                     if (types == null) {
-                        System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
+                        if (!ClassDowngrader.QUIET) System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
                         types = Collections.emptyList();
                     }
                     List<ClassMapping> superTypes = new ArrayList<>();
