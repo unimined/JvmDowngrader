@@ -2,6 +2,8 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
+import xyz.wagyourtail.gradle.GenerateCtSymTask
+import xyz.wagyourtail.gradle.toOpcode
 
 buildscript {
     repositories {
@@ -60,6 +62,7 @@ dependencies {
     implementation(project(":")) {
         isTransitive = false
     }
+
     implementation(rootProject.sourceSets.getByName("shared").output)
 
     implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
@@ -93,7 +96,7 @@ tasks.compileJava {
                         val node = ClassNode()
                         reader.accept(node, ClassReader.SKIP_CODE)
                         stubClass.visit(
-                            jvToOpc(mainVersion),
+                            mainVersion.toOpcode(),
                             node.access,
                             node.name,
                             node.signature,
@@ -126,7 +129,7 @@ tasks.compileTestJava {
 }
 
 tasks.getByName<JavaCompile>("compileCoverageJava") {
-    configCompile(toVersion)
+    configCompile(testVersion)
 }
 
 tasks.jar {
@@ -152,31 +155,6 @@ fun JavaCompile.configCompile(version: JavaVersion) {
     }
 }
 
-fun jvToOpc(vers: JavaVersion): Int = when (vers) {
-    JavaVersion.VERSION_1_1 -> Opcodes.V1_1
-    JavaVersion.VERSION_1_2 -> Opcodes.V1_2
-    JavaVersion.VERSION_1_3 -> Opcodes.V1_3
-    JavaVersion.VERSION_1_4 -> Opcodes.V1_4
-    JavaVersion.VERSION_1_5 -> Opcodes.V1_5
-    JavaVersion.VERSION_1_6 -> Opcodes.V1_6
-    JavaVersion.VERSION_1_7 -> Opcodes.V1_7
-    JavaVersion.VERSION_1_8 -> Opcodes.V1_8
-    JavaVersion.VERSION_1_9 -> Opcodes.V9
-    JavaVersion.VERSION_1_10 -> Opcodes.V10
-    JavaVersion.VERSION_11 -> Opcodes.V11
-    JavaVersion.VERSION_12 -> Opcodes.V12
-    JavaVersion.VERSION_13 -> Opcodes.V13
-    JavaVersion.VERSION_14 -> Opcodes.V14
-    JavaVersion.VERSION_15 -> Opcodes.V15
-    JavaVersion.VERSION_16 -> Opcodes.V16
-    JavaVersion.VERSION_17 -> Opcodes.V17
-    JavaVersion.VERSION_18 -> Opcodes.V18
-    JavaVersion.VERSION_19 -> Opcodes.V19
-    JavaVersion.VERSION_20 -> Opcodes.V20
-    JavaVersion.VERSION_21 -> Opcodes.V21
-    JavaVersion.VERSION_22 -> Opcodes.V22
-    else -> throw IllegalArgumentException("Unsupported Java Version: $vers")
-}
 val tempFile11 = project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("java-api-${project.version}-downgraded-11.jar")
 
 val downgradeJar11Exec by tasks.registering(JavaExec::class) {
@@ -191,7 +169,7 @@ val downgradeJar11Exec by tasks.registering(JavaExec::class) {
     workingDir = project.layout.buildDirectory.get().asFile
     jvmArgs = listOf("-Djvmdg.java-api=$apiJar")
     args = listOf(
-        jvToOpc(JavaVersion.VERSION_11).toString(),
+        JavaVersion.VERSION_11.toOpcode().toString(),
         apiJar,
         tempFile11.absolutePath
     )
@@ -218,7 +196,7 @@ val downgradeJar8Exec by tasks.registering(JavaExec::class) {
     workingDir = project.layout.buildDirectory.get().asFile
     jvmArgs = listOf("-Djvmdg.java-api=$apiJar")
     args = listOf(
-        jvToOpc(JavaVersion.VERSION_1_8).toString(),
+        JavaVersion.VERSION_1_8.toOpcode().toString(),
         apiJar,
         tempFile8.absolutePath
     )
@@ -232,17 +210,23 @@ val downgradeJar8 by tasks.registering(Jar::class) {
     from(zipTree(tempFile8))
 }
 
+val genCySym by tasks.registering(GenerateCtSymTask::class) {
+    group = "jvmdg"
+}
+
 val coverageReport by tasks.registering(JavaExec::class) {
     group = "jvmdg"
-    dependsOn(tasks.jar)
+    dependsOn(tasks.jar, genCySym)
     javaLauncher.set(javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(toVersion.majorVersion))
+        languageVersion.set(JavaLanguageVersion.of(testVersion.majorVersion))
     })
-    mainClass = "xyz.wagyourtail.jvmdg.coverage.CoverageChecker"
+    mainClass = "xyz.wagyourtail.jvmdg.coverage.ApiCoverageChecker"
     classpath = coverage.runtimeClasspath
-    jvmArgs("-Djvmdg.java-api=${tasks.jar.get().archiveFile.get().asFile.absolutePath}")
+    jvmArgs("-Djvmdg.java-api=${tasks.jar.get().archiveFile.get().asFile.absolutePath}", "-Djvmdg.quiet=true")
+    args(genCySym.get().ctSym)
     workingDir = project.layout.buildDirectory.get().asFile
 }
+
 
 
 publishing {
