@@ -335,11 +335,11 @@ public class ClassDowngrader {
         } else {
             superType = stubClass(node.version, Type.getObjectType(node.superName)).getInternalName();
         }
-        Set<String> interfaces = new HashSet<>();
+        List<String> interfaces = new ArrayList<>();
         for (String i : node.interfaces) {
             interfaces.add(stubClass(node.version, Type.getObjectType(i)).getInternalName());
         }
-        return new ASMClassWriter.ClassInfo((node.access & Opcodes.ACC_INTERFACE) != 0, node.name, node.superName, node.interfaces);
+        return new ASMClassWriter.ClassInfo((node.access & Opcodes.ACC_INTERFACE) != 0, node.name, superType, interfaces);
     }
 
     public ASMClassWriter.ClassInfo fromClassLoader(int version, String name) {
