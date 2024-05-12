@@ -23,6 +23,20 @@ public class TestRandom {
 
         random = new RandomGenImpl();
         System.out.println(random.nextInt());
+
+        TestNotRandom tnr = new TestNotRandom() {
+            @Override
+            public int nextInt() {
+                return 0;
+            }
+        };
+        System.out.println(tnr.nextInt());
+    }
+
+    private interface TestNotRandom {
+
+        int nextInt();
+
     }
 
     private static class RandomGenImpl implements RandomGenerator {

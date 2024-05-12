@@ -47,6 +47,18 @@ public abstract class VersionProvider {
             Type owner;
             String name;
             List<Type> params = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(method)));
+
+            Annotation[][] annotations = method.getParameterAnnotations();
+            for (int i = 0; i < params.size(); i++) {
+                Annotation[] param = annotations[i];
+                for (Annotation a : param) {
+                    if (a instanceof Coerce) {
+                        Coerce c = (Coerce) a;
+                        params.set(i, Type.getType(c.value()));
+                    }
+                }
+            }
+
             Type ret = Type.getReturnType(method);
             if (ref.value().isEmpty()) {
                 owner = params.remove(0);
@@ -66,16 +78,6 @@ public abstract class VersionProvider {
             if (ref.desc().isEmpty()) {
                 if (name.equals("<init>")) {
                     ret = Type.VOID_TYPE;
-                }
-                Annotation[][] annotations = method.getParameterAnnotations();
-                for (int i = 0; i < params.size(); i++) {
-                    Annotation[] param = annotations[i];
-                    for (Annotation a : param) {
-                        if (a instanceof Coerce) {
-                            Coerce c = (Coerce) a;
-                            params.set(i, Type.getType(c.value()));
-                        }
-                    }
                 }
                 desc = Type.getMethodType(ret, params.toArray(new Type[0]));
             } else {
