@@ -2,6 +2,8 @@ package xyz.wagyourtail.jvmdg.gradle
 
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Dependency
+import org.gradle.api.file.FileCollection
 import org.gradle.jvm.tasks.Jar
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
@@ -46,12 +48,11 @@ abstract class JVMDowngraderExtension(val project: Project) {
         )
     }
 
-    val downgradedApi = defaultedMapOf<JavaVersion, File> { version ->
+    private val downgradedApis = defaultedMapOf<JavaVersion, Dependency> { version ->
         // if it's 8 or 11, premade exists, grab off maven
         if (version.isJava8 || version.isJava11) {
             project.logger.lifecycle("Using pre-downgraded api for ${version.majorVersion}")
-            return@defaultedMapOf project.configurations.detachedConfiguration(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${this.version}:downgraded-${version.majorVersion}"))
-                .resolve().first { it.extension == "jar" }
+            return@defaultedMapOf project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${this.version}:downgraded-${version.majorVersion}")
         }
         project.logger.lifecycle("Generating downgraded api for ${version.majorVersion}")
         // else, generate it
@@ -74,6 +75,28 @@ abstract class JVMDowngraderExtension(val project: Project) {
                 throw Exception("Failed to downgrade jar")
             }
         }
-        downgradedApi
+        project.dependencies.create(downgradedApi)
     }
+
+    fun downgradeDirectories(version: JavaVersion, inputs: List<File>, outputs: List<File>, classpath: FileCollection) {
+        val tempDir = project.layout.buildDirectory.get().asFile.resolve("jvmdg")
+        tempDir.mkdirs()
+        project.javaexec { spec ->
+            spec.mainClass.set("xyz.wagyourtail.jvmdg.compile.PathDowngrader")
+            spec.args = listOf(
+                jvToOpc(version).toString(),
+                inputs.joinToString(File.pathSeparator) { it.absolutePath },
+                outputs.joinToString(File.pathSeparator) { it.absolutePath },
+                classpath.files.joinToString(File.pathSeparator) { it.absolutePath }
+            )
+            spec.workingDir = tempDir
+            spec.classpath = core
+            spec.jvmArgs = listOf("-Djvmdg.java-api=${api.resolve().first { it.extension == "jar" }.absolutePath}")
+        }.assertNormalExitValue().rethrowFailure()
+    }
+
+    fun getDowngradedApi(version: JavaVersion): Dependency {
+        return downgradedApis[version]
+    }
+
 }

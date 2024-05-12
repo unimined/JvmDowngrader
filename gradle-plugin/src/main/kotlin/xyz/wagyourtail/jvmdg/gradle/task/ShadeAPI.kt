@@ -45,16 +45,16 @@ abstract class ShadeAPI : Jar() {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
 
-        project.javaexec {
-            it.mainClass.set("xyz.wagyourtail.jvmdg.compile.ApiShader")
-            it.args = listOf(
-                jvmdg.downgradedApi[downgradeTo].absolutePath,
+        project.javaexec { spec ->
+            spec.mainClass.set("xyz.wagyourtail.jvmdg.compile.ApiShader")
+            spec.args = listOf(
+                project.configurations.detachedConfiguration(jvmdg.getDowngradedApi(downgradeTo)).resolve().first { it.extension == "jar" }.absolutePath,
                 shadePath,
                 inputFile.get().asFile.absolutePath,
                 tempOutput.absolutePath,
             )
-            it.workingDir = temporaryDir
-            it.classpath = jvmdg.core
+            spec.workingDir = temporaryDir
+            spec.classpath = jvmdg.core
         }.assertNormalExitValue().rethrowFailure()
 
         inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->
