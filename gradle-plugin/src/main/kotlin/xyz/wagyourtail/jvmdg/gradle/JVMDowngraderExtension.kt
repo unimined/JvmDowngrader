@@ -75,7 +75,7 @@ abstract class JVMDowngraderExtension(val project: Project) {
                 throw Exception("Failed to downgrade jar")
             }
         }
-        project.dependencies.create(downgradedApi)
+        project.dependencies.create(project.files(downgradedApi))
     }
 
     fun downgradeDirectories(version: JavaVersion, inputs: List<File>, outputs: List<File>, classpath: FileCollection) {

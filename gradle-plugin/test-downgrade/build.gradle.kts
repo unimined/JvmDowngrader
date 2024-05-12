@@ -1,3 +1,4 @@
+import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
 import java.util.*
 
@@ -52,4 +53,17 @@ dependencies {
     implementation("org.jetbrains:annotations-java5:24.1.0")
 }
 
+val downgradeJar9 by tasks.creating(DowngradeJar::class) {
+    inputFile.set(tasks.jar.get().archiveFile)
+    archiveClassifier.set("downgraded-9")
+    downgradeTo = JavaVersion.VERSION_1_9
+}
+
+val shadeDowngradedApi9 by tasks.creating(ShadeAPI::class) {
+    inputFile.set(downgradeJar9.archiveFile)
+    archiveClassifier.set("downgraded-shaded-9")
+    downgradeTo = JavaVersion.VERSION_1_9
+}
+
 tasks.build.get().dependsOn(tasks.shadeDowngradedApi)
+tasks.build.get().dependsOn(shadeDowngradedApi9)
