@@ -116,6 +116,7 @@ tasks.test {
 }
 
 tasks.shadowJar {
+    from(sourceSets["main"].output, sourceSets["shared"].output)
     relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
 }
 
