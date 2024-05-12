@@ -326,14 +326,15 @@ public class ClassDowngrader {
         return outputs;
     }
 
-    public byte[] classNodeToBytes(ClassNode node, final Function<String, byte[]> getExtraRead) {
-        ASMClassWriter cw = new ASMClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS, new Function<String, String>() {
+    public byte[] classNodeToBytes(final ClassNode node, final Function<String, byte[]> getExtraRead) {
+        ASMClassWriter cw = new ASMClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS, new Function<String, ASMClassWriter.ClassInfo>() {
             @Override
-            public String apply(String s) {
-                byte[] b = getExtraRead.apply(s);
+            public ASMClassWriter.ClassInfo apply(String s) {
+                String target = stubClass(node.version, Type.getObjectType(s)).getInternalName();
+                byte[] b = getExtraRead.apply(target);
                 if (b == null) return null;
                 ClassNode cn = ASMUtils.bytesToClassNode(b, ClassReader.SKIP_CODE);
-                return stubClass(cn.version, Type.getObjectType(cn.superName)).getInternalName();
+                return ASMClassWriter.ClassInfo.fromClassNode(cn);
             }
         });
         node.accept(cw);
