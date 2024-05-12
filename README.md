@@ -29,7 +29,7 @@ in `build.gradle`:
 ```gradle
 // add the plugin
 plugins {
-    id 'xyz.wagyourtail.jvmdowngrader' version '0.1.0'
+    id 'xyz.wagyourtail.jvmdowngrader' version '0.2.0'
 }
 ```
 
@@ -66,7 +66,6 @@ task customDowngrade(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar) {
 task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeDowngradedApi) {
     inputFile = customDowngrade.archiveFile
     downgradeTo = JavaVersion.VERSION_1_8 // default
-    sourceSet = sourceSets.main // default
     shadePath = "${archiveBaseName}/jvmdg/api" // default
     archiveClassifier = "downgraded-8-shaded"
 }

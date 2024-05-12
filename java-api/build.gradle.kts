@@ -40,7 +40,7 @@ val toVersion = JavaVersion.toVersion(project.properties["stubToVersion"]!!)
 sourceSets {
     for (vers in fromVersion..toVersion) {
         create("java${vers.ordinal + 1}") {
-            inputOf(main.get())
+            inputOf(sourceSets.main.get())
             main {
                 outputOf(this@create)
             }
@@ -60,6 +60,12 @@ dependencies {
     implementation(project(":")) {
         isTransitive = false
     }
+    implementation(rootProject.sourceSets.getByName("shared").output)
+
+    implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
+    implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
+    implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
+    implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
 }
 
 for (vers in fromVersion..toVersion) {
@@ -125,6 +131,7 @@ tasks.getByName<JavaCompile>("compileCoverageJava") {
 
 tasks.jar {
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output } + sourceSets.main.get().output).toTypedArray())
+    from(rootProject.sourceSets.getByName("shared").output)
 }
 
 tasks.shadowJar {

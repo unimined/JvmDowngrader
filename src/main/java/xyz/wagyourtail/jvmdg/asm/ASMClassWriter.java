@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg;
+package xyz.wagyourtail.jvmdg.asm;
 
 import org.objectweb.asm.ClassWriter;
 import xyz.wagyourtail.jvmdg.util.Function;

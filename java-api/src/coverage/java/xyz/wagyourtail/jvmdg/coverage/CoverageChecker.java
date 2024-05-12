@@ -248,7 +248,7 @@ public class CoverageChecker {
         for (Path path : mods) {
             var scn = path.resolve(name + ".sig");
             if (Files.exists(scn)) {
-                return ClassDowngrader.bytesToClassNode(Files.readAllBytes(scn), ClassReader.SKIP_CODE);
+                return ClassUtils.bytesToClassNode(Files.readAllBytes(scn), ClassReader.SKIP_CODE);
             }
         }
         return null;
@@ -276,7 +276,7 @@ public class CoverageChecker {
                             System.err.println("Skipping " + p.toAbsolutePath());
                             return;
                         }
-                        var cn = ClassDowngrader.bytesToClassNode(Files.readAllBytes(p), ClassReader.SKIP_CODE);
+                        var cn = ClassUtils.bytesToClassNode(Files.readAllBytes(p), ClassReader.SKIP_CODE);
                         if (cn.name.startsWith("jdk/")) return;
                         if (cn.name.startsWith("sun/")) {
                             if (!cn.name.equals("sun/misc/Unsafe")) return;

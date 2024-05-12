@@ -11,7 +11,7 @@ import java.io.File
 
 abstract class JVMDowngraderExtension(val project: Project) {
 
-    var version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.0.1")
+    var version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.2.0")
 
     var asmVersion by FinalizeOnRead("9.7")
 

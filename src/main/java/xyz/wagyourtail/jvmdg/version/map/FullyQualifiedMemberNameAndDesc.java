@@ -20,6 +20,10 @@ public class FullyQualifiedMemberNameAndDesc {
         return new FullyQualifiedMemberNameAndDesc(Type.getType(method.getDeclaringClass()), method.getName(), Type.getType(method));
     }
 
+    public static FullyQualifiedMemberNameAndDesc ofType(Type type) {
+        return new FullyQualifiedMemberNameAndDesc(type, null, null);
+    }
+
     public Type getOwner() {
         return owner;
     }
@@ -32,7 +36,12 @@ public class FullyQualifiedMemberNameAndDesc {
         return desc;
     }
 
+    public boolean isClassRef() {
+        return name == null;
+    }
+
     public MemberNameAndDesc toMemberNameAndDesc() {
+        if (name == null) return null;
         return new MemberNameAndDesc(name, desc);
     }
 

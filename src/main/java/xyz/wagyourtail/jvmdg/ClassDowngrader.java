@@ -9,6 +9,8 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
+import xyz.wagyourtail.jvmdg.asm.ASMClassWriter;
+import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
@@ -127,22 +129,6 @@ public class ClassDowngrader {
         } catch (IOException e) {
             throw new RuntimeException("Failed to find java api", e);
         }
-    }
-
-    public static ClassNode bytesToClassNode(byte[] bytes) {
-        ClassNode node = new ClassNode();
-        new ClassReader(bytes).accept(node, 0);
-        return node;
-    }
-
-    public static ClassNode bytesToClassNode(byte[] bytes, int flags) {
-        ClassNode node = new ClassNode();
-        new ClassReader(bytes).accept(node, flags);
-        return node;
-    }
-
-    public static void main(String[] args) {
-        //TODO
     }
 
     public Set<MemberNameAndDesc> getMembers(int version, Type type) throws IOException {
@@ -288,7 +274,7 @@ public class ClassDowngrader {
             return null;
         }
         // transform
-        ClassNode node = bytesToClassNode(bytes);
+        ClassNode node = ASMUtils.bytesToClassNode(bytes);
         if (name.get() == null) {
             name.set(node.name);
         } else if (!name.get().equals(node.name)) {
@@ -306,7 +292,7 @@ public class ClassDowngrader {
                         if (out == null) {
                             return null;
                         }
-                        return bytesToClassNode(out);
+                        return ASMUtils.bytesToClassNode(out);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -346,7 +332,7 @@ public class ClassDowngrader {
             public String apply(String s) {
                 byte[] b = getExtraRead.apply(s);
                 if (b == null) return null;
-                ClassNode cn = bytesToClassNode(b, ClassReader.SKIP_CODE);
+                ClassNode cn = ASMUtils.bytesToClassNode(b, ClassReader.SKIP_CODE);
                 return stubClass(cn.version, Type.getObjectType(cn.superName)).getInternalName();
             }
         });

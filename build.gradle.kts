@@ -39,12 +39,19 @@ allprojects {
     }
 }
 
-subprojects {
-    dependencies {
-        implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
+val shared by sourceSets.creating {
+    compileClasspath += sourceSets["main"].compileClasspath
+    runtimeClasspath += sourceSets["main"].runtimeClasspath
+}
+
+sourceSets {
+    main {
+        compileClasspath += shared.output
+        runtimeClasspath += shared.output
+    }
+    test {
+        compileClasspath += shared.output
+        runtimeClasspath += shared.output
     }
 }
 
@@ -72,6 +79,7 @@ java {
 }
 
 tasks.jar {
+    from(sourceSets["main"].output, sourceSets["shared"].output)
     manifest {
         attributes(
             "Manifest-Version" to "1.0",
