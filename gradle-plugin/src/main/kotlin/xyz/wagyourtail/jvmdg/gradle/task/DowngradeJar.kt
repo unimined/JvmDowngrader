@@ -38,7 +38,8 @@ abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngrad
     fun doDowngrade() {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
-        val result = project.javaexec {
+
+        project.javaexec {
             it.mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
             it.args = listOf(
                 jvToOpc(downgradeTo).toString(),
@@ -49,10 +50,8 @@ abstract class DowngradeJar @Inject constructor(@Internal val jvmdg: JVMDowngrad
             it.workingDir = temporaryDir
             it.classpath = jvmdg.core
             it.jvmArgs = listOf("-Djvmdg.java-api=${jvmdg.api.resolve().first { it.extension == "jar" }.absolutePath}")
-        }
-        if (result.exitValue != 0) {
-            throw Exception("Failed to downgrade jar")
-        }
+        }.assertNormalExitValue().rethrowFailure()
+
         from(project.zipTree(tempOutput))
         copy()
     }

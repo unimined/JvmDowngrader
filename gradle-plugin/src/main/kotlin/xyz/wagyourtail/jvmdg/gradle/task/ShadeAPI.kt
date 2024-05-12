@@ -37,7 +37,8 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
     fun doShade() {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
-        val result = project.javaexec {
+
+        project.javaexec {
             it.mainClass.set("xyz.wagyourtail.jvmdg.compile.ApiShader")
             it.args = listOf(
                 jvmdg.api.resolve().first { it.extension == "jar" }.absolutePath,
@@ -47,10 +48,8 @@ abstract class ShadeAPI @Inject constructor(@Internal val jvmdg: JVMDowngraderEx
             )
             it.workingDir = temporaryDir
             it.classpath = jvmdg.core
-        }
-        if (result.exitValue != 0) {
-            throw Exception("Failed to downgrade jar")
-        }
+        }.assertNormalExitValue().rethrowFailure()
+
         from(project.zipTree(tempOutput))
         copy()
     }
