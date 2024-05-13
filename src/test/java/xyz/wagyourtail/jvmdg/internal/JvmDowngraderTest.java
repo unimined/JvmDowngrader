@@ -47,45 +47,25 @@ public class JvmDowngraderTest {
     public JvmDowngraderTest() throws Exception {
     }
 
-    @BeforeAll
-    public static void before() throws Exception {
-        new JvmDowngraderTest().cleanup();
-    }
-
-    public void cleanup() throws Exception {
-        if (Files.exists(downgraded)) {
-            Files.delete(downgraded);
-        }
-        if (Files.exists(shaded)) {
-            Files.delete(shaded);
-        }
-        if (Files.exists(downgradedJavaApi)) {
-            Files.delete(downgradedJavaApi);
-        }
-    }
-
     private Path getDowngradedPath(Path originalPath, String suffix) throws Exception {
         Path path = originalPath.getParent().resolve(originalPath.getFileName().toString().replace(".jar", suffix));
-        if (!Files.exists(path)) {
-            ZipDowngrader.downgradeZip(target.toOpcode(), originalPath, new HashSet<>(), path);
-        }
+        Files.deleteIfExists(path);
+        ZipDowngrader.downgradeZip(target.toOpcode(), originalPath, new HashSet<>(), path);
         return path;
     }
 
     private Path getDowngradedJavaApi(Path javaApi, String suffix) throws IOException {
         // resolve temp file in build
         Path output = Path.of("./build/tmp/test/" + javaApi.getFileName().toString().replace(".jar", suffix));
-        if (!Files.exists(output)) {
-            ApiShader.downgradedApi(target.toOpcode(), javaApi, output);
-        }
+        Files.deleteIfExists(output);
+        ApiShader.downgradedApi(target.toOpcode(), javaApi, output);
         return output;
     }
 
     private Path getShadedPath(Path originalPath, Path downgradedJavaApi, String suffix) throws IOException {
         Path path = originalPath.getParent().resolve(originalPath.getFileName().toString().replace(".jar", suffix));
-        if (!Files.exists(path)) {
-            ApiShader.shadeApis("jvmdg/shade/", originalPath, path, downgradedJavaApi);
-        }
+        Files.deleteIfExists(path);
+        ApiShader.shadeApis("jvmdg/shade/", originalPath, path, downgradedJavaApi);
         return path;
     }
 
