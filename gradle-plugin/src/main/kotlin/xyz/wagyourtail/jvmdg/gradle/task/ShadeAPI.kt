@@ -2,8 +2,11 @@
 
 package xyz.wagyourtail.jvmdg.gradle.task
 
+import org.apache.commons.io.output.NullOutputStream
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.LogLevel
+import org.gradle.api.logging.configuration.ShowStacktrace
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
@@ -57,6 +60,17 @@ abstract class ShadeAPI : Jar() {
             )
             spec.workingDir = temporaryDir
             spec.classpath = jvmdg.core
+
+            if (project.gradle.startParameter.logLevel < LogLevel.LIFECYCLE) {
+                spec.standardOutput = System.out
+            } else {
+                spec.standardOutput = NullOutputStream.NULL_OUTPUT_STREAM
+            }
+            if (project.gradle.startParameter.logLevel < LogLevel.LIFECYCLE || project.gradle.startParameter.showStacktrace != ShowStacktrace.INTERNAL_EXCEPTIONS) {
+                spec.errorOutput = System.err
+            } else {
+                spec.errorOutput = NullOutputStream.NULL_OUTPUT_STREAM
+            }
         }.assertNormalExitValue().rethrowFailure()
 
         inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->

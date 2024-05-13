@@ -2,8 +2,11 @@
 
 package xyz.wagyourtail.jvmdg.gradle.task
 
+import org.apache.commons.io.output.NullOutputStream
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.logging.LogLevel
+import org.gradle.api.logging.configuration.ShowStacktrace
 import org.gradle.api.tasks.*
 import org.gradle.jvm.tasks.Jar
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
@@ -45,17 +48,28 @@ abstract class DowngradeJar : Jar() {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
 
-        project.javaexec {
-            it.mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
-            it.args = listOf(
+        project.javaexec { spec ->
+            spec.mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
+            spec.args = listOf(
                 jvToOpc(downgradeTo).toString(),
                 inputFile.get().asFile.absolutePath,
                 tempOutput.absolutePath,
                 sourceSet.compileClasspath.files.joinToString(File.pathSeparator) { it.absolutePath }
             )
-            it.workingDir = temporaryDir
-            it.classpath = jvmdg.core
-            it.jvmArgs = listOf("-Djvmdg.java-api=${jvmdg.api.resolve().first { it.extension == "jar" }.absolutePath}")
+            spec.workingDir = temporaryDir
+            spec.classpath = jvmdg.core
+            spec.jvmArgs = listOf("-Djvmdg.java-api=${jvmdg.api.resolve().first { it.extension == "jar" }.absolutePath}")
+
+            if (project.gradle.startParameter.logLevel < LogLevel.LIFECYCLE) {
+                spec.standardOutput = System.out
+            } else {
+                spec.standardOutput = NullOutputStream.NULL_OUTPUT_STREAM
+            }
+            if (project.gradle.startParameter.logLevel < LogLevel.LIFECYCLE || project.gradle.startParameter.showStacktrace != ShowStacktrace.INTERNAL_EXCEPTIONS) {
+                spec.errorOutput = System.err
+            } else {
+                spec.errorOutput = NullOutputStream.NULL_OUTPUT_STREAM
+            }
         }.assertNormalExitValue().rethrowFailure()
 
         inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->
