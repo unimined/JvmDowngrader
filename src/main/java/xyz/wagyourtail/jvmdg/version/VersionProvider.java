@@ -624,6 +624,24 @@ public abstract class VersionProvider {
                     Handle bsm = condy.getBootstrapMethod();
                     throw MissingStubError.create(Type.getObjectType(bsm.getOwner()), bsm.getName(), Type.getType(bsm.getDesc()));
                 }
+            } else if (insn instanceof FrameNode) {
+                FrameNode fn = (FrameNode) insn;
+                if (fn.local != null) {
+                    for (int j = 0; j < fn.local.size(); j++) {
+                        Object o = fn.local.get(j);
+                        if (o instanceof String) {
+                            fn.local.set(j, stubClass(Type.getObjectType((String) o)).getInternalName());
+                        }
+                    }
+                }
+                if (fn.stack != null) {
+                    for (int j = 0; j < fn.stack.size(); j++) {
+                        Object o = fn.stack.get(j);
+                        if (o instanceof String) {
+                            fn.stack.set(j, stubClass(Type.getObjectType((String) o)).getInternalName());
+                        }
+                    }
+                }
             }
         }
         return method;

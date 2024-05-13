@@ -56,6 +56,7 @@ public class J_L_R_ObjectMethods {
         visitor.visitInsn(Opcodes.ICONST_1);
         visitor.visitInsn(Opcodes.IRETURN);
         visitor.visitLabel(l0);
+        visitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
         var notEqual = new Label();
         // if (obj != null) {
         visitor.visitVarInsn(Opcodes.ALOAD, 1);
@@ -109,6 +110,7 @@ public class J_L_R_ObjectMethods {
         visitor.visitInsn(Opcodes.ICONST_1);
         visitor.visitInsn(Opcodes.IRETURN);
         visitor.visitLabel(notEqual);
+        visitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
         // return false;
         visitor.visitInsn(Opcodes.ICONST_0);
         visitor.visitInsn(Opcodes.IRETURN);

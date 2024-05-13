@@ -98,6 +98,7 @@ public class J_L_R_SwitchBootstraps {
         var retLabel = new Label();
         smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
         smnode.visitLabel(l0);
+        smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
 
         List<CaseLabels> labels = new ArrayList<>();
         List<Label> startLabels = new ArrayList<>();
@@ -114,6 +115,7 @@ public class J_L_R_SwitchBootstraps {
         for (int j = 0; j < types.size(); j++) {
             var caseLabels = labels.get(j);
             smnode.visitLabel(caseLabels.start);
+            smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
             var type = types.get(j);
             if (type instanceof EnumType et) {
                 // lookahead if multiple EnumTypes in a row
@@ -156,6 +158,7 @@ public class J_L_R_SwitchBootstraps {
                 }
                 // load enum value
                 smnode.visitLabel(caseLabels.afterTypeCheck);
+                smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
                 smnode.visitFieldInsn(Opcodes.GETSTATIC, et.type.getInternalName(), et.value, et.type.getDescriptor());
                 smnode.visitVarInsn(Opcodes.ALOAD, 0);
                 // equals
@@ -200,6 +203,7 @@ public class J_L_R_SwitchBootstraps {
                     }
                 }
                 smnode.visitLabel(caseLabels.afterTypeCheck);
+                smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
                 // load string
                 smnode.visitLdcInsn(type);
                 smnode.visitVarInsn(Opcodes.ALOAD, 0);
@@ -250,6 +254,7 @@ public class J_L_R_SwitchBootstraps {
                 }
 
                 smnode.visitLabel(caseLabels.afterTypeCheck);
+                smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
                 // load int
                 // if (value instanceof Number v && v.intValue() == type.intValue()) {
                 //     return j;
@@ -291,10 +296,12 @@ public class J_L_R_SwitchBootstraps {
                 throw new IllegalStateException("Unknown type for switch: " + type);
             }
             smnode.visitLabel(caseLabels.end);
+            smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
         }
         smnode.visitLabel(def);
         smnode.visitLdcInsn(types.size());
         smnode.visitLabel(retLabel);
+        smnode.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[]{Opcodes.INTEGER});
         smnode.visitInsn(Opcodes.IRETURN);
 
 
