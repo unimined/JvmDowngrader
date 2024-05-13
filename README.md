@@ -125,6 +125,20 @@ Uses the bootstrap main class
 
 ex. `java -jar JvmDowngrader-all.jar myapp.jar;classpath.jar;classpath2.jar mainclass args`
 
+
+## From Code
+
+### Downgrading ClassLoader
+
+This is what the bootstrap downgrader uses internally.
+```groovy
+// construct with parent of the default class downgrader classloader, as that contains the downgraded api classes.
+DowngradingClassLoader loader = new DowngradingClassLoader(ClassDowngrader.classLoader);
+
+// adding jars
+loader.addDelegate(new URL[] { new File("jarname.jar").toURI().toURL() });
+```
+
 ### inspired by
 
 https://github.com/Chocohead/Not-So-New and https://github.com/luontola/retrolambda
