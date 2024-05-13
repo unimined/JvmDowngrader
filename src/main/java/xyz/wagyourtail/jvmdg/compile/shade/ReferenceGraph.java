@@ -32,6 +32,16 @@ public class ReferenceGraph {
     public Map<Path, Type> preScan(final Path root) throws IOException {
         final Map<Path, Type> newScanTargets = new HashMap<>();
         Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                if (root.relativize(dir).toString().startsWith("META-INF/versions")) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                } else {
+                    return FileVisitResult.CONTINUE;
+                }
+            }
+
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 if (file.getFileName().toString().equals("module-info.class")) {
