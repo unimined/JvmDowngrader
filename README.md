@@ -29,7 +29,7 @@ in `build.gradle`:
 ```gradle
 // add the plugin
 plugins {
-    id 'xyz.wagyourtail.jvmdowngrader' version '0.2.0'
+    id 'xyz.wagyourtail.jvmdowngrader' version '0.3.0'
 }
 ```
 
