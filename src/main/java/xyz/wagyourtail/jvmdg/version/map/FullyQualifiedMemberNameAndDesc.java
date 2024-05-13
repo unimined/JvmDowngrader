@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.version.map;
 
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
@@ -16,12 +17,16 @@ public class FullyQualifiedMemberNameAndDesc {
         this.desc = desc;
     }
 
-    public static FullyQualifiedMemberNameAndDesc fromMethod(Method method) {
+    public static FullyQualifiedMemberNameAndDesc of(Method method) {
         return new FullyQualifiedMemberNameAndDesc(Type.getType(method.getDeclaringClass()), method.getName(), Type.getType(method));
     }
 
-    public static FullyQualifiedMemberNameAndDesc ofType(Type type) {
+    public static FullyQualifiedMemberNameAndDesc of(Type type) {
         return new FullyQualifiedMemberNameAndDesc(type, null, null);
+    }
+
+    public static FullyQualifiedMemberNameAndDesc of(Handle handle) {
+        return new FullyQualifiedMemberNameAndDesc(Type.getObjectType(handle.getOwner()), handle.getName(), Type.getType(handle.getDesc()));
     }
 
     public Type getOwner() {

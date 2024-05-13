@@ -20,7 +20,7 @@ public class J_M_BigInteger {
 
     @Modify(ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>", desc = "([BII)V"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
 
         // stack: BigInteger, byte[], (start) int, (len) int
@@ -42,7 +42,7 @@ public class J_M_BigInteger {
 
     @Modify(ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>", desc = "(I[BII)V"))
     public static void init2(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
 
         // stack: BigInteger, int, byte[], (start) int, (len) int

@@ -46,7 +46,7 @@ public class J_L_R_ObjectMethods {
     }
 
     private static void makeEquals(ClassNode cnode, String mname, String desc, Type recordClass, ArrayList<Handle> getters) {
-        var visitor = cnode.visitMethod(Constants.synthetic(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC), mname, desc, null, null);
+        var visitor = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, mname, desc, null, null);
         visitor.visitCode();
         visitor.visitVarInsn(Opcodes.ALOAD, 0);
         visitor.visitVarInsn(Opcodes.ALOAD, 1);
@@ -117,7 +117,7 @@ public class J_L_R_ObjectMethods {
     }
 
     private static void makeHashCode(ClassNode cnode, String mname, String desc, Type recordClass, ArrayList<Handle> getters) {
-        var visitor = cnode.visitMethod(Constants.synthetic(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC), mname, desc, null, null);
+        var visitor = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, mname, desc, null, null);
         visitor.visitCode();
         visitor.visitLdcInsn(getters.size());
         visitor.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
@@ -224,7 +224,7 @@ public class J_L_R_ObjectMethods {
     }
 
     private static void makeToString(ClassNode cnode, String mname, String desc, Type recordClass, String fieldNames, List<Handle> getters) {
-        var visitor = cnode.visitMethod(Constants.synthetic(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC), mname, desc, null, null);
+        var visitor = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, mname, desc, null, null);
         visitor.visitCode();
         visitor.visitVarInsn(Opcodes.ALOAD, 0);
         String last = recordClass.getInternalName();

@@ -219,7 +219,7 @@ public class ApiCoverageChecker {
                     }
                     if (!unmatchedStubs.isEmpty()) {
                         var unmatched = Path.of("./coverage/" + stubVersion + "/unmatched.txt");
-                        writeList(unmatchedStubs.stream().map(methodStubPair -> new MemberInfo("unknown", FullyQualifiedMemberNameAndDesc.fromMethod(methodStubPair), false, false)).collect(Collectors.toList()), unmatched);
+                        writeList(unmatchedStubs.stream().map(methodStubPair -> new MemberInfo("unknown", FullyQualifiedMemberNameAndDesc.of(methodStubPair), false, false)).collect(Collectors.toList()), unmatched);
                     }
 
                 } catch (IOException e) {

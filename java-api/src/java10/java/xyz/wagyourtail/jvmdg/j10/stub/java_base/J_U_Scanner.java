@@ -6,22 +6,12 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
-
-import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.Charset;
-import java.util.Scanner;
 
 public class J_U_Scanner {
 
-//    @Stub(ref = @Ref(value = "Ljava/util/Scanner;", member = "<init>"))
-//    public static Scanner init(ReadableByteChannel source, Charset charset) {
-//        return new Scanner(source, charset.name());
-//    }
-
     @Modify(ref = @Ref(value = "Ljava/util/Scanner;", member = "<init>", desc = "(Ljava/nio/channels/ReadableByteChannel;Ljava/nio/charset/Charset;)V"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: Scanner, ReadableByteChannel, Charset
         // call:J_N_C_Channels.newReader(ReadableByteChannel, Charset)

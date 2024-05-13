@@ -9,7 +9,7 @@ public class J_N_S_SSLHandshakeException {
 
     @Modify(ref = @Ref(value = "Ljavax/net/ssl/SSLHandshakeException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
 
         // stack: SSLHandshakeException, String (reason), Throwable

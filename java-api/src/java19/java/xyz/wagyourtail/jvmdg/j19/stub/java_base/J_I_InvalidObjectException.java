@@ -9,7 +9,7 @@ public class J_I_InvalidObjectException {
 
     @Modify(ref = @Ref(value = "Ljava/io/InvalidObjectException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: InvalidObjectException, String, Throwable
         list.add(new InsnNode(Opcodes.DUP_X2));

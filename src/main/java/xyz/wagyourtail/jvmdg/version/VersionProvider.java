@@ -516,7 +516,7 @@ public abstract class VersionProvider {
                                             }
                                             // else
                                             if (!found) {
-                                                MethodVisitor mv = owner.visitMethod(Constants.synthetic(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC), name, hStaticDesc.getDescriptor(), null, null);
+                                                MethodVisitor mv = owner.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, name, hStaticDesc.getDescriptor(), null, null);
                                                 mv.visitCode();
                                                 Type returnType = hStaticDesc.getReturnType();
                                                 Type[] arguments = hStaticDesc.getArgumentTypes();
@@ -543,6 +543,64 @@ public abstract class VersionProvider {
                                             desc,
                                             false
                                         );
+                                    }
+                                } else {
+                                    Pair<Method, Modify> mod = stubMapper.getModifyFor(member, isStatic);
+                                    if (mod != null) {
+                                        if (handle.getTag() != Opcodes.H_NEWINVOKESPECIAL) {
+                                            System.err.println("Invalid modify for indy handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
+                                        } else {
+                                            Type returnType = Type.getObjectType(handle.getOwner());
+                                            Type[] arguments = hDesc.getArgumentTypes();
+
+                                            String name = "jvmdowngrader$construct";
+                                            String desc = Type.getMethodDescriptor(returnType, arguments);
+
+                                            boolean found = false;
+                                            for (MethodNode mn : owner.methods) {
+                                                if (mn.name.equals(name) && mn.desc.equals(desc)) {
+                                                    found = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (!found) {
+
+                                                // construct wrapper
+                                                MethodNode mn = new MethodNode(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, name, desc, null, null);
+                                                mn.visitCode();
+                                                mn.visitTypeInsn(Opcodes.NEW, returnType.getInternalName());
+                                                mn.visitInsn(Opcodes.DUP);
+                                                int k = 0;
+                                                for (Type argument : arguments) {
+                                                    mn.visitVarInsn(argument.getOpcode(Opcodes.ILOAD), k);
+                                                    k += argument.getSize();
+                                                }
+                                                mn.visitMethodInsn(Opcodes.INVOKESPECIAL, returnType.getInternalName(), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, arguments), false);
+                                                mn.visitInsn(Opcodes.ARETURN);
+                                                mn.visitMaxs(0, 0);
+                                                mn.visitEnd();
+                                                owner.methods.add(mn);
+
+                                                // invoke modify
+                                                try {
+                                                    List<Object> modifyArgs = Arrays.asList(mn, mn.instructions.size() - 2, owner, extra);
+                                                    mod.getFirst().invoke(null, modifyArgs.subList(0, mod.getFirst().getParameterTypes().length).toArray());
+                                                } catch (Throwable e) {
+                                                    throw new RuntimeException(e);
+                                                }
+
+                                            }
+
+                                            indy.bsmArgs[j] = new Handle(
+                                                Opcodes.H_INVOKESTATIC,
+                                                owner.name,
+                                                name,
+                                                desc,
+                                                false
+                                            );
+
+                                        }
                                     }
                                 }
                                 break;
@@ -725,7 +783,7 @@ public abstract class VersionProvider {
             for (String removedInterface : removedInterfaces) {
                 sb.append(removedInterface).append(";");
             }
-            clazz.visitField(Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL), "jvmdg$removedInterfaces", "Ljava/lang/String;", null, sb.toString()).visitEnd();
+            clazz.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, "jvmdg$removedInterfaces", "Ljava/lang/String;", null, sb.toString()).visitEnd();
         }
 
         // signature

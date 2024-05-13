@@ -496,7 +496,7 @@ public class J_L_I_StringConcatFactory {
             if (index > 0) {
                 this.name += index;
             }
-            this.access = Constants.synthetic(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC);
+            this.access = Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC;
             this.desc = Type.getMethodDescriptor(Type.getType(String.class), types.toArray(new Type[0]));
             init(args, types);
         }

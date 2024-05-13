@@ -9,7 +9,7 @@ public class J_I_ObjectStreamException {
 
     @Modify(ref = @Ref(value = "Ljava/io/ObjectStreamException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: ObjectStreamException, String, Throwable
         list.add(new InsnNode(Opcodes.DUP_X2));
@@ -36,7 +36,7 @@ public class J_I_ObjectStreamException {
 
     @Modify(ref = @Ref(value = "Ljava/io/ObjectStreamException;", member = "<init>", desc = "(Ljava/lang/Throwable;)V;"))
     public static void init2(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: ObjectStreamException, Throwable
         list.add(new InsnNode(Opcodes.DUP2));

@@ -12,7 +12,7 @@ public class J_L_IndexOutOfBoundsException {
 
     @Modify(ref = @Ref(value = "java/lang/IndexOutOfBoundsException", member = "<init>", desc = "(J)V"))
     public static void init(MethodNode mNode, int i) {
-        AbstractInsnNode node = mNode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mNode.instructions.get(i);
         InsnList list = new InsnList();
         // string concat factory, "Index out of range: \u0001"
         list.add(new InvokeDynamicInsnNode(

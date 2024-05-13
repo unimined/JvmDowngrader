@@ -395,7 +395,7 @@ public class Java11Downgrader extends VersionProvider {
                 } else {
 
                     // create new package-private method to call private method
-                    MethodVisitor mv = clazz.visitMethod(Constants.synthetic(isStatic ? Opcodes.ACC_STATIC : 0), "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$" + name, desc, null, null);
+                    MethodVisitor mv = clazz.visitMethod(isStatic ? Opcodes.ACC_STATIC : 0, "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$" + name, desc, null, null);
                     mv.visitCode();
                     if (!isStatic) {
                         mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -430,7 +430,7 @@ public class Java11Downgrader extends VersionProvider {
                 }
 
                 // create new package-private method to get field
-                MethodVisitor mv = clazz.visitMethod(Constants.synthetic(isStatic ? Opcodes.ACC_STATIC : 0), "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$get$" + field, "()" + desc, null, null);
+                MethodVisitor mv = clazz.visitMethod(isStatic ? Opcodes.ACC_STATIC : 0, "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$get$" + field, "()" + desc, null, null);
                 mv.visitCode();
                 if (!isStatic) {
                     mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -440,7 +440,7 @@ public class Java11Downgrader extends VersionProvider {
                 mv.visitEnd();
 
                 // create new package-private method to set field
-                mv = clazz.visitMethod(Constants.synthetic(isStatic ? Opcodes.ACC_STATIC : 0), "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$set$" + field, "(" + desc + ")V", null, null);
+                mv = clazz.visitMethod(isStatic ? Opcodes.ACC_STATIC : 0, "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$set$" + field, "(" + desc + ")V", null, null);
                 mv.visitCode();
                 if (!isStatic) {
                     mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -467,7 +467,7 @@ public class Java11Downgrader extends VersionProvider {
         sb.deleteCharAt(sb.length() - 1);
 
         clazz.visitField(
-            Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
+            Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
             "jvmdowngrader$nestMembers",
             "Ljava/lang/String;",
             null,
@@ -494,7 +494,7 @@ public class Java11Downgrader extends VersionProvider {
 
         // create nest members synthetic class
         clazz.visitField(
-            Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
+            Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
             "jvmdowngrader$nestHost",
             "Ljava/lang/String;",
             null,

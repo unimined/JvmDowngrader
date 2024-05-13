@@ -86,7 +86,7 @@ public class ReferenceGraph {
         Set<FullyQualifiedMemberNameAndDesc> refs = new HashSet<>();
         for (References value : references.values()) {
             for (Type requiredInstance : value.requiredInstances) {
-                refs.add(FullyQualifiedMemberNameAndDesc.ofType(requiredInstance));
+                refs.add(FullyQualifiedMemberNameAndDesc.of(requiredInstance));
             }
             for (List<FullyQualifiedMemberNameAndDesc> requiredForMembers : value.requiredForMembers.values()) {
                 refs.addAll(requiredForMembers);
@@ -111,7 +111,7 @@ public class ReferenceGraph {
                     }
                 }
                 for (Type t : refer.requiredInstances) {
-                    FullyQualifiedMemberNameAndDesc f = FullyQualifiedMemberNameAndDesc.ofType(t);
+                    FullyQualifiedMemberNameAndDesc f = FullyQualifiedMemberNameAndDesc.of(t);
                     if (refs.add(f)) {
                         toAdd.add(f);
                     }
@@ -154,13 +154,13 @@ public class ReferenceGraph {
             Type currentType = Type.getObjectType(classNode.name);
             // super
             Type superType = Type.getObjectType(classNode.superName);
-            if (filter.shouldInclude(FullyQualifiedMemberNameAndDesc.ofType(superType))) {
+            if (filter.shouldInclude(FullyQualifiedMemberNameAndDesc.of(superType))) {
                 requiredInstances.add(superType);
             }
             // interfaces
             for (String s : classNode.interfaces) {
                 Type interfaceType = Type.getObjectType(s);
-                if (filter.shouldInclude(FullyQualifiedMemberNameAndDesc.ofType(interfaceType))) {
+                if (filter.shouldInclude(FullyQualifiedMemberNameAndDesc.of(interfaceType))) {
                     requiredInstances.add(interfaceType);
                 }
             }
@@ -287,7 +287,7 @@ public class ReferenceGraph {
             FullyQualifiedMemberNameAndDesc type;
             switch (required.getSort()) {
                 case Type.ARRAY:
-                    type = FullyQualifiedMemberNameAndDesc.ofType(required.getElementType());
+                    type = FullyQualifiedMemberNameAndDesc.of(required.getElementType());
                     if (filter.shouldInclude(type)) {
                         if (list == null) {
                             list = new ArrayList<>();
@@ -297,7 +297,7 @@ public class ReferenceGraph {
                     }
                     break;
                 case Type.OBJECT:
-                    type = FullyQualifiedMemberNameAndDesc.ofType(required);
+                    type = FullyQualifiedMemberNameAndDesc.of(required);
                     if (filter.shouldInclude(type)) {
                         if (list == null) {
                             list = new ArrayList<>();

@@ -9,7 +9,7 @@ public class J_N_SocketException {
 
     @Modify(ref = @Ref(value = "Ljava/net/SocketException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: SocketException, String, Throwable
         list.add(new InsnNode(Opcodes.DUP_X2));
@@ -36,7 +36,7 @@ public class J_N_SocketException {
 
     @Modify(ref = @Ref(value = "Ljava/net/SocketException;", member = "<init>", desc = "(Ljava/lang/Throwable;)V;"))
     public static void init2(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: SocketException, Throwable
         list.add(new InsnNode(Opcodes.DUP2));

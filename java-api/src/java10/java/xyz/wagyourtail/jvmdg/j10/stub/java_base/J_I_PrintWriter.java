@@ -10,7 +10,7 @@ public class J_I_PrintWriter {
 
     @Modify(ref = @Ref(value = "Ljava/io/PrintWriter;", member = "<init>", desc = "(Ljava/io/OutputStream;ZLjava/nio/charset/Charset;)V"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: PrintWriter, OutputStream, boolean, Charset
         list.add(new InsnNode(Opcodes.DUP2_X1));

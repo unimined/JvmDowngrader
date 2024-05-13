@@ -18,6 +18,7 @@ import java.lang.invoke.MethodHandles;
 public class J_L_Thread {
 
     private static final ThreadLocal<Object> old = new ThreadLocal<>();
+    private static final MethodHandles.Lookup impl_lookup = Utils.getImplLookup();
 
     @Stub(ref = @Ref("Ljava/lang/Thread;"))
     public static void onSpinWait() {
@@ -26,7 +27,7 @@ public class J_L_Thread {
 
     @Modify(ref = @Ref(value = "java/lang/Thread", member = "<init>", desc = "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;JZ)V"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
 
         // stack: Thread, ThreadGroup, Runnable, String, long, boolean
@@ -46,7 +47,6 @@ public class J_L_Thread {
         if (!inheritThreadLocals) {
             Thread current = Thread.currentThread();
             try {
-                MethodHandles.Lookup impl_lookup = Utils.getImplLookup();
                 Class<?> map = Class.forName("java.lang.ThreadLocal$ThreadLocalMap");
                 MethodHandle setter = impl_lookup.findSetter(Thread.class, "inheritableThreadLocals", map);
                 MethodHandle getter = impl_lookup.findGetter(Thread.class, "inheritableThreadLocals", map);
@@ -65,7 +65,6 @@ public class J_L_Thread {
         if (o != null) {
             Thread current = Thread.currentThread();
             try {
-                MethodHandles.Lookup impl_lookup = Utils.getImplLookup();
                 Class<?> map = Class.forName("java.lang.ThreadLocal$ThreadLocalMap");
                 MethodHandle setter = impl_lookup.findSetter(Thread.class, "inheritableThreadLocals", map);
                 setter.invoke(current, o);

@@ -11,7 +11,7 @@ public class J_L_IndexOutOfBoundsException {
 
     @Modify(ref = @Ref(value = "java/lang/IndexOutOfBoundsException", member = "<init>", desc = "(I)V"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
 
         // stack: IndexOutOfBoundsException, int

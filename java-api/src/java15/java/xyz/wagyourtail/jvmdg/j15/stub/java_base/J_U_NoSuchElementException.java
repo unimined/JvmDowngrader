@@ -5,15 +5,12 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
-
-import java.util.NoSuchElementException;
 
 public class J_U_NoSuchElementException {
 
     @Modify(ref = @Ref(value = "Ljava/util/NoSuchElementException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: NoSuchElementException, String, Throwable
         list.add(new InsnNode(Opcodes.DUP_X2));
@@ -40,7 +37,7 @@ public class J_U_NoSuchElementException {
 
     @Modify(ref = @Ref(value = "java/util/NoSuchElementException", member = "<init>", desc = "(Ljava/lang/Throwable;)V"))
     public static void init2(MethodNode mNode, int i) {
-        AbstractInsnNode node = mNode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mNode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: NoSuchElementException, Throwable
         list.add(new InsnNode(Opcodes.DUP2));

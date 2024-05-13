@@ -104,7 +104,7 @@ public class Java16Downgrader extends VersionProvider {
 //            value.deleteCharAt(value.length() - 1);
 //            node.recordComponents = null;
 //            node.visitField(
-//                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
+//                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
 //                "jvmdowngrader$recordComponents",
 //                "Ljava/lang/String;",
 //                null,
