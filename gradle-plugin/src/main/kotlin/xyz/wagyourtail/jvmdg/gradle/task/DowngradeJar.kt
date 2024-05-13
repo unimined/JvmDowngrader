@@ -18,7 +18,9 @@ import kotlin.io.path.outputStream
 
 abstract class DowngradeJar : Jar() {
 
-    private val jvmdg = project.extensions.getByType(JVMDowngraderExtension::class.java)
+    private val jvmdg by lazy {
+        project.extensions.getByType(JVMDowngraderExtension::class.java)
+    }
 
     @get:Input
     @get:Optional
