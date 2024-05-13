@@ -2,6 +2,8 @@
 
 package xyz.wagyourtail.jvmdg.gradle.task
 
+import groovy.lang.Closure
+import groovy.lang.DelegatesTo
 import org.apache.commons.io.output.NullOutputStream
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.FileCollection
@@ -10,6 +12,7 @@ import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.configuration.ShowStacktrace
 import org.gradle.api.tasks.*
 import org.gradle.jvm.tasks.Jar
+import org.gradle.process.JavaExecSpec
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.deleteIfExists
 import xyz.wagyourtail.jvmdg.gradle.jvToOpc
@@ -44,6 +47,29 @@ abstract class DowngradeJar : Jar() {
         description = "Downgrades the jar to the specified version"
     }
 
+    private var configureDowngrade: JavaExecSpec.() -> Unit = {}
+
+    fun configureDowngrade(spec: JavaExecSpec.() -> Unit) {
+        val old = configureDowngrade
+        configureDowngrade = {
+            old()
+            spec()
+        }
+    }
+
+    fun configureDowngrade(
+        @DelegatesTo(
+            JavaExecSpec::class,
+            strategy = Closure.DELEGATE_FIRST
+        )
+        closure: Closure<*>
+    ) {
+        configureDowngrade {
+            closure.delegate = this
+            closure.call(this)
+        }
+    }
+
     @TaskAction
     fun doDowngrade() {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
@@ -71,6 +97,7 @@ abstract class DowngradeJar : Jar() {
             } else {
                 spec.errorOutput = NullOutputStream.NULL_OUTPUT_STREAM
             }
+            configureDowngrade(spec)
         }.assertNormalExitValue().rethrowFailure()
 
         inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->

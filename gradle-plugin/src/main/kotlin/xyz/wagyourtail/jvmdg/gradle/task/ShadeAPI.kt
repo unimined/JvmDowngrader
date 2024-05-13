@@ -2,6 +2,8 @@
 
 package xyz.wagyourtail.jvmdg.gradle.task
 
+import groovy.lang.Closure
+import groovy.lang.DelegatesTo
 import org.apache.commons.io.output.NullOutputStream
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
@@ -12,6 +14,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.tasks.Jar
+import org.gradle.process.JavaExecSpec
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.deleteIfExists
 import xyz.wagyourtail.jvmdg.gradle.readZipInputStreamFor
@@ -33,6 +36,30 @@ abstract class ShadeAPI : Jar() {
     @get:Input
     @get:Optional
     var shadePath by FinalizeOnRead(LazyMutable { archiveBaseName.get().replace(Regex("[ -]"), "_") + "/jvmdg/api" })
+
+
+    private var configureShade: JavaExecSpec.() -> Unit = {}
+
+    fun configureShade(spec: JavaExecSpec.() -> Unit) {
+        val old = configureShade
+        configureShade = {
+            old()
+            spec()
+        }
+    }
+
+    fun configureShade(
+        @DelegatesTo(
+            JavaExecSpec::class,
+            strategy = Closure.DELEGATE_FIRST
+        )
+        closure: Closure<*>
+    ) {
+        configureShade {
+            closure.delegate = this
+            closure.call(this)
+        }
+    }
 
     /**
      * must already be downgraded
@@ -71,6 +98,7 @@ abstract class ShadeAPI : Jar() {
             } else {
                 spec.errorOutput = NullOutputStream.NULL_OUTPUT_STREAM
             }
+            configureShade(spec)
         }.assertNormalExitValue().rethrowFailure()
 
         inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->
