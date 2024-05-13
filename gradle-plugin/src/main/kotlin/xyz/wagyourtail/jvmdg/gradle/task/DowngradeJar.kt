@@ -4,6 +4,7 @@ package xyz.wagyourtail.jvmdg.gradle.task
 
 import org.apache.commons.io.output.NullOutputStream
 import org.gradle.api.JavaVersion
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.configuration.ShowStacktrace
@@ -31,8 +32,8 @@ abstract class DowngradeJar : Jar() {
 
 
     @get:Internal
-    var sourceSet: SourceSet by FinalizeOnRead(LazyMutable {
-        project.extensions.getByType(SourceSetContainer::class.java).getByName("main")
+    var classpath: FileCollection by FinalizeOnRead(LazyMutable {
+        project.extensions.getByType(SourceSetContainer::class.java).getByName("main").compileClasspath
     })
 
     @get:InputFile
@@ -54,7 +55,7 @@ abstract class DowngradeJar : Jar() {
                 jvToOpc(downgradeTo).toString(),
                 inputFile.get().asFile.absolutePath,
                 tempOutput.absolutePath,
-                sourceSet.compileClasspath.files.joinToString(File.pathSeparator) { it.absolutePath }
+                classpath.files.joinToString(File.pathSeparator) { it.absolutePath }
             )
             spec.workingDir = temporaryDir
             spec.classpath = jvmdg.core
