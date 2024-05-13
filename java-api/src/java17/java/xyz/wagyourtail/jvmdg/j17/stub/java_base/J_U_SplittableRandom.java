@@ -39,13 +39,13 @@ public class J_U_SplittableRandom {
     }
 
     @Stub
-    public Stream<J_U_R_RandomGenerator> rngs() {
-        return new SplittableRandomGeneratorImpl(new SplittableRandom()).rngs();
+    public Stream<J_U_R_RandomGenerator> rngs(SplittableRandom random) {
+        return new SplittableRandomGeneratorImpl(random).rngs();
     }
 
     @Stub
-    public Stream<J_U_R_RandomGenerator> rngs(long size) {
-        return new SplittableRandomGeneratorImpl(new SplittableRandom()).rngs(size);
+    public Stream<J_U_R_RandomGenerator> rngs(SplittableRandom random, long size) {
+        return new SplittableRandomGeneratorImpl(random).rngs(size);
     }
 
     @Stub

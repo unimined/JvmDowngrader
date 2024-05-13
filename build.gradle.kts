@@ -104,12 +104,14 @@ tasks.compileTestJava {
 }
 
 tasks.test {
+    outputs.upToDateWhen { false }
     useJUnitPlatform()
+
     dependsOn(
         project(":downgradetest").tasks.build,
         project(":java-api").tasks.build
     )
-    jvmArgs("-Djvmdg.debug=true")
+//    jvmArgs("-Djvmdg.debug=true")
     javaLauncher = javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
     }

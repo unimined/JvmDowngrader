@@ -17,6 +17,7 @@ public class Java10Downgrader extends VersionProvider {
         stub(J_L_Runtime$Version.class);
         // StackWalker
         stub(J_L_I_MethodType.class);
+        stub(J_N_C_Channels.class);
         stub(J_N_URLDecoder.class);
         stub(J_N_URLEncoder.class);
         // FileStore
