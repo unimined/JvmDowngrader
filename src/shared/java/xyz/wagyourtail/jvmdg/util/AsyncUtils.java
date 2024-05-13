@@ -10,7 +10,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class AsyncUtils {
-    private static final ForkJoinPool pool = new ForkJoinPool(Runtime.getRuntime().availableProcessors(), ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, false);
+    private static final ForkJoinPool pool = new ForkJoinPool(Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() - 1), Short.MAX_VALUE), ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
 
     public static <T> Future<List<T>> waitForFutures(Future<T>... futures) {
         return waitForFutures(new ArrayDeque<>(Arrays.asList(futures)));

@@ -67,16 +67,16 @@ public class ApiShader {
         shadeApis(prefix, input.toPath(), output.toPath(), downgradedApiPath);
     }
 
-    public static void shadeApis(final String prefix, Path input, Path output, Path downgradedApi) throws IOException {
+    public static void shadeApis(final String prefix, Path input, final Path output, Path downgradedApi) throws IOException {
         if (!prefix.endsWith("/")) throw new IllegalArgumentException("prefix must end with /");
         // step 2: collect classes in the api and their references
-        ReferenceGraph refs = new ReferenceGraph();
+        final ReferenceGraph apiRefs = new ReferenceGraph();
         final Set<Type> apiClasses;
         try (FileSystem apiFs = Utils.openZipFileSystem(downgradedApi, new HashMap<String, Object>())) {
             final Path apiRoot = apiFs.getPath("/");
-            Map<Path, Type> preScan = refs.preScan(apiFs.getPath("/"));
+            Map<Path, Type> preScan = apiRefs.preScan(apiFs.getPath("/"));
             apiClasses = new HashSet<>(preScan.values());
-            refs.scan(preScan, new ReferenceGraph.Filter() {
+            apiRefs.scan(preScan, new ReferenceGraph.Filter() {
                 @Override
                 public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
                     return apiClasses.contains(member.getOwner());
@@ -85,7 +85,7 @@ public class ApiShader {
             try (final FileSystem inputFs = Utils.openZipFileSystem(input, new HashMap<String, Object>())) {
                 final Path inputRoot = inputFs.getPath("/");
                 // step 3: traverse the input classes for references to the api
-                ReferenceGraph inputRefs = new ReferenceGraph();
+                final ReferenceGraph inputRefs = new ReferenceGraph();
                 inputRefs.scan(inputFs.getPath("/"), new ReferenceGraph.Filter() {
                     @Override
                     public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
@@ -97,7 +97,7 @@ public class ApiShader {
                 try (final FileSystem outputFs = Utils.openZipFileSystem(output, env)) {
                     final Path outputRoot = outputFs.getPath("/");
                     // step 4: create remapper for api classes to prefixed api classes
-                    Pair<Set<FullyQualifiedMemberNameAndDesc>, Set<String>> required = refs.recursiveResolveFrom(inputRefs.getAllRefs());
+                    Pair<Set<FullyQualifiedMemberNameAndDesc>, Set<String>> required = apiRefs.recursiveResolveFrom(inputRefs.getAllRefs());
                     final Map<Type, Set<MemberNameAndDesc>> byType = byType(required.getFirst());
                     final Map<String, String> remap = new HashMap<>();
                     for (Type type : byType.keySet()) {
@@ -109,17 +109,13 @@ public class ApiShader {
                     Future<Void> apiWrite = AsyncUtils.forEachAsync(byType.entrySet(), new IOConsumer<Map.Entry<Type, Set<MemberNameAndDesc>>>() {
                         @Override
                         public void accept(Map.Entry<Type, Set<MemberNameAndDesc>> type) throws IOException {
-                            Path inPath = apiRoot.resolve(type.getKey().getInternalName() + ".class");
                             Path outPath = outputRoot.resolve(prefix + type.getKey().getInternalName() + ".class");
                             Path parent = outPath.getParent();
                             if (parent != null) {
                                 Files.createDirectories(outputRoot.resolve(parent));
                             }
                             // load api class as a ClassNode
-                            ClassNode node = new ClassNode();
-                            try (InputStream stream = Files.newInputStream(inPath)) {
-                                new ClassReader(stream).accept(node, 0);
-                            }
+                            ClassNode node = apiRefs.getClassFor(type.getKey());
                             if ((node.access & Opcodes.ACC_ENUM) == 0) {
                                 // remove unused members
                                 Set<MemberNameAndDesc> members = type.getValue();
@@ -141,7 +137,7 @@ public class ApiShader {
                             // write the class to the output
                             ClassWriter writer = new ClassWriter(0);
                             node.accept(new ClassRemapper(writer, remapper));
-                            Files.write(outPath, writer.toByteArray());
+                            Files.write(outPath, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
                         }
 
                     });
@@ -170,12 +166,19 @@ public class ApiShader {
                     }, new IOConsumer<Path>() {
                         @Override
                         public void accept(Path path) throws IOException {
-                            Path output = outputRoot.resolve(inputRoot.relativize(path));
-                            if (path.toString().endsWith(".class")) {
-                                byte[] data = Files.readAllBytes(path);
+                            Path relPath = inputRoot.relativize(path);
+                            Path output = outputRoot.resolve(relPath);
+                            String pathStr = relPath.toString();
+                            if (!pathStr.startsWith("META-INF/versions") && pathStr.endsWith(".class") && !pathStr.equals("module-info.class")) {
+//                                byte[] data = Files.readAllBytes(path);
                                 ClassWriter writer = new ClassWriter(0);
-                                new ClassReader(data).accept(new ClassRemapper(writer, remapper), 0);
-                                Files.write(output, writer.toByteArray());
+                                pathStr = pathStr.substring(0, pathStr.length() - 6);
+                                ClassNode cn = inputRefs.getClassFor(Type.getObjectType(pathStr));
+                                if (cn == null) {
+                                    throw new IllegalStateException("Class not found from ref cache? " + pathStr);
+                                }
+                                cn.accept(new ClassRemapper(writer, remapper));
+                                Files.write(output, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
                             } else {
                                 Files.copy(path, output, StandardCopyOption.REPLACE_EXISTING);
                             }

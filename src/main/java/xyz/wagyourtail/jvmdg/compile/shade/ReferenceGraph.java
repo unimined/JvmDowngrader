@@ -25,6 +25,23 @@ import java.util.concurrent.ExecutionException;
 
 public class ReferenceGraph {
     private final Map<Type, References> references = new ConcurrentHashMap<>();
+    private final Map<Type, ClassNode> classNodes = new ConcurrentHashMap<>();
+    private final boolean keepClassNodes;
+
+    public ReferenceGraph() {
+        keepClassNodes = true;
+    }
+
+    public ReferenceGraph(boolean keepClassNodes) {
+        this.keepClassNodes = keepClassNodes;
+    }
+
+    public ClassNode getClassFor(Type type) {
+        if (!keepClassNodes) {
+            throw new IllegalStateException();
+        }
+        return classNodes.get(type);
+    }
 
     public void scan(Path root, Filter filter) throws IOException, ExecutionException, InterruptedException {
         scan(preScan(root), filter);
@@ -58,17 +75,23 @@ public class ReferenceGraph {
         return newScanTargets;
     }
 
-    public void scan(final Map<Path, Type> newScanTargets, Filter filter) throws IOException {
-        for (Path path : newScanTargets.keySet()) {
-            try (InputStream stream = Files.newInputStream(path)) {
-                ClassNode node = ASMUtils.bytesToClassNode(Utils.readAllBytes(stream));
-                Type type = Type.getObjectType(node.name);
-                if (!type.equals(newScanTargets.get(path))) {
-                    throw new IllegalStateException("Expected path to match class name: " + path + " != " + type.getInternalName());
+    public void scan(final Map<Path, Type> newScanTargets, final Filter filter) throws IOException, ExecutionException, InterruptedException {
+        AsyncUtils.forEachAsync(newScanTargets.keySet(), new IOConsumer<Path>() {
+            @Override
+            public void accept(Path path) throws IOException {
+                try (InputStream stream = Files.newInputStream(path)) {
+                    ClassNode node = ASMUtils.bytesToClassNode(Utils.readAllBytes(stream));
+                    Type type = Type.getObjectType(node.name);
+                    if (!type.equals(newScanTargets.get(path))) {
+                        throw new IllegalStateException("Expected path to match class name: " + path + " != " + type.getInternalName());
+                    }
+                    if (keepClassNodes) {
+                        classNodes.put(type, node);
+                    }
+                    references.get(type).scan(node, filter);
                 }
-                references.get(type).scan(node, filter);
             }
-        }
+        }).get();
     }
 
     public void debugPrint() {
