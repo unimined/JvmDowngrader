@@ -27,6 +27,7 @@ import java.util.*;
 public class ApiShader {
 
     public static void main(String[] args) throws IOException {
+        long start = System.currentTimeMillis();
         String prefix = args[1];
         File input = new File(args[2]);
         File output = new File(args[3]);
@@ -41,6 +42,7 @@ public class ApiShader {
             prefix += "/";
         }
         shadeApis(target, prefix, input, output, downgradedApi);
+        System.out.println("Shaded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     public static void downgradedApi(int target, Path api, Path targetPath) throws IOException {

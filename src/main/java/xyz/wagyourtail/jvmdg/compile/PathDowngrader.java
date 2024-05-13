@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class PathDowngrader {
 
     public static void main(String[] args) throws IOException {
+        long start = System.currentTimeMillis();
         int target = Integer.parseInt(args[0]);
         Set<Path> input = new HashSet<>();
         Set<Path> output = new HashSet<>();
@@ -37,6 +38,7 @@ public class PathDowngrader {
             }
         }
         downgradePaths(target, new ArrayList<>(input), new ArrayList<>(output), classpath);
+        System.out.println("Downgraded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     public static void downgradePaths(int opcVersion, List<Path> input, List<Path> output, Set<File> classpath) throws IOException {
