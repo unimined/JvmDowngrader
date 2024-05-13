@@ -3,15 +3,15 @@ package xyz.wagyourtail.jvmdg.internal;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
+import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.test.JavaRunner;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,7 +19,15 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 
 public class JvmDowngraderTest {
-    private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-0.0.1.jar");
+    private static Properties props = new Properties();
+    static {
+        try (InputStream is = Files.newInputStream(Path.of("gradle.properties"))) {
+            props.load(is);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + props.getProperty("version") + ".jar");
 
     static {
         System.setProperty("jvmdg.java-api", javaApi.toString());
@@ -32,31 +40,32 @@ public class JvmDowngraderTest {
     private final Path original = Path.of("./downgradetest/build/libs/downgradetest-1.0.0.jar");
 
     private final Path downgraded = getDowngradedPath(original, "-downgraded-" + target.getMajorVersion() + ".jar");
+    private final Path downgradedJavaApi = getDowngradedJavaApi(javaApi, "-downgraded-" + target.getMajorVersion() + ".jar");
 
-    private final Path downgradedJavaApi = getDowngradedPath(javaApi, "-downgraded-" + target.getMajorVersion() + ".jar");
+    private final Path shaded = getShadedPath(downgraded, downgradedJavaApi, "-shaded.jar");
 
     public JvmDowngraderTest() throws Exception {
     }
 
-    @BeforeAll
-    public static void before() throws Exception {
-        new JvmDowngraderTest().cleanup();
-    }
-
-    public void cleanup() throws Exception {
-        if (Files.exists(downgraded)) {
-            Files.delete(downgraded);
-        }
-        if (Files.exists(downgradedJavaApi)) {
-            Files.delete(downgradedJavaApi);
-        }
-    }
-
     private Path getDowngradedPath(Path originalPath, String suffix) throws Exception {
         Path path = originalPath.getParent().resolve(originalPath.getFileName().toString().replace(".jar", suffix));
-        if (!Files.exists(path)) {
-            ZipDowngrader.downgradeZip(target.toOpcode(), originalPath, new HashSet<>(), path);
-        }
+        Files.deleteIfExists(path);
+        ZipDowngrader.downgradeZip(target.toOpcode(), originalPath, new HashSet<>(), path);
+        return path;
+    }
+
+    private Path getDowngradedJavaApi(Path javaApi, String suffix) throws IOException {
+        // resolve temp file in build
+        Path output = Path.of("./build/tmp/test/" + javaApi.getFileName().toString().replace(".jar", suffix));
+        Files.deleteIfExists(output);
+        ApiShader.downgradedApi(target.toOpcode(), javaApi, output);
+        return output;
+    }
+
+    private Path getShadedPath(Path originalPath, Path downgradedJavaApi, String suffix) throws IOException {
+        Path path = originalPath.getParent().resolve(originalPath.getFileName().toString().replace(".jar", suffix));
+        Files.deleteIfExists(path);
+        ApiShader.shadeApis("jvmdg/shade/", originalPath, path, downgradedJavaApi);
         return path;
     }
 
@@ -114,9 +123,36 @@ public class JvmDowngraderTest {
             }
         );
 
+        System.out.println();
+        System.out.println("Shaded: ");
+
+        StringBuilder shadedLog = new StringBuilder();
+        Integer ret4 = JavaRunner.runJarInSubprocess(
+            shaded,
+            new String[]{},
+            mainClass,
+            Set.of(),
+            Path.of("."),
+            Map.of(),
+            true,
+            List.of(),
+            target.toOpcode(),
+            (String it) -> {
+                shadedLog.append(it).append("\n");
+                System.out.println(it);
+            },
+            (String it) -> {
+                shadedLog.append(it).append("\n");
+                System.out.println(it);
+            }
+        );
+
         Set<Path> classpathJars = new HashSet<>(Stream.of(System.getProperty("java.class.path").split(":"))
             .map(Path::of)
             .toList());
+
+        System.out.println();
+        System.out.println("Runtime Downgraded: ");
 
         StringBuilder runtimeDowngradeLog = new StringBuilder();
 
@@ -128,7 +164,7 @@ public class JvmDowngraderTest {
             Path.of("."),
             Map.of(),
             true,
-            List.of(/*"-Djvmdg.debug=true", */"-Djvmdg.java-api=" + javaApi, "-Djvmdg.log=false"),
+            List.of(/*"-Djvmdg.debug=true", */"-Djvmdg.java-api=" + javaApi, "-Djvmdg.log=false", "-Djvmdg.quiet=true"),
             target.toOpcode(),
             (String it) -> {
                 runtimeDowngradeLog.append(it).append("\n");
@@ -146,6 +182,9 @@ public class JvmDowngraderTest {
         if (ret != 0) {
             throw new Exception("Downgraded jar did not return 0");
         }
+        if (ret4 != 0) {
+            throw new Exception("Shaded jar did not return 0");
+        }
         if (ret3 != 0) {
             throw new Exception("Runtime Downgraded jar did not return 0");
         }
@@ -153,9 +192,11 @@ public class JvmDowngraderTest {
         if (eq) {
             assertEquals(originalLog.toString(), downgradedLog.toString());
             assertEquals(originalLog.toString(), runtimeDowngradeLog.toString());
+            assertEquals(originalLog.toString(), shadedLog.toString());
         } else {
             assertNotEquals(originalLog.toString(), downgradedLog.toString());
             assertNotEquals(originalLog.toString(), runtimeDowngradeLog.toString());
+            assertNotEquals(originalLog.toString(), shadedLog.toString());
         }
     }
 

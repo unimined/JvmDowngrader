@@ -9,6 +9,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
+import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
@@ -129,22 +130,6 @@ public class ClassDowngrader {
         }
     }
 
-    public static ClassNode bytesToClassNode(byte[] bytes) {
-        ClassNode node = new ClassNode();
-        new ClassReader(bytes).accept(node, 0);
-        return node;
-    }
-
-    public static ClassNode bytesToClassNode(byte[] bytes, int flags) {
-        ClassNode node = new ClassNode();
-        new ClassReader(bytes).accept(node, flags);
-        return node;
-    }
-
-    public static void main(String[] args) {
-        //TODO
-    }
-
     public Set<MemberNameAndDesc> getMembers(int version, Type type) throws IOException {
         for (int vers = version; vers > target; vers--) {
             VersionProvider downgrader = downgraders.get(vers);
@@ -249,7 +234,10 @@ public class ClassDowngrader {
             }
             Set<ClassNode> newClasses = new HashSet<>();
             for (ClassNode c : classes) {
-                newClasses.add(downgrader.downgrade(c, newClasses, enableRuntime, getReadOnly));
+                ClassNode downgraded = downgrader.downgrade(c, newClasses, enableRuntime, getReadOnly);
+                if (downgraded != null) {
+                    newClasses.add(downgraded);
+                }
             }
             classes = newClasses;
             version = downgrader.outputVersion;
@@ -285,7 +273,7 @@ public class ClassDowngrader {
             return null;
         }
         // transform
-        ClassNode node = bytesToClassNode(bytes);
+        ClassNode node = ASMUtils.bytesToClassNode(bytes);
         if (name.get() == null) {
             name.set(node.name);
         } else if (!name.get().equals(node.name)) {
@@ -303,7 +291,7 @@ public class ClassDowngrader {
                         if (out == null) {
                             return null;
                         }
-                        return bytesToClassNode(out);
+                        return ASMUtils.bytesToClassNode(out);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -321,9 +309,8 @@ public class ClassDowngrader {
                 }
                 outputs.put(c.name, classNodeToBytes(c, getExtraRead));
             }
-        } catch (InvocationTargetException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException |
-                 InstantiationException | IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to downgrade " + name.get(), e);
         }
         if (Constants.DEBUG) {
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
@@ -338,16 +325,8 @@ public class ClassDowngrader {
         return outputs;
     }
 
-    public byte[] classNodeToBytes(ClassNode node, final Function<String, byte[]> getExtraRead) {
-        ASMClassWriter cw = new ASMClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS, new Function<String, String>() {
-            @Override
-            public String apply(String s) {
-                byte[] b = getExtraRead.apply(s);
-                if (b == null) return null;
-                ClassNode cn = bytesToClassNode(b, ClassReader.SKIP_CODE);
-                return stubClass(cn.version, Type.getObjectType(cn.superName)).getInternalName();
-            }
-        });
+    public byte[] classNodeToBytes(final ClassNode node, final Function<String, byte[]> getExtraRead) {
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         node.accept(cw);
         return cw.toByteArray();
     }

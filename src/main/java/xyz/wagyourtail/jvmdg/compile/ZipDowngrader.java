@@ -12,6 +12,7 @@ import java.util.*;
 public class ZipDowngrader {
 
     public static void main(String[] args) throws IOException {
+        long start = System.currentTimeMillis();
         int target = Integer.parseInt(args[0]);
         File input = new File(args[1]);
         File output = new File(args[2]);
@@ -22,6 +23,7 @@ public class ZipDowngrader {
             }
         }
         downgradeZip(target, input, classpath, output);
+        System.out.println("Downgraded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     public static void downgradeZip(int opcVersion, File input, Set<File> classpath, File output) throws IOException {
@@ -43,11 +45,7 @@ public class ZipDowngrader {
             Map<String, Object> map = new HashMap<>();
             map.put("create", "true");
             try (final FileSystem outputZipFs = Utils.openZipFileSystem(output, map)) {
-                List<Path> input = new ArrayList<>();
-                input.add(zipfs.getPath("/"));
-                List<Path> outputPaths = new ArrayList<>();
-                outputPaths.add(outputZipFs.getPath("/"));
-                PathDowngrader.downgradePaths(downgrader, input, outputPaths, classpath);
+                PathDowngrader.downgradePaths(downgrader, Collections.singletonList(zipfs.getPath("/")), Collections.singletonList(outputZipFs.getPath("/")), classpath);
             }
         }
     }

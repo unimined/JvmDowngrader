@@ -696,9 +696,16 @@ public class J_U_Arrays {
         int bLength = b.length;
         int length = Math.min(aLength, bLength);
         for (int i = 0; i < length; i++) {
-            int result = a[i].compareTo(b[i]);
-            if (result != 0) {
-                return result;
+            T aElement = a[i];
+            T bElement = b[i];
+            if (aElement != bElement) {
+                if (aElement == null || bElement == null) {
+                    return aElement == null ? -1 : 1;
+                }
+                int result = a[i].compareTo(b[i]);
+                if (result != 0) {
+                    return result;
+                }
             }
         }
         return aLength - bLength;

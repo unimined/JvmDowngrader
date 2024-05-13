@@ -165,7 +165,7 @@ public class ClassMapping {
         try {
             Pair<Method, Stub> pair = methodStub.get(member);
             if (pair == null) {
-                if (!invoke_static) {
+                if (!invoke_static && !member.getName().equals("<init>")) {
                     Set<MemberNameAndDesc> members = this.members.get();
                     if (members != null && members.contains(member)) {
 //                        if (parentStub != null) {
@@ -187,6 +187,40 @@ public class ClassMapping {
             int modifiers = m.getModifiers();
             if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
                 throw new RuntimeException("stub method must be public static");
+            }
+            return pair;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Pair<Method, Modify> getParentModifyFor(MemberNameAndDesc member) {
+        for (ClassMapping parent : parents.get()) {
+            Pair<Method, Modify> node = parent.getModifyFor(member, false);
+            if (node != null) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    public Pair<Method, Modify> getModifyFor(MemberNameAndDesc member, boolean invoke_static) {
+        try {
+            Pair<Method, Modify> pair = methodModify.get(member);
+            if (pair == null) {
+                if (!invoke_static && !member.getName().equals("<init>")) {
+                    Set<MemberNameAndDesc> members = this.members.get();
+                    if (members != null && members.contains(member)) {
+                        return null;
+                    }
+                    return getParentModifyFor(member);
+                }
+                return null;
+            }
+            Method m = pair.getFirst();
+            int modifiers = m.getModifiers();
+            if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
+                throw new RuntimeException("modify method must be public static");
             }
             return pair;
         } catch (Exception e) {

@@ -9,7 +9,7 @@ public class J_S_InvalidParameterException {
 
     @Modify(ref = @Ref(value = "Ljava/security/InvalidParameterException;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
     public static void init(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: InvalidParameterException, String, Throwable
         list.add(new InsnNode(Opcodes.DUP_X2));
@@ -34,7 +34,7 @@ public class J_S_InvalidParameterException {
 
     @Modify(ref = @Ref(value = "Ljava/security/InvalidParameterException;", member = "<init>", desc = "(Ljava/lang/Throwable;)V;"))
     public static void init1(MethodNode mnode, int i) {
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: InvalidParameterException, Throwable
         list.add(new InsnNode(Opcodes.DUP_X1));

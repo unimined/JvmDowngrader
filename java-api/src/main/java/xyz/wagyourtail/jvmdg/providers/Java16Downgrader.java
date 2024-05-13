@@ -11,33 +11,36 @@ public class Java16Downgrader extends VersionProvider {
         super(Opcodes.V16, Opcodes.V15);
     }
 
-        public void init() {
-            // -- java.base --
-            stub(J_L_Class.class);
-            stub(J_L_IndexOutOfBoundsException.class);
-            stub(J_L_Record.class);
-            // ElementType
-            // MethodHandles
-            // VarHandle
-            // Reference
-            // InvocationHandler
-            stub(J_L_R_RecordComponent.class);
-            stub(J_N_ByteBuffer.class);
-            stub(J_L_R_ObjectMethods.class);
-            // StandardProtocolFamily
-            // UnixDomainSocketAddress
-            // MGF1ParameterSpec
-            // DateTimeFormatterBuilder
-            // IllegalFormatArgumentIndexException
-            stub(J_U_Objects.class);
-            stub(J_U_S_DoubleStream.class);
-            stub(J_U_S_IntStream.class);
-            stub(J_U_S_LongStream.class);
-            stub(J_U_S_Stream.class);
-            // ValueBased
-            // Preconditions // same exact as J_U_Objects, but it's internal here... jdk package
-            // IntrinsicCandidate
-            // TypeAnnotation
+    public void init() {
+        // -- java.base --
+        stub(J_L_Class.class);
+        stub(J_L_IndexOutOfBoundsException.class);
+        stub(J_L_Record.class);
+        // ElementType
+        // MethodHandles
+        // VarHandle
+        stub(J_L_R_Reference.class);
+        // InvocationHandler
+        stub(J_L_R_RecordComponent.class);
+        stub(J_N_ByteBuffer.class);
+        stub(J_L_R_ObjectMethods.class);
+        // StandardProtocolFamily
+        // UnixDomainSocketAddress
+        // MGF1ParameterSpec
+        // DateTimeFormatterBuilder
+        // IllegalFormatArgumentIndexException
+        stub(J_U_Objects.class);
+        stub(J_U_S_DoubleStream.class);
+        stub(J_U_S_DoubleStream.DoubleMapMultiConsumer.class);
+        stub(J_U_S_IntStream.class);
+        stub(J_U_S_IntStream.IntMapMultiConsumer.class);
+        stub(J_U_S_LongStream.class);
+        stub(J_U_S_LongStream.LongMapMultiConsumer.class);
+        stub(J_U_S_Stream.class);
+        // ValueBased
+        // Preconditions // same exact as J_U_Objects, but it's internal here... jdk package
+        // IntrinsicCandidate
+        // TypeAnnotation
 
         // -- java.compiler --
         // SourceVersion
@@ -101,7 +104,7 @@ public class Java16Downgrader extends VersionProvider {
 //            value.deleteCharAt(value.length() - 1);
 //            node.recordComponents = null;
 //            node.visitField(
-//                Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL),
+//                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
 //                "jvmdowngrader$recordComponents",
 //                "Ljava/lang/String;",
 //                null,

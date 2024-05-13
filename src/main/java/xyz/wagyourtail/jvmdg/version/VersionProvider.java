@@ -1,14 +1,12 @@
 package xyz.wagyourtail.jvmdg.version;
 
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Lazy;
@@ -49,6 +47,18 @@ public abstract class VersionProvider {
             Type owner;
             String name;
             List<Type> params = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(method)));
+
+            Annotation[][] annotations = method.getParameterAnnotations();
+            for (int i = 0; i < params.size(); i++) {
+                Annotation[] param = annotations[i];
+                for (Annotation a : param) {
+                    if (a instanceof Coerce) {
+                        Coerce c = (Coerce) a;
+                        params.set(i, Type.getType(c.value()));
+                    }
+                }
+            }
+
             Type ret = Type.getReturnType(method);
             if (ref.value().isEmpty()) {
                 owner = params.remove(0);
@@ -66,22 +76,13 @@ public abstract class VersionProvider {
             }
             Type desc;
             if (ref.desc().isEmpty()) {
-                if (name.equals("<init>")) {
-                    ret = Type.VOID_TYPE;
-                }
-                Annotation[][] annotations = method.getParameterAnnotations();
-                for (int i = 0; i < params.size(); i++) {
-                    Annotation[] param = annotations[i];
-                    for (Annotation a : param) {
-                        if (a instanceof Coerce) {
-                            Coerce c = (Coerce) a;
-                            params.set(i, Type.getType(c.value()));
-                        }
-                    }
-                }
                 desc = Type.getMethodType(ret, params.toArray(new Type[0]));
             } else {
                 desc = Type.getMethodType(ref.desc());
+            }
+            if (name.equals("<init>")) {
+                // due to not being able to pass UNINITIALIZED_THIS
+                throw new IllegalArgumentException(owner.getDescriptor() + "<init>;" + desc + " shouldn't be @Stub, should be @Modify");
             }
             // re-assemble desc
             return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
@@ -206,7 +207,7 @@ public abstract class VersionProvider {
                 try {
                     List<Type> types = superTypeResolver.apply(type);
                     if (types == null) {
-//                        System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
+                        if (!Constants.QUIET) System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
                         types = Collections.emptyList();
                     }
                     List<ClassMapping> superTypes = new ArrayList<>();
@@ -224,72 +225,89 @@ public abstract class VersionProvider {
     }
 
     public void stub(Class<?> clazz) {
-        if (clazz.isAnnotationPresent(Adapter.class)) {
-            Adapter stub = clazz.getAnnotation(Adapter.class);
-            if (stub.value().isEmpty()) {
-                throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter must have a ref");
-            } else {
-                Type value;
-                if (stub.value().startsWith("L") && stub.value().endsWith(";")) {
-                    value = Type.getType(stub.value());
+        try {
+            if (clazz.isAnnotationPresent(Adapter.class)) {
+                Adapter stub = clazz.getAnnotation(Adapter.class);
+                if (stub.value().isEmpty()) {
+                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter must have a ref");
                 } else {
-                    value = Type.getObjectType(stub.value());
-                }
+                    Type value;
+                    if (stub.value().startsWith("L") && stub.value().endsWith(";")) {
+                        value = Type.getType(stub.value());
+                    } else {
+                        value = Type.getObjectType(stub.value());
+                    }
 //                if (classStubs.containsKey(type)) {
 //                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter ref " + type.getInternalName() + " already exists");
 //                }
-                Type target;
-                if (stub.target().isEmpty()) {
-                    target = Type.getType(clazz);
-                } else {
-                    if (stub.target().startsWith("L") && stub.target().endsWith(";")) {
-                        target = Type.getType(stub.target());
+                    Type target;
+                    if (stub.target().isEmpty()) {
+                        target = Type.getType(clazz);
                     } else {
-                        target = Type.getObjectType(stub.target());
+                        if (stub.target().startsWith("L") && stub.target().endsWith(";")) {
+                            target = Type.getType(stub.target());
+                        } else {
+                            target = Type.getObjectType(stub.target());
+                        }
+                    }
+                    classStubs.put(value, new Pair<Type, Pair<Class<?>, Adapter>>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
+                }
+            }
+            try {
+                for (Method method : clazz.getDeclaredMethods()) {
+                    try {
+                        if (method.isAnnotationPresent(Stub.class)) {
+                            Stub stub = method.getAnnotation(Stub.class);
+                            FullyQualifiedMemberNameAndDesc target = resolveStubTarget(method, stub.ref());
+                            Type owner = target.getOwner();
+                            MemberNameAndDesc member = target.toMemberNameAndDesc();
+                            getStubMapper(owner).addStub(member, method, stub);
+                        } else if (method.isAnnotationPresent(Modify.class)) {
+                            Modify modify = method.getAnnotation(Modify.class);
+                            FullyQualifiedMemberNameAndDesc target = resolveModifyTarget(method, modify.ref());
+                            Type owner = target.getOwner();
+                            MemberNameAndDesc member = target.toMemberNameAndDesc();
+                            // ensure method parameters are valid
+                            Class<?>[] params = method.getParameterTypes();
+                            for (int i = 0; i < params.length; i++) {
+                                if (i >= Modify.MODIFY_SIG.length) {
+                                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " has too many parameters");
+                                }
+                                if (params[i] != Modify.MODIFY_SIG[i]) {
+                                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " parameter " + i + " must be of type " + Modify.MODIFY_SIG[i].getName());
+                                }
+                            }
+                            getStubMapper(owner).addModify(member, method, modify);
+                        }
+                    } catch (Throwable e) {
+                        if (!Constants.QUIET) {
+                            System.out.println("ERROR: failed to create stub for " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
+                            e.printStackTrace(System.err);
+                        }
                     }
                 }
-                classStubs.put(value, new Pair<Type, Pair<Class<?>, Adapter>>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
+            } catch (Throwable e) {
+                if (!Constants.QUIET) {
+                    System.out.println("ERROR: failed to resolve methods for " + clazz.getName());
+                    e.printStackTrace(System.err);
+                }
             }
-        }
-        try {
-            for (Method method : clazz.getDeclaredMethods()) {
-                if (method.isAnnotationPresent(Stub.class)) {
-                    Stub stub = method.getAnnotation(Stub.class);
-                    FullyQualifiedMemberNameAndDesc target = resolveStubTarget(method, stub.ref());
-                    Type owner = target.getOwner();
-                    MemberNameAndDesc member = target.toMemberNameAndDesc();
-                    getStubMapper(owner).addStub(member, method, stub);
-                } else if (method.isAnnotationPresent(Modify.class)) {
-                    Modify modify = method.getAnnotation(Modify.class);
-                    FullyQualifiedMemberNameAndDesc target = resolveModifyTarget(method, modify.ref());
-                    Type owner = target.getOwner();
-                    MemberNameAndDesc member = target.toMemberNameAndDesc();
-                    // ensure method parameters are valid
-                    Class<?>[] params = method.getParameterTypes();
-                    for (int i = 0; i < params.length; i++) {
-                        if (i >= Modify.MODIFY_SIG.length) {
-                            throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " has too many parameters");
-                        }
-                        if (params[i] != Modify.MODIFY_SIG[i]) {
-                            throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " parameter " + i + " must be of type " + Modify.MODIFY_SIG[i].getName());
-                        }
-                    }
-                    getStubMapper(owner).addModify(member, method, modify);
+            try {
+                // inner classes
+                for (Class<?> inner : clazz.getDeclaredClasses()) {
+                    stub(inner);
+                }
+            } catch (Throwable e) {
+                if (!Constants.QUIET) {
+                    System.out.println("ERROR: failed to resolve inner classes for " + clazz.getName());
+                    e.printStackTrace(System.err);
                 }
             }
         } catch (Throwable e) {
-//            throw new RuntimeException("failed to create stub " + clazz.getName(), e);
-//            System.out.println("ERROR: failed to create stub for " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
-//            e.printStackTrace(System.err);
-        }
-        try {
-            // inner classes
-            for (Class<?> inner : clazz.getDeclaredClasses()) {
-                stub(inner);
+            if (!Constants.QUIET) {
+                System.out.println("ERROR: failed to create stub(s) for " + clazz.getName());
+                e.printStackTrace(System.err);
             }
-        } catch (Throwable e) {
-//            throw new RuntimeException("failed to create stub for inner classes of " + clazz.getName(), e);
-//            System.out.println("ERROR: failed to create stub for inner classes of " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
         }
     }
 
@@ -380,6 +398,10 @@ public abstract class VersionProvider {
     }
 
     public ClassNode stubMethods(ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Type>> superTypeResolver) throws IOException {
+        if (owner.name.equals("module-info")) {
+            return owner;
+        }
+
         for (MethodNode method : new ArrayList<>(owner.methods)) {
             MethodNode newMethod = stubMethods(method, owner, extra, enableRuntime, memberResolver, superTypeResolver);
             if (newMethod != method) {
@@ -394,9 +416,11 @@ public abstract class VersionProvider {
             AbstractInsnNode insn = method.instructions.get(i);
             if (insn instanceof MethodInsnNode) {
                 MethodInsnNode min = (MethodInsnNode) insn;
-                min.owner = stubClass(Type.getObjectType(min.owner)).getInternalName();
-                min.desc = stubClass(Type.getMethodType(min.desc)).getDescriptor();
-                getStubMapper(Type.getObjectType(min.owner), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
+                if (!min.owner.startsWith("[")) {
+                    min.owner = stubClass(Type.getObjectType(min.owner)).getInternalName();
+                    min.desc = stubClass(Type.getMethodType(min.desc)).getDescriptor();
+                    getStubMapper(Type.getObjectType(min.owner), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
+                }
             } else if (insn instanceof TypeInsnNode) {
                 TypeInsnNode tin = (TypeInsnNode) insn;
                 MethodInsnNode min = stubTypeInsnNode(tin);
@@ -447,6 +471,9 @@ public abstract class VersionProvider {
                                     captured = Type.getMethodType(indy.desc).getArgumentTypes();
                                 }
                                 Type hOwner = Type.getObjectType(handle.getOwner());
+                                if (hOwner.getSort() == Type.ARRAY) {
+                                    continue;
+                                }
                                 Type hDesc = Type.getMethodType(handle.getDesc());
                                 MemberNameAndDesc member = new MemberNameAndDesc(handle.getName(), hDesc);
                                 ClassMapping stubMapper = getStubMapper(hOwner, memberResolver, superTypeResolver);
@@ -489,7 +516,7 @@ public abstract class VersionProvider {
                                             }
                                             // else
                                             if (!found) {
-                                                MethodVisitor mv = owner.visitMethod(Constants.synthetic(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC), name, hStaticDesc.getDescriptor(), null, null);
+                                                MethodVisitor mv = owner.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, name, hStaticDesc.getDescriptor(), null, null);
                                                 mv.visitCode();
                                                 Type returnType = hStaticDesc.getReturnType();
                                                 Type[] arguments = hStaticDesc.getArgumentTypes();
@@ -517,6 +544,64 @@ public abstract class VersionProvider {
                                             false
                                         );
                                     }
+                                } else {
+                                    Pair<Method, Modify> mod = stubMapper.getModifyFor(member, isStatic);
+                                    if (mod != null) {
+                                        if (handle.getTag() != Opcodes.H_NEWINVOKESPECIAL) {
+                                            System.err.println("Invalid modify for indy handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
+                                        } else {
+                                            Type returnType = Type.getObjectType(handle.getOwner());
+                                            Type[] arguments = hDesc.getArgumentTypes();
+
+                                            String name = "jvmdowngrader$construct";
+                                            String desc = Type.getMethodDescriptor(returnType, arguments);
+
+                                            boolean found = false;
+                                            for (MethodNode mn : owner.methods) {
+                                                if (mn.name.equals(name) && mn.desc.equals(desc)) {
+                                                    found = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (!found) {
+
+                                                // construct wrapper
+                                                MethodNode mn = new MethodNode(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, name, desc, null, null);
+                                                mn.visitCode();
+                                                mn.visitTypeInsn(Opcodes.NEW, returnType.getInternalName());
+                                                mn.visitInsn(Opcodes.DUP);
+                                                int k = 0;
+                                                for (Type argument : arguments) {
+                                                    mn.visitVarInsn(argument.getOpcode(Opcodes.ILOAD), k);
+                                                    k += argument.getSize();
+                                                }
+                                                mn.visitMethodInsn(Opcodes.INVOKESPECIAL, returnType.getInternalName(), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, arguments), false);
+                                                mn.visitInsn(Opcodes.ARETURN);
+                                                mn.visitMaxs(0, 0);
+                                                mn.visitEnd();
+                                                owner.methods.add(mn);
+
+                                                // invoke modify
+                                                try {
+                                                    List<Object> modifyArgs = Arrays.asList(mn, mn.instructions.size() - 2, owner, extra);
+                                                    mod.getFirst().invoke(null, modifyArgs.subList(0, mod.getFirst().getParameterTypes().length).toArray());
+                                                } catch (Throwable e) {
+                                                    throw new RuntimeException(e);
+                                                }
+
+                                            }
+
+                                            indy.bsmArgs[j] = new Handle(
+                                                Opcodes.H_INVOKESTATIC,
+                                                owner.name,
+                                                name,
+                                                desc,
+                                                false
+                                            );
+
+                                        }
+                                    }
                                 }
                                 break;
                         }
@@ -534,6 +619,28 @@ public abstract class VersionProvider {
                 LdcInsnNode ldc = (LdcInsnNode) insn;
                 if (ldc.cst instanceof Type) {
                     ldc.cst = stubClass((Type) ldc.cst);
+                } else if (ldc.cst instanceof ConstantDynamic) {
+                    ConstantDynamic condy = (ConstantDynamic) ldc.cst;
+                    Handle bsm = condy.getBootstrapMethod();
+                    throw MissingStubError.create(Type.getObjectType(bsm.getOwner()), bsm.getName(), Type.getType(bsm.getDesc()));
+                }
+            } else if (insn instanceof FrameNode) {
+                FrameNode fn = (FrameNode) insn;
+                if (fn.local != null) {
+                    for (int j = 0; j < fn.local.size(); j++) {
+                        Object o = fn.local.get(j);
+                        if (o instanceof String) {
+                            fn.local.set(j, stubClass(Type.getObjectType((String) o)).getInternalName());
+                        }
+                    }
+                }
+                if (fn.stack != null) {
+                    for (int j = 0; j < fn.stack.size(); j++) {
+                        Object o = fn.stack.get(j);
+                        if (o instanceof String) {
+                            fn.stack.set(j, stubClass(Type.getObjectType((String) o)).getInternalName());
+                        }
+                    }
                 }
             }
         }
@@ -599,14 +706,22 @@ public abstract class VersionProvider {
         };
 
         clazz = stubClasses(clazz, enableRuntime);
+        if (clazz == null) return null;
         clazz = stubMethods(clazz, extra, enableRuntime, getMembers, getSuperTypes);
+        if (clazz == null) return null;
         clazz = insertAbstractMethods(clazz, extra, getMembers, getSuperTypes);
+        if (clazz == null) return null;
         clazz = otherTransforms(clazz, extra, getReadOnly);
+        if (clazz == null) return null;
         clazz.version = inputVersion - 1;
         return clazz;
     }
 
     public ClassNode insertAbstractMethods(ClassNode clazz, Set<ClassNode> extra, IOFunction<Type, Set<MemberNameAndDesc>> getMembers, IOFunction<Type, List<Type>> getSuperTypes) throws IOException {
+        if (clazz.name.equals("module-info")) {
+            return clazz;
+        }
+
         Map<MemberNameAndDesc, Pair<Method, Stub>> members = getStubMapper(Type.getObjectType(clazz.name), getMembers, getSuperTypes).getAbstracts();
         for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> member : members.entrySet()) {
             boolean contains = false;
@@ -654,6 +769,10 @@ public abstract class VersionProvider {
     }
 
     public ClassNode stubClasses(ClassNode clazz, boolean enableRuntime) {
+        if (clazz.name.equals("module-info")) {
+            return clazz;
+        }
+
         // super
         Type type = Type.getObjectType(clazz.superName);
         if (classStubs.containsKey(type)) {
@@ -682,7 +801,7 @@ public abstract class VersionProvider {
             for (String removedInterface : removedInterfaces) {
                 sb.append(removedInterface).append(";");
             }
-            clazz.visitField(Constants.synthetic(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL), "jvmdg$removedInterfaces", "Ljava/lang/String;", null, sb.toString()).visitEnd();
+            clazz.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, "jvmdg$removedInterfaces", "Ljava/lang/String;", null, sb.toString()).visitEnd();
         }
 
         // signature

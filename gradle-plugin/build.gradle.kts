@@ -1,7 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.util.*
 
 plugins {
-    kotlin("jvm") version "1.8.0"
+    kotlin("jvm") version "1.9.22"
     `java-gradle-plugin`
     `maven-publish`
 }
@@ -14,16 +15,21 @@ repositories {
     mavenCentral()
 }
 
+val asmVersion: String = project.properties["asm_version"]?.toString() ?: run {
+    projectDir.parentFile.resolve("gradle.properties").inputStream().use {
+        val props = Properties()
+        props.load(it)
+        props.getProperty("asm_version") as String
+    }
+}
+
 dependencies {
     // commons compress
     implementation("org.apache.commons:commons-compress:1.26.1")
 
-    // asm
-    implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
-    implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
-    implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
-
     testImplementation(kotlin("test"))
+
+    implementation("org.ow2.asm:asm:${asmVersion}")
 }
 
 tasks.withType<KotlinCompile> {

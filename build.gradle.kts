@@ -2,6 +2,7 @@ plugins {
     java
     id("com.github.johnrengelman.shadow") version "8.1.1"
     `maven-publish`
+    `java-library`
 }
 
 allprojects {
@@ -25,11 +26,6 @@ allprojects {
 
     dependencies {
         implementation("org.jetbrains:annotations-java5:24.1.0")
-
-        implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
-        implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
     }
 
     tasks.jar {
@@ -43,16 +39,35 @@ allprojects {
     }
 }
 
+val shared by sourceSets.creating {
+    compileClasspath += sourceSets["main"].compileClasspath
+    runtimeClasspath += sourceSets["main"].runtimeClasspath
+}
+
+sourceSets {
+    main {
+        compileClasspath += shared.output
+        runtimeClasspath += shared.output
+    }
+    test {
+        compileClasspath += shared.output
+        runtimeClasspath += shared.output
+    }
+}
+
 dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
     testImplementation("com.google.code.gson:gson:2.10")
     testImplementation("org.apache.commons:commons-compress:1.26.1")
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
-}
 
-base {
+    val api by configurations.getting
 
+    api("org.ow2.asm:asm:${project.properties["asm_version"]}")
+    api("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
+    api("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
+    api("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
 }
 
 val mainVersion = project.properties["mainVersion"] as String
@@ -64,6 +79,7 @@ java {
 }
 
 tasks.jar {
+    from(sourceSets["main"].output, sourceSets["shared"].output)
     manifest {
         attributes(
             "Manifest-Version" to "1.0",
@@ -88,18 +104,21 @@ tasks.compileTestJava {
 }
 
 tasks.test {
+    outputs.upToDateWhen { false }
     useJUnitPlatform()
+
     dependsOn(
         project(":downgradetest").tasks.build,
         project(":java-api").tasks.build
     )
-    jvmArgs("-Djvmdg.debug=true")
+//    jvmArgs("-Djvmdg.debug=true")
     javaLauncher = javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
     }
 }
 
 tasks.shadowJar {
+    from(sourceSets["main"].output, sourceSets["shared"].output)
     relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
 }
 

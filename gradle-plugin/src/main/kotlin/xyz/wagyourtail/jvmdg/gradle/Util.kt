@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.gradle
 
+import org.apache.commons.compress.archivers.zip.ZipFile
 import org.gradle.api.JavaVersion
 import org.objectweb.asm.Opcodes
 import java.io.File
@@ -41,6 +42,22 @@ fun openZipFileSystem(path: Path, args: Map<String, *> = mapOf<String, Any>()): 
         }
     }
     return FileSystems.newFileSystem(URI.create("jar:${path.toUri()}"), args, null)
+}
+
+fun <T> Path.readZipInputStreamFor(path: String, throwIfMissing: Boolean = true, action: (InputStream) -> T): T {
+    Files.newByteChannel(this).use {
+        ZipFile(it).use { zip ->
+            val entry = zip.getEntry(path.replace("\\", "/"))
+            if (entry != null) {
+                return zip.getInputStream(entry).use(action)
+            } else {
+                if (throwIfMissing) {
+                    throw IllegalArgumentException("Missing file $path in $this")
+                }
+            }
+        }
+    }
+    return null as T
 }
 
 fun jvToOpc(vers: JavaVersion): Int = when (vers) {

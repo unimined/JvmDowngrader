@@ -1,6 +1,9 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.*;
+import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -15,14 +18,48 @@ public class J_M_BigInteger {
     public static final BigInteger TWO = BigInteger.valueOf(2);
     static final long LONG_MASK = 0xffffffffL;
 
-    @Stub(ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>"))
-    public static BigInteger init(byte[] val, int off, int len) {
-        return new BigInteger(Arrays.copyOfRange(val, off, off + len));
+    @Modify(ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>", desc = "([BII)V"))
+    public static void init(MethodNode mnode, int i) {
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
+        InsnList list = new InsnList();
+
+        // stack: BigInteger, byte[], (start) int, (len) int
+        list.add(new InsnNode(Opcodes.DUP2));
+        // stack: BigInteger, byte[], (start) int, (len) int, (start) int, (len) int
+        list.add(new InsnNode(Opcodes.IADD));
+        // stack: BigInteger, byte[],(start) int, (len) int, (start+len) int
+        list.add(new InsnNode(Opcodes.SWAP));
+        // stack: BigInteger, byte[], (start) int, (start+len) int, (len) int
+        list.add(new InsnNode(Opcodes.POP));
+        // stack: BigInteger, byte[], (start) int, (start+len) int
+        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "java/util/Arrays", "copyOfRange", "([BII)[B", false));
+        // stack: BigInteger, byte[]
+        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/math/BigInteger", "<init>", "([B)V", false));
+
+        mnode.instructions.insert(node, list);
+        mnode.instructions.remove(node);
     }
 
-    @Stub(ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>"))
-    public static BigInteger init(int signum, byte[] magnitude, int off, int len) {
-        return new BigInteger(signum, Arrays.copyOfRange(magnitude, off, off + len));
+    @Modify(ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>", desc = "(I[BII)V"))
+    public static void init2(MethodNode mnode, int i) {
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
+        InsnList list = new InsnList();
+
+        // stack: BigInteger, int, byte[], (start) int, (len) int
+        list.add(new InsnNode(Opcodes.DUP2));
+        // stack: BigInteger, int, byte[], (start) int, (len) int, (start) int, (len) int
+        list.add(new InsnNode(Opcodes.IADD));
+        // stack: BigInteger, int, byte[], (start) int, (len) int, (start+len) int
+        list.add(new InsnNode(Opcodes.SWAP));
+        // stack: BigInteger, int, byte[], (start) int, (start+len) int, (len) int
+        list.add(new InsnNode(Opcodes.POP));
+        // stack: BigInteger, int, byte[], (start) int, (start+len) int
+        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "java/util/Arrays", "copyOfRange", "([BII)[B", false));
+        // stack: BigInteger, int, byte[]
+        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/math/BigInteger", "<init>", "(I[B)V", false));
+
+        mnode.instructions.insert(node, list);
+        mnode.instructions.remove(node);
     }
 
     @Stub

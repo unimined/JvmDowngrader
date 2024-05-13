@@ -522,6 +522,9 @@ public class Java9Downgrader extends VersionProvider {
     @Override
     public ClassNode otherTransforms(ClassNode clazz) {
         fixPrivateMethodsInInterfaces(clazz);
+        if (clazz.name.equals("module-info")) {
+            return null;
+        }
         return clazz;
     }
 

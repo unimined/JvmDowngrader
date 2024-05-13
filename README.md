@@ -29,8 +29,19 @@ in `build.gradle`:
 ```gradle
 // add the plugin
 plugins {
-    id 'xyz.wagyourtail.jvmdowngrader' version '0.1.0'
+    id 'xyz.wagyourtail.jvmdowngrader' version '0.3.0'
 }
+
+// optionally you can change some globals:
+
+jvmdg.defaultMavens = false // stops from inserting my maven into the project repositories
+
+jvmdg.group = "xyz.wagyourtail.jvmdowngrader" // default
+jvmdg.coreArchiveName "jvmdowngrader" // default
+jvmdg.apiArchiveName "jvmdowngrader-java-api" // default
+jvmdg.version = "0.3.0" // default
+jvmdg.asmVersion = "9.7" // default
+
 ```
 
 This will create a default downgrade task for `jar` (or `shadowJar` if present) called `downgradeJar` that will downgrade the output to java 8 by default.
@@ -59,29 +70,39 @@ you can create a custom task by doing:
 task customDowngrade(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar) {
     inputFile = tasks.jar.archiveFile
     downgradeTo = JavaVersion.VERSION_1_8 // default
-    sourceSet = sourceSets.main // default
+    classpath = sourceSets.main.compileClasspath // default
     archiveClassifier = "downgraded-8"
+    configureDowngrade {
+        jvmArgs += ["-Djvmdg.quiet=true"]
+    }
 }
 
-task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeDowngradedApi) {
+task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeApi) {
     inputFile = customDowngrade.archiveFile
     downgradeTo = JavaVersion.VERSION_1_8 // default
-    sourceSet = sourceSets.main // default
-    shadePath = "${archiveBaseName}/jvmdg/api" // default
+    shadePath = "${archiveBaseName}/jvmdg/api" // default, where the shaded classes will be placed
     archiveClassifier = "downgraded-8-shaded"
+    configureShade {
+        jvmArgs += ["-Djvmdg.quiet=true"]
+    }
 }
 ```
 
 ## "Compile" Time Downgrading
-
-Shading the required api is currently only supported in the gradle plugin. 
-So this isn't recommended outside of debugging.
 
 ### Zip Downgrading
 
 Downgrades the contents of a zip file to an older version.
 
 ex. `java -cp JvmDowngrader-all.jar xyz.wagyourtail.jvmdg.compile.ZipDowngrader 52 input.jar output.jar classpath.jar;classpath2.jar`
+
+### Shading Api
+
+Analyze a downgraded zip file for API usages and shade them into the output.
+
+ex. `java -cp JvmDowngrader-all.jar xyz.wagyourtail.jvmdg.compile.ApiShader 52 "shade/prefix" input.jar output.jar`
+
+The class version can be replaced with a path to the pre-downgraded api jar to save time.
 
 ### Path Downgrading
 
@@ -103,6 +124,29 @@ ex. `java -javaagent:JvmDowngrader-all.jar -jar myapp.jar`
 Uses the bootstrap main class
 
 ex. `java -jar JvmDowngrader-all.jar myapp.jar;classpath.jar;classpath2.jar mainclass args`
+
+
+## From Code
+
+### Downgrading ClassLoader
+
+This is what the bootstrap downgrader essentially uses internally.
+```groovy
+// add jar to default downgrading classloader
+ClassDowngrader.classLoader.addDelegate(new URL[] { new File("jarname.jar").toURI().toURL() });
+
+// call main method
+ClassDowngrader.classLoader.loadClass("mainclass").getMethod("main", String[].class).invoke(null, new Object[] { new String[] { "args" } });
+```
+
+You can also create your own downgrading classloader, for more complicated environments.
+```groovy
+// construct with parent of the default class downgrader classloader, as that contains the downgraded api classes.
+DowngradingClassLoader loader = new DowngradingClassLoader(ClassDowngrader.classLoader);
+
+// adding jars
+loader.addDelegate(new URL[] { new File("jarname.jar").toURI().toURL() });
+```
 
 ### inspired by
 

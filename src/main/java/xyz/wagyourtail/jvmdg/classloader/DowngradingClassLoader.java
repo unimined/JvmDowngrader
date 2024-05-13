@@ -62,7 +62,7 @@ public class DowngradingClassLoader extends ClassLoader {
                     }
                 }
             });
-            if (outputs == null || outputs.isEmpty()) {
+            if (outputs == null) {
                 // doesn't need downgrading
                 return defineClass(name, bytes, 0, bytes.length);
             }
@@ -79,6 +79,9 @@ public class DowngradingClassLoader extends ClassLoader {
             }
             try {
                 bytes = outputs.get(internalName);
+                if (bytes == null) {
+                    throw new ClassNotFoundException("removed by downgrader: " + name);
+                }
                 return defineClass(name, bytes, 0, bytes.length);
             } catch (ClassFormatError e) {
                 ClassDowngrader.currentVersionDowngrader.writeBytesToDebug(name, bytes);
