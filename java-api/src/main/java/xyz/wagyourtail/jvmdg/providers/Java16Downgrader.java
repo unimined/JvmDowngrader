@@ -19,7 +19,7 @@ public class Java16Downgrader extends VersionProvider {
         // ElementType
         // MethodHandles
         // VarHandle
-        // Reference
+        stub(J_L_R_Reference.class);
         // InvocationHandler
         stub(J_L_R_RecordComponent.class);
         stub(J_N_ByteBuffer.class);
