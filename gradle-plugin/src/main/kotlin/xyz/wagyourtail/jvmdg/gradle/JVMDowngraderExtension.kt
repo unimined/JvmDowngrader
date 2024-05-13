@@ -21,7 +21,7 @@ abstract class JVMDowngraderExtension(val project: Project) {
     val coreArchiveName by FinalizeOnRead("jvmdowngrader")
     var apiArchiveName by FinalizeOnRead("jvmdowngrader-java-api")
 
-    var version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.2.0")
+    var version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.2.2")
 
     var asmVersion by FinalizeOnRead("9.7")
 

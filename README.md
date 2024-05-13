@@ -29,8 +29,19 @@ in `build.gradle`:
 ```gradle
 // add the plugin
 plugins {
-    id 'xyz.wagyourtail.jvmdowngrader' version '0.2.0'
+    id 'xyz.wagyourtail.jvmdowngrader' version '0.2.2'
 }
+
+// optionally you can change some globals:
+
+jvmdg.defaultMavens = false // stops from inserting my maven into the project repositories
+
+jvmdg.group = "xyz.wagyourtail.jvmdowngrader" // default
+jvmdg.coreArchiveName "jvmdowngrader" // default
+jvmdg.apiArchiveName "jvmdowngrader-java-api" // default
+jvmdg.version = "0.2.2" // default
+jvmdg.asmVersion = "9.7" // default
+
 ```
 
 This will create a default downgrade task for `jar` (or `shadowJar` if present) called `downgradeJar` that will downgrade the output to java 8 by default.
@@ -59,8 +70,11 @@ you can create a custom task by doing:
 task customDowngrade(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar) {
     inputFile = tasks.jar.archiveFile
     downgradeTo = JavaVersion.VERSION_1_8 // default
-    sourceSet = sourceSets.main // default, used for classpath
+    classpath = sourceSets.main.compileClasspath // default
     archiveClassifier = "downgraded-8"
+    configureDowngrade {
+        jvmArgs += ["-Djvmdg.quiet=true"]
+    }
 }
 
 task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeApi) {
@@ -68,6 +82,9 @@ task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeApi) 
     downgradeTo = JavaVersion.VERSION_1_8 // default
     shadePath = "${archiveBaseName}/jvmdg/api" // default, where the shaded classes will be placed
     archiveClassifier = "downgraded-8-shaded"
+    configureShade {
+        jvmArgs += ["-Djvmdg.quiet=true"]
+    }
 }
 ```
 
