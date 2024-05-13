@@ -45,11 +45,7 @@ public class ZipDowngrader {
             Map<String, Object> map = new HashMap<>();
             map.put("create", "true");
             try (final FileSystem outputZipFs = Utils.openZipFileSystem(output, map)) {
-                List<Path> input = new ArrayList<>();
-                input.add(zipfs.getPath("/"));
-                List<Path> outputPaths = new ArrayList<>();
-                outputPaths.add(outputZipFs.getPath("/"));
-                PathDowngrader.downgradePaths(downgrader, input, outputPaths, classpath);
+                PathDowngrader.downgradePaths(downgrader, Collections.singletonList(zipfs.getPath("/")), Collections.singletonList(outputZipFs.getPath("/")), classpath);
             }
         }
     }

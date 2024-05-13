@@ -7,8 +7,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.asm.AnnotationUtils;
-import xyz.wagyourtail.jvmdg.util.Pair;
-import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.util.*;
 import xyz.wagyourtail.jvmdg.version.RequiresResource;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
@@ -21,45 +20,41 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 public class ReferenceGraph {
-    private final Map<Type, References> references = new HashMap<>();
+    private final Map<Type, References> references = new ConcurrentHashMap<>();
 
-    public void scan(Path root, Filter filter) throws IOException {
+    public void scan(Path root, Filter filter) throws IOException, ExecutionException, InterruptedException {
         scan(preScan(root), filter);
     }
 
-    public Map<Path, Type> preScan(final Path root) throws IOException {
-        final Map<Path, Type> newScanTargets = new HashMap<>();
-        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
-
+    public Map<Path, Type> preScan(final Path root) throws IOException, ExecutionException, InterruptedException {
+        final Map<Path, Type> newScanTargets = new ConcurrentHashMap<>();
+        AsyncUtils.visitPathsAsync(root, new IOFunction<Path, Boolean>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                if (root.relativize(dir).toString().startsWith("META-INF/versions")) {
-                    return FileVisitResult.SKIP_SUBTREE;
-                } else {
-                    return FileVisitResult.CONTINUE;
-                }
+            public Boolean apply(Path path) throws IOException {
+                return !root.relativize(path).toString().startsWith("META-INF/versions");
             }
-
+        }, new IOConsumer<Path>() {
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                if (file.getFileName().toString().equals("module-info.class")) {
-                    return FileVisitResult.CONTINUE;
+            public void accept(Path path) throws IOException {
+                if (path.getFileName().toString().equals("module-info.class")) {
+                    return;
                 }
-                String path = root.relativize(file).toString();
-                if (path.endsWith(".class")) {
-                    path = path.substring(0, path.length() - 6);
-                    Type type = Type.getObjectType(path);
+                String pathStr = root.relativize(path).toString();
+                if (pathStr.endsWith(".class")) {
+                    pathStr = pathStr.substring(0, pathStr.length() - 6);
+                    Type type = Type.getObjectType(pathStr);
                     if (!references.containsKey(type)) {
                         references.put(type, new References());
-                        newScanTargets.put(file, type);
+                        newScanTargets.put(path, type);
                     }
 
                 }
-                return FileVisitResult.CONTINUE;
             }
-        });
+        }).get();
         return newScanTargets;
     }
 

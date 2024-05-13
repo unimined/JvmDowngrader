@@ -11,8 +11,7 @@ import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.compile.shade.ReferenceGraph;
-import xyz.wagyourtail.jvmdg.util.Pair;
-import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.util.*;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
@@ -23,6 +22,8 @@ import java.net.URL;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 public class ApiShader {
 
@@ -72,7 +73,7 @@ public class ApiShader {
         ReferenceGraph refs = new ReferenceGraph();
         final Set<Type> apiClasses;
         try (FileSystem apiFs = Utils.openZipFileSystem(downgradedApi, new HashMap<String, Object>())) {
-            Path apiRoot = apiFs.getPath("/");
+            final Path apiRoot = apiFs.getPath("/");
             Map<Path, Type> preScan = refs.preScan(apiFs.getPath("/"));
             apiClasses = new HashSet<>(preScan.values());
             refs.scan(preScan, new ReferenceGraph.Filter() {
@@ -103,78 +104,91 @@ public class ApiShader {
                         remap.put(type.getInternalName(), prefix + type.getInternalName());
                     }
                     final SimpleRemapper remapper = new SimpleRemapper(remap);
+
                     // step 5: actually write the referenced api classes to the output, removing unused parts from them.
-                    for (Map.Entry<Type, Set<MemberNameAndDesc>> type : byType.entrySet()) {
-                        Path inPath = apiRoot.resolve(type.getKey().getInternalName() + ".class");
-                        Path outPath = outputRoot.resolve(prefix + type.getKey().getInternalName() + ".class");
-                        Path parent = outPath.getParent();
-                        if (parent != null) {
-                            Files.createDirectories(outputRoot.resolve(parent));
-                        }
-                        // load api class as a ClassNode
-                        ClassNode node = new ClassNode();
-                        try (InputStream stream = Files.newInputStream(inPath)) {
-                            new ClassReader(stream).accept(node, 0);
-                        }
-                        if ((node.access & Opcodes.ACC_ENUM) == 0) {
-                            // remove unused members
-                            Set<MemberNameAndDesc> members = type.getValue();
-                            Iterator<MethodNode> iter = node.methods.iterator();
-                            while (iter.hasNext()) {
-                                MethodNode method = iter.next();
-                                if (!members.contains(new MemberNameAndDesc(method.name, Type.getMethodType(method.desc)))) {
-                                    iter.remove();
+                    Future<Void> apiWrite = AsyncUtils.forEachAsync(byType.entrySet(), new IOConsumer<Map.Entry<Type, Set<MemberNameAndDesc>>>() {
+                        @Override
+                        public void accept(Map.Entry<Type, Set<MemberNameAndDesc>> type) throws IOException {
+                            Path inPath = apiRoot.resolve(type.getKey().getInternalName() + ".class");
+                            Path outPath = outputRoot.resolve(prefix + type.getKey().getInternalName() + ".class");
+                            Path parent = outPath.getParent();
+                            if (parent != null) {
+                                Files.createDirectories(outputRoot.resolve(parent));
+                            }
+                            // load api class as a ClassNode
+                            ClassNode node = new ClassNode();
+                            try (InputStream stream = Files.newInputStream(inPath)) {
+                                new ClassReader(stream).accept(node, 0);
+                            }
+                            if ((node.access & Opcodes.ACC_ENUM) == 0) {
+                                // remove unused members
+                                Set<MemberNameAndDesc> members = type.getValue();
+                                Iterator<MethodNode> iter = node.methods.iterator();
+                                while (iter.hasNext()) {
+                                    MethodNode method = iter.next();
+                                    if (!members.contains(new MemberNameAndDesc(method.name, Type.getMethodType(method.desc)))) {
+                                        iter.remove();
+                                    }
+                                }
+                                Iterator<FieldNode> fiter = node.fields.iterator();
+                                while (fiter.hasNext()) {
+                                    FieldNode field = fiter.next();
+                                    if (!members.contains(new MemberNameAndDesc(field.name, Type.getType(field.desc)))) {
+                                        fiter.remove();
+                                    }
                                 }
                             }
-                            Iterator<FieldNode> fiter = node.fields.iterator();
-                            while (fiter.hasNext()) {
-                                FieldNode field = fiter.next();
-                                if (!members.contains(new MemberNameAndDesc(field.name, Type.getType(field.desc)))) {
-                                    fiter.remove();
-                                }
-                            }
+                            // write the class to the output
+                            ClassWriter writer = new ClassWriter(0);
+                            node.accept(new ClassRemapper(writer, remapper));
+                            Files.write(outPath, writer.toByteArray());
                         }
-                        // write the class to the output
-                        ClassWriter writer = new ClassWriter(0);
-                        node.accept(new ClassRemapper(writer, remapper));
-                        Files.write(outPath, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-                    }
 
-                    for (String resource : required.getSecond()) {
-                        Path inPath = apiRoot.resolve(resource);
-                        Path outPath = outputRoot.resolve(resource);
-                        Path parent = outPath.getParent();
-                        if (parent != null) {
-                            Files.createDirectories(outputRoot.resolve(parent));
-                        }
-                        Files.copy(inPath, outPath, StandardCopyOption.REPLACE_EXISTING);
-                    }
+                    });
 
-                    // step 6: remap references to the api to start with prefix
-                    Files.walkFileTree(inputFs.getPath("/"), new SimpleFileVisitor<Path>() {
+                    Future<Void> resourceWrite = AsyncUtils.forEachAsync(required.getSecond(), new IOConsumer<String>() {
                         @Override
-                        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-                            Path output = outputRoot.resolve(inputRoot.relativize(dir));
-                            Files.createDirectories(output);
-                            return super.preVisitDirectory(dir, attrs);
-                        }
-
-                        @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                            Path output = outputRoot.resolve(inputRoot.relativize(file));
-                            if (file.toString().endsWith(".class")) {
-                                byte[] data = Files.readAllBytes(file);
-                                ClassWriter writer = new ClassWriter(0);
-                                new ClassReader(data).accept(new ClassRemapper(writer, remapper), 0);
-                                Files.write(output, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-                            } else {
-                                Files.copy(file, output, StandardCopyOption.REPLACE_EXISTING);
+                        public void accept(String resource) throws IOException {
+                            Path inPath = apiRoot.resolve(resource);
+                            Path outPath = outputRoot.resolve(resource);
+                            Path parent = outPath.getParent();
+                            if (parent != null) {
+                                Files.createDirectories(outputRoot.resolve(parent));
                             }
-                            return super.visitFile(file, attrs);
+                            Files.copy(inPath, outPath, StandardCopyOption.REPLACE_EXISTING);
                         }
                     });
+
+                    // step 6: remap references to the api to start with prefix
+                    Future<Void> shadeWrite = AsyncUtils.visitPathsAsync(inputRoot, new IOFunction<Path, Boolean>() {
+                        @Override
+                        public Boolean apply(Path path) throws IOException {
+                            Path output = outputRoot.resolve(inputRoot.relativize(path));
+                            Files.createDirectories(output);
+                            return true;
+                        }
+                    }, new IOConsumer<Path>() {
+                        @Override
+                        public void accept(Path path) throws IOException {
+                            Path output = outputRoot.resolve(inputRoot.relativize(path));
+                            if (path.toString().endsWith(".class")) {
+                                byte[] data = Files.readAllBytes(path);
+                                ClassWriter writer = new ClassWriter(0);
+                                new ClassReader(data).accept(new ClassRemapper(writer, remapper), 0);
+                                Files.write(output, writer.toByteArray());
+                            } else {
+                                Files.copy(path, output, StandardCopyOption.REPLACE_EXISTING);
+                            }
+                        }
+                    });
+
+                    AsyncUtils.waitForFutures(apiWrite, resourceWrite, shadeWrite).get();
+                } catch (ExecutionException | InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
             }
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
