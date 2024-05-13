@@ -219,31 +219,29 @@ public class Java11Downgrader extends VersionProvider {
                 if (insn instanceof FieldInsnNode) {
                     FieldInsnNode fieldInsn = (FieldInsnNode) insn;
                     if (nestMembers.containsKey(fieldInsn.owner)) {
-                        if (nestMembers.containsKey(fieldInsn.owner)) {
-                            ClassNode target = nestMembers.get(fieldInsn.owner);
-                            for (FieldNode field : target.fields) {
-                                if (field.name.equals(fieldInsn.name)) {
-                                    if ((field.access & Opcodes.ACC_PRIVATE) == 0) {
-                                        break;
-                                    }
-                                    switch (insn.getOpcode()) {
-                                        case Opcodes.GETSTATIC:
-                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESTATIC, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$get$" + fieldInsn.name, "()" + fieldInsn.desc, false));
-                                            break;
-                                        case Opcodes.PUTSTATIC:
-                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESTATIC, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$set$" + fieldInsn.name, "(" + fieldInsn.desc + ")V", false));
-                                            break;
-                                        case Opcodes.GETFIELD:
-                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKEVIRTUAL, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$get$" + fieldInsn.name, "()" + fieldInsn.desc, false));
-                                            break;
-                                        case Opcodes.PUTFIELD:
-                                            method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKEVIRTUAL, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$set$" + fieldInsn.name, "(" + fieldInsn.desc + ")V", false));
-                                            break;
-                                        default:
-                                            throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
-                                    }
+                        ClassNode target = nestMembers.get(fieldInsn.owner);
+                        for (FieldNode field : target.fields) {
+                            if (field.name.equals(fieldInsn.name)) {
+                                if ((field.access & Opcodes.ACC_PRIVATE) == 0) {
                                     break;
                                 }
+                                switch (insn.getOpcode()) {
+                                    case Opcodes.GETSTATIC:
+                                        method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESTATIC, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$get$" + fieldInsn.name, "()" + fieldInsn.desc, false));
+                                        break;
+                                    case Opcodes.PUTSTATIC:
+                                        method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKESTATIC, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$set$" + fieldInsn.name, "(" + fieldInsn.desc + ")V", false));
+                                        break;
+                                    case Opcodes.GETFIELD:
+                                        method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKEVIRTUAL, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$get$" + fieldInsn.name, "()" + fieldInsn.desc, false));
+                                        break;
+                                    case Opcodes.PUTFIELD:
+                                        method.instructions.set(insn, new MethodInsnNode(Opcodes.INVOKEVIRTUAL, fieldInsn.owner, "jvmdowngrader$nest$" + fieldInsn.owner.replace("/", "_") + "$set$" + fieldInsn.name, "(" + fieldInsn.desc + ")V", false));
+                                        break;
+                                    default:
+                                        throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
+                                }
+                                break;
                             }
                         }
                     }
