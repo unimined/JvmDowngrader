@@ -405,6 +405,15 @@ public class Java8Downgrader extends VersionProvider {
                         if (min.getOpcode() == Opcodes.INVOKESTATIC) {
                             min.owner = min.owner + "$jvmdg$StaticDefaults";
                             min.itf = false;
+                        } else if (min.getOpcode() == Opcodes.INVOKESPECIAL) {
+                            Type[] args = Type.getArgumentTypes(min.desc);
+                            Type[] newArgs = new Type[args.length + 1];
+                            newArgs[0] = Type.getObjectType(min.owner);
+                            System.arraycopy(args, 0, newArgs, 1, args.length);
+                            min.owner = min.owner + "$jvmdg$StaticDefaults";
+                            min.desc = Type.getMethodDescriptor(Type.getReturnType(min.desc), newArgs);
+                            min.itf = false;
+                            min.setOpcode(Opcodes.INVOKESTATIC);
                         }
                     }
                 } else if (insn instanceof InvokeDynamicInsnNode) {
@@ -413,15 +422,30 @@ public class Java8Downgrader extends VersionProvider {
                         Object arg = indy.bsmArgs[i];
                         if (arg instanceof Handle) {
                             Handle handle = (Handle) arg;
-                            if (handle.getTag() == Opcodes.H_INVOKESTATIC && handle.isInterface()) {
-                                handle = new Handle(
-                                    Opcodes.H_INVOKESTATIC,
-                                    handle.getOwner() + "$jvmdg$StaticDefaults",
-                                    handle.getName(),
-                                    handle.getDesc(),
-                                    false
-                                );
-                                indy.bsmArgs[i] = handle;
+                            if (handle.isInterface()) {
+                                if (handle.getTag() == Opcodes.H_INVOKESTATIC) {
+                                    handle = new Handle(
+                                        Opcodes.H_INVOKESTATIC,
+                                        handle.getOwner() + "$jvmdg$StaticDefaults",
+                                        handle.getName(),
+                                        handle.getDesc(),
+                                        false
+                                    );
+                                    indy.bsmArgs[i] = handle;
+                                } else if (handle.getTag() == Opcodes.H_INVOKESPECIAL) {
+                                    Type[] args = Type.getArgumentTypes(handle.getDesc());
+                                    Type[] newArgs = new Type[args.length + 1];
+                                    newArgs[0] = Type.getObjectType(handle.getOwner());
+                                    System.arraycopy(args, 0, newArgs, 1, args.length);
+                                    handle = new Handle(
+                                        Opcodes.H_INVOKESTATIC,
+                                        handle.getOwner() + "$jvmdg$StaticDefaults",
+                                        handle.getName(),
+                                        Type.getMethodDescriptor(Type.getReturnType(handle.getDesc()), newArgs),
+                                        false
+                                    );
+                                    indy.bsmArgs[i] = handle;
+                                }
                             }
                         }
                     }
@@ -437,6 +461,7 @@ public class Java8Downgrader extends VersionProvider {
                 internalName.startsWith("com/sun/"))
             {
                 System.err.println("[Interface Downgrader] Found java interface default missing implementation: " + member.getKey().toFullyQualified(member.getValue()));
+                continue;
             }
             // create method redirecting to static default
             MethodVisitor mn = clazz.visitMethod(

@@ -81,7 +81,7 @@ public class JvmDowngraderTest {
         Integer ret2 = JavaRunner.runJarInSubprocess(
             original,
             new String[]{},
-            mainClass,
+            mainClass.replace("$jvmdg$StaticDefaults", ""),
             Set.of(),
             Path.of("."),
             Map.of(),
@@ -215,7 +215,7 @@ public class JvmDowngraderTest {
 
     @Test
     public void testDowngradeInterface() throws Exception {
-        testDowngrade("xyz.wagyourtail.downgradetest.TestInterface");
+        testDowngrade("xyz.wagyourtail.downgradetest.TestInterface$jvmdg$StaticDefaults");
     }
 
     @Test
