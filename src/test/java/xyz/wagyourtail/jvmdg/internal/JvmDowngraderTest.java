@@ -32,7 +32,7 @@ public class JvmDowngraderTest {
         System.setProperty("jvmdg.java-api", javaApi.toString());
     }
 
-    private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.fromMajor(Integer.parseInt(props.getProperty("stubFromVersion")) - 1);
+    private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.fromMajor(Integer.parseInt(props.getProperty("testTargetVersion")));
 
     private final Path mainClasses = Path.of("./build/classes/java/main");
 
@@ -97,6 +97,11 @@ public class JvmDowngraderTest {
                 System.out.println(it);
             }
         );
+
+        // only java <= 7 moves interface statics
+        if (target.ordinal() > JavaRunner.JavaVersion.V1_7.ordinal()) {
+            mainClass = mainClass.replace("$jvmdg$StaticDefaults", "");
+        }
 
         System.out.println();
         System.out.println("Downgraded: ");

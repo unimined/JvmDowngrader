@@ -10,6 +10,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class AsyncUtils {
+    // basically a fork-join pool similar to the commonPool, since java 7 doesn't include it.
     private static final ForkJoinPool pool = new ForkJoinPool(Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() - 1), Short.MAX_VALUE), ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
 
     public static <T> Future<List<T>> waitForFutures(Future<T>... futures) {
@@ -68,7 +69,7 @@ public class AsyncUtils {
                     try {
                         fileVisitor.accept(path);
                     } catch (IOException e) {
-                        throw new RuntimeException(e);
+                        Utils.<RuntimeException>sneakyThrow(e);
                     }
                 }
             }, (Void) null));
@@ -103,8 +104,10 @@ public class AsyncUtils {
                     public void run() {
                         try {
                             visitPathsAsync(dir, folderVisitor, fileVisitor).get();
-                        } catch (IOException | InterruptedException | ExecutionException e) {
+                        } catch (InterruptedException e) {
                             throw new RuntimeException(e);
+                        } catch (ExecutionException | IOException e) {
+                            Utils.<RuntimeException>sneakyThrow(e);
                         }
                     }
                 }, (Void) null));
@@ -119,7 +122,7 @@ public class AsyncUtils {
                         try {
                             fileVisitor.accept(file);
                         } catch (IOException e) {
-                            throw new RuntimeException(e);
+                            Utils.<RuntimeException>sneakyThrow(e);
                         }
                     }
                 }, (Void) null));
