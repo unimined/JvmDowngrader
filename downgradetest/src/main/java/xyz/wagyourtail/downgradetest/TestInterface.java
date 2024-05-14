@@ -8,6 +8,7 @@ public interface TestInterface {
         new TestInterface() {
         }.test2();
         System.out.println(TestInterface.test5);
+        test3();
     }
 
     default void test2() {
@@ -16,6 +17,10 @@ public interface TestInterface {
 
     private void test() {
         System.out.println("test");
+    }
+
+    static void test3() {
+        System.out.println("test3");
     }
 
 }

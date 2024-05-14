@@ -147,7 +147,7 @@ public class J_L_Thread {
     private static class PlatformClassBuilder extends BuilderImpl<PlatformClassBuilder> implements Builder.OfPlatform {
         boolean daemon = false;
         ThreadGroup group;
-        int priority = Thread.NORM_PRIORITY;
+        int priority = 0;
         long stackSize = 0;
 
         PlatformClassBuilder() {
@@ -173,7 +173,7 @@ public class J_L_Thread {
         public Thread unstarted(Runnable task) {
             Thread thread = new Thread(group, task, name == null ? new Thread().getName() : name.get(), stackSize, inheritInheritableThreadLocals);
             thread.setDaemon(daemon);
-            thread.setPriority(priority);
+            if (priority != 0) thread.setPriority(priority);
             thread.setUncaughtExceptionHandler(uncaughtExceptionHandler);
             return thread;
         }
