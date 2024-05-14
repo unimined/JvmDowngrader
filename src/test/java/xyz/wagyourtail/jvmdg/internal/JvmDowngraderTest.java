@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.internal;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
@@ -33,7 +32,7 @@ public class JvmDowngraderTest {
         System.setProperty("jvmdg.java-api", javaApi.toString());
     }
 
-    private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.V1_7;
+    private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.fromMajor(Integer.parseInt(props.getProperty("stubFromVersion")) - 1);
 
     private final Path mainClasses = Path.of("./build/classes/java/main");
 
@@ -112,7 +111,7 @@ public class JvmDowngraderTest {
             Map.of(),
             true,
             List.of(),
-            target.toOpcode(),
+            JavaRunner.JavaVersion.V1_8.toOpcode(),
             (String it) -> {
                 downgradedLog.append(it).append("\n");
                 System.out.println(it);
@@ -136,7 +135,7 @@ public class JvmDowngraderTest {
             Map.of(),
             true,
             List.of(),
-            target.toOpcode(),
+            JavaRunner.JavaVersion.V1_8.toOpcode(),
             (String it) -> {
                 shadedLog.append(it).append("\n");
                 System.out.println(it);
@@ -165,7 +164,7 @@ public class JvmDowngraderTest {
             Map.of(),
             true,
             List.of(/*"-Djvmdg.debug=true", */"-Djvmdg.java-api=" + javaApi, "-Djvmdg.log=false", "-Djvmdg.quiet=true"),
-            target.toOpcode(),
+            JavaRunner.JavaVersion.V1_8.toOpcode(),
             (String it) -> {
                 runtimeDowngradeLog.append(it).append("\n");
                 System.out.println(it);

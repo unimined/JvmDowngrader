@@ -12,10 +12,6 @@ import java.util.Objects;
 @Adapter("Ljava/util/function/LongUnaryOperator;")
 public interface J_U_F_LongUnaryOperator {
 
-    static J_U_F_LongUnaryOperator identity() {
-        return t -> t;
-    }
-
     long applyAsLong(long operand);
 
     J_U_F_LongUnaryOperator compose(J_U_F_LongUnaryOperator before);

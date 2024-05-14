@@ -12,6 +12,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
@@ -175,7 +176,7 @@ public class ClassDowngrader {
         }
     }
 
-    public List<Type> getSupertypes(int version, Type type) throws IOException {
+    public List<Pair<Type, Boolean>> getSupertypes(int version, Type type) throws IOException {
         for (int vers = version; vers > target; vers--) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
@@ -187,10 +188,10 @@ public class ClassDowngrader {
                 try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
                     if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
                     ClassReader reader = new ClassReader(stream);
-                    List<Type> types = new ArrayList<>();
-                    types.add(Type.getObjectType(reader.getSuperName()));
+                    List<Pair<Type, Boolean>> types = new ArrayList<>();
+                    types.add(new Pair<>(Type.getObjectType(reader.getSuperName()), Boolean.FALSE));
                     for (String anInterface : reader.getInterfaces()) {
-                        types.add(Type.getObjectType(anInterface));
+                        types.add(new Pair<>(Type.getObjectType(anInterface), Boolean.TRUE));
                     }
                     return types;
                 }
@@ -199,12 +200,35 @@ public class ClassDowngrader {
         try (InputStream stream = classLoader.getResourceAsStream(type.getInternalName() + ".class")) {
             if (stream == null) return null;
             ClassReader reader = new ClassReader(stream);
-            List<Type> types = new ArrayList<>();
-            types.add(Type.getObjectType(reader.getSuperName()));
+            List<Pair<Type, Boolean>> types = new ArrayList<>();
+            types.add(new Pair<>(Type.getObjectType(reader.getSuperName()), Boolean.FALSE));
             for (String anInterface : reader.getInterfaces()) {
-                types.add(Type.getObjectType(anInterface));
+                types.add(new Pair<>(Type.getObjectType(anInterface), Boolean.TRUE));
             }
             return types;
+        }
+    }
+
+    public Boolean isInterface(int version, Type type) throws IOException {
+        for (int vers = version; vers > target; vers--) {
+            VersionProvider downgrader = downgraders.get(vers);
+            if (downgrader == null) {
+                throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
+            }
+            downgrader.ensureInit();
+            Type stubbed = downgrader.stubClass(type);
+            if (!stubbed.equals(type)) {
+                try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
+                    if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
+                    ClassReader reader = new ClassReader(stream);
+                    return (reader.getAccess() & Opcodes.ACC_INTERFACE) != 0;
+                }
+            }
+        }
+        try (InputStream stream = classLoader.getResourceAsStream(type.getInternalName() + ".class")) {
+            if (stream == null) return null;
+            ClassReader reader = new ClassReader(stream);
+            return (reader.getAccess() & Opcodes.ACC_INTERFACE) != 0;
         }
     }
 

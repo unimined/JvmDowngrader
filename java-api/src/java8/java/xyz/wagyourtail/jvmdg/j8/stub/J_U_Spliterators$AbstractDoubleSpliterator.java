@@ -1,12 +1,9 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.intl.spliterator.DoubleArraySpliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_DoubleConsumer;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Comparator;
 
@@ -24,21 +21,6 @@ public abstract class J_U_Spliterators$AbstractDoubleSpliterator implements J_U_
             characteristics = additionalCharacteristics | J_U_Spliterator.SUBSIZED;
         } else {
             characteristics = additionalCharacteristics;
-        }
-    }
-
-    static final class Holder implements J_U_F_DoubleConsumer {
-        double value;
-
-
-        @Override
-        public void accept(double t) {
-            value = t;
-        }
-
-        @Override
-        public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
-            return DoubleConsumerDefaults.andThen(this, after);
         }
     }
 
@@ -115,13 +97,14 @@ public abstract class J_U_Spliterators$AbstractDoubleSpliterator implements J_U_
         throw new IllegalStateException();
     }
 
-    static final class Holder implements J_U_F_DoubleConsumer {
-        double value;
 
+    static final class Holder extends J_U_F_DoubleConsumer.DoubleConsumerAdapter {
+        double value;
 
         @Override
         public void accept(double t) {
             value = t;
         }
+
     }
 }

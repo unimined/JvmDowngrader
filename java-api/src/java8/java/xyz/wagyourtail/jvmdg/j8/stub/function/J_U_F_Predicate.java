@@ -12,16 +12,6 @@ import java.util.Objects;
 @Adapter("Ljava/util/function/Predicate;")
 public interface J_U_F_Predicate<T> {
 
-    static <T> J_U_F_Predicate<T> isEqual(Object targetRef) {
-        return (null == targetRef)
-            ? Objects::isNull
-            : object -> targetRef.equals(object);
-    }
-
-    static <T> J_U_F_Predicate<T> not(J_U_F_Predicate<? super T> target) {
-        return target.negate();
-    }
-
     boolean test(T t);
 
     J_U_F_Predicate<T> and(J_U_F_Predicate<? super T> other);

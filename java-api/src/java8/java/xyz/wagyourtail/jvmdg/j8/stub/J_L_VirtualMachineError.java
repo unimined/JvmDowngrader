@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 
 public class J_L_VirtualMachineError {
 
-    @Modify(javaVersion = Opcodes.V1_8, ref = @Ref(value = "java/lang/VirtualMachineError", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V"))
+    @Modify(ref = @Ref(value = "java/lang/VirtualMachineError", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V"))
     public static void init(MethodNode mnode, int i) {
         // stack: VirtualMachineError, String, Throwable
         MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
@@ -34,10 +34,10 @@ public class J_L_VirtualMachineError {
         mnode.instructions.remove(node);
     }
 
-    @Modify(javaVersion = Opcodes.V1_8, ref = @Ref(value = "java/lang/VirtualMachineError", member = "<init>", desc = "(Ljava/lang/Throwable;)V"))
+    @Modify(ref = @Ref(value = "java/lang/VirtualMachineError", member = "<init>", desc = "(Ljava/lang/Throwable;)V"))
     public static void init2(MethodNode mnode, int i) {
         // stack:  VirtualMachineError, Throwable
-        AbstractInsnNode node = mnode.instructions.get(i);
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         list.add(new InsnNode(Opcodes.DUP2));
         // stack: VirtualMachineError, Throwable, VirtualMachineError, Throwable

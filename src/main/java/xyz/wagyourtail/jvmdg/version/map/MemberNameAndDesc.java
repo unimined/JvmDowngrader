@@ -28,11 +28,11 @@ public class MemberNameAndDesc {
         return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
     }
 
-    public MemberNameAndDesc fromNode(MethodNode mNode) {
+    public static MemberNameAndDesc fromNode(MethodNode mNode) {
         return new MemberNameAndDesc(mNode.name, Type.getMethodType(mNode.desc));
     }
 
-    public MemberNameAndDesc fromNode(FieldNode fNode) {
+    public static MemberNameAndDesc fromNode(FieldNode fNode) {
         return new MemberNameAndDesc(fNode.name, Type.getType(fNode.desc));
     }
 

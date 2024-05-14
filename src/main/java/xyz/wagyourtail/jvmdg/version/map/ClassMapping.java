@@ -19,28 +19,35 @@ import java.util.*;
 public class ClassMapping {
 
     public final Type current;
-    protected final Lazy<Set<MemberNameAndDesc>> members;
+    protected final Lazy<Map<MemberNameAndDesc, Pair<Boolean, Type>>> members;
     protected final Lazy<List<ClassMapping>> parents;
     protected final VersionProvider vp;
     private final Map<MemberNameAndDesc, Pair<Method, Stub>> methodStub = new HashMap<>();
     private final Map<MemberNameAndDesc, Pair<Method, Modify>> methodModify = new HashMap<>();
 
-    public ClassMapping(final Lazy<List<ClassMapping>> parents, final Type current, final IOFunction<Type, Set<MemberNameAndDesc>> members, VersionProvider vp) {
+    public ClassMapping(final Lazy<List<ClassMapping>> parents, final Type current, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> members, VersionProvider vp) {
         this.parents = parents;
         this.current = current;
-        this.members = new Lazy<Set<MemberNameAndDesc>>() {
+        this.members = new Lazy<Map<MemberNameAndDesc, Pair<Boolean, Type>>>() {
 
             @Override
-            protected Set<MemberNameAndDesc> init() {
+            protected Map<MemberNameAndDesc, Pair<Boolean, Type>> init() {
                 try {
-                    Set<MemberNameAndDesc> mems = new HashSet<>();
+                    Map<MemberNameAndDesc, Pair<Boolean, Type>> mems = new HashMap<>();
                     Set<MemberNameAndDesc> m = members.apply(current);
                     if (m != null) {
-                        mems.addAll(m);
+//                        mems.addAll(m);
+                        for (MemberNameAndDesc member : m) {
+                            mems.put(member, new Pair<>(isInterface, current));
+                        }
                     }
                     // fix multi-inheritance
                     for (ClassMapping parent : parents.get()) {
-                        mems.addAll(parent.members.get());
+                        for (Map.Entry<MemberNameAndDesc, Pair<Boolean, Type>> member : parent.members.get().entrySet()) {
+                            if (!mems.containsKey(member.getKey()) || !member.getValue().getFirst()) {
+                                mems.put(member.getKey(), member.getValue());
+                            }
+                        }
                     }
                     return mems;
                 } catch (IOException e) {
@@ -166,8 +173,8 @@ public class ClassMapping {
             Pair<Method, Stub> pair = methodStub.get(member);
             if (pair == null) {
                 if (!invoke_static && !member.getName().equals("<init>")) {
-                    Set<MemberNameAndDesc> members = this.members.get();
-                    if (members != null && members.contains(member)) {
+                    Map<MemberNameAndDesc, Pair<Boolean, Type>> members = this.members.get();
+                    if (members != null && members.containsKey(member)) {
 //                        if (parentStub != null) {
 //                            System.err.println("WARNING: " + current.getDescriptor() + member + " is not missing but parent has stub...");
 //                        }
@@ -209,8 +216,8 @@ public class ClassMapping {
             Pair<Method, Modify> pair = methodModify.get(member);
             if (pair == null) {
                 if (!invoke_static && !member.getName().equals("<init>")) {
-                    Set<MemberNameAndDesc> members = this.members.get();
-                    if (members != null && members.contains(member)) {
+                    Map<MemberNameAndDesc, Pair<Boolean, Type>> members = this.members.get();
+                    if (members != null && members.containsKey(member)) {
                         return null;
                     }
                     return getParentModifyFor(member);
@@ -261,11 +268,14 @@ public class ClassMapping {
             }
         }
         // remove if can resolve a non-abstract already
-        for (MemberNameAndDesc memberNameAndDesc : this.members.get()) {
+        for (MemberNameAndDesc memberNameAndDesc : this.members.get().keySet()) {
             methods.remove(memberNameAndDesc);
         }
         return methods;
     }
 
+    public Map<MemberNameAndDesc, Pair<Boolean, Type>> getMembers() {
+        return members.get();
+    }
 
 }

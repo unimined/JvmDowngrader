@@ -242,6 +242,10 @@ public class JavaRunner {
             return JavaVersion.values()[vers - 45];
         }
 
+        public static JavaVersion fromMajor(int vers) {
+            return JavaVersion.values()[vers - 1];
+        }
+
         public int getMajorVersion() {
             return this.ordinal() + 1;
         }

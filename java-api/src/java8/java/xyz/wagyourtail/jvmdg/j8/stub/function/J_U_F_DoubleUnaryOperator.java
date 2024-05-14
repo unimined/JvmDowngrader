@@ -12,10 +12,6 @@ import java.util.Objects;
 @Adapter("Ljava/util/function/DoubleUnaryOperator;")
 public interface J_U_F_DoubleUnaryOperator {
 
-    static J_U_F_DoubleUnaryOperator identity() {
-        return t -> t;
-    }
-
     double applyAsDouble(double operand);
 
     J_U_F_DoubleUnaryOperator compose(J_U_F_DoubleUnaryOperator before);

@@ -1,12 +1,9 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.intl.spliterator.IntArraySpliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Comparator;
 
@@ -24,21 +21,6 @@ public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spl
             characteristics = additionalCharacteristics | J_U_Spliterator.SUBSIZED;
         } else {
             characteristics = additionalCharacteristics;
-        }
-    }
-
-    static final class Holder implements J_U_F_IntConsumer {
-        int value;
-
-
-        @Override
-        public void accept(int t) {
-            value = t;
-        }
-
-        @Override
-        public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
-            return IntConsumerDefaults.andThen(this, after);
         }
     }
 
@@ -115,13 +97,15 @@ public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spl
         throw new IllegalStateException();
     }
 
-    static final class Holder implements J_U_F_IntConsumer {
-        int value;
 
+
+    static final class Holder extends J_U_F_IntConsumer.IntConsumerAdapter {
+        int value;
 
         @Override
         public void accept(int t) {
             value = t;
         }
+
     }
 }

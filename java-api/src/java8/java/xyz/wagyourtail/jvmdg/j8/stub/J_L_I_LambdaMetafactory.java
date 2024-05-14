@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 public class J_L_I_LambdaMetafactory {
 
-    @Modify(javaVersion = Opcodes.V1_8, ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "metafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
+    @Modify(ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "metafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
     public static void makeLambdaInnerClass(MethodNode mnode, int i, ClassNode cnode, Set<ClassNode> extra) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         String ifName = indy.name;
@@ -46,7 +46,7 @@ public class J_L_I_LambdaMetafactory {
         // add child as inner class
         cnode.innerClasses.add(new InnerClassNode(child.name, null, null, Opcodes.ACC_STATIC));
         // create method for constructing child
-        MethodVisitor mv = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, "jvmdowngrader$construct$" + nextAnonymous, constructor.getDescriptor(), null, null);
+        MethodVisitor mv = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, "jvmdowngrader$lambda$" + nextAnonymous, constructor.getDescriptor(), null, null);
         mv.visitCode();
         mv.visitTypeInsn(Opcodes.NEW, child.name);
         mv.visitInsn(Opcodes.DUP);
@@ -61,7 +61,7 @@ public class J_L_I_LambdaMetafactory {
         mv.visitEnd();
 
         // replace invokedynamic with method call
-        mnode.instructions.set(indy, new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, "jvmdowngrader$construct$" + nextAnonymous, constructor.getDescriptor(), false));
+        mnode.instructions.set(indy, new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, "jvmdowngrader$lambda$" + nextAnonymous, constructor.getDescriptor(), false));
     }
 
     @Stub(ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "altMetafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))

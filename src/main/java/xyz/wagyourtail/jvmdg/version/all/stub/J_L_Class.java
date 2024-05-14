@@ -35,15 +35,15 @@ public class J_L_Class {
             }
         }
     };
-    static final IOFunction<Type, List<Type>> getSuperTypes = new IOFunction<Type, List<Type>>() {
+    static final IOFunction<Type, List<Pair<Type, Boolean>>> getSuperTypes = new IOFunction<Type, List<Pair<Type, Boolean>>>() {
         @Override
-        public List<Type> apply(Type type) throws IOException {
+        public List<Pair<Type, Boolean>> apply(Type type) throws IOException {
             try {
                 Class<?> clazz = Class.forName(type.getClassName());
-                List<Type> parents = new ArrayList<>();
-                parents.add(Type.getType(clazz.getSuperclass()));
+                List<Pair<Type, Boolean>> parents = new ArrayList<>();
+                parents.add(new Pair<>(Type.getType(clazz.getSuperclass()), Boolean.FALSE));
                 for (Class<?> i : clazz.getInterfaces()) {
-                    parents.add(Type.getType(i));
+                    parents.add(new Pair<>(Type.getType(i), Boolean.TRUE));
                 }
                 return parents;
             } catch (ClassNotFoundException e) {
@@ -111,7 +111,7 @@ public class J_L_Class {
         for (VersionProvider vp : versionProviders) {
             if (vp.classStubs.containsKey(target)) {
                 try {
-                    List<Pair<Method, Stub>> targets = vp.getStubMapper(target, getMethods, getSuperTypes).getStubTargets();
+                    List<Pair<Method, Stub>> targets = vp.getStubMapper(target, ClassDowngrader.currentVersionDowngrader.isInterface(ClassDowngrader.currentVersionDowngrader.target, target), getMethods, getSuperTypes).getStubTargets();
                     for (Pair<Method, Stub> t : targets) {
                         if (!methods.contains(t.getFirst())) {
                             methods.add(t.getFirst());

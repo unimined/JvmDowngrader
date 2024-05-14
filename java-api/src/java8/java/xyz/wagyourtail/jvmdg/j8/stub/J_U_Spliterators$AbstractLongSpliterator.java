@@ -27,21 +27,6 @@ public abstract class J_U_Spliterators$AbstractLongSpliterator implements J_U_Sp
         }
     }
 
-    static final class Holder implements J_U_F_LongConsumer {
-        long value;
-
-
-        @Override
-        public void accept(long t) {
-            value = t;
-        }
-
-        @Override
-        public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
-            return LongConsumerDefaults.andThen(this, after);
-        }
-    }
-
     @Override
     public OfLong trySplit() {
         Holder holder = new Holder();
@@ -115,7 +100,7 @@ public abstract class J_U_Spliterators$AbstractLongSpliterator implements J_U_Sp
         throw new IllegalStateException();
     }
 
-    static final class Holder implements J_U_F_LongConsumer {
+    static final class Holder extends J_U_F_LongConsumer.LongConsumerAdapter {
         long value;
 
 

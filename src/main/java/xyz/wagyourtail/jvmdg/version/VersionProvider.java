@@ -154,7 +154,11 @@ public abstract class VersionProvider {
     public abstract void init();
 
     public synchronized ClassMapping getStubMapper(Type type) throws IOException {
-        return getStubMapper(type, new IOFunction<Type, Set<MemberNameAndDesc>>() {
+        return getStubMapper(type, ClassDowngrader.currentVersionDowngrader.isInterface(outputVersion, type) == Boolean.TRUE);
+    }
+
+    public synchronized ClassMapping getStubMapper(Type type, boolean isInterface) throws IOException {
+        return getStubMapper(type, isInterface, new IOFunction<Type, Set<MemberNameAndDesc>>() {
 
             @Override
             public Set<MemberNameAndDesc> apply(Type o) throws IOException {
@@ -164,18 +168,18 @@ public abstract class VersionProvider {
         });
     }
 
-    public synchronized ClassMapping getStubMapper(Type type, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver) throws IOException {
-        return getStubMapper(type, memberResolver, new IOFunction<Type, List<Type>>() {
+    public synchronized ClassMapping getStubMapper(Type type, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver) throws IOException {
+        return getStubMapper(type, isInterface, memberResolver, new IOFunction<Type, List<Pair<Type, Boolean>>>() {
 
             @Override
-            public List<Type> apply(Type o) throws IOException {
+            public List<Pair<Type, Boolean>> apply(Type o) throws IOException {
                 return ClassDowngrader.currentVersionDowngrader.getSupertypes(inputVersion, o);
             }
 
         });
     }
 
-    public synchronized ClassMapping getStubMapper(final Type type, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final IOFunction<Type, List<Type>> superTypeResolver) throws IOException {
+    public synchronized ClassMapping getStubMapper(final Type type, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
         if (stubMappings.containsKey(type)) {
             return stubMappings.get(type);
         }
@@ -184,12 +188,12 @@ public abstract class VersionProvider {
                 @Override
                 public List<ClassMapping> init() {
                     try {
-                        return Collections.singletonList(getStubMapper(Type.getObjectType("java/lang/Object"), memberResolver, superTypeResolver));
+                        return Collections.singletonList(getStubMapper(Type.getObjectType("java/lang/Object"), false, memberResolver, superTypeResolver));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
-            }, type, memberResolver, this);
+            }, type, isInterface, memberResolver, this);
         }
         if (type.getInternalName().equals("java/lang/Object")) {
             ClassMapping mapping = new ClassMapping(new Lazy<List<ClassMapping>>() {
@@ -197,7 +201,7 @@ public abstract class VersionProvider {
                 public List<ClassMapping> init() {
                     return Collections.emptyList();
                 }
-            }, type, memberResolver, this);
+            }, type, false, memberResolver, this);
             stubMappings.put(type, mapping);
             return mapping;
         }
@@ -205,21 +209,21 @@ public abstract class VersionProvider {
             @Override
             public List<ClassMapping> init() {
                 try {
-                    List<Type> types = superTypeResolver.apply(type);
+                    List<Pair<Type, Boolean>> types = superTypeResolver.apply(type);
                     if (types == null) {
                         if (!Constants.QUIET) System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
                         types = Collections.emptyList();
                     }
                     List<ClassMapping> superTypes = new ArrayList<>();
-                    for (Type superType : types) {
-                        superTypes.add(getStubMapper(superType, memberResolver, superTypeResolver));
+                    for (Pair<Type, Boolean> superType : types) {
+                        superTypes.add(getStubMapper(superType.getFirst(), superType.getSecond(), memberResolver, superTypeResolver));
                     }
                     return superTypes;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
-        }, type, memberResolver, this);
+        }, type, isInterface, memberResolver, this);
         stubMappings.put(type, mapping);
         return mapping;
     }
@@ -250,7 +254,7 @@ public abstract class VersionProvider {
                             target = Type.getObjectType(stub.target());
                         }
                     }
-                    classStubs.put(value, new Pair<Type, Pair<Class<?>, Adapter>>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
+                    classStubs.put(value, new Pair<>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
                 }
             }
             try {
@@ -397,7 +401,7 @@ public abstract class VersionProvider {
         }
     }
 
-    public ClassNode stubMethods(ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Type>> superTypeResolver) throws IOException {
+    public ClassNode stubMethods(ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
         if (owner.name.equals("module-info")) {
             return owner;
         }
@@ -411,7 +415,7 @@ public abstract class VersionProvider {
         return owner;
     }
 
-    public MethodNode stubMethods(MethodNode method, ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Type>> superTypeResolver) throws IOException {
+    public MethodNode stubMethods(MethodNode method, ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
         for (int i = 0; i < method.instructions.size(); i++) {
             AbstractInsnNode insn = method.instructions.get(i);
             if (insn instanceof MethodInsnNode) {
@@ -419,7 +423,7 @@ public abstract class VersionProvider {
                 if (!min.owner.startsWith("[")) {
                     min.owner = stubClass(Type.getObjectType(min.owner)).getInternalName();
                     min.desc = stubClass(Type.getMethodType(min.desc)).getDescriptor();
-                    getStubMapper(Type.getObjectType(min.owner), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
+                    getStubMapper(Type.getObjectType(min.owner), min.itf, memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
                 }
             } else if (insn instanceof TypeInsnNode) {
                 TypeInsnNode tin = (TypeInsnNode) insn;
@@ -476,7 +480,7 @@ public abstract class VersionProvider {
                                 }
                                 Type hDesc = Type.getMethodType(handle.getDesc());
                                 MemberNameAndDesc member = new MemberNameAndDesc(handle.getName(), hDesc);
-                                ClassMapping stubMapper = getStubMapper(hOwner, memberResolver, superTypeResolver);
+                                ClassMapping stubMapper = getStubMapper(hOwner, handle.isInterface(), memberResolver, superTypeResolver);
                                 boolean isStatic = handle.getTag() == Opcodes.H_INVOKESTATIC;
                                 boolean isSpecial = handle.getTag() == Opcodes.H_INVOKESPECIAL || handle.getTag() == Opcodes.H_NEWINVOKESPECIAL;
                                 Pair<Method, Stub> min = stubMapper.getStubFor(member, isStatic, enableRuntime, isSpecial);
@@ -611,7 +615,7 @@ public abstract class VersionProvider {
                         indy.bsmArgs[j] = stubClass(type);
                     }
                 }
-                getStubMapper(Type.getObjectType(indy.bsm.getOwner()), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
+                getStubMapper(Type.getObjectType(indy.bsm.getOwner()), indy.bsm.isInterface(), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
             } else if (insn instanceof MultiANewArrayInsnNode) {
                 MultiANewArrayInsnNode manain = (MultiANewArrayInsnNode) insn;
                 manain.desc = stubClass(Type.getType(manain.desc)).getDescriptor();
@@ -685,19 +689,19 @@ public abstract class VersionProvider {
             }
         };
 
-        IOFunction<Type, List<Type>> getSuperTypes = new IOFunction<Type, List<Type>>() {
+        IOFunction<Type, List<Pair<Type, Boolean>>> getSuperTypes = new IOFunction<Type, List<Pair<Type, Boolean>>>() {
 
             @Override
-            public List<Type> apply(Type o) throws IOException {
-                List<Type> types = ClassDowngrader.currentVersionDowngrader.getSupertypes(inputVersion, o);
+            public List<Pair<Type, Boolean>> apply(Type o) throws IOException {
+                List<Pair<Type, Boolean>> types = ClassDowngrader.currentVersionDowngrader.getSupertypes(inputVersion, o);
                 // if not found in the classloader, check getReadOnly for it. this should really only happen with the ZipDowngrader
                 if (types == null) {
                     ClassNode ro = getReadOnly.apply(o.getInternalName());
                     if (ro != null) {
                         types = new ArrayList<>();
-                        types.add(Type.getObjectType(ro.superName));
+                        types.add(new Pair<>(Type.getObjectType(ro.superName), Boolean.FALSE));
                         for (String anInterface : ro.interfaces) {
-                            types.add(Type.getObjectType(anInterface));
+                            types.add(new Pair<>(Type.getObjectType(anInterface), Boolean.TRUE));
                         }
                     }
                 }
@@ -717,12 +721,12 @@ public abstract class VersionProvider {
         return clazz;
     }
 
-    public ClassNode insertAbstractMethods(ClassNode clazz, Set<ClassNode> extra, IOFunction<Type, Set<MemberNameAndDesc>> getMembers, IOFunction<Type, List<Type>> getSuperTypes) throws IOException {
+    public ClassNode insertAbstractMethods(ClassNode clazz, Set<ClassNode> extra, IOFunction<Type, Set<MemberNameAndDesc>> getMembers, IOFunction<Type, List<Pair<Type, Boolean>>> getSuperTypes) throws IOException {
         if (clazz.name.equals("module-info")) {
             return clazz;
         }
 
-        Map<MemberNameAndDesc, Pair<Method, Stub>> members = getStubMapper(Type.getObjectType(clazz.name), getMembers, getSuperTypes).getAbstracts();
+        Map<MemberNameAndDesc, Pair<Method, Stub>> members = getStubMapper(Type.getObjectType(clazz.name), (clazz.access & Opcodes.ACC_INTERFACE) != 0, getMembers, getSuperTypes).getAbstracts();
         for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> member : members.entrySet()) {
             boolean contains = false;
             for (MethodNode method : clazz.methods) {
