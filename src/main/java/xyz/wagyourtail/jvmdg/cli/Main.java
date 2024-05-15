@@ -29,7 +29,7 @@ public class Main {
             new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
                 new Arguments("--print", "Enable printing debug info", new String[]{"-p"}, null),
                 new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
-                new Arguments("--downgradeApi", "Retrieves and downgrades the java api jar", new String[]{"-d"}, new String[]{"outputPath"})
+                new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", new String[]{"-d"}, new String[]{"outputPath"})
             ),
             new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
                 input,
