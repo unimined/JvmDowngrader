@@ -31,16 +31,16 @@ public class Main {
                 new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
                 new Arguments("--downgradeApi", "Retrieves and downgrades the java api jar", new String[]{"-d"}, new String[]{"outputPath"})
             ),
-            new Arguments("downgrade", "Downgrades a jar or folder", new String[]{"-d"}, null).addChildren(
+            new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
                 input,
                 classpath
             ),
-            new Arguments("shade", "Shades necessary api's into targets", new String[]{"-s"}, null).addChildren(
+            new Arguments("shade", "Shades necessary api's into targets", null, null).addChildren(
                 new Arguments("--prefix", "Prefix to use for shaded classes\n  (required)", new String[]{"-p"}, new String[]{"prefix"}),
                 new Arguments("--downgradedApi", "Pre-downgraded api jar", new String[]{"-d"}, new String[]{"jar"}),
                 input
             ),
-            new Arguments("bootstrap", "Bootstraps a downgrading environment, unparsed args will get passed", new String[]{"-b"}, null).addChildren(
+            new Arguments("bootstrap", "Bootstraps a downgrading environment, unparsed args will get passed", null, null).addChildren(
                 new Arguments("--main", "Main class to run\n  (required)", new String[]{"-m"}, new String[]{"class"}),
                 classpath
             )
