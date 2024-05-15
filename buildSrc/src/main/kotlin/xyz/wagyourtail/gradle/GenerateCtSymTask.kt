@@ -4,6 +4,8 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
 import org.gradle.api.JavaVersion
 import org.gradle.api.internal.ConventionTask
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
@@ -17,14 +19,23 @@ import java.nio.file.StandardOpenOption
 import java.util.zip.ZipFile
 import kotlin.io.path.*
 
-open class GenerateCtSymTask : ConventionTask() {
+abstract class GenerateCtSymTask : ConventionTask() {
 
     @Optional
     @OutputFile
     var ctSym = temporaryDir.resolve("jvmdg").resolve("ct.sym")
 
+    @get:Input
+    @get:Optional
+    abstract val lowerVersion: Property<JavaVersion>
+
+    @get:Input
+    abstract val upperVersion: Property<JavaVersion>
+
     init {
         outputs.upToDateWhen { ctSym.exists() }
+        lowerVersion.set(JavaVersion.VERSION_1_6)
+        upperVersion.set(JavaVersion.VERSION_22)
     }
 
     private fun ZipArchiveOutputStream.write(ci: ClassInfo) {
@@ -60,7 +71,7 @@ open class GenerateCtSymTask : ConventionTask() {
 
         ZipArchiveOutputStream(ctSym.toPath().outputStream(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)).use { zos ->
             val prevJava = mutableMapOf<String, ClassInfo>()
-            for (java in (JavaVersion.VERSION_1_6..JavaVersion.VERSION_21).reversed()) {
+            for (java in (JavaVersion.VERSION_1_6..JavaVersion.VERSION_22).reversed()) {
                 val home = toolchain.getJavaHome(java)
                 project.logger.lifecycle("[ct.sym] Processing $java at $home")
                 for (path in home.walk().filter { it.exists() && it.isRegularFile() && it.extension in setOf("jar", "jmod") }) {

@@ -6,6 +6,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.j8.stub.*;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
 import xyz.wagyourtail.jvmdg.j8.stub.stream.*;
@@ -28,7 +29,7 @@ public class Java8Downgrader extends VersionProvider {
 
     @Override
     public void init() {
-        if (!Constants.QUIET) System.err.println("[WARNING] Java 8 -> 7 Stubs are VERY incomplete!");
+        if (!Flags.quiet) System.err.println("[WARNING] Java 8 -> 7 Stubs are VERY incomplete!");
         // -- java.base --
         // GaloisCounterMode
         // GCMParameters

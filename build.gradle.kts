@@ -3,6 +3,7 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
     `maven-publish`
     `java-library`
+    application
 }
 
 allprojects {
@@ -42,6 +43,10 @@ allprojects {
 val shared by sourceSets.creating {
     compileClasspath += sourceSets["main"].compileClasspath
     runtimeClasspath += sourceSets["main"].runtimeClasspath
+}
+
+application {
+    mainClass.set("xyz.wagyourtail.jvmdg.cli.Main")
 }
 
 sourceSets {
@@ -85,9 +90,9 @@ tasks.jar {
             "Manifest-Version" to "1.0",
             "Implementation-Title" to project.name,
             "Implementation-Version" to project.version,
-            "Main-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
-            "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
-            "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            "Main-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
+            "Premain-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
+            "Agent-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
             "Can-Retransform-Classes" to "true",
         )
     }
@@ -137,9 +142,9 @@ val jarInJar by tasks.registering(Jar::class) {
             "Manifest-Version" to "1.0",
             "Implementation-Title" to project.name,
             "Implementation-Version" to project.version,
-            "Main-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
-            "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
-            "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            "Main-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
+            "Premain-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
+            "Agent-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
             "Can-Retransform-Classes" to "true",
         )
     }

@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.runtime;
 
 import org.objectweb.asm.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -24,7 +25,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
     private static final int currentVersion;
 
     static {
-        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "false")) ? Level.ALL : Level.OFF);
+        LOGGER.setLevel(Flags.printDebug ? Level.ALL : Level.OFF);
     }
 
     static {

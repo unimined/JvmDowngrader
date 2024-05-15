@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.internal;
 
 import org.junit.jupiter.api.Test;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.test.JavaRunner;
@@ -29,7 +30,8 @@ public class JvmDowngraderTest {
     private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + props.getProperty("version") + ".jar");
 
     static {
-        System.setProperty("jvmdg.java-api", javaApi.toString());
+//        System.setProperty("jvmdg.java-api", javaApi.toString());
+        Flags.api = javaApi.toFile();
     }
 
     private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.fromMajor(Integer.parseInt(props.getProperty("testTargetVersion")));
@@ -64,7 +66,7 @@ public class JvmDowngraderTest {
     private Path getShadedPath(Path originalPath, Path downgradedJavaApi, String suffix) throws IOException {
         Path path = originalPath.getParent().resolve(originalPath.getFileName().toString().replace(".jar", suffix));
         Files.deleteIfExists(path);
-        ApiShader.shadeApis("jvmdg/shade/", originalPath, path, downgradedJavaApi);
+        ApiShader.shadeApis(-1, "jvmdg/shade/", originalPath.toFile(), path.toFile(), downgradedJavaApi.toFile());
         return path;
     }
 
@@ -162,13 +164,22 @@ public class JvmDowngraderTest {
 
         Integer ret3 = JavaRunner.runJarInSubprocess(
             null,
-            new String[]{downgraded.toString(), mainClass},
-            "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            new String[]{
+                "-a",
+                javaApi.toString(),
+                "--quiet",
+                "bootstrap",
+                "--classpath",
+                original.toString(),
+                "-m",
+                mainClass
+            },
+            "xyz.wagyourtail.jvmdg.cli.Main",
             classpathJars,
             Path.of("."),
             Map.of(),
             true,
-            List.of(/*"-Djvmdg.debug=true", */"-Djvmdg.java-api=" + javaApi, "-Djvmdg.log=false", "-Djvmdg.quiet=true"),
+            List.of(/*"-Djvmdg.debug=true", "-Djvmdg.java-api=" + javaApijvm, "-Djvmdg.log=false", "-Djvmdg.quiet=true" */),
             JavaRunner.JavaVersion.V1_8.toOpcode(),
             (String it) -> {
                 runtimeDowngradeLog.append(it).append("\n");

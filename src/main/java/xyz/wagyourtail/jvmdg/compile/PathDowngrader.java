@@ -49,12 +49,12 @@ public class PathDowngrader {
         downgradePaths(ClassDowngrader.downgradeTo(opcVersion), input, output, classpathPaths);
     }
 
-    public static void downgradePaths(final ClassDowngrader downgrader, final List<Path> input, List<Path> output, Set<URL> classpath) throws IOException {
+    public static void downgradePaths(final ClassDowngrader downgrader, final List<Path> inputRoots, List<Path> outputRoots, Set<URL> classpath) throws IOException {
         try (final URLClassLoader extraClasspath = new URLClassLoader(classpath.toArray(new URL[0]), PathDowngrader.class.getClassLoader())) {
             // zip input and output
-            for (int i = 0; i < input.size(); i++) {
-                final Path in = input.get(i);
-                final Path out = output.get(i);
+            for (int i = 0; i < inputRoots.size(); i++) {
+                final Path in = inputRoots.get(i);
+                final Path out = outputRoots.get(i);
                 AsyncUtils.visitPathsAsync(in, new IOFunction<Path, Boolean>() {
 
                     @Override
@@ -81,7 +81,7 @@ public class PathDowngrader {
                                         @Override
                                         public byte[] apply(String s) {
                                             try {
-                                                for (Path in : input) {
+                                                for (Path in : inputRoots) {
                                                     Path p = in.resolve(s + ".class");
                                                     if (Files.exists(p)) {
                                                         return Files.readAllBytes(p);

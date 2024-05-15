@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.runtime;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -26,7 +27,7 @@ public class Bootstrap {
     private static final Logger LOGGER = Logger.getLogger("JVMDowngrader");
 
     static {
-        LOGGER.setLevel(Boolean.parseBoolean(System.getProperty("jvmdg.log", "false")) ? Level.ALL : Level.WARNING);
+        LOGGER.setLevel(Flags.printDebug ? Level.ALL : Level.WARNING);
     }
 
     public static void main(String[] args) {
@@ -69,7 +70,7 @@ public class Bootstrap {
     public static void premain(String args, Instrumentation instrumentation) throws IOException, URISyntaxException, UnmodifiableClassException {
         LOGGER.info("Starting JVMDowngrader Bootstrap in agent mode.");
         // downgrade api
-        Path zip = Paths.get(ClassDowngrader.javaApi.toURI());
+        Path zip = Flags.findJavaApi();
         String zipSha = sha1(zip);
         Path tmp = Constants.DIR.toPath().resolve("java-api-downgraded-" + ClassDowngrader.currentVersionDowngrader.target + "-" + zipSha.substring(0, 8) + ".jar");
         boolean downgrade = false;

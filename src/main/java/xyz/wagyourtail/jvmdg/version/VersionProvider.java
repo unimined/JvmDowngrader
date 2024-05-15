@@ -6,6 +6,7 @@ import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
@@ -96,7 +97,6 @@ public abstract class VersionProvider {
 
     public static FullyQualifiedMemberNameAndDesc resolveModifyTarget(Member member, Ref ref) {
         if (member instanceof Method) {
-            Method method = (Method) member;
             Type owner;
             String name;
             Type desc;
@@ -126,7 +126,7 @@ public abstract class VersionProvider {
     }
 
     public void afterInit() {
-        if (Constants.DEBUG) {
+        if (Flags.printDebug) {
             for (Map.Entry<Type, Pair<Type, Pair<Class<?>, Adapter>>> stub : classStubs.entrySet()) {
                 System.out.println(stub.getKey().getInternalName() + " -> " + stub.getValue().getFirst());
             }
@@ -211,7 +211,7 @@ public abstract class VersionProvider {
                 try {
                     List<Pair<Type, Boolean>> types = superTypeResolver.apply(type);
                     if (types == null) {
-                        if (!Constants.QUIET) System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
+                        if (!Flags.quiet) System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
                         types = Collections.emptyList();
                     }
                     List<ClassMapping> superTypes = new ArrayList<>();
@@ -284,14 +284,14 @@ public abstract class VersionProvider {
                             getStubMapper(owner).addModify(member, method, modify);
                         }
                     } catch (Throwable e) {
-                        if (!Constants.QUIET) {
+                        if (!Flags.quiet) {
                             System.out.println("ERROR: failed to create stub for " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
                             e.printStackTrace(System.err);
                         }
                     }
                 }
             } catch (Throwable e) {
-                if (!Constants.QUIET) {
+                if (!Flags.quiet) {
                     System.out.println("ERROR: failed to resolve methods for " + clazz.getName());
                     e.printStackTrace(System.err);
                 }
@@ -302,13 +302,13 @@ public abstract class VersionProvider {
                     stub(inner);
                 }
             } catch (Throwable e) {
-                if (!Constants.QUIET) {
+                if (!Flags.quiet) {
                     System.out.println("ERROR: failed to resolve inner classes for " + clazz.getName());
                     e.printStackTrace(System.err);
                 }
             }
         } catch (Throwable e) {
-            if (!Constants.QUIET) {
+            if (!Flags.quiet) {
                 System.out.println("ERROR: failed to create stub(s) for " + clazz.getName());
                 e.printStackTrace(System.err);
             }

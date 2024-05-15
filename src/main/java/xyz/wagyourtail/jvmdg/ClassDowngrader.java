@@ -11,6 +11,7 @@ import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceClassVisitor;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
@@ -37,11 +38,20 @@ public class ClassDowngrader {
     // because parent is null, this is (essentially) a wrapper around the bootstrap classloader
     public static final ClassLoader bootstrapClassLoader = new URLClassLoader(new URL[0], null);
 
-    public static final URL javaApi = findJavaApi();
-    public static final DowngradingClassLoader classLoader = new DowngradingClassLoader(new URL[]{javaApi}, ClassDowngrader.class.getClassLoader());
-    private static final Map<Integer, VersionProvider> downgraders = collectProviders();
+    public static final DowngradingClassLoader classLoader;
+
+    private static final Map<Integer, VersionProvider> downgraders;
 
     public final int target;
+
+    static {
+        try {
+            classLoader = new DowngradingClassLoader(new URL[]{Flags.findJavaApi().toUri().toURL()}, ClassDowngrader.class.getClassLoader());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        downgraders = collectProviders();
+    }
 
     protected ClassDowngrader(int versionTarget) {
         this.target = versionTarget;
@@ -63,72 +73,6 @@ public class ClassDowngrader {
             downgraders.put(provider.inputVersion, provider);
         }
         return downgraders;
-    }
-
-    private static URL getJavaApiFromShade() throws IOException {
-        return ClassDowngrader.class.getResource("/META-INF/lib/java-api.jar");
-    }
-
-    private static URL getJavaApiFromSystemProperty() throws IOException {
-        String api = System.getProperty("jvmdg.java-api");
-        if (api == null) {
-            return null;
-        }
-        try {
-            return new File(api).toURI().toURL();
-        } catch (MalformedURLException e) {
-            throw new IOException(e);
-        }
-    }
-
-    private static URL getJavaApiFromMaven() throws IOException {
-        Package pkg = ClassDowngrader.class.getPackage();
-        String version = pkg.getImplementationVersion();
-        if (version.contains("SNAPSHOT")) {
-            // retrieve maven metadata
-            URL url = URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/maven-metadata.xml").toURL();
-            // get actual latest
-            try (InputStream in = url.openStream()) {
-                XMLDecoder decoder = new XMLDecoder(in);
-                Map<String, Object> metadata = (Map<String, Object>) decoder.readObject();
-                String snapshotVersion = ((Map<String, Object>) ((Map<String, Object>) metadata.get("versioning")).get("snapshot")).get("timestamp") + "-" + ((Map<String, Object>) ((Map<String, Object>) metadata.get("versioning")).get("snapshot")).get("buildNumber");
-                return URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + "-" + snapshotVersion + ".jar").toURL();
-            }
-        } else {
-            File file = Constants.DIR;
-            file.mkdirs();
-            file = new File(file, "java-api-" + version + ".jar");
-            // if already exists, return that
-            if (file.exists()) {
-                return file.toURI().toURL();
-            }
-
-            URL url = URI.create("https://maven.wagyourtail.xyz/releases/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + ".jar").toURL();
-            // download
-            try (InputStream in = url.openStream()) {
-                Files.copy(in, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
-            return file.toURI().toURL();
-        }
-    }
-
-    private static URL findJavaApi() {
-        try {
-            Path tmp = Files.createTempFile("jvmdg-api", ".jar");
-            URL url = getJavaApiFromSystemProperty();
-            if (url == null) {
-                url = getJavaApiFromShade();
-            }
-            if (url == null) {
-                url = getJavaApiFromMaven();
-            }
-            try (InputStream in = url.openStream()) {
-                Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
-            }
-            return tmp.toUri().toURL();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to find java api", e);
-        }
     }
 
     public Set<MemberNameAndDesc> getMembers(int version, Type type) throws IOException {
@@ -305,7 +249,7 @@ public class ClassDowngrader {
         }
         Map<String, byte[]> outputs = new HashMap<>();
         try {
-            if (Constants.DEBUG) System.out.println("Transforming " + name.get());
+            if (Flags.printDebug) System.out.println("Transforming " + name.get());
             Set<ClassNode> extra = downgrade(node, enableRuntime, new Function<String, ClassNode>() {
 
                 @Override
@@ -322,7 +266,7 @@ public class ClassDowngrader {
                 }
             });
             for (ClassNode c : extra) {
-                if (Constants.DEBUG) {
+                if (Flags.printDebug) {
                     File f = new File(Constants.DEBUG_DIR, c.name + ".javasm");
                     f.getParentFile().mkdirs();
                     try (FileOutputStream fos = new FileOutputStream(f)) {
@@ -336,7 +280,7 @@ public class ClassDowngrader {
         } catch (Exception e) {
             throw new RuntimeException("Failed to downgrade " + name.get(), e);
         }
-        if (Constants.DEBUG) {
+        if (Flags.printDebug) {
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 if (!entry.getKey().equals(name.get())) {
                     System.out.println("Downgraded " + entry.getKey() + " from unknown to " + target);

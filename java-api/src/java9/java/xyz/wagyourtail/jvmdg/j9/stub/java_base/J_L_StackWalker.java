@@ -74,6 +74,8 @@ public class J_L_StackWalker {
             } else {
                 if (e.getClassName().equals("xyz.wagyourtail.jvmdg.runtime.Bootstrap")) {
                     return false;
+                } else if (e.getClassName().equals("xyz.wagyourtail.jvmdg.cli.Main")) {
+                    return false;
                 }
             }
             if (showReflect) {
