@@ -28,6 +28,7 @@ public class Main {
             new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
             new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
                 new Arguments("--print", "Enable printing debug info", new String[]{"p"}, null),
+                new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
                 new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", new String[]{"d"}, new String[]{"outputPath"})
             ),
             new Arguments("downgrade", "Downgrades a jar or folder", new String[]{"d"}, null).addChildren(
@@ -115,10 +116,16 @@ public class Main {
 
     public static void debug(Map<String, List<String[]>> args) throws IOException {
         for (Map.Entry<String, List<String[]>> entry : args.entrySet()) {
-            //noinspection SwitchStatementWithTooFewBranches
             switch (entry.getKey()) {
                 case "--print":
                     Flags.printDebug = true;
+                    break;
+                case "--skipStubs":
+                    for (String[] s : entry.getValue()) {
+                        for (String string : s) {
+                            Flags.debugSkipStubs.add(Integer.parseInt(string));
+                        }
+                    }
                     break;
             }
         }
@@ -171,7 +178,9 @@ public class Main {
         if (args.containsKey("--classpath")) {
             for (String[] s : args.get("--classpath")) {
                 for (String path : s) {
-                    classpath.add(new File(path));
+                    for (String string : path.split(File.pathSeparator)) {
+                        classpath.add(new File(string));
+                    }
                 }
             }
         }

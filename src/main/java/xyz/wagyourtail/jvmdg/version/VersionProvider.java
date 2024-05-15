@@ -655,6 +655,10 @@ public abstract class VersionProvider {
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
+                    if (Flags.debugSkipStubs.contains(inputVersion)) {
+                        initialized = true;
+                        return;
+                    }
                     preInit();
                     init();
                     afterInit();

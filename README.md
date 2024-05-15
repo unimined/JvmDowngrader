@@ -90,25 +90,21 @@ task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeApi) 
 
 ## "Compile" Time Downgrading
 
-### Zip Downgrading
+### Zip/Path Downgrading
 
-Downgrades the contents of a zip file to an older version.
+Downgrades the contents of a zip file or path to an older version.
+you can specify multiple targets for bulk operations. (and they will include eachother in classpath searches during downgrading)
 
-ex. `java -cp JvmDowngrader-all.jar xyz.wagyourtail.jvmdg.compile.ZipDowngrader 52 input.jar output.jar classpath.jar;classpath2.jar`
+ex. `java -jar JvmDowngrader-all.jar -c 52 downgrade -t input.jar output.jar -cp classpath.jar -cp classpath2.jar`
 
 ### Shading Api
 
 Analyze a downgraded zip file for API usages and shade them into the output.
+you can specify multiple targets for bulk operations.
 
-ex. `java -cp JvmDowngrader-all.jar xyz.wagyourtail.jvmdg.compile.ApiShader 52 "shade/prefix" input.jar output.jar`
+ex. `java -jar JvmDowngrader-all.jar -c 52 shade -p "shade/prefix" -t input.jar output.jar`
 
 The class version can be replaced with a path to the pre-downgraded api jar to save time.
-
-### Path Downgrading
-
-Downgrade the contents of 1 or more directory trees to an older version.
-
-ex. `java -cp JvmDowngrader-all.jar xyz.wagyourtail.jvmdg.compile.PathDowngrader 52 build/classes/java/main;build/classes/java/api build/downgraded/java/main;build/classes/java/api classpath.jar;classpath2.jar`
 
 ## Runtime Downgrading
 
@@ -123,7 +119,7 @@ ex. `java -javaagent:JvmDowngrader-all.jar -jar myapp.jar`
 ### Bootstrap Downgrading
 Uses the bootstrap main class
 
-ex. `java -jar JvmDowngrader-all.jar myapp.jar;classpath.jar;classpath2.jar mainclass args`
+ex. `java -jar JvmDowngrader-all.jar bootstrap -cp myapp.jar;classpath.jar;classpath2.jar --main mainclass args`
 
 
 ## From Code

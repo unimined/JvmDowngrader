@@ -11,6 +11,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.shade.ReferenceGraph;
 import xyz.wagyourtail.jvmdg.util.*;
@@ -83,7 +84,7 @@ public class ApiShader {
     public static Path resolveDowngradedApi(int target, @Nullable File downgradedApi) throws IOException {
         // step 1: downgrade the api to the target version
         Path downgradedApiPath;
-        Path temp = Files.createTempDirectory(".jvmdg");
+        Path temp = Constants.DIR.toPath();
         if (downgradedApi == null) {
             downgradeApi(target, downgradedApiPath = temp.resolve("downgraded-api.jar"));
         } else {

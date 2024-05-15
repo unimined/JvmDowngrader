@@ -28,8 +28,13 @@ public class Java8Downgrader extends VersionProvider {
     }
 
     @Override
-    public void init() {
+    public void ensureInit() {
         if (!Flags.quiet) System.err.println("[WARNING] Java 8 -> 7 Stubs are VERY incomplete!");
+        super.ensureInit();
+    }
+
+    @Override
+    public void init() {
         // -- java.base --
         // GaloisCounterMode
         // GCMParameters

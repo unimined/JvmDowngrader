@@ -14,30 +14,38 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.Map;
+import java.util.*;
 
 public class Flags {
     public static int classVersion = Opcodes.V1_8;
     public static File api = null;
-    public static boolean quiet = Boolean.getBoolean("jvmdg.quiet");
+    public static boolean quiet = Boolean.getBoolean(Constants.QUIET);
+    public static boolean allowMaven = System.getProperty(Constants.ALLOW_MAVEN_LOOKUP, "true").equalsIgnoreCase("true");
 
     // debug
-    public static boolean printDebug = Boolean.getBoolean("jvmdg.debug");
+    public static boolean printDebug = Boolean.getBoolean(Constants.DEBUG);
+    public static Set<Integer> debugSkipStubs = new HashSet<>(getDebugSkip());
+
+    private static Set<Integer> getDebugSkip() {
+        Set<Integer> skip = new HashSet<>();
+        String skipStubs = System.getProperty("jvmdg.debug.skipStubs");
+        if (skipStubs == null) return skip;
+        for (String s : skipStubs.split(",")) {
+            skip.add(Integer.parseInt(s));
+        }
+        return skip;
+    }
 
     private static URL getJavaApiFromShade() throws IOException {
         return ClassDowngrader.class.getResource("/META-INF/lib/java-api.jar");
     }
 
-    private static URL getJavaApiFromSystemProperty() throws IOException {
-        String api = System.getProperty("jvmdg.java-api");
+    private static File getJavaApiFromSystemProperty() throws IOException {
+        String api = System.getProperty(Constants.JAVA_API);
         if (api == null) {
             return null;
         }
-        try {
-            return new File(api).toURI().toURL();
-        } catch (MalformedURLException e) {
-            throw new IOException(e);
-        }
+        return new File(api);
     }
 
     private static URL getJavaApiFromMaven() throws IOException {
@@ -76,14 +84,17 @@ public class Flags {
             if (api != null) {
                 return api.toPath();
             }
-            Path tmp = Files.createTempDirectory(".jvmdg").resolve("jvmdg-api.jar");
-            URL url = getJavaApiFromSystemProperty();
-            if (url == null) {
-                url = getJavaApiFromShade();
+            Constants.DIR.mkdirs();
+            Path tmp = Constants.DIR.toPath().resolve("jvmdg-api.jar");
+            File prop = getJavaApiFromSystemProperty();
+            if (prop != null) {
+                return prop.toPath();
             }
-            if (url == null) {
+            URL url = getJavaApiFromShade();
+            if (url == null && allowMaven) {
                 url = getJavaApiFromMaven();
             }
+            assert url != null;
             try (InputStream in = url.openStream()) {
                 Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
             }
