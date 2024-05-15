@@ -10,9 +10,12 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.configuration.ShowStacktrace
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.gradle.jvm.tasks.Jar
 import org.gradle.process.JavaExecSpec
+import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.deleteIfExists
 import xyz.wagyourtail.jvmdg.gradle.jvToOpc
@@ -38,6 +41,16 @@ abstract class DowngradeJar : Jar() {
     var classpath: FileCollection by FinalizeOnRead(LazyMutable {
         project.extensions.getByType(SourceSetContainer::class.java).getByName("main").compileClasspath
     })
+
+    @get:Input
+    @get:Optional
+    @get:ApiStatus.Experimental
+    abstract val debugSkipStubs: ListProperty<Int>
+
+    @get:Input
+    @get:Optional
+    @get:ApiStatus.Experimental
+    abstract val debugPrint: Property<Boolean>
 
     @get:InputFile
     abstract val inputFile: RegularFileProperty
@@ -76,16 +89,35 @@ abstract class DowngradeJar : Jar() {
         tempOutput.deleteIfExists()
 
         project.javaexec { spec ->
-            spec.mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
-            spec.args = listOf(
+            spec.mainClass.set("xyz.wagyourtail.jvmdg.cli.Main")
+            val args = mutableListOf<String>(
+                "-a",
+                jvmdg.api.resolve().first { it.extension == "jar" }.absolutePath,
+                "-c"
+            )
+            if (debugSkipStubs.get().isNotEmpty() || debugPrint.get()) {
+                args.add("debug")
+                for (i in debugSkipStubs.get()) {
+                    args.add("-s")
+                    args.add(i.toString())
+                }
+                if (debugPrint.get()) {
+                    args.add("-p")
+                }
+            }
+            args.addAll(listOf(
                 jvToOpc(downgradeTo).toString(),
+                "downgrade",
+                "-t",
                 inputFile.get().asFile.absolutePath,
                 tempOutput.absolutePath,
+                "-cp",
                 classpath.files.joinToString(File.pathSeparator) { it.absolutePath }
-            )
+            ))
+
+            spec.args = args
             spec.workingDir = temporaryDir
             spec.classpath = jvmdg.core
-            spec.jvmArgs = listOf("-Djvmdg.java-api=${jvmdg.api.resolve().first { it.extension == "jar" }.absolutePath}")
 
             if (project.gradle.startParameter.logLevel < LogLevel.LIFECYCLE) {
                 spec.standardOutput = System.out

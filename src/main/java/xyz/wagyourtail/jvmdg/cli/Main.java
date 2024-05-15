@@ -18,8 +18,8 @@ public class Main {
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         Arguments parser = new Arguments("JvmDowngrader", null, null, null);
-        Arguments input = new Arguments("--target", "input to output", new String[]{"-t"}, new String[]{"input jar|path", "output jar|path"});
-        Arguments classpath = new Arguments("--classpath", "Classpath to use", new String[]{"-cp"}, new String[]{"classpath"});
+        Arguments input = new Arguments("--target", "input to output\n  (required)", new String[]{"-t"}, new String[]{"input jar|path", "output jar|path"});
+        Arguments classpath = new Arguments("--classpath", "Classpath to use\n  (highly recommended)", new String[]{"-cp"}, new String[]{"classpath"});
         parser.addChildren(
             new Arguments("--help", "Prints this help", new String[]{"-h"}, null),
             new Arguments("--version", "Prints the version", new String[]{"-v"}, null),
@@ -27,20 +27,21 @@ public class Main {
             new Arguments("--api", "Provide a java-api jar", new String[]{"-a"}, new String[]{"jar"}),
             new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
             new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
-                new Arguments("--print", "Enable printing debug info", new String[]{"p"}, null),
+                new Arguments("--print", "Enable printing debug info", new String[]{"-p"}, null),
                 new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
-                new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", new String[]{"d"}, new String[]{"outputPath"})
+                new Arguments("--downgradeApi", "Retrieves and downgrades the java api jar", new String[]{"-d"}, new String[]{"outputPath"})
             ),
-            new Arguments("downgrade", "Downgrades a jar or folder", new String[]{"d"}, null).addChildren(
+            new Arguments("downgrade", "Downgrades a jar or folder", new String[]{"-d"}, null).addChildren(
                 input,
                 classpath
             ),
-            new Arguments("shade", "Shades necessary api's into targets", new String[]{"s"}, null).addChildren(
-                new Arguments("--prefix", "Prefix to use for shaded classes", new String[]{"-p"}, new String[]{"prefix"}),
+            new Arguments("shade", "Shades necessary api's into targets", new String[]{"-s"}, null).addChildren(
+                new Arguments("--prefix", "Prefix to use for shaded classes\n  (required)", new String[]{"-p"}, new String[]{"prefix"}),
+                new Arguments("--downgradedApi", "Pre-downgraded api jar", new String[]{"-d"}, new String[]{"jar"}),
                 input
             ),
-            new Arguments("bootstrap", "Bootstraps a downgrading environment, unparsed args will get passed", new String[]{"b"}, null).addChildren(
-                new Arguments("--main", "Main class to run", new String[]{"-m"}, new String[]{"class"}),
+            new Arguments("bootstrap", "Bootstraps a downgrading environment, unparsed args will get passed", new String[]{"-b"}, null).addChildren(
+                new Arguments("--main", "Main class to run\n  (required)", new String[]{"-m"}, new String[]{"class"}),
                 classpath
             )
         );
@@ -209,6 +210,16 @@ public class Main {
         if (args.get("--prefix").size() > 1) {
             throw new IllegalArgumentException("Multiple prefixes specified");
         }
+        File downgradedApi = null;
+        if (args.containsKey("--downgradedApi")) {
+            if (args.get("--downgradedApi").size() > 1) {
+                throw new IllegalArgumentException("Multiple downgraded api paths specified");
+            }
+            downgradedApi = new File(args.get("--downgradedApi").get(0)[0]);
+            if (!downgradedApi.exists()) {
+                throw new IllegalArgumentException("Downgraded api jar does not exist");
+            }
+        }
         String prefix = args.get("--prefix").get(0)[0];
 
         Map<Path, Path> targets = new HashMap<>();
@@ -222,7 +233,7 @@ public class Main {
             outputs.add(entry.getValue());
         }
 
-        ApiShader.shadeApis(Flags.classVersion, prefix, inputs, outputs, null);
+        ApiShader.shadeApis(Flags.classVersion, prefix, inputs, outputs, downgradedApi);
     }
 
     public static void bootstrap(Map<String, List<String[]>> args, List<String> unparsed) throws MalformedURLException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {

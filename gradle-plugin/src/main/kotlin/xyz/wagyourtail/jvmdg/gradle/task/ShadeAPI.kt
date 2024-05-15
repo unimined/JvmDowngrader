@@ -9,12 +9,14 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.configuration.ShowStacktrace
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.tasks.Jar
 import org.gradle.process.JavaExecSpec
+import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.deleteIfExists
 import xyz.wagyourtail.jvmdg.gradle.readZipInputStreamFor
@@ -32,6 +34,11 @@ abstract class ShadeAPI : Jar() {
     @get:Input
     @get:Optional
     var downgradeTo by FinalizeOnRead(JavaVersion.VERSION_1_8)
+
+    @get:Input
+    @get:Optional
+    @get:ApiStatus.Experimental
+    abstract val debugPrint: Property<Boolean>
 
     @get:Input
     @get:Optional
@@ -78,13 +85,26 @@ abstract class ShadeAPI : Jar() {
         tempOutput.deleteIfExists()
 
         project.javaexec { spec ->
-            spec.mainClass.set("xyz.wagyourtail.jvmdg.compile.ApiShader")
-            spec.args = listOf(
+            spec.mainClass.set("xyz.wagyourtail.jvmdg.cli.Main")
+
+            val args = mutableListOf<String>()
+
+            if (debugPrint.get()) {
+                args.add("debug")
+                args.add("-p")
+            }
+            args.addAll(listOf(
+                "shade",
+                "-d",
                 project.configurations.detachedConfiguration(jvmdg.getDowngradedApi(downgradeTo)).resolve().first { it.extension == "jar" }.absolutePath,
+                "-p",
                 shadePath,
+                "-t",
                 inputFile.get().asFile.absolutePath,
                 tempOutput.absolutePath,
-            )
+            ))
+
+            spec.args = args
             spec.workingDir = temporaryDir
             spec.classpath = jvmdg.core
 
