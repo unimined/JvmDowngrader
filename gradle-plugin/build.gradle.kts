@@ -4,6 +4,7 @@ import java.util.*
 plugins {
     kotlin("jvm") version "1.9.22"
     `java-gradle-plugin`
+    `java-library`
     `maven-publish`
     id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
 }
@@ -33,7 +34,7 @@ dependencies {
     // commons compress
     implementation("org.apache.commons:commons-compress:1.26.1")
 
-    implementation(project(":"))
+    api(project(":"))
     implementation(rootProject.sourceSets.getByName("shared").output)
 
     testImplementation(kotlin("test"))
@@ -49,6 +50,14 @@ tasks.withType<JavaCompile> {
 
 tasks.jar {
     from(projectDir.parentFile.resolve("LICENSE.md"))
+
+    // so we don't have to retrieve it.
+    from(project.project(":java-api").tasks.jar.get().outputs.files) {
+        into("META-INF/lib")
+        rename {
+            "java-api.jar"
+        }
+    }
 
     manifest {
         attributes.putAll(
