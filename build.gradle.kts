@@ -92,6 +92,9 @@ tasks.jar {
     from(sourceSets["main"].output, sourceSets["shared"].output)
     from(rootDir.resolve("LICENSE.md"))
 
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+
     manifest {
         attributes(
             "Manifest-Version" to "1.0",
@@ -108,6 +111,9 @@ tasks.jar {
 tasks.getByName<Jar>("sourcesJar") {
     from(sourceSets["shared"].allSource)
     from(rootDir.resolve("LICENSE.md"))
+
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
 }
 
 tasks.javadoc {
@@ -138,29 +144,19 @@ tasks.test {
     }
 }
 
+project.evaluationDependsOnChildren()
 
 val shadowJar by tasks.registering(ShadowJar::class) {
     from(sourceSets["main"].output, sourceSets["shared"].output)
-    relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
-    shadowContents.add(sourceSets.main.get().runtimeClasspath)
-
-    destinationDirectory.set(temporaryDir)
-
-    exclude("module-info.class")
-}
-
-project.evaluationDependsOnChildren()
-
-val jarInJar by tasks.registering(Jar::class) {
-    group = "jvmdg"
-
-    dependsOn(shadowJar.get())
-    from(zipTree(shadowJar.get().outputs.files.singleFile))
     from(rootDir.resolve("LICENSE.md"))
 
-    archiveClassifier.set("all")
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
 
-    duplicatesStrategy = DuplicatesStrategy.WARN
+    shadowContents.add(sourceSets.main.get().runtimeClasspath)
+    relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
+
+    exclude("module-info.class")
 
     manifest {
         attributes(
@@ -174,8 +170,8 @@ val jarInJar by tasks.registering(Jar::class) {
         )
     }
 
+    // my version lets you include zip/jars without extracting them, so I can include the java-api jar directly in this step
     dependsOn(project(":java-api").tasks.getByName("shadowJar"))
-
     from(project.project(":java-api").tasks.getByName("shadowJar").outputs.files) {
         into("META-INF/lib")
         rename {
@@ -189,7 +185,7 @@ tasks.compileJava {
 }
 
 tasks.assemble.configure {
-    dependsOn(jarInJar.get())
+    dependsOn(shadowJar.get())
 }
 
 publishing {
@@ -215,7 +211,7 @@ publishing {
 
             from(components["java"])
 
-            artifact(jarInJar.get()) {
+            artifact(shadowJar.get()) {
                 classifier = "all"
             }
         }

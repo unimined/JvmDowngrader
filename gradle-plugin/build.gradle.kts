@@ -50,10 +50,16 @@ tasks.jar {
             )
         )
     }
+
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
 }
 
 tasks.getByName<Jar>("sourcesJar") {
     from(projectDir.parentFile.resolve("LICENSE.md"))
+
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
 }
 
 gradlePlugin {

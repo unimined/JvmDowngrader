@@ -125,6 +125,9 @@ tasks.jar {
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
     from(rootProject.sourceSets.getByName("shared").output)
     from(projectDir.parentFile.resolve("LICENSE.md"))
+
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
 }
 
 tasks.getByName<Jar>("sourcesJar") {
@@ -147,9 +150,15 @@ tasks.javadoc {
 val shadowJar by tasks.registering(ShadowJar::class) {
     dependsOn(tasks.jar.get().taskDependencies)
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output } + sourceSets.main.get().output).toTypedArray())
+
     archiveClassifier.set("all")
+
     destinationDirectory.set(temporaryDir)
+
     relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
+
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
 }
 
 fun JavaCompile.configCompile(version: JavaVersion) {
