@@ -115,7 +115,7 @@ as it contains the original code from the input jar and the shaded code from jvm
 
 And this does mean that you shouldn't need to use the *exact* same license, as long as you comply with section 4 of the LGPL.
 Running this tool, should be a thing the end-user is capable of doing, thus section 6.a should be satisfied as long as
-your project provides the pre-shaded jar as well, or alternatively provides source code to build said jar (or this jar).
+your project provides the pre-shaded jar as well, or alternatively provides source code to build said jar, or the post-shaded jar.
 
 ## Runtime Downgrading
 
