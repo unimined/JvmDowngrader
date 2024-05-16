@@ -8,7 +8,6 @@ import java.beans.XMLDecoder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
@@ -28,7 +27,7 @@ public class Flags {
 
     private static Set<Integer> getDebugSkip() {
         Set<Integer> skip = new HashSet<>();
-        String skipStubs = System.getProperty("jvmdg.debug.skipStubs");
+        String skipStubs = System.getProperty(Constants.DEBUG_SKIP_STUBS);
         if (skipStubs == null) return skip;
         for (String s : skipStubs.split(",")) {
             skip.add(Integer.parseInt(s));

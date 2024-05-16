@@ -240,10 +240,6 @@ publishing {
             version = rootProject.version as String
 
             from(components["java"])
-
-            artifact(shadowJar.get()) {
-                classifier = "all"
-            }
         }
     }
 }
