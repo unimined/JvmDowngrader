@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.internal.sharedruntime.codegen.licenseHeader
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
 
@@ -5,6 +6,11 @@ plugins {
     kotlin("jvm") version "1.9.22"
     `java-gradle-plugin`
     `maven-publish`
+}
+
+metadata {
+    readableName.set("JvmDowngrader Gradle Plugin")
+    description = "A Gradle plugin to downgrade java api and bytecode usages"
 }
 
 java {

@@ -14,6 +14,11 @@ buildscript {
     }
 }
 
+metadata {
+    readableName.set("JvmDowngrader Java Api")
+    description = "JvmDowngrader's implementations of java api, and the actual downgrade providers"
+}
+
 fun SourceSet.inputOf(sourceSet: SourceSet) {
     compileClasspath += sourceSet.compileClasspath
     runtimeClasspath += sourceSet.runtimeClasspath

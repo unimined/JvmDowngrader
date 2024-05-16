@@ -5,11 +5,36 @@ plugins {
     `maven-publish`
     `java-library`
     application
+    id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
 }
 
 allprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
+    apply(plugin = "io.github.sgtsilvio.gradle.metadata")
+
+    metadata {
+        license {
+            shortName.set("LGPL-2.1")
+            fullName.set("GNU Lesser General Public License v2.1")
+            url.set("https://www.gnu.org/licenses/lgpl-2.1.html")
+        }
+        organization {
+            url.set("https://wagyourtail.xyz")
+        }
+        developers {
+            register("wagyourtail") {
+                fullName.set("William Gray")
+                email.set("william.gray@wagyourtail.xyz")
+            }
+        }
+        github {
+            org.set("unimined")
+            repo.set("JvmDowngrader")
+            pages()
+            issues()
+        }
+    }
 
     java {
         if (project.name != "downgradetest") {
@@ -43,6 +68,11 @@ allprojects {
             )
         }
     }
+}
+
+metadata {
+    readableName.set("JvmDowngrader")
+    description = "A tool to downgrade java api and bytecode usages"
 }
 
 val shared by sourceSets.creating {
