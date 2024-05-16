@@ -191,16 +191,22 @@ public class Main {
     public static void downgrade(Map<String, List<String[]>> args) throws IOException {
         Map<Path, Path> targets = new HashMap<>();
         List<FileSystem> fileSystems = new ArrayList<>();
-        getTargets(args, targets, fileSystems);
+        try {
+            getTargets(args, targets, fileSystems);
 
-        List<Path> inputs = new ArrayList<>();
-        List<Path> outputs = new ArrayList<>();
-        for (Map.Entry<Path, Path> entry : targets.entrySet()) {
-            inputs.add(entry.getKey());
-            outputs.add(entry.getValue());
+            List<Path> inputs = new ArrayList<>();
+            List<Path> outputs = new ArrayList<>();
+            for (Map.Entry<Path, Path> entry : targets.entrySet()) {
+                inputs.add(entry.getKey());
+                outputs.add(entry.getValue());
+            }
+
+            PathDowngrader.downgradePaths(Flags.classVersion, inputs, outputs, getClasspath(args));
+        } finally {
+            for (FileSystem fileSystem : fileSystems) {
+                fileSystem.close();
+            }
         }
-
-        PathDowngrader.downgradePaths(Flags.classVersion, inputs, outputs, getClasspath(args));
     }
 
     public static void shade(Map<String, List<String[]>> args) throws IOException {
@@ -224,16 +230,22 @@ public class Main {
 
         Map<Path, Path> targets = new HashMap<>();
         List<FileSystem> fileSystems = new ArrayList<>();
-        getTargets(args, targets, fileSystems);
+        try {
+            getTargets(args, targets, fileSystems);
 
-        List<Path> inputs = new ArrayList<>();
-        List<Path> outputs = new ArrayList<>();
-        for (Map.Entry<Path, Path> entry : targets.entrySet()) {
-            inputs.add(entry.getKey());
-            outputs.add(entry.getValue());
+            List<Path> inputs = new ArrayList<>();
+            List<Path> outputs = new ArrayList<>();
+            for (Map.Entry<Path, Path> entry : targets.entrySet()) {
+                inputs.add(entry.getKey());
+                outputs.add(entry.getValue());
+            }
+
+            ApiShader.shadeApis(Flags.classVersion, prefix, inputs, outputs, downgradedApi);
+        } finally {
+            for (FileSystem fileSystem : fileSystems) {
+                fileSystem.close();
+            }
         }
-
-        ApiShader.shadeApis(Flags.classVersion, prefix, inputs, outputs, downgradedApi);
     }
 
     public static void bootstrap(Map<String, List<String[]>> args, List<String> unparsed) throws MalformedURLException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {

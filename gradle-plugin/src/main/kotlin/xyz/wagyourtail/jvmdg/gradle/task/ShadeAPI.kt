@@ -44,6 +44,9 @@ abstract class ShadeAPI : Jar() {
     @get:Optional
     var shadePath by FinalizeOnRead(LazyMutable { archiveBaseName.get().replace(Regex("[ -]"), "_") + "/jvmdg/api" })
 
+    init {
+        debugPrint.convention(false)
+    }
 
     private var configureShade: JavaExecSpec.() -> Unit = {}
 

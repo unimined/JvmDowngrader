@@ -1,4 +1,3 @@
-import org.gradle.kotlin.dsl.internal.sharedruntime.codegen.licenseHeader
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
 
@@ -6,6 +5,7 @@ plugins {
     kotlin("jvm") version "1.9.22"
     `java-gradle-plugin`
     `maven-publish`
+    id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
 }
 
 metadata {
@@ -33,9 +33,10 @@ dependencies {
     // commons compress
     implementation("org.apache.commons:commons-compress:1.26.1")
 
-    testImplementation(kotlin("test"))
+    implementation(project(":"))
+    implementation(rootProject.sourceSets.getByName("shared").output)
 
-    implementation("org.ow2.asm:asm:${asmVersion}")
+    testImplementation(kotlin("test"))
 }
 
 tasks.withType<KotlinCompile> {

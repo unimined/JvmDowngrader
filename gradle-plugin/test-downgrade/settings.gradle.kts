@@ -4,6 +4,4 @@ pluginManagement {
     }
 }
 
-includeBuild("../")
-
 rootProject.name = "test-downgrade"
