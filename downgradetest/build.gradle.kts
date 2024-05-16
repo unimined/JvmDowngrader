@@ -12,14 +12,13 @@ val testVersion = JavaVersion.toVersion(project.properties["testVersion"] as Str
 java {
     sourceCompatibility = testVersion
     targetCompatibility = testVersion
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(testVersion.majorVersion))
+    }
 }
 
 tasks.compileJava {
     options.encoding = "UTF-8"
-
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion.set(JavaLanguageVersion.of(testVersion.majorVersion))
-    }
 }
 
 val removeLibs by tasks.registering {

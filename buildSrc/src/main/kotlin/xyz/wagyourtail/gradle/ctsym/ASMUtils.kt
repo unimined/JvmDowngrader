@@ -1,4 +1,4 @@
-package xyz.wagyourtail.gradle
+package xyz.wagyourtail.gradle.ctsym
 
 import org.objectweb.asm.tree.*
 

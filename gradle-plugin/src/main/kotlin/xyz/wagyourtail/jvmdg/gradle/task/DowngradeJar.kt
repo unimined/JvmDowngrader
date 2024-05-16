@@ -58,6 +58,9 @@ abstract class DowngradeJar : Jar() {
     init {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
+
+        debugSkipStubs.convention(mutableListOf())
+        debugPrint.convention(false)
     }
 
     private var configureDowngrade: JavaExecSpec.() -> Unit = {}

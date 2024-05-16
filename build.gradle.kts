@@ -1,6 +1,7 @@
+import xyz.wagyourtail.gradle.shadow.ShadowJar
+
 plugins {
     java
-    id("com.github.johnrengelman.shadow") version "8.1.1"
     `maven-publish`
     `java-library`
     application
@@ -9,8 +10,12 @@ plugins {
 allprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
-    if (this.path.equals(":java-api")) {
-        apply(plugin = "com.github.johnrengelman.shadow")
+
+    java {
+        if (project.name != "downgradetest") {
+            withSourcesJar()
+            withJavadocJar()
+        }
     }
 
     version =
@@ -26,7 +31,7 @@ allprojects {
     }
 
     dependencies {
-        implementation("org.jetbrains:annotations-java5:24.1.0")
+        compileOnly("org.jetbrains:annotations-java5:24.1.0")
     }
 
     tasks.jar {
@@ -85,17 +90,28 @@ java {
 
 tasks.jar {
     from(sourceSets["main"].output, sourceSets["shared"].output)
+    from(rootDir.resolve("LICENSE.md"))
+
     manifest {
         attributes(
             "Manifest-Version" to "1.0",
             "Implementation-Title" to project.name,
             "Implementation-Version" to project.version,
             "Main-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
-            "Premain-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
-            "Agent-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
+            "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             "Can-Retransform-Classes" to "true",
         )
     }
+}
+
+tasks.getByName<Jar>("sourcesJar") {
+    from(sourceSets["shared"].allSource)
+    from(rootDir.resolve("LICENSE.md"))
+}
+
+tasks.javadoc {
+    source = sourceSets.main.get().allJava + sourceSets["shared"].allJava
 }
 
 val testVersion = project.properties["testVersion"] as String
@@ -122,20 +138,29 @@ tasks.test {
     }
 }
 
-tasks.shadowJar {
+
+val shadowJar by tasks.registering(ShadowJar::class) {
     from(sourceSets["main"].output, sourceSets["shared"].output)
     relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
+    shadowContents.add(sourceSets.main.get().runtimeClasspath)
+
+    destinationDirectory.set(temporaryDir)
+
+    exclude("module-info.class")
 }
+
+project.evaluationDependsOnChildren()
 
 val jarInJar by tasks.registering(Jar::class) {
     group = "jvmdg"
-    dependsOn(tasks.shadowJar)
 
-    archiveClassifier.set("jij")
+    dependsOn(shadowJar.get())
+    from(zipTree(shadowJar.get().outputs.files.singleFile))
+    from(rootDir.resolve("LICENSE.md"))
+
+    archiveClassifier.set("all")
+
     duplicatesStrategy = DuplicatesStrategy.WARN
-
-    // Copy the shadow jar contents into the jij jar
-    from(zipTree(tasks.shadowJar.get().outputs.files.singleFile))
 
     manifest {
         attributes(
@@ -143,13 +168,13 @@ val jarInJar by tasks.registering(Jar::class) {
             "Implementation-Title" to project.name,
             "Implementation-Version" to project.version,
             "Main-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
-            "Premain-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
-            "Agent-Class" to "xyz.wagyourtail.jvmdg.cli.Main",
+            "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
+            "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             "Can-Retransform-Classes" to "true",
         )
     }
 
-    dependsOn(project(":java-api").tasks.shadowJar)
+    dependsOn(project(":java-api").tasks.getByName("shadowJar"))
 
     from(project.project(":java-api").tasks.getByName("shadowJar").outputs.files) {
         into("META-INF/lib")
@@ -161,6 +186,10 @@ val jarInJar by tasks.registering(Jar::class) {
 
 tasks.compileJava {
     options.encoding = "UTF-8"
+}
+
+tasks.assemble.configure {
+    dependsOn(jarInJar.get())
 }
 
 publishing {
@@ -184,8 +213,9 @@ publishing {
             artifactId = rootProject.property("archives_base_name") as String
             version = rootProject.version as String
 
-            artifact(project.tasks.jar) {}
-            artifact(project.tasks["jarInJar"]) {
+            from(components["java"])
+
+            artifact(jarInJar.get()) {
                 classifier = "all"
             }
         }

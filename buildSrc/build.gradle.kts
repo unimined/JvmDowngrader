@@ -40,5 +40,6 @@ dependencies {
     implementation("org.apache.commons:commons-compress:1.26.1")
 
     implementation("org.ow2.asm:asm:${asmVersion}")
+    implementation("org.ow2.asm:asm-commons:${asmVersion}")
     implementation("org.ow2.asm:asm-tree:${asmVersion}")
 }

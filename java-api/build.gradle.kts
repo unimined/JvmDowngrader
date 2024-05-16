@@ -1,8 +1,8 @@
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
-import xyz.wagyourtail.gradle.GenerateCtSymTask
+import xyz.wagyourtail.gradle.ctsym.GenerateCtSymTask
+import xyz.wagyourtail.gradle.shadow.ShadowJar
 import xyz.wagyourtail.gradle.toOpcode
 
 buildscript {
@@ -12,10 +12,6 @@ buildscript {
     dependencies {
         classpath("org.ow2.asm:asm:${project.properties["asm_version"]}")
     }
-}
-
-plugins {
-    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 fun SourceSet.inputOf(sourceSet: SourceSet) {
@@ -59,16 +55,9 @@ val coverage by sourceSets.creating {
 }
 
 dependencies {
-    implementation(project(":")) {
-        isTransitive = false
-    }
+    implementation(project(":"))
 
     implementation(rootProject.sourceSets.getByName("shared").output)
-
-    implementation("org.ow2.asm:asm:${project.properties["asm_version"]}")
-    implementation("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
-    implementation("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
-    implementation("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
 }
 
 for (vers in fromVersion..toVersion) {
@@ -133,15 +122,34 @@ tasks.getByName<JavaCompile>("compileCoverageJava") {
 }
 
 tasks.jar {
-    from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output } + sourceSets.main.get().output).toTypedArray())
+    from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
     from(rootProject.sourceSets.getByName("shared").output)
+    from(projectDir.parentFile.resolve("LICENSE.md"))
 }
 
-tasks.shadowJar {
+tasks.getByName<Jar>("sourcesJar") {
+    from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].allSource }).toTypedArray())
+    from(rootProject.sourceSets.getByName("shared").allSource)
+    from(projectDir.parentFile.resolve("LICENSE.md"))
+}
+
+tasks.javadoc {
+    javadocTool = javaToolchains.javadocToolFor {
+        languageVersion.set(JavaLanguageVersion.of(toVersion.majorVersion))
+    }
+    for (vers in fromVersion..toVersion) {
+        source += sourceSets["java${vers.ordinal + 1}"].allJava
+    }
+    source += rootProject.sourceSets.getByName("shared").allJava
+    (options as CoreJavadocOptions).addStringOption("Xdoclint:none", "-quiet")
+}
+
+val shadowJar by tasks.registering(ShadowJar::class) {
+    dependsOn(tasks.jar.get().taskDependencies)
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output } + sourceSets.main.get().output).toTypedArray())
-    archiveClassifier.set("jij")
+    archiveClassifier.set("all")
+    destinationDirectory.set(temporaryDir)
     relocate("org.objectweb.asm", "xyz.wagyourtail.jvmdg.shade.asm")
-    configurations = listOf()
 }
 
 fun JavaCompile.configCompile(version: JavaVersion) {
@@ -228,7 +236,10 @@ val coverageReport by tasks.registering(JavaExec::class) {
     workingDir = project.layout.buildDirectory.get().asFile
 }
 
-
+tasks.assemble {
+    dependsOn(downgradeJar11)
+    dependsOn(downgradeJar8)
+}
 
 publishing {
     repositories {
@@ -251,7 +262,7 @@ publishing {
             artifactId = rootProject.property("archives_base_name") as String + "-java-api"
             version = rootProject.version as String
 
-            artifact(tasks["jar"]) {}
+            from(components["java"])
 
             artifact(tasks["downgradeJar11"]) {
                 classifier = "downgraded-11"
