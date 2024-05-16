@@ -104,7 +104,18 @@ you can specify multiple targets for bulk operations.
 
 ex. `java -jar JvmDowngrader-all.jar -c 52 shade -p "shade/prefix" -t input.jar output.jar`
 
-The class version can be replaced with a path to the pre-downgraded api jar to save time.
+The class version can be replaced with a path to the pre-downgraded api jar to save time, using `-d`.
+
+#### License Concerns
+
+Some people think that shading would mean they're bound by the stricter GPL license. I don't belive this to be the case.
+
+For the purpose of Licensing, the produced jar from this task should be considered a "Combined Work", 
+as it contains the original code from the input jar and the shaded code from jvmdowngrader's api.
+
+And this does mean that you shouldn't need to use the *exact* same license, as long as you comply with section 4 of the LGPL.
+Running this tool, should be a thing the end-user is capable of doing, thus section 4.d.0 is satisfied as long as
+your project provides the pre-shaded jar as well, or alternatively provides source code to build said jar (or this jar).
 
 ## Runtime Downgrading
 
