@@ -144,7 +144,7 @@ public class ApiShader {
                     Path outPath = outputRoot.resolve(prefix + type.getKey().getInternalName() + ".class");
                     Path parent = outPath.getParent();
                     if (parent != null) {
-                        Files.createDirectories(outputRoot.resolve(parent));
+                        Files.createDirectories(parent);
                     }
                     // load api class as a ClassNode
                     ClassNode node = apiRefs.getClassFor(type.getKey());
@@ -181,7 +181,7 @@ public class ApiShader {
                     Path outPath = outputRoot.resolve(resource);
                     Path parent = outPath.getParent();
                     if (parent != null) {
-                        Files.createDirectories(outputRoot.resolve(parent));
+                        Files.createDirectories(parent);
                     }
                     Files.copy(inPath, outPath, StandardCopyOption.REPLACE_EXISTING);
                 }
@@ -191,7 +191,7 @@ public class ApiShader {
             Future<Void> shadeWrite = AsyncUtils.visitPathsAsync(inputRoot, new IOFunction<Path, Boolean>() {
                 @Override
                 public Boolean apply(Path path) throws IOException {
-                    Path output = outputRoot.resolve(inputRoot.relativize(path));
+                    Path output = outputRoot.resolve(inputRoot.relativize(path).toString());
                     Files.createDirectories(output);
                     return true;
                 }
@@ -199,7 +199,7 @@ public class ApiShader {
                 @Override
                 public void accept(Path path) throws IOException {
                     Path relPath = inputRoot.relativize(path);
-                    Path output = outputRoot.resolve(relPath);
+                    Path output = outputRoot.resolve(relPath.toString());
                     String pathStr = relPath.toString();
                     if (!pathStr.startsWith("META-INF/versions") && pathStr.endsWith(".class") && !pathStr.equals("module-info.class")) {
 //                                byte[] data = Files.readAllBytes(path);

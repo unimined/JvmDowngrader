@@ -41,12 +41,12 @@ public class PathDowngrader {
         System.out.println("Downgraded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
-    public static void downgradePaths(int opcVersion, List<Path> input, List<Path> output, Set<File> classpath) throws IOException {
+    public static void downgradePaths(int opcVersion, List<Path> inputRoots, List<Path> outputRoots, Set<File> classpath) throws IOException {
         Set<URL> classpathPaths = new HashSet<>();
         for (File file : classpath) {
             classpathPaths.add(file.toURI().toURL());
         }
-        downgradePaths(ClassDowngrader.downgradeTo(opcVersion), input, output, classpathPaths);
+        downgradePaths(ClassDowngrader.downgradeTo(opcVersion), inputRoots, outputRoots, classpathPaths);
     }
 
     public static void downgradePaths(final ClassDowngrader downgrader, final List<Path> inputRoots, List<Path> outputRoots, Set<URL> classpath) throws IOException {
@@ -59,7 +59,7 @@ public class PathDowngrader {
 
                     @Override
                     public Boolean apply(Path path) throws IOException {
-                        Files.createDirectories(out.resolve(in.relativize(path)));
+                        Files.createDirectories(out.resolve(in.relativize(path).toString()));
                         return true;
                     }
 
@@ -68,7 +68,7 @@ public class PathDowngrader {
                     @Override
                     public void accept(Path path) throws IOException {
                         Path relativized = in.relativize(path);
-                        Path outFile = out.resolve(relativized);
+                        Path outFile = out.resolve(relativized.toString());
                         if (path.getFileName().toString().endsWith(".class")) {
                             if (relativized.startsWith("META-INF/versions")) {
                                 Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);

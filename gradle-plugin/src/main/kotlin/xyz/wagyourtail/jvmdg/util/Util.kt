@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.gradle
+package xyz.wagyourtail.jvmdg.util
 
 import org.apache.commons.compress.archivers.zip.ZipFile
 import org.gradle.api.JavaVersion
@@ -30,7 +30,7 @@ fun <T> Path.readZipInputStreamFor(path: String, throwIfMissing: Boolean = true,
     return null as T
 }
 
-fun jvToOpc(vers: JavaVersion): Int = when (vers) {
+fun JavaVersion.toOpcode(): Int = when (this) {
     JavaVersion.VERSION_1_1 -> Opcodes.V1_1
     JavaVersion.VERSION_1_2 -> Opcodes.V1_2
     JavaVersion.VERSION_1_3 -> Opcodes.V1_3
@@ -53,5 +53,5 @@ fun jvToOpc(vers: JavaVersion): Int = when (vers) {
     JavaVersion.VERSION_20 -> Opcodes.V20
     JavaVersion.VERSION_21 -> Opcodes.V21
     JavaVersion.VERSION_22 -> Opcodes.V22
-    else -> throw IllegalArgumentException("Unsupported Java Version: $vers")
+    else -> throw IllegalArgumentException("Unsupported Java Version: $this")
 }

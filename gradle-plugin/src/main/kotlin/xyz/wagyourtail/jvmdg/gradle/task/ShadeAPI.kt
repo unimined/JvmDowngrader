@@ -2,24 +2,20 @@
 
 package xyz.wagyourtail.jvmdg.gradle.task
 
-import groovy.lang.Closure
-import groovy.lang.DelegatesTo
-import org.apache.commons.io.output.NullOutputStream
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.logging.LogLevel
-import org.gradle.api.logging.configuration.ShowStacktrace
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.tasks.Jar
-import org.gradle.process.JavaExecSpec
 import org.jetbrains.annotations.ApiStatus
+import xyz.wagyourtail.jvmdg.cli.Flags
+import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
-import xyz.wagyourtail.jvmdg.gradle.deleteIfExists
-import xyz.wagyourtail.jvmdg.gradle.readZipInputStreamFor
+import xyz.wagyourtail.jvmdg.util.deleteIfExists
+import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.LazyMutable
 import java.nio.file.StandardOpenOption
@@ -48,29 +44,6 @@ abstract class ShadeAPI : Jar() {
         debugPrint.convention(false)
     }
 
-    private var configureShade: JavaExecSpec.() -> Unit = {}
-
-    fun configureShade(spec: JavaExecSpec.() -> Unit) {
-        val old = configureShade
-        configureShade = {
-            old()
-            spec()
-        }
-    }
-
-    fun configureShade(
-        @DelegatesTo(
-            JavaExecSpec::class,
-            strategy = Closure.DELEGATE_FIRST
-        )
-        closure: Closure<*>
-    ) {
-        configureShade {
-            closure.delegate = this
-            closure.call(this)
-        }
-    }
-
     /**
      * must already be downgraded
      */
@@ -87,42 +60,16 @@ abstract class ShadeAPI : Jar() {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
 
-        project.javaexec { spec ->
-            spec.mainClass.set("xyz.wagyourtail.jvmdg.cli.Main")
+        Flags.api = jvmdg.apiJar
+        Flags.printDebug = debugPrint.get()
 
-            val args = mutableListOf<String>()
-
-            if (debugPrint.get()) {
-                args.add("debug")
-                args.add("-p")
-            }
-            args.addAll(listOf(
-                "shade",
-                "-d",
-                project.configurations.detachedConfiguration(jvmdg.getDowngradedApi(downgradeTo)).resolve().first { it.extension == "jar" }.absolutePath,
-                "-p",
-                shadePath,
-                "-t",
-                inputFile.get().asFile.absolutePath,
-                tempOutput.absolutePath,
-            ))
-
-            spec.args = args
-            spec.workingDir = temporaryDir
-            spec.classpath = jvmdg.core
-
-            if (project.gradle.startParameter.logLevel < LogLevel.LIFECYCLE) {
-                spec.standardOutput = System.out
-            } else {
-                spec.standardOutput = NullOutputStream.NULL_OUTPUT_STREAM
-            }
-            if (project.gradle.startParameter.logLevel < LogLevel.LIFECYCLE || project.gradle.startParameter.showStacktrace != ShowStacktrace.INTERNAL_EXCEPTIONS) {
-                spec.errorOutput = System.err
-            } else {
-                spec.errorOutput = NullOutputStream.NULL_OUTPUT_STREAM
-            }
-            configureShade(spec)
-        }.assertNormalExitValue().rethrowFailure()
+        ApiShader.shadeApis(
+            -1,
+            shadePath,
+            inputFile.asFile.get(),
+            tempOutput,
+            jvmdg.downgradedApis[downgradeTo]
+        )
 
         inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->
             // write to temp file

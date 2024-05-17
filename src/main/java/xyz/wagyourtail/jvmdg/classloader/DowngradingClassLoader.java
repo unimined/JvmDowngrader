@@ -94,7 +94,7 @@ public class DowngradingClassLoader extends ClassLoader {
 //           System.err.println("Failed to load class " + name + " with original bytes, writing to debug folder.");
 //           throw e;
             throw new ClassNotFoundException(name, e);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             throw new ClassNotFoundException(name, e);
         }
     }

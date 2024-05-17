@@ -3,6 +3,7 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Stub;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,22 +13,13 @@ public class J_I_InputStream {
 
     @Stub
     public static byte[] readAllBytes(InputStream in) throws IOException {
-        int readBytes = 0;
-        byte[] bytes = new byte[8192];
-        // read into bytes
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
         int read;
-        while ((read = in.read(bytes, readBytes, bytes.length - readBytes)) != -1) {
-            readBytes += read;
-            if (readBytes == bytes.length) {
-                byte[] old = bytes;
-                bytes = new byte[readBytes << 1];
-                System.arraycopy(old, 0, bytes, 0, readBytes);
-            }
+        while ((read = in.read(buffer)) != -1) {
+            out.write(buffer, 0, read);
         }
-        if (readBytes == bytes.length) return bytes;
-        byte[] trimmed = new byte[readBytes];
-        System.arraycopy(bytes, 0, trimmed, 0, readBytes);
-        return trimmed;
+        return out.toByteArray();
     }
 
     @Stub

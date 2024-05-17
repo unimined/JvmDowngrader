@@ -2,6 +2,9 @@ package xyz.wagyourtail.jvmdg.version.map;
 
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -27,6 +30,14 @@ public class FullyQualifiedMemberNameAndDesc {
 
     public static FullyQualifiedMemberNameAndDesc of(Handle handle) {
         return new FullyQualifiedMemberNameAndDesc(Type.getObjectType(handle.getOwner()), handle.getName(), Type.getType(handle.getDesc()));
+    }
+
+    public static FullyQualifiedMemberNameAndDesc of(MethodInsnNode min) {
+        return new FullyQualifiedMemberNameAndDesc(Type.getObjectType(min.owner), min.name, Type.getMethodType(min.desc));
+    }
+
+    public static FullyQualifiedMemberNameAndDesc of(FieldInsnNode mn) {
+        return new FullyQualifiedMemberNameAndDesc(Type.getObjectType(mn.owner), mn.name, Type.getType(mn.desc));
     }
 
     public Type getOwner() {

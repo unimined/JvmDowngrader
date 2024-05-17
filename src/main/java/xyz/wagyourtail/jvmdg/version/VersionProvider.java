@@ -668,6 +668,10 @@ public abstract class VersionProvider {
         }
     }
 
+    public boolean isInitialized() {
+        return initialized;
+    }
+
     public ClassNode downgrade(ClassNode clazz, Set<ClassNode> extra, boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws IOException {
         if (clazz.version != inputVersion)
             throw new IllegalArgumentException("Class " + clazz.name + " is not version " + inputVersion);

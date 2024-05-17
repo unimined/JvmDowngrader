@@ -65,12 +65,22 @@ public class ClassDowngrader {
         }
     }
 
-    public static Map<Integer, VersionProvider> collectProviders() {
-        Iterator<VersionProvider> providerIterator = ServiceLoader.load(VersionProvider.class, classLoader).iterator();
+    public synchronized static Map<Integer, VersionProvider> collectProviders() {
         Map<Integer, VersionProvider> downgraders = new HashMap<>();
-        while (providerIterator.hasNext()) {
-            VersionProvider provider = providerIterator.next();
-            downgraders.put(provider.inputVersion, provider);
+        try {
+            Iterator<VersionProvider> providerIterator = ServiceLoader.load(VersionProvider.class, classLoader).iterator();
+            while (providerIterator.hasNext()) {
+                VersionProvider provider = providerIterator.next();
+                downgraders.put(provider.inputVersion, provider);
+            }
+        } catch (Throwable t) {
+            try {
+                Class.forName("xyz.wagyourtail.jvmdg.providers.Java8Downgrader", false, classLoader);
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException("Failed to load downgraders", e);
+            }
+            t.printStackTrace();
+            throw t;
         }
         return downgraders;
     }
