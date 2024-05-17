@@ -28,15 +28,12 @@ abstract class JVMDowngraderExtension(val project: Project) {
     var shadeDebugSkipStubs = mutableListOf<Int>()
 
     var apiJar by FinalizeOnRead(LazyMutable {
-        JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar").use { zin ->
-            if (zin == null) {
-                throw IllegalStateException("java-api.jar not found in resources")
-            }
+        JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar").use {
             val apiJar = project.layout.buildDirectory.get().asFile.resolve("jvmdg/java-api-${version}.jar")
             if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
                 apiJar.parentFile.mkdirs()
-                apiJar.toPath().outputStream(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use { os ->
-                    zin.copyTo(os)
+                apiJar.outputStream().use { os ->
+                    it.copyTo(os)
                 }
             }
             apiJar
