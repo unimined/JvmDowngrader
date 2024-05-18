@@ -26,10 +26,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Publish
-        env:
-          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
-          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
-        run: ./gradlew publish -Pmvn.user=${{ secrets.MAVEN_USER }} -Pmvn.key=${{ secrets.MAVEN_TOKEN }} -PsigningPassword=${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
+        run: ./gradlew publish -Pmvn.user=${{ secrets.MAVEN_USER }} -Pmvn.key=${{ secrets.MAVEN_TOKEN }} -PsigningKey="${{ secrets.OSSRH_GPG_SECRET_KEY }}" -PsigningPassword="${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}"
 
       - uses: actions/upload-artifact@v2
         with:
