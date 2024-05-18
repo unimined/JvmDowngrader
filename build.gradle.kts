@@ -4,12 +4,14 @@ plugins {
     java
     `maven-publish`
     `java-library`
+    signing
     application
     id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
 }
 
 allprojects {
     apply(plugin = "java")
+    apply(plugin = "signing")
     apply(plugin = "maven-publish")
     apply(plugin = "io.github.sgtsilvio.gradle.metadata")
 
@@ -67,6 +69,10 @@ allprojects {
                 "Implementation-Version" to project.version,
             )
         }
+    }
+
+    signing {
+        useInMemoryPgpKeys(findProperty("signingKey") as String, findProperty("signingPassword") as String)
     }
 }
 
@@ -246,4 +252,8 @@ publishing {
             }
         }
     }
+}
+
+signing {
+    sign(publishing.publications.getByName("maven"))
 }

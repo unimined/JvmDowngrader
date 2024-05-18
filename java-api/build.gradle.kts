@@ -4,6 +4,7 @@ import org.objectweb.asm.tree.ClassNode
 import xyz.wagyourtail.gradle.ctsym.GenerateCtSymTask
 import xyz.wagyourtail.gradle.shadow.ShadowJar
 import xyz.wagyourtail.gradle.toOpcode
+import kotlin.math.sign
 
 buildscript {
     repositories {
@@ -287,4 +288,9 @@ publishing {
             }
         }
     }
+}
+
+
+signing {
+    sign(publishing.publications.getByName("maven"))
 }

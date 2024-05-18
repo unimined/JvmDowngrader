@@ -7,6 +7,7 @@ plugins {
     `java-library`
     `maven-publish`
     id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
+    id("com.gradle.plugin-publish") version "1.2.1"
 }
 
 metadata {
@@ -81,9 +82,14 @@ tasks.getByName<Jar>("sourcesJar") {
 }
 
 gradlePlugin {
+    website = metadata.url
+    vcsUrl = metadata.github.get().vcsUrl
     plugins {
         create("simplePlugin") {
             id = "xyz.wagyourtail.jvmdowngrader"
+            displayName = metadata.readableName.get()
+            description = project.description
+            tags.set(listOf("jvm", "bytecode", "converter"))
             implementationClass = "xyz.wagyourtail.jvmdg.gradle.JVMDowngraderPlugin"
             version = project.version as String
         }
