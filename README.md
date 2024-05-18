@@ -110,12 +110,12 @@ The class version can be replaced with a path to the pre-downgraded api jar to s
 
 Some people think that shading would mean they're bound by the stricter GPL license. I don't belive this to be the case.
 
-For the purpose of Licensing, the produced jar from this task should be considered a "Combined Work", 
+For the purpose of Licensing, the produced jar from this task, or the downgrading task, should be considered a "Combined Work", 
 as it contains the original code from the input jar and the shaded code from jvmdowngrader's api.
 
-And this does mean that you shouldn't need to use the *exact* same license, as long as you comply with section 4 of the LGPL.
+And this does, usually, mean that you shouldn't need to use the *exact* same license.
 Running this tool, should be a thing the end-user is capable of doing, thus section 6.a should be satisfied as long as
-your project provides the pre-shaded jar as well, or alternatively provides source code to build said jar, or the post-shaded jar.
+your project provides the unshaded/undowngraded jar as well, or alternatively provides source code to build said jar, or the post-shaded jar.
 
 ## Runtime Downgrading
 
