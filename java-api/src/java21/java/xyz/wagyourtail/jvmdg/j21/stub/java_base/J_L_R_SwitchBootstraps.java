@@ -1,10 +1,7 @@
 package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
 import org.jetbrains.annotations.NotNull;
-import org.objectweb.asm.ConstantDynamic;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -82,11 +79,54 @@ public class J_L_R_SwitchBootstraps {
 
         //     }
         // }
+//        smnode.visitVarInsn(Opcodes.ILOAD, 1);
+        // stack: start
+//        smnode.visitLdcInsn(types.size());
+        // stack: start, types.size()
+//        smnode.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Objects", "checkIndex", "(II)I", false);
+
+        // inline checkIndex
         smnode.visitVarInsn(Opcodes.ILOAD, 1);
+        // stack: start
+        var l1 = new Label();
+        smnode.visitJumpInsn(Opcodes.IFLT, l1);
+        smnode.visitVarInsn(Opcodes.ILOAD, 1);
+        // stack: start
         smnode.visitLdcInsn(types.size());
         // stack: start, types.size()
-        smnode.visitMethodInsn(Opcodes.INVOKESTATIC, "java/util/Objects", "checkIndex", "(II)I", false);
-        smnode.visitInsn(Opcodes.POP);
+        smnode.visitJumpInsn(Opcodes.IF_ICMPGE, l1);
+        var l2 = new Label();
+        smnode.visitJumpInsn(Opcodes.GOTO, l2);
+        smnode.visitLabel(l1);
+        smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+        smnode.visitTypeInsn(Opcodes.NEW, "java/lang/IndexOutOfBoundsException");
+        // stack: (U) IOOBE
+        smnode.visitInsn(Opcodes.DUP);
+        // stack: IOOBE, IOOBE
+        // string concat factory with constants
+        smnode.visitVarInsn(Opcodes.ILOAD, 1);
+        // stack: IOOBE, IOOBE, start
+        smnode.visitLdcInsn(types.size());
+        // stack: IOOBE, IOOBE, start, types.size()
+        smnode.visitInvokeDynamicInsn(
+            "makeConcatWithConstants",
+            "(II)Ljava/lang/String;",
+            new Handle(
+                Opcodes.H_INVOKESTATIC,
+                "java/lang/invoke/StringConcatFactory",
+                "makeConcatWithConstants",
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"
+            ),
+            "Index " + "\u0001" + " out of bounds for length " + "\u0001"
+        );
+        // stack: IOOBE, IOOBE, message
+        smnode.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/IndexOutOfBoundsException", "<init>", "(Ljava/lang/String;)V", false);
+        // stack: IOOBE
+        smnode.visitInsn(Opcodes.ATHROW);
+
+        smnode.visitLabel(l2);
+        smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+
         // stack:
         smnode.visitVarInsn(Opcodes.ALOAD, 0);
         var l0 = new Label();
