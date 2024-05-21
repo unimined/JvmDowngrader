@@ -99,7 +99,7 @@ public class Java16Downgrader extends VersionProvider {
 //            StringBuilder value = new StringBuilder();
 //            for (int i = 0; i < node.recordComponents.size(); i++) {
 //                RecordComponentNode recordComponent = node.recordComponents.get(i);
-//                value.append(recordComponent.name).append(' ').append(recordComponent.signature).append(':');
+//                value.append(recordComponent.name).append(' ').append(recordComponent.signature).append(';');
 //            }
 //            value.deleteCharAt(value.length() - 1);
 //            node.recordComponents = null;

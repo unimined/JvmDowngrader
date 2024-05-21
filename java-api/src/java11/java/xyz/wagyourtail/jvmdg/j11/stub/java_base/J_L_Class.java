@@ -42,7 +42,7 @@ public class J_L_Class {
         try {
             Class<?> host = getNestHost(clazz);
             Field fd = host.getDeclaredField("jvmdowngrader$nestMembers");
-            String[] members = ((String) fd.get(null)).split(":");
+            String[] members = ((String) fd.get(null)).split(";");
             Class<?>[] classes = new Class<?>[members.length + 1];
             classes[0] = host;
             for (int i = 0; i < members.length; i++) {

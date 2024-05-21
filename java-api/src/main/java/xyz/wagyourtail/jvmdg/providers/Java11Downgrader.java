@@ -6,6 +6,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.j11.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -458,19 +459,22 @@ public class Java11Downgrader extends VersionProvider {
         }
 
         // create nest members synthetic class
-        StringBuilder sb = new StringBuilder();
-        for (String member : clazz.nestMembers) {
-            sb.append(member).append(":");
-        }
-        sb.deleteCharAt(sb.length() - 1);
 
-        clazz.visitField(
-            Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-            "jvmdowngrader$nestMembers",
-            "Ljava/lang/String;",
-            null,
-            sb.toString()
-        ).visitEnd();
+        if (!Flags.removeReflectionInfo) {
+            StringBuilder sb = new StringBuilder();
+            for (String member : clazz.nestMembers) {
+                sb.append(member).append(";");
+            }
+            sb.deleteCharAt(sb.length() - 1);
+
+            clazz.visitField(
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+                "jvmdowngrader$nestMembers",
+                "Ljava/lang/String;",
+                null,
+                sb.toString()
+            ).visitEnd();
+        }
 
         Map<String, ClassNode> nestMembers = new HashMap<>();
         for (String member : clazz.nestMembers) {
@@ -491,13 +495,15 @@ public class Java11Downgrader extends VersionProvider {
         }
 
         // create nest members synthetic class
-        clazz.visitField(
-            Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-            "jvmdowngrader$nestHost",
-            "Ljava/lang/String;",
-            null,
-            clazz.nestHostClass
-        ).visitEnd();
+        if (!Flags.removeReflectionInfo) {
+            clazz.visitField(
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+                "jvmdowngrader$nestHost",
+                "Ljava/lang/String;",
+                null,
+                clazz.nestHostClass
+            ).visitEnd();
+        }
 
         Map<String, ClassNode> nestMembers = new HashMap<>();
         ClassNode nestHost = getReadOnly.apply(clazz.nestHostClass);

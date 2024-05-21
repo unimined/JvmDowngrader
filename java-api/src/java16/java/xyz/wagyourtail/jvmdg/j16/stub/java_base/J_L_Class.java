@@ -13,6 +13,9 @@ public class J_L_Class {
 
     @Stub
     public static J_L_R_RecordComponent[] getRecordComponents(Class<?> clazz) {
+        if (!isRecord(clazz)) {
+            return null;
+        }
         // check if the field exists
         Field[] fields = clazz.getDeclaredFields();
         List<J_L_R_RecordComponent> components = new ArrayList<>();

@@ -23,6 +23,7 @@ public class Flags {
 
     // debug
     public static boolean printDebug = Boolean.getBoolean(Constants.DEBUG);
+    public static boolean removeReflectionInfo = Boolean.getBoolean(Constants.DEBUG_REMOVE_REFLECTION_INFO);
     public static Set<Integer> debugSkipStubs = new HashSet<>(getDebugSkip());
 
     private static Set<Integer> getDebugSkip() {
