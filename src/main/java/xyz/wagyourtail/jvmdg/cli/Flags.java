@@ -16,17 +16,29 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 public class Flags {
-    public static int classVersion = Opcodes.V1_8;
-    public static File api = null;
-    public static boolean quiet = Boolean.getBoolean(Constants.QUIET);
-    public static boolean allowMaven = System.getProperty(Constants.ALLOW_MAVEN_LOOKUP, "true").equalsIgnoreCase("true");
+    public int classVersion = Opcodes.V1_8;
+    public File api = null;
+    public boolean quiet = Boolean.getBoolean(Constants.QUIET);
+    public boolean allowMaven = System.getProperty(Constants.ALLOW_MAVEN_LOOKUP, "true").equalsIgnoreCase("true");
 
     // debug
-    public static boolean printDebug = Boolean.getBoolean(Constants.DEBUG);
-    public static boolean removeReflectionInfo = Boolean.getBoolean(Constants.DEBUG_REMOVE_REFLECTION_INFO);
-    public static Set<Integer> debugSkipStubs = new HashSet<>(getDebugSkip());
+    public boolean printDebug = Boolean.getBoolean(Constants.DEBUG);
+    public boolean removeReflectionInfo = Boolean.getBoolean(Constants.DEBUG_REMOVE_REFLECTION_INFO);
+    public Set<Integer> debugSkipStubs = new HashSet<>(getDebugSkip());
 
-    private static Set<Integer> getDebugSkip() {
+    public Flags copy() {
+        Flags flags = new Flags();
+        flags.classVersion = classVersion;
+        flags.api = api;
+        flags.quiet = quiet;
+        flags.allowMaven = allowMaven;
+        flags.printDebug = printDebug;
+        flags.removeReflectionInfo = removeReflectionInfo;
+        flags.debugSkipStubs = new HashSet<>(debugSkipStubs);
+        return flags;
+    }
+
+    private Set<Integer> getDebugSkip() {
         Set<Integer> skip = new HashSet<>();
         String skipStubs = System.getProperty(Constants.DEBUG_SKIP_STUBS);
         if (skipStubs == null) return skip;
@@ -36,11 +48,11 @@ public class Flags {
         return skip;
     }
 
-    private static URL getJavaApiFromShade() throws IOException {
+    private URL getJavaApiFromShade() throws IOException {
         return ClassDowngrader.class.getResource("/META-INF/lib/java-api.jar");
     }
 
-    private static File getJavaApiFromSystemProperty() throws IOException {
+    private File getJavaApiFromSystemProperty() throws IOException {
         String api = System.getProperty(Constants.JAVA_API);
         if (api == null) {
             return null;
@@ -48,7 +60,7 @@ public class Flags {
         return new File(api);
     }
 
-    private static URL getJavaApiFromMaven() throws IOException {
+    private URL getJavaApiFromMaven() throws IOException {
         Package pkg = ClassDowngrader.class.getPackage();
         String version = pkg.getImplementationVersion();
         if (version.contains("SNAPSHOT")) {
@@ -79,7 +91,7 @@ public class Flags {
         }
     }
 
-    public static Path findJavaApi() {
+    public Path findJavaApi() {
         try {
             if (api != null) {
                 return api.toPath();

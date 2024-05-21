@@ -3,6 +3,7 @@ package xyz.wagyourtail.jvmdg.cli;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader;
+import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
@@ -15,6 +16,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class Main {
+    private static final Flags flags = new Flags();
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         Arguments parser = new Arguments("JvmDowngrader", null, null, null);
@@ -69,13 +71,13 @@ public class Main {
         for (Map.Entry<String, List<String[]>> entry : parsed.entrySet()) {
             switch (entry.getKey()) {
                 case "--quiet":
-                    Flags.quiet = true;
+                    flags.quiet = true;
                     break;
                 case "--classVersion":
                     if (entry.getValue().size() > 1) {
                         throw new IllegalArgumentException("Multiple class versions specified");
                     }
-                    Flags.classVersion = Integer.parseInt(entry.getValue().get(0)[0]);
+                    flags.classVersion = Integer.parseInt(entry.getValue().get(0)[0]);
                     break;
                 case "--api":
                     if (entry.getValue().size() > 1) {
@@ -85,7 +87,7 @@ public class Main {
                     if (!api.exists()) {
                         throw new IllegalArgumentException("Api jar does not exist");
                     }
-                    Flags.api = api;
+                    flags.api = api;
                     break;
                 default:
             }
@@ -119,12 +121,12 @@ public class Main {
         for (Map.Entry<String, List<String[]>> entry : args.entrySet()) {
             switch (entry.getKey()) {
                 case "--print":
-                    Flags.printDebug = true;
+                    flags.printDebug = true;
                     break;
                 case "--skipStubs":
                     for (String[] s : entry.getValue()) {
                         for (String string : s) {
-                            Flags.debugSkipStubs.add(Integer.parseInt(string));
+                            flags.debugSkipStubs.add(Integer.parseInt(string));
                         }
                     }
                     break;
@@ -135,7 +137,7 @@ public class Main {
             if (args.get("downgradeApi").size() > 1) {
                 throw new IllegalArgumentException("Multiple output paths specified");
             }
-            ApiShader.downgradeApi(Flags.classVersion, new File(args.get("downgradeApi").get(0)[0]).toPath());
+            ZipDowngrader.downgradeZip(ClassDowngrader.downgradeTo(flags), flags.api.toPath(), new HashSet<URL>(), new File(args.get("downgradeApi").get(0)[0]).toPath());
         }
     }
 
@@ -174,13 +176,13 @@ public class Main {
         }
     }
 
-    public static Set<File> getClasspath(Map<String, List<String[]>> args) {
-        Set<File> classpath = new HashSet<>();
+    public static Set<URL> getClasspath(Map<String, List<String[]>> args) throws MalformedURLException {
+        Set<URL> classpath = new HashSet<>();
         if (args.containsKey("--classpath")) {
             for (String[] s : args.get("--classpath")) {
                 for (String path : s) {
                     for (String string : path.split(File.pathSeparator)) {
-                        classpath.add(new File(string));
+                        classpath.add(new File(string).toURI().toURL());
                     }
                 }
             }
@@ -201,7 +203,7 @@ public class Main {
                 outputs.add(entry.getValue());
             }
 
-            PathDowngrader.downgradePaths(Flags.classVersion, inputs, outputs, getClasspath(args));
+            PathDowngrader.downgradePaths(ClassDowngrader.downgradeTo(flags), inputs, outputs, getClasspath(args));
         } finally {
             for (FileSystem fileSystem : fileSystems) {
                 fileSystem.close();
@@ -240,7 +242,7 @@ public class Main {
                 outputs.add(entry.getValue());
             }
 
-            ApiShader.shadeApis(Flags.classVersion, prefix, inputs, outputs, downgradedApi);
+            ApiShader.shadeApis(flags, prefix, inputs, outputs, downgradedApi);
         } finally {
             for (FileSystem fileSystem : fileSystems) {
                 fileSystem.close();
@@ -257,15 +259,12 @@ public class Main {
         }
         String main = args.get("--main").get(0)[0];
 
-        Set<File> classpath = getClasspath(args);
-        URL[] cp = new URL[classpath.size()];
-        int i = 0;
-        for (File file : classpath) {
-            cp[i++] = file.toURI().toURL();
-        }
+        Set<URL> classpath = getClasspath(args);
 
-        ClassDowngrader.classLoader.addDelegate(cp);
-        Class.forName(main, false, ClassDowngrader.classLoader).getMethod("main", String[].class).invoke(
+        ClassDowngrader currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(flags);
+
+        currentVersionDowngrader.getClassLoader().addDelegate(classpath.toArray(new URL[0]));
+        Class.forName(main, false, currentVersionDowngrader.getClassLoader()).getMethod("main", String[].class).invoke(
             null,
             (Object) unparsed.toArray(new String[0])
         );

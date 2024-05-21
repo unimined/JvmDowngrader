@@ -85,7 +85,7 @@ public class Java17Downgrader extends VersionProvider {
     // TODO: add bytecode to check the seal and throw
     public void unseal(ClassNode node) {
         if (node.permittedSubclasses != null) {
-            if (!Flags.removeReflectionInfo) {
+            if (!downgrader.flags.removeReflectionInfo) {
                 StringBuilder sb = new StringBuilder();
                 for (String s : node.permittedSubclasses) {
                     sb.append(s).append(";");

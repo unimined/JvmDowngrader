@@ -460,7 +460,7 @@ public class Java11Downgrader extends VersionProvider {
 
         // create nest members synthetic class
 
-        if (!Flags.removeReflectionInfo) {
+        if (!downgrader.flags.removeReflectionInfo) {
             StringBuilder sb = new StringBuilder();
             for (String member : clazz.nestMembers) {
                 sb.append(member).append(";");
@@ -495,7 +495,7 @@ public class Java11Downgrader extends VersionProvider {
         }
 
         // create nest members synthetic class
-        if (!Flags.removeReflectionInfo) {
+        if (!downgrader.flags.removeReflectionInfo) {
             clazz.visitField(
                 Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
                 "jvmdowngrader$nestHost",

@@ -5,7 +5,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.j8.stub.*;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
@@ -19,7 +19,6 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ForkJoinTask;
 
 public class Java8Downgrader extends VersionProvider {
 
@@ -29,11 +28,11 @@ public class Java8Downgrader extends VersionProvider {
     }
 
     @Override
-    public void ensureInit() {
+    public void ensureInit(ClassDowngrader downgrader) {
         if (!isInitialized()) {
-            if (!Flags.quiet) System.err.println("[WARNING] Java 8 -> 7 Stubs are VERY incomplete!");
+            if (!downgrader.flags.quiet) System.err.println("[WARNING] Java 8 -> 7 Stubs are VERY incomplete!");
         }
-        super.ensureInit();
+        super.ensureInit(downgrader);
     }
 
     @Override

@@ -25,9 +25,11 @@ import java.util.logging.Logger;
 
 public class Bootstrap {
     private static final Logger LOGGER = Logger.getLogger("JVMDowngrader");
+    static final Flags flags = new Flags();
+    static final ClassDowngrader currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(flags);
 
     static {
-        LOGGER.setLevel(Flags.printDebug ? Level.ALL : Level.WARNING);
+        LOGGER.setLevel(flags.printDebug ? Level.ALL : Level.WARNING);
     }
 
     public static void main(String[] args) {
@@ -41,8 +43,8 @@ public class Bootstrap {
             for (int i = 0; i < classpath.length; i++) {
                 cp[i] = new File(classpath[i]).toURI().toURL();
             }
-            ClassDowngrader.classLoader.addDelegate(cp);
-            Class.forName(mainClass, false, ClassDowngrader.classLoader).getMethod("main", String[].class).invoke(
+            currentVersionDowngrader.getClassLoader().addDelegate(cp);
+            Class.forName(mainClass, false, currentVersionDowngrader.getClassLoader()).getMethod("main", String[].class).invoke(
                 null,
                 (Object) newArgs
             );
@@ -70,9 +72,9 @@ public class Bootstrap {
     public static void premain(String args, Instrumentation instrumentation) throws IOException, URISyntaxException, UnmodifiableClassException {
         LOGGER.info("Starting JVMDowngrader Bootstrap in agent mode.");
         // downgrade api
-        Path zip = Flags.findJavaApi();
+        Path zip = flags.findJavaApi();
         String zipSha = sha1(zip);
-        Path tmp = Constants.DIR.toPath().resolve("java-api-downgraded-" + ClassDowngrader.currentVersionDowngrader.target + "-" + zipSha.substring(0, 8) + ".jar");
+        Path tmp = Constants.DIR.toPath().resolve("java-api-downgraded-" + currentVersionDowngrader.target + "-" + zipSha.substring(0, 8) + ".jar");
         boolean downgrade = false;
         if (!Files.exists(tmp)) {
             LOGGER.warning("Downgrading java-api.jar as its hash changed or this is first launch, this may take a minute...");
@@ -85,7 +87,7 @@ public class Bootstrap {
                 file.delete();
             }
             Files.createDirectories(tmp.getParent());
-            ZipDowngrader.downgradeZip(ClassDowngrader.currentVersionDowngrader, zip, new HashSet<URL>(), tmp);
+            ZipDowngrader.downgradeZip(currentVersionDowngrader, zip, new HashSet<URL>(), tmp);
         }
         instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(tmp.toFile()));
         // add self

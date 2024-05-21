@@ -7,6 +7,7 @@ import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.ApiShader
+import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
@@ -59,11 +60,13 @@ abstract class JVMDowngraderExtension(val project: Project) {
     internal val downgradedApis = defaultedMapOf<JavaVersion, File> { version ->
         val downgradedPath = apiJar.resolveSibling("java-api-${version}-${version.majorVersion}-downgraded.jar")
 
-        Flags.api = apiJar
-        Flags.printDebug = false
-        Flags.debugSkipStubs = shadeDebugSkipStubs.toSet()
+        val flags = Flags()
+        flags.api = apiJar
+        flags.printDebug = false
+        flags.classVersion = version.toOpcode()
+        flags.debugSkipStubs = shadeDebugSkipStubs.toSet()
 
-        ApiShader.downgradedApi(version.toOpcode(), apiJar.toPath(), downgradedPath.toPath())
+        ZipDowngrader.downgradeZip(ClassDowngrader.downgradeTo(flags), flags.findJavaApi(), emptySet(), downgradedPath.toPath())
         downgradedPath
     }
 }

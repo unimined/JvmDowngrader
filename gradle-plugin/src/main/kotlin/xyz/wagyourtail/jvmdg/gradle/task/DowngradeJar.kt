@@ -13,6 +13,7 @@ import org.gradle.api.tasks.*
 import org.gradle.jvm.tasks.Jar
 import org.gradle.process.JavaExecSpec
 import org.jetbrains.annotations.ApiStatus
+import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
@@ -90,15 +91,17 @@ abstract class DowngradeJar : Jar() {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
 
-        Flags.api = jvmdg.apiJar
-        Flags.printDebug = debugPrint.get()
-        Flags.debugSkipStubs = debugSkipStubs.get().toSet()
+        val flags = Flags()
+        flags.api = jvmdg.apiJar
+        flags.printDebug = debugPrint.get()
+        flags.classVersion = downgradeTo.toOpcode()
+        flags.debugSkipStubs = debugSkipStubs.get().toSet()
 
         ZipDowngrader.downgradeZip(
-            downgradeTo.toOpcode(),
-            inputFile.asFile.get(),
-            classpath.files,
-            tempOutput
+            ClassDowngrader.downgradeTo(flags),
+            inputFile.asFile.get().toPath(),
+            classpath.files.map { it.toURI().toURL() }.toSet(),
+            tempOutput.toPath()
         )
 
         inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->

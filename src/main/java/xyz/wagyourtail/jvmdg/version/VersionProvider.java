@@ -5,7 +5,6 @@ import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
-import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
@@ -29,6 +28,12 @@ public abstract class VersionProvider {
     public final Map<Type, ClassMapping> stubMappings = new HashMap<>();
     public final int inputVersion;
     public final int outputVersion;
+
+    /**
+     * lateinit
+     * bound during ensureInit
+     */
+    protected ClassDowngrader downgrader;
 
     private volatile boolean initialized = false;
 
@@ -125,7 +130,7 @@ public abstract class VersionProvider {
     }
 
     public void afterInit() {
-        if (Flags.printDebug) {
+        if (downgrader.flags.printDebug) {
             for (Map.Entry<Type, Pair<Type, Pair<Class<?>, Adapter>>> stub : classStubs.entrySet()) {
                 System.out.println(stub.getKey().getInternalName() + " -> " + stub.getValue().getFirst());
             }
@@ -153,7 +158,7 @@ public abstract class VersionProvider {
     public abstract void init();
 
     public synchronized ClassMapping getStubMapper(Type type) throws IOException {
-        return getStubMapper(type, ClassDowngrader.currentVersionDowngrader.isInterface(outputVersion, type) == Boolean.TRUE);
+        return getStubMapper(type, downgrader.isInterface(outputVersion, type) == Boolean.TRUE);
     }
 
     public synchronized ClassMapping getStubMapper(Type type, boolean isInterface) throws IOException {
@@ -161,7 +166,7 @@ public abstract class VersionProvider {
 
             @Override
             public Set<MemberNameAndDesc> apply(Type o) throws IOException {
-                return ClassDowngrader.currentVersionDowngrader.getMembers(inputVersion, o);
+                return downgrader.getMembers(inputVersion, o);
             }
 
         });
@@ -172,7 +177,7 @@ public abstract class VersionProvider {
 
             @Override
             public List<Pair<Type, Boolean>> apply(Type o) throws IOException {
-                return ClassDowngrader.currentVersionDowngrader.getSupertypes(inputVersion, o);
+                return downgrader.getSupertypes(inputVersion, o);
             }
 
         });
@@ -210,7 +215,7 @@ public abstract class VersionProvider {
                 try {
                     List<Pair<Type, Boolean>> types = superTypeResolver.apply(type);
                     if (types == null) {
-                        if (!Flags.quiet) System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
+                        if (!downgrader.flags.quiet) System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
                         types = Collections.emptyList();
                     }
                     List<ClassMapping> superTypes = new ArrayList<>();
@@ -283,14 +288,14 @@ public abstract class VersionProvider {
                             getStubMapper(owner).addModify(member, method, modify);
                         }
                     } catch (Throwable e) {
-                        if (!Flags.quiet) {
+                        if (!downgrader.flags.quiet) {
                             System.out.println("ERROR: failed to create stub for " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
                             e.printStackTrace(System.err);
                         }
                     }
                 }
             } catch (Throwable e) {
-                if (!Flags.quiet) {
+                if (!downgrader.flags.quiet) {
                     System.out.println("ERROR: failed to resolve methods for " + clazz.getName());
                     e.printStackTrace(System.err);
                 }
@@ -301,39 +306,17 @@ public abstract class VersionProvider {
                     stub(inner);
                 }
             } catch (Throwable e) {
-                if (!Flags.quiet) {
+                if (!downgrader.flags.quiet) {
                     System.out.println("ERROR: failed to resolve inner classes for " + clazz.getName());
                     e.printStackTrace(System.err);
                 }
             }
         } catch (Throwable e) {
-            if (!Flags.quiet) {
+            if (!downgrader.flags.quiet) {
                 System.out.println("ERROR: failed to create stub(s) for " + clazz.getName());
                 e.printStackTrace(System.err);
             }
         }
-    }
-
-    private MethodInsnNode boxPrimitive(Type type) {
-        switch (type.getSort()) {
-            case Type.BOOLEAN:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false);
-            case Type.CHAR:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false);
-            case Type.BYTE:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false);
-            case Type.SHORT:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false);
-            case Type.INT:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false);
-            case Type.FLOAT:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false);
-            case Type.LONG:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false);
-            case Type.DOUBLE:
-                return new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false);
-        }
-        return null;
     }
 
     public MethodInsnNode stubTypeInsnNode(TypeInsnNode insn) {
@@ -650,11 +633,12 @@ public abstract class VersionProvider {
         return method;
     }
 
-    public void ensureInit() {
+    public void ensureInit(ClassDowngrader downgrader) {
+        this.downgrader = downgrader;
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
-                    if (Flags.debugSkipStubs.contains(inputVersion)) {
+                    if (downgrader.flags.debugSkipStubs.contains(inputVersion)) {
                         initialized = true;
                         return;
                     }
@@ -671,16 +655,16 @@ public abstract class VersionProvider {
         return initialized;
     }
 
-    public ClassNode downgrade(ClassNode clazz, Set<ClassNode> extra, boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws IOException {
+    public ClassNode downgrade(final ClassDowngrader downgrader, ClassNode clazz, Set<ClassNode> extra, boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws IOException {
         if (clazz.version != inputVersion)
             throw new IllegalArgumentException("Class " + clazz.name + " is not version " + inputVersion);
 
-        ensureInit();
+        ensureInit(downgrader);
 
         IOFunction<Type, Set<MemberNameAndDesc>> getMembers = new IOFunction<Type, Set<MemberNameAndDesc>>() {
             @Override
             public Set<MemberNameAndDesc> apply(Type o) throws IOException {
-                Set<MemberNameAndDesc> members = ClassDowngrader.currentVersionDowngrader.getMembers(inputVersion, o);
+                Set<MemberNameAndDesc> members = downgrader.getMembers(inputVersion, o);
                 // if not found in the classloader, check getReadOnly for it. this should really only happen with the ZipDowngrader
                 if (members == null) {
                     ClassNode ro = getReadOnly.apply(o.getInternalName());
@@ -700,7 +684,7 @@ public abstract class VersionProvider {
 
             @Override
             public List<Pair<Type, Boolean>> apply(Type o) throws IOException {
-                List<Pair<Type, Boolean>> types = ClassDowngrader.currentVersionDowngrader.getSupertypes(inputVersion, o);
+                List<Pair<Type, Boolean>> types = downgrader.getSupertypes(inputVersion, o);
                 // if not found in the classloader, check getReadOnly for it. this should really only happen with the ZipDowngrader
                 if (types == null) {
                     ClassNode ro = getReadOnly.apply(o.getInternalName());
@@ -812,7 +796,7 @@ public abstract class VersionProvider {
             for (String removedInterface : removedInterfaces) {
                 sb.append(removedInterface).append(";");
             }
-            if (!Flags.removeReflectionInfo) {
+            if (!downgrader.flags.removeReflectionInfo) {
                 clazz.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, "jvmdg$removedInterfaces", "Ljava/lang/String;", null, sb.toString()).visitEnd();
             }
         }

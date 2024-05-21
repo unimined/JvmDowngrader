@@ -14,10 +14,7 @@ import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
-import xyz.wagyourtail.jvmdg.util.deleteIfExists
-import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
-import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
-import xyz.wagyourtail.jvmdg.util.LazyMutable
+import xyz.wagyourtail.jvmdg.util.*
 import java.nio.file.StandardOpenOption
 import kotlin.io.path.outputStream
 
@@ -60,11 +57,13 @@ abstract class ShadeAPI : Jar() {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
 
-        Flags.api = jvmdg.apiJar
-        Flags.printDebug = debugPrint.get()
+        val flags = Flags()
+        flags.classVersion = downgradeTo.toOpcode()
+        flags.api = jvmdg.apiJar
+        flags.printDebug = debugPrint.get()
 
         ApiShader.shadeApis(
-            -1,
+            flags,
             shadePath,
             inputFile.asFile.get(),
             tempOutput,

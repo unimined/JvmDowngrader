@@ -4,6 +4,7 @@ import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -75,7 +76,7 @@ public class J_L_Class {
 
     @Stub(ref = @Ref("java/lang/Class"), downgradeVersion = true, requiresRuntime = true)
     public static Class<?> forName(String className, int origVersion) throws ClassNotFoundException {
-        List<VersionProvider> versionProviders = ClassDowngrader.currentVersionDowngrader.versionProviders(origVersion);
+        List<VersionProvider> versionProviders = ClassDowngrader.downgradeTo(Utils.getCurrentClassVersion()).versionProviders(origVersion);
         Type classType = Type.getObjectType(className.replace('.', '/'));
         Class<?> caller = getCaller();
         for (VersionProvider vp : versionProviders) {
@@ -88,7 +89,7 @@ public class J_L_Class {
 
     @Stub(ref = @Ref("java/lang/Class"), downgradeVersion = true, requiresRuntime = true)
     public static Class<?> forName(String className, boolean initialize, ClassLoader loader, int origVersion) throws ClassNotFoundException {
-        List<VersionProvider> versionProviders = ClassDowngrader.currentVersionDowngrader.versionProviders(origVersion);
+        List<VersionProvider> versionProviders = ClassDowngrader.downgradeTo(Utils.getCurrentClassVersion()).versionProviders(origVersion);
         Type classType = Type.getObjectType(className.replace('.', '/'));
         for (VersionProvider vp : versionProviders) {
             if (vp.classStubs.containsKey(classType)) {
@@ -106,12 +107,13 @@ public class J_L_Class {
         } else {
             target = Type.getType(clazz);
         }
-        List<VersionProvider> versionProviders = ClassDowngrader.currentVersionDowngrader.versionProviders(origVersion);
+        List<VersionProvider> versionProviders = ClassDowngrader.downgradeTo(Utils.getCurrentClassVersion()).versionProviders(origVersion);
         List<Method> methods = new ArrayList<>(Arrays.asList(clazz.getMethods()));
         for (VersionProvider vp : versionProviders) {
             if (vp.classStubs.containsKey(target)) {
                 try {
-                    List<Pair<Method, Stub>> targets = vp.getStubMapper(target, ClassDowngrader.currentVersionDowngrader.isInterface(ClassDowngrader.currentVersionDowngrader.target, target), getMethods, getSuperTypes).getStubTargets();
+                    ClassDowngrader downgrader = ClassDowngrader.downgradeTo(Utils.getCurrentClassVersion());
+                    List<Pair<Method, Stub>> targets = vp.getStubMapper(target, downgrader.isInterface(downgrader.target, target), getMethods, getSuperTypes).getStubTargets();
                     for (Pair<Method, Stub> t : targets) {
                         if (!methods.contains(t.getFirst())) {
                             methods.add(t.getFirst());

@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 
 public class ApiShader {
 
+    @Deprecated
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
         String prefix = args[1];
@@ -42,22 +43,24 @@ public class ApiShader {
         } else {
             downgradedApi = new File(args[0]);
         }
-        shadeApis(target, prefix, input, output, downgradedApi);
+        Flags flags = new Flags();
+        flags.classVersion = target;
+        shadeApis(flags, prefix, input, output, downgradedApi);
         System.out.println("Shaded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
-    public static void downgradedApi(int target, Path api, Path targetPath) throws IOException {
-        ZipDowngrader.downgradeZip(target, api, new HashSet<URL>(), targetPath);
+    public static void downgradedApi(Flags flags, Path api, Path targetPath) throws IOException {
+        ZipDowngrader.downgradeZip(ClassDowngrader.downgradeTo(flags), api, new HashSet<URL>(), targetPath);
     }
 
-    public static void shadeApis(int target, String prefix, File input, File output, File downgradedApi) throws IOException {
+    public static void shadeApis(Flags flags, String prefix, File input, File output, File downgradedApi) throws IOException {
         if (output.exists()) {
             output.delete();
         }
         if (!prefix.endsWith("/")) {
             prefix += "/";
         }
-        try (FileSystem apiFs = Utils.openZipFileSystem(resolveDowngradedApi(target, downgradedApi), Collections.<String, Object>emptyMap())) {
+        try (FileSystem apiFs = Utils.openZipFileSystem(resolveDowngradedApi(flags, downgradedApi), Collections.<String, Object>emptyMap())) {
             try (FileSystem inputFs = Utils.openZipFileSystem(input.toPath(), Collections.<String, Object>emptyMap())) {
                 try (FileSystem outputFs = Utils.openZipFileSystem(output.toPath(), Collections.<String, Object>singletonMap("create", "true"))) {
                     Path apiRoot = apiFs.getPath("/");
@@ -68,11 +71,11 @@ public class ApiShader {
         }
     }
 
-    public static void shadeApis(int target, String prefix, List<Path> inputRoots, List<Path> outputRoots, File downgradedApi) throws IOException {
+    public static void shadeApis(Flags flags, String prefix, List<Path> inputRoots, List<Path> outputRoots, File downgradedApi) throws IOException {
         if (!prefix.endsWith("/")) {
             prefix += "/";
         }
-        Path downgradedApiPath = resolveDowngradedApi(target, downgradedApi);
+        Path downgradedApiPath = resolveDowngradedApi(flags, downgradedApi);
         try (FileSystem apiFs = Utils.openZipFileSystem(downgradedApiPath, Collections.<String, Object>emptyMap())) {
             Pair<ReferenceGraph, Set<Type>> api = scanApis(apiFs.getPath("/"));
             for (int i = 0; i < inputRoots.size(); i++) {
@@ -81,20 +84,20 @@ public class ApiShader {
         }
     }
 
-    public static Path resolveDowngradedApi(int target, @Nullable File downgradedApi) throws IOException {
+    public static Path resolveDowngradedApi(Flags flags, @Nullable File downgradedApi) throws IOException {
         // step 1: downgrade the api to the target version
         Path downgradedApiPath;
         Path temp = Constants.DIR.toPath();
         if (downgradedApi == null) {
-            downgradeApi(target, downgradedApiPath = temp.resolve("downgraded-api.jar"));
+            downgradeApi(flags, downgradedApiPath = temp.resolve("downgraded-api.jar"));
         } else {
             downgradedApiPath = downgradedApi.toPath();
         }
         return downgradedApiPath;
     }
 
-    public static void downgradeApi(int target, Path outputLocation) throws IOException {
-        downgradedApi(target, Flags.findJavaApi(), outputLocation);
+    public static void downgradeApi(Flags flags, Path outputLocation) throws IOException {
+        downgradedApi(flags, flags.findJavaApi(), outputLocation);
     }
 
     public static Pair<ReferenceGraph, Set<Type>> scanApis(Path apiRoot) throws IOException {

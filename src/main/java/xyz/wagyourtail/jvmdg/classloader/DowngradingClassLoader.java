@@ -11,23 +11,34 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class DowngradingClassLoader extends ClassLoader {
+    private final ClassDowngrader currentVersionDowngrader;
     private final List<ClassLoader> delegates = new ArrayList<>();
 
-    public DowngradingClassLoader() {
+    public DowngradingClassLoader(ClassDowngrader downgrader) {
         super();
+        if (downgrader.target != Utils.getCurrentClassVersion()) {
+            this.currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(downgrader.flags);
+        } else {
+            this.currentVersionDowngrader = downgrader;
+        }
     }
 
-    public DowngradingClassLoader(ClassLoader parent) {
+    public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) {
         super(parent);
+        if (downgrader.target != Utils.getCurrentClassVersion()) {
+            this.currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(downgrader.flags);
+        } else {
+            this.currentVersionDowngrader = downgrader;
+        }
     }
 
-    public DowngradingClassLoader(URL[] urls, ClassLoader parent) {
-        super(parent);
+    public DowngradingClassLoader(ClassDowngrader downgrader, URL[] urls, ClassLoader parent) {
+        this(downgrader, parent);
         delegates.add(new URLClassLoader(urls, getParent()));
     }
 
-    public DowngradingClassLoader(URL[] urls) {
-        super();
+    public DowngradingClassLoader(ClassDowngrader downgrader, URL[] urls) {
+        this(downgrader);
         delegates.add(new URLClassLoader(urls, getParent()));
     }
 
@@ -50,7 +61,7 @@ public class DowngradingClassLoader extends ClassLoader {
         byte[] bytes = null;
         try {
             bytes = Utils.readAllBytes(url.openStream());
-            Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), bytes, true, new Function<String, byte[]>() {
+            Map<String, byte[]> outputs = currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), bytes, true, new Function<String, byte[]>() {
                 @Override
                 public byte[] apply(String s) {
                     try {
@@ -73,7 +84,7 @@ public class DowngradingClassLoader extends ClassLoader {
                 try {
                     defineClass(extraName, extraBytes, 0, extraBytes.length);
                 } catch (ClassFormatError e) {
-                    ClassDowngrader.currentVersionDowngrader.writeBytesToDebug(extraName, bytes);
+                    currentVersionDowngrader.writeBytesToDebug(extraName, bytes);
                     throw e;
                 }
             }
@@ -84,13 +95,13 @@ public class DowngradingClassLoader extends ClassLoader {
                 }
                 return defineClass(name, bytes, 0, bytes.length);
             } catch (ClassFormatError e) {
-                ClassDowngrader.currentVersionDowngrader.writeBytesToDebug(name, bytes);
+                currentVersionDowngrader.writeBytesToDebug(name, bytes);
 //                System.err.println("Failed to load class " + name + " with downgraded bytes, writing to debug folder.");
 //                throw e;
                 throw new ClassNotFoundException(name, e);
             }
         } catch (ClassFormatError e) {
-            ClassDowngrader.currentVersionDowngrader.writeBytesToDebug(name, bytes);
+            currentVersionDowngrader.writeBytesToDebug(name, bytes);
 //           System.err.println("Failed to load class " + name + " with original bytes, writing to debug folder.");
 //           throw e;
             throw new ClassNotFoundException(name, e);

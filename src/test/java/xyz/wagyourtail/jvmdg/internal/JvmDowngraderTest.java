@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.internal;
 
 import org.junit.jupiter.api.Test;
+import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
@@ -29,9 +30,11 @@ public class JvmDowngraderTest {
     }
     private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + props.getProperty("version") + ".jar");
 
+    private static final Flags flags = new Flags();
+
     static {
 //        System.setProperty("jvmdg.java-api", javaApi.toString());
-        Flags.api = javaApi.toFile();
+        flags.api = javaApi.toFile();
     }
 
     private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.fromMajor(Integer.parseInt(props.getProperty("testTargetVersion")));
@@ -51,7 +54,7 @@ public class JvmDowngraderTest {
     private Path getDowngradedPath(Path originalPath, String suffix) throws Exception {
         Path path = originalPath.getParent().resolve(originalPath.getFileName().toString().replace(".jar", suffix));
         Files.deleteIfExists(path);
-        ZipDowngrader.downgradeZip(target.toOpcode(), originalPath, new HashSet<>(), path);
+        ZipDowngrader.downgradeZip(ClassDowngrader.downgradeTo(flags), originalPath, new HashSet<>(), path);
         return path;
     }
 
@@ -59,14 +62,14 @@ public class JvmDowngraderTest {
         // resolve temp file in build
         Path output = Path.of("./build/tmp/test/" + javaApi.getFileName().toString().replace(".jar", suffix));
         Files.deleteIfExists(output);
-        ApiShader.downgradedApi(target.toOpcode(), javaApi, output);
+        ApiShader.downgradedApi(flags, javaApi, output);
         return output;
     }
 
     private Path getShadedPath(Path originalPath, Path downgradedJavaApi, String suffix) throws IOException {
         Path path = originalPath.getParent().resolve(originalPath.getFileName().toString().replace(".jar", suffix));
         Files.deleteIfExists(path);
-        ApiShader.shadeApis(-1, "jvmdg/shade/", originalPath.toFile(), path.toFile(), downgradedJavaApi.toFile());
+        ApiShader.shadeApis(null, "jvmdg/shade/", originalPath.toFile(), path.toFile(), downgradedJavaApi.toFile());
         return path;
     }
 

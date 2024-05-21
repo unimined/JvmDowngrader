@@ -18,54 +18,65 @@ import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
-import java.beans.XMLDecoder;
 import java.io.*;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ClassDowngrader {
-    public static final ClassDowngrader currentVersionDowngrader = new ClassDowngrader(Utils.getCurrentClassVersion());
-
-    // because parent is null, this is (essentially) a wrapper around the bootstrap classloader
+    /**
+     * because parent is null, this is (essentially) a wrapper around the bootstrap classloader
+     */
     public static final ClassLoader bootstrapClassLoader = new URLClassLoader(new URL[0], null);
 
-    public static final DowngradingClassLoader classLoader;
+    private final Map<Integer, VersionProvider> downgraders;
+    private final DowngradingClassLoader classLoader;
 
-    private static final Map<Integer, VersionProvider> downgraders;
-
+    public final Flags flags;
     public final int target;
 
-    static {
+    protected ClassDowngrader(Flags flags) {
+        this.flags = flags;
+        this.target = flags.classVersion;
         try {
-            classLoader = new DowngradingClassLoader(new URL[]{Flags.findJavaApi().toUri().toURL()}, ClassDowngrader.class.getClassLoader());
+            classLoader = new DowngradingClassLoader(this, new URL[]{flags.findJavaApi().toUri().toURL()}, ClassDowngrader.class.getClassLoader());
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
         downgraders = collectProviders();
     }
 
-    protected ClassDowngrader(int versionTarget) {
-        this.target = versionTarget;
-    }
-
     public static ClassDowngrader downgradeTo(int version) {
-        if (Utils.getCurrentClassVersion() != version) {
-            return new ClassDowngrader(version);
-        } else {
-            return currentVersionDowngrader;
-        }
+        Flags flags = new Flags();
+        flags.classVersion = version;
+        return new ClassDowngrader(flags);
     }
 
-    public synchronized static Map<Integer, VersionProvider> collectProviders() {
+    public static ClassDowngrader downgradeTo(Flags flags) {
+        return new ClassDowngrader(flags.copy());
+    }
+
+    public static ClassDowngrader getCurrentVersionDowngrader() {
+        Flags flags = new Flags();
+        flags.classVersion = Utils.getCurrentClassVersion();
+        return new ClassDowngrader(flags);
+    }
+
+    public static ClassDowngrader getCurrentVersionDowngrader(Flags flags) {
+        flags = flags.copy();
+        flags.classVersion = Utils.getCurrentClassVersion();
+        return new ClassDowngrader(flags);
+    }
+
+    public DowngradingClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+    public synchronized Map<Integer, VersionProvider> collectProviders() {
         Map<Integer, VersionProvider> downgraders = new HashMap<>();
         try {
             Iterator<VersionProvider> providerIterator = ServiceLoader.load(VersionProvider.class, classLoader).iterator();
@@ -91,7 +102,7 @@ public class ClassDowngrader {
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
-            downgrader.ensureInit();
+            downgrader.ensureInit(this);
             Type stubbed = downgrader.stubClass(type);
             if (!stubbed.equals(type)) {
                 try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
@@ -136,7 +147,7 @@ public class ClassDowngrader {
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
-            downgrader.ensureInit();
+            downgrader.ensureInit(this);
             Type stubbed = downgrader.stubClass(type);
             if (!stubbed.equals(type)) {
                 try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
@@ -169,7 +180,7 @@ public class ClassDowngrader {
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
-            downgrader.ensureInit();
+            downgrader.ensureInit(this);
             Type stubbed = downgrader.stubClass(type);
             if (!stubbed.equals(type)) {
                 try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
@@ -192,7 +203,7 @@ public class ClassDowngrader {
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
-            downgrader.ensureInit();
+            downgrader.ensureInit(this);
             Type stubbed = downgrader.stubClass(type);
             if (!stubbed.equals(type)) {
                 return stubbed;
@@ -212,7 +223,7 @@ public class ClassDowngrader {
             }
             Set<ClassNode> newClasses = new HashSet<>();
             for (ClassNode c : classes) {
-                ClassNode downgraded = downgrader.downgrade(c, newClasses, enableRuntime, getReadOnly);
+                ClassNode downgraded = downgrader.downgrade(this, c, newClasses, enableRuntime, getReadOnly);
                 if (downgraded != null) {
                     newClasses.add(downgraded);
                 }
@@ -259,7 +270,7 @@ public class ClassDowngrader {
         }
         Map<String, byte[]> outputs = new HashMap<>();
         try {
-            if (Flags.printDebug) System.out.println("Transforming " + name.get());
+            if (flags.printDebug) System.out.println("Transforming " + name.get());
             Set<ClassNode> extra = downgrade(node, enableRuntime, new Function<String, ClassNode>() {
 
                 @Override
@@ -276,7 +287,7 @@ public class ClassDowngrader {
                 }
             });
             for (ClassNode c : extra) {
-                if (Flags.printDebug) {
+                if (flags.printDebug) {
                     File f = new File(Constants.DEBUG_DIR, c.name + ".javasm");
                     f.getParentFile().mkdirs();
                     try (FileOutputStream fos = new FileOutputStream(f)) {
@@ -290,7 +301,7 @@ public class ClassDowngrader {
         } catch (Exception e) {
             throw new RuntimeException("Failed to downgrade " + name.get(), e);
         }
-        if (Flags.printDebug) {
+        if (flags.printDebug) {
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 if (!entry.getKey().equals(name.get())) {
                     System.out.println("Downgraded " + entry.getKey() + " from unknown to " + target);
@@ -327,7 +338,7 @@ public class ClassDowngrader {
         // This is not true for java 1
         VersionProvider vp = downgraders.get(version + 44);
         if (vp == null) return null;
-        vp.ensureInit();
+        vp.ensureInit(this);
         return vp;
     }
 

@@ -7,6 +7,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.jetbrains.annotations.ApiStatus
+import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
@@ -62,9 +63,11 @@ abstract class DowngradeFiles : ConventionTask() {
 
         val fileSystems = mutableSetOf<FileSystem>()
 
-        Flags.api = jvmdg.apiJar
-        Flags.printDebug = debugPrint.get()
-        Flags.debugSkipStubs = debugSkipStubs.get().toSet()
+        val flags = Flags()
+        flags.api = jvmdg.apiJar
+        flags.printDebug = debugPrint.get()
+        flags.classVersion = downgradeTo.toOpcode()
+        flags.debugSkipStubs = debugSkipStubs.get().toSet()
 
         try {
 
@@ -82,7 +85,7 @@ abstract class DowngradeFiles : ConventionTask() {
                 fs.getPath("/")
             } }
 
-            PathDowngrader.downgradePaths(downgradeTo.toOpcode(), toDowngrade, downgraded, classpath)
+            PathDowngrader.downgradePaths(ClassDowngrader.downgradeTo(flags), toDowngrade, downgraded, classpath.map { it.toURI().toURL() }.toSet())
         } finally {
             fileSystems.forEach { it.close() }
         }

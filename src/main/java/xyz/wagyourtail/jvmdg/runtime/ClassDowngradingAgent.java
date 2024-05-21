@@ -25,7 +25,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
     private static final int currentVersion;
 
     static {
-        LOGGER.setLevel(Flags.printDebug ? Level.ALL : Level.OFF);
+        LOGGER.setLevel(Bootstrap.flags.printDebug ? Level.ALL : Level.OFF);
     }
 
     static {
@@ -96,7 +96,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             }
             LOGGER.fine("Transforming " + className + " from " + version + " to " + currentVersion);
 //        if (loader instanceof DowngradingClassLoader) return bytes; // already handled
-            Map<String, byte[]> outputs = ClassDowngrader.currentVersionDowngrader.downgrade(new AtomicReference<>(className), bytes, true, new Function<String, byte[]>() {
+            Map<String, byte[]> outputs = Bootstrap.currentVersionDowngrader.downgrade(new AtomicReference<>(className), bytes, true, new Function<String, byte[]>() {
                 @Override
                 public byte[] apply(String s) {
                     try {
@@ -114,7 +114,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 LOGGER.fine("Loading " + entry.getKey() + " into " + loader);
                 if (DUMP_CLASSES) {
-                    ClassDowngrader.currentVersionDowngrader.writeBytesToDebug(entry.getKey(), entry.getValue());
+                    Bootstrap.currentVersionDowngrader.writeBytesToDebug(entry.getKey(), entry.getValue());
                 }
                 if (entry.getKey().equals(className)) {
                     bytes = entry.getValue();
