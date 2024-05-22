@@ -13,7 +13,7 @@ public class Java15Downgrader extends VersionProvider {
         // -- java.base --
         // Boolean
         // Character$UnicodeBlock (more unicode spaces);
-        // CharSequence
+        stub(J_L_CharSequence.class);
         // Class
         stub(J_L_Math.class);
         // Short
