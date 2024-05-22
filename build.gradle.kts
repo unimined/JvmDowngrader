@@ -92,7 +92,7 @@ nmcp {
 
         username = project.properties["ossrhUsername"] as String?
         password = project.properties["ossrhPassword"] as String?
-        publicationType = "USER_MANAGED"
+        publicationType = "AUTOMATIC"
     }
 }
 
