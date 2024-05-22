@@ -79,7 +79,7 @@ public class ApiCoverageChecker {
                 var availableStubCount = 0;
                 var onlyOnParentStubCount = 0;
                 var missingStubCount = 0;
-                var versionProvider = ClassDowngrader.currentVersionDowngrader.getVersionProviderFor(stubVersion);
+                var versionProvider = ClassDowngrader.getCurrentVersionDowngrader().getVersionProviderFor(stubVersion);
 
                 if (versionProvider == null) {
                     System.out.println("No version provider for " + stubVersion);
@@ -150,7 +150,7 @@ public class ApiCoverageChecker {
                             if (versionProvider.classStubs.containsKey(stub.getOwner())) {
                                 var clsStub = versionProvider.classStubs.get(stub.getOwner());
                                 try {
-                                    Class<?> cls = Class.forName(clsStub.getFirst().getInternalName().replace('/', '.'), true, ClassDowngrader.classLoader);
+                                    Class<?> cls = Class.forName(clsStub.getFirst().getInternalName().replace('/', '.'), true, ClassDowngrader.getCurrentVersionDowngrader().getClassLoader());
                                     // check if has matching method
                                     for (var m : cls.getMethods()) {
                                         if (m.getName().equals(member.getName()) && Type.getType(m).equals(member.getDesc())) {
