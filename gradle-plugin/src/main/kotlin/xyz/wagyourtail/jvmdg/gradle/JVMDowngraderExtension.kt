@@ -57,7 +57,7 @@ abstract class JVMDowngraderExtension(val project: Project) {
 
     @get:ApiStatus.Internal
     internal val downgradedApis = defaultedMapOf<JavaVersion, File> { version ->
-        val downgradedPath = apiJar.resolveSibling("java-api-${version}-${version.majorVersion}-downgraded.jar")
+        val downgradedPath = apiJar.resolveSibling("java-api-${version}-downgraded.jar")
 
         Flags.api = apiJar
         Flags.printDebug = false
