@@ -74,7 +74,10 @@ public class PathDowngrader {
                                 Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
                             } else {
                                 try {
-                                    String relativizedName = relativized.toString().replace('\\', '/');
+                                    String relativizedName = relativized.toString();
+                                    if (relativized.getFileSystem().getSeparator().equals("\\")) {
+                                        relativizedName = relativizedName.replace('\\', '/');
+                                    }
                                     String internalName = relativizedName.substring(0, relativizedName.length() - 6);
                                     byte[] bytes = Files.readAllBytes(path);
                                     Map<String, byte[]> outputs = downgrader.downgrade(new AtomicReference<>(internalName), bytes, false, new Function<String, byte[]>() {
