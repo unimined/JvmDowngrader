@@ -242,7 +242,6 @@ tasks.assemble.configure {
 tasks.publish.configure {
     if (!project.hasProperty("version_snapshot")) {
         finalizedBy(tasks.getByName("publishAggregatedPublicationToCentralPortal"))
-        finalizedBy(tasks.getByName("publishPlugins"))
     }
 }
 
