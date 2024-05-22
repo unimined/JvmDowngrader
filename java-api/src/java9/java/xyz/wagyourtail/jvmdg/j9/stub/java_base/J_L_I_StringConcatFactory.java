@@ -531,6 +531,16 @@ public class J_L_I_StringConcatFactory {
                             visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;", false);
                         }
                         break;
+                    case Type.BYTE:
+                    case Type.SHORT:
+                    case Type.INT:
+                        // stack = [StringBuilder, StringBuilder]
+                        visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
+                        // stack = [StringBuilder]
+                        visitVarInsn(Opcodes.ILOAD, 0);
+                        // stack = [StringBuilder, "int"]
+                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;", false);
+                        break;
                     default:
                         // stack = [StringBuilder, StringBuilder]
                         visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
@@ -573,32 +583,20 @@ public class J_L_I_StringConcatFactory {
                                 visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;", false);
                             }
                             break;
+                        case Type.BYTE:
+                        case Type.SHORT:
+                        case Type.INT:
+                            // stack = [StringBuilder]
+                            visitVarInsn(Opcodes.ILOAD, typesIndex);
+                            // stack = [StringBuilder, "int"]
+                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;", false);
+                            break;
                         default:
                             // stack = [StringBuilder]
                             visitVarInsn(type.getOpcode(Opcodes.ILOAD), typesIndex);
                             // stack = [StringBuilder, int]
                             visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + desc + ")Ljava/lang/StringBuilder;", false);
                             break;
-//                        case Type.LONG:
-//                            // stack = [StringBuilder]
-//                            visitVarInsn(type.getOpcode(Opcodes.LLOAD), typesIndex);
-//                            // stack = [StringBuilder, long]
-//                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + desc + ")Ljava/lang/StringBuilder;", false);
-//                            break;
-//                        case Type.FLOAT:
-//                            // stack = [StringBuilder]
-//                            visitVarInsn(type.getOpcode(Opcodes.FLOAD), typesIndex);
-//                            // stack = [StringBuilder, float]
-//                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + desc + ")Ljava/lang/StringBuilder;", false);
-//                            break;
-//                        case Type.DOUBLE:
-//                            // stack = [StringBuilder]
-//                            visitVarInsn(type.getOpcode(Opcodes.DLOAD), typesIndex);
-//                            // stack = [StringBuilder, double]
-//                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + desc + ")Ljava/lang/StringBuilder;", false);
-//                            break;
-//                        default:
-//                            throw new IllegalStateException("Unknown type: " + type);
                     }
                     typesIndex += type.getSize();
                     index++;

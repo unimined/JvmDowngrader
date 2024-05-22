@@ -4,7 +4,6 @@ import org.objectweb.asm.tree.ClassNode
 import xyz.wagyourtail.gradle.ctsym.GenerateCtSymTask
 import xyz.wagyourtail.gradle.shadow.ShadowJar
 import xyz.wagyourtail.gradle.toOpcode
-import kotlin.math.sign
 
 buildscript {
     repositories {
@@ -18,6 +17,10 @@ buildscript {
 metadata {
     readableName.set("JvmDowngrader Java Api")
     description = "JvmDowngrader's implementations of java api, and the actual downgrade providers"
+}
+
+nmcp {
+    publishAllPublications {}
 }
 
 fun SourceSet.inputOf(sourceSet: SourceSet) {

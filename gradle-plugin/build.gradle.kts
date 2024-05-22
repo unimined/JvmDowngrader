@@ -96,6 +96,12 @@ gradlePlugin {
     }
 }
 
+tasks.publish.configure {
+    if (!project.hasProperty("version_snapshot")) {
+        finalizedBy(tasks.getByName("publishPlugins"))
+    }
+}
+
 publishing {
     repositories {
         maven {

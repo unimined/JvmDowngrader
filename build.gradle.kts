@@ -7,6 +7,7 @@ plugins {
     signing
     application
     id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
+    id("com.gradleup.nmcp") version "0.0.7"
 }
 
 allprojects {
@@ -14,8 +15,10 @@ allprojects {
     apply(plugin = "signing")
     apply(plugin = "maven-publish")
     apply(plugin = "io.github.sgtsilvio.gradle.metadata")
+    apply(plugin = "com.gradleup.nmcp")
 
     metadata {
+        url.set("https://github.com/unimined/JvmDowngrader")
         license {
             shortName.set("LGPL-2.1")
             fullName.set("GNU Lesser General Public License v2.1")
@@ -79,6 +82,18 @@ allprojects {
 metadata {
     readableName.set("JvmDowngrader")
     description = "A tool to downgrade java api and bytecode usages"
+}
+
+nmcp {
+    publishAllPublications {}
+    publishAggregation {
+        project(":")
+        project(":java-api")
+
+        username = project.properties["ossrhUsername"] as String?
+        password = project.properties["ossrhPassword"] as String?
+        publicationType = "USER_MANAGED"
+    }
 }
 
 val shared by sourceSets.creating {
@@ -222,6 +237,12 @@ tasks.compileJava {
 
 tasks.assemble.configure {
     dependsOn(shadowJar.get())
+}
+
+tasks.publish.configure {
+    if (!project.hasProperty("version_snapshot")) {
+        finalizedBy(tasks.getByName("publishAggregatedPublicationToCentralPortal"))
+    }
 }
 
 publishing {
