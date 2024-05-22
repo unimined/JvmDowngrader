@@ -10,7 +10,7 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 
 public class J_N_S_SSLProtocolException {
 
-    @Modify(ref = @Ref(value = "javax/net/ssl/SSLProtocolException", member = "<init>", desc = "(Ljava/lang/String;java/lang/Throwable;)V"))
+    @Modify(ref = @Ref(value = "javax/net/ssl/SSLProtocolException", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V"))
     public static void init(MethodNode mnode, int i) {
         MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
