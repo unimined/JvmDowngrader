@@ -33,6 +33,12 @@ public class TestString {
         System.out.println();
 
         System.out.println(Character.isEmoji(0x1F600));
+
+        byte by = 0b1010;
+        short sh = 0b1010;
+        int in = 0b1010;
+        long lo = 0b1010;
+        System.out.println(by + " short: " + sh + " int: " + in + " long: " + lo);
     }
 
 }
