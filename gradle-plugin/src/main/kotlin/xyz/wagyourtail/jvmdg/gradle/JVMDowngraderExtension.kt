@@ -66,4 +66,7 @@ abstract class JVMDowngraderExtension(val project: Project) {
         ApiShader.downgradedApi(version.toOpcode(), apiJar.toPath(), downgradedPath.toPath())
         downgradedPath
     }
+
+    fun getDowngradedApi(version: JavaVersion): File = downgradedApis[version]
+
 }
