@@ -14,9 +14,7 @@ public class Java20Downgrader extends VersionProvider {
         stub(J_L_Class.class);
         stub(J_L_Float.class);
         stub(J_L_C_ClassDesc.class);
-        stub(J_L_M_ModuleDescriptor$Exports.class);
-        stub(J_L_M_ModuleDescriptor$Opens.class);
-        stub(J_L_M_ModuleDescriptor$Requires.class);
+        stub(J_L_M_ModuleDescriptor.class);
         stub(J_L_R_AccessFlag.class);
         stub(J_L_R_ClassFileFormatVersion.class);
         stub(J_L_R_Executable.class);

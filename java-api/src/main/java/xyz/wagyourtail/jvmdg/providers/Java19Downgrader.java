@@ -21,6 +21,8 @@ public class Java19Downgrader extends VersionProvider {
         stub(J_M_BigInteger.class);
         stub(J_N_S_SSLHandshakeException.class);
         stub(J_N_S_SSLKeyException.class);
+        stub(J_N_S_SSLPeerUnverifiedException.class);
+        stub(J_N_S_SSLProtocolException.class);
         stub(J_N_SocketException.class);
         stub(J_T_C_Chronology.class);
         stub(J_T_DecimalFormatSymbols.class);
@@ -41,8 +43,6 @@ public class Java19Downgrader extends VersionProvider {
         stub(J_U_WeakHashMap.class);
         // ToolProvider
         // SSLParameters
-        // SSLPeerUnverifiedException
-        // SSLProtocolException
 
         // -- java.compiler --
     }
