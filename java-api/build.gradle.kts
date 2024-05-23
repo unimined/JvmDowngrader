@@ -295,5 +295,7 @@ publishing {
 
 
 signing {
-    sign(publishing.publications.getByName("maven"))
+    if (!project.hasProperty("is_local")) {
+        sign(publishing.publications.getByName("maven"))
+    }
 }

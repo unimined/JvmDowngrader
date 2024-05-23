@@ -46,7 +46,7 @@ public class J_L_I_LambdaMetafactory {
         // add child as inner class
         cnode.innerClasses.add(new InnerClassNode(child.name, null, null, Opcodes.ACC_STATIC));
         // create method for constructing child
-        MethodVisitor mv = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, "jvmdowngrader$lambda$" + nextAnonymous, constructor.getDescriptor(), null, null);
+        MethodVisitor mv = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, "jvmdowngrader$lambda$" + mnode.name.replace("<", "$").replace(">", "$") + "$" + nextAnonymous, constructor.getDescriptor(), null, null);
         mv.visitCode();
         mv.visitTypeInsn(Opcodes.NEW, child.name);
         mv.visitInsn(Opcodes.DUP);
@@ -61,7 +61,7 @@ public class J_L_I_LambdaMetafactory {
         mv.visitEnd();
 
         // replace invokedynamic with method call
-        mnode.instructions.set(indy, new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, "jvmdowngrader$lambda$" + nextAnonymous, constructor.getDescriptor(), false));
+        mnode.instructions.set(indy, new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, "jvmdowngrader$lambda$" + mnode.name.replace("<", "$").replace(">", "$") + "$" + nextAnonymous, constructor.getDescriptor(), false));
     }
 
     @Stub(ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "altMetafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))

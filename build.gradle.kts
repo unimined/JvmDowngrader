@@ -48,8 +48,7 @@ allprojects {
         }
     }
 
-    version =
-        if (project.hasProperty("version_snapshot")) "${project.properties["version"]}-SNAPSHOT" else project.properties["version"] as String
+    version = if (project.hasProperty("version_snapshot")) "${project.properties["version"]}-SNAPSHOT" else project.properties["version"] as String
     group = project.properties["maven_group"] as String
 
     base {
@@ -75,7 +74,7 @@ allprojects {
     }
 
     signing {
-        useInMemoryPgpKeys(findProperty("signingKey") as String, findProperty("signingPassword") as String)
+        useInMemoryPgpKeys(findProperty("signingKey") as String?, findProperty("signingPassword") as String?)
     }
 }
 
@@ -276,5 +275,7 @@ publishing {
 }
 
 signing {
-    sign(publishing.publications.getByName("maven"))
+    if (!project.hasProperty("is_local")) {
+        sign(publishing.publications.getByName("maven"))
+    }
 }
