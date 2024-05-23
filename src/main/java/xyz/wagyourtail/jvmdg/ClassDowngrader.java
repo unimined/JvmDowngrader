@@ -125,7 +125,7 @@ public class ClassDowngrader implements Closeable {
                     Set<MemberNameAndDesc> members = new HashSet<>();
                     for (MethodNode o : node.methods) {
                         if ((o.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
-                        members.add(new MemberNameAndDesc(o.name, Type.getMethodType(o.desc)));
+                        members.add(new MemberNameAndDesc(o.name, stubClass(node.version, Type.getMethodType(o.desc))));
                     }
                     return members;
                 }
@@ -147,7 +147,7 @@ public class ClassDowngrader implements Closeable {
             Set<MemberNameAndDesc> members = new HashSet<>();
             for (MethodNode o : node.methods) {
                 if ((o.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
-                members.add(new MemberNameAndDesc(o.name, Type.getMethodType(o.desc)));
+                members.add(new MemberNameAndDesc(o.name, stubClass(node.version, Type.getMethodType(o.desc))));
             }
             return members;
         }
