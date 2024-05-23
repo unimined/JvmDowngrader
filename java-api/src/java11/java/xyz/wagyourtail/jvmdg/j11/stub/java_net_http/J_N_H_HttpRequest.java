@@ -44,13 +44,10 @@ public abstract class J_N_H_HttpRequest {
         if (!that.method().equals(this.method())) {
             return false;
         }
-        if (!that.uri().equals(this.uri())) {
-            return false;
-        }
+        return that.uri().equals(this.uri());
 //        if (!that.headers().equals(this.headers())) {
 //            return false;
 //        }
-        return true;
     }
 
     public final int hashCode() {

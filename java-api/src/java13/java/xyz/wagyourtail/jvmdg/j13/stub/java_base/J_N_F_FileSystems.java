@@ -33,7 +33,7 @@ public class J_N_F_FileSystems {
         for (FileSystemProvider pro : FileSystemProvider.installedProviders()) {
             try {
                 return pro.newFileSystem(p, env);
-            } catch (UnsupportedOperationException e) {
+            } catch (UnsupportedOperationException ignored) {
             }
         }
 
@@ -41,7 +41,7 @@ public class J_N_F_FileSystems {
             for (FileSystemProvider pro : ServiceLoader.load(FileSystemProvider.class, loader)) {
                 try {
                     return pro.newFileSystem(p, env);
-                } catch (UnsupportedOperationException e) {
+                } catch (UnsupportedOperationException ignored) {
                 }
             }
         }

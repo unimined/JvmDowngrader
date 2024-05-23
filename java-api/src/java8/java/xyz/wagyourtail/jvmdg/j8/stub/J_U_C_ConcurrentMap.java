@@ -135,7 +135,6 @@ public class J_U_C_ConcurrentMap {
                 } else {
                     if ((oldValue = map.putIfAbsent(key, value)) == null)
                         return value;
-                    continue haveOldValue;
                 }
             }
         }

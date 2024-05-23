@@ -120,6 +120,7 @@ public interface J_U_S_Stream<T> extends J_U_S_BaseStream<T, J_U_S_Stream<T>> {
             throw MissingStubError.create();
         }
 
+        @SafeVarargs
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
         public static <T> J_U_S_Stream<T> of(T... values) {
             throw MissingStubError.create();

@@ -170,10 +170,10 @@ public class ReferenceGraph {
     }
 
     private static class References {
-        private List<Type> requiredInstances = new ArrayList<>();
-        private Map<MemberNameAndDesc, List<FullyQualifiedMemberNameAndDesc>> requiredForMembers = new HashMap<>();
-        private List<MemberNameAndDesc> instanceMembers = new ArrayList<>();
-        private Map<MemberNameAndDesc, String[]> resourceList = new HashMap<>();
+        private final List<Type> requiredInstances = new ArrayList<>();
+        private final Map<MemberNameAndDesc, List<FullyQualifiedMemberNameAndDesc>> requiredForMembers = new HashMap<>();
+        private final List<MemberNameAndDesc> instanceMembers = new ArrayList<>();
+        private final Map<MemberNameAndDesc, String[]> resourceList = new HashMap<>();
 
         public void scan(ClassNode classNode, Filter filter) {
             Type currentType = Type.getObjectType(classNode.name);

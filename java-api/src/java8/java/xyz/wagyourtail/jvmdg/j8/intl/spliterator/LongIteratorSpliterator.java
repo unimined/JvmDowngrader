@@ -11,7 +11,7 @@ public class LongIteratorSpliterator implements J_U_Spliterator.OfLong {
     static final int BATCH_UNIT = 1 << 10;
     static final int MAX_BATCH = 1 << 25;
     private final int characteristics;
-    private J_U_PrimitiveIterator.OfLong it;
+    private final J_U_PrimitiveIterator.OfLong it;
     private long est;
     private int batch;
 

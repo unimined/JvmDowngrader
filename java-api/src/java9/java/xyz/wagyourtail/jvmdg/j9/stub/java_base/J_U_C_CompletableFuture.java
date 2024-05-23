@@ -136,7 +136,7 @@ public class J_U_C_CompletableFuture {
                 try {
                     Thread.sleep(unit.toMillis(timeout));
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    e.printStackTrace(System.err);
                 }
                 if (future.isDone()) {
                     return;
@@ -150,7 +150,7 @@ public class J_U_C_CompletableFuture {
                 try {
                     Thread.sleep(unit.toMillis(timeout));
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    e.printStackTrace(System.err);
                 }
                 if (future.isDone()) {
                     return;
@@ -178,7 +178,7 @@ public class J_U_C_CompletableFuture {
                 try {
                     Thread.sleep(unit.toMillis(delay));
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    e.printStackTrace(System.err);
                 }
                 command.run();
             });

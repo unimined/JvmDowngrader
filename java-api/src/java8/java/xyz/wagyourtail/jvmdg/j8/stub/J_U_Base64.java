@@ -412,11 +412,11 @@ public class J_U_Base64 {
         private final byte[] newline;   // line separator, if needed
         private final int linemax;
         private final boolean doPadding;// whether or not to pad
+        private final byte[] buf;
         private int leftover = 0;
         private int b0, b1, b2;
         private boolean closed = false;
         private int linepos = 0;
-        private byte[] buf;
 
         EncOutputStream(OutputStream os, char[] base64,
                         byte[] newline, int linemax, boolean doPadding) {
@@ -539,13 +539,12 @@ public class J_U_Base64 {
         private final InputStream is;
         private final boolean isMIME;
         private final int[] base64;
+        private final byte[] sbBuf = new byte[1];
         private int bits = 0;
         private int wpos = 0;
         private int rpos = 0;
-
         private boolean eof = false;
         private boolean closed = false;
-        private byte[] sbBuf = new byte[1];
 
         DecInputStream(InputStream is, int[] base64, boolean isMIME) {
             this.is = is;

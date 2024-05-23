@@ -24,7 +24,8 @@ public class J_L_IndexOutOfBoundsException {
                         Opcodes.H_INVOKESTATIC,
                         "java/lang/invoke/StringConcatFactory",
                         "makeConcatWithConstants",
-                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"
+                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;",
+                        false
                 ),
                 "Index out of range: \u0001"
         ));

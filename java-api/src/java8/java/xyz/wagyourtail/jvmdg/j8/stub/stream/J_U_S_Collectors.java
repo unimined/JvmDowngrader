@@ -704,8 +704,7 @@ public final class J_U_S_Collectors {
                             return downstreamFinisher.apply(a);
                         }
                     });
-                    M castResult = (M) kaConcurrentMap;
-                    return castResult;
+                    return (M) kaConcurrentMap;
                 }
             };
             return J_U_S_Collector.CollectorStatics.of(

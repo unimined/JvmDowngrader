@@ -221,7 +221,7 @@ public enum J_L_R_AccessFlag {
     private final Set<Location> locations;
     private final Function<J_L_R_ClassFileFormatVersion, Set<Location>> locationsFunction;
 
-    private J_L_R_AccessFlag(int mask, boolean sourceModifier, Set<Location> locations, Function<J_L_R_ClassFileFormatVersion, Set<Location>> locationsFunction) {
+    J_L_R_AccessFlag(int mask, boolean sourceModifier, Set<Location> locations, Function<J_L_R_ClassFileFormatVersion, Set<Location>> locationsFunction) {
         this.mask = mask;
         this.sourceModifier = sourceModifier;
         this.locations = locations;
@@ -273,9 +273,7 @@ public enum J_L_R_AccessFlag {
         MODULE,
         MODULE_REQUIRES,
         MODULE_EXPORTS,
-        MODULE_OPENS;
-
-
+        MODULE_OPENS
     }
 
 }

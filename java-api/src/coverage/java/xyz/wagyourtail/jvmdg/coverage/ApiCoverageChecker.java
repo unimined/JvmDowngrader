@@ -56,9 +56,7 @@ public class ApiCoverageChecker {
             var versions = new HashMap<Integer, List<Path>>();
             try (var folders = Files.newDirectoryStream(fs.getPath("/"))) {
                 for (var folder : folders) {
-                    folder.getFileName().toString().chars().map(c -> Character.digit(c, 36)).forEach(javaVersion -> {
-                        versions.computeIfAbsent(javaVersion, k -> new ArrayList<>()).add(folder);
-                    });
+                    folder.getFileName().toString().chars().map(c -> Character.digit(c, 36)).forEach(javaVersion -> versions.computeIfAbsent(javaVersion, k -> new ArrayList<>()).add(folder));
                 }
             }
 
@@ -392,13 +390,14 @@ public class ApiCoverageChecker {
                     removed.add(new MemberInfo(cls.getValue().getFirst(), new FullyQualifiedMemberNameAndDesc(Type.getObjectType(cls.getKey()), null, null), false, false));
                     // add all methods
                     var oldCls = cls.getValue().getSecond();
+                    outer:
                     for (var method : oldCls.methods) {
                         if ((method.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) continue;
                         if (method.name.equals("<clinit>")) continue;
                         if (method.invisibleAnnotations != null) {
                             for (var a : method.invisibleAnnotations) {
                                 if (a.desc.equals("Ljdk/internal/javac/PreviewFeature;") || a.desc.equals("Ljdk/internal/PreviewFeature;")) {
-                                    continue;
+                                    continue outer;
                                 }
                             }
                         }

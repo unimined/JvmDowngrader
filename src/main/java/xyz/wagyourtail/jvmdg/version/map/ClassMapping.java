@@ -55,8 +55,6 @@ public class ClassMapping {
                 }
             }
 
-            ;
-
         };
         this.vp = vp;
     }

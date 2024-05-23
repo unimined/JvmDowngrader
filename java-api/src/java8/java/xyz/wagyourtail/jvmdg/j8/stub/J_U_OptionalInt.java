@@ -87,7 +87,7 @@ public class J_U_OptionalInt {
         }
         J_U_OptionalInt other = (J_U_OptionalInt) obj;
         return (isPresent && other.isPresent
-                ? Integer.compare(value, other.value) == 0
+                ? value == other.value
                 : isPresent == other.isPresent);
     }
 

@@ -41,7 +41,6 @@ public class J_T_C_IsoChronology {
                     dom = 31;
                     break;
             }
-            ;
             if (dayOfMonth > dom) {
                 if (dayOfMonth == 29) {
                     throw new DateTimeException(

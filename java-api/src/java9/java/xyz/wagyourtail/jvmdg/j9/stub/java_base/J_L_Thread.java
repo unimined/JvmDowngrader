@@ -55,7 +55,7 @@ public class J_L_Thread {
                 throw new Error(e);
             }
         } else {
-            old.set(null);
+            old.remove();
         }
     }
 

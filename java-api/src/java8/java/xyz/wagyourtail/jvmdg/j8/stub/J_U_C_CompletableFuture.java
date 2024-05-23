@@ -552,7 +552,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
         });
         try {
             semaphore.acquire();
-            return new J_U_C_CompletableFuture<>(new CompletableFutureTask<U>(new Callable<U>() {
+            return new J_U_C_CompletableFuture<>(new CompletableFutureTask<>(new Callable<U>() {
                 @Override
                 public U call() throws Exception {
                     try {
@@ -576,7 +576,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
 
     @Override
     public <U> J_U_C_CompletionStage<U> handleAsync(final J_U_F_BiFunction<? super T, Throwable, ? extends U> fn, Executor executor) {
-        return new J_U_C_CompletableFuture<>(new CompletableFutureTask<U>(new Callable<U>() {
+        return new J_U_C_CompletableFuture<>(new CompletableFutureTask<>(new Callable<U>() {
             @Override
             public U call() throws Exception {
                 try {
@@ -797,7 +797,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
                             wasDone = done;
                             done = true;
                         }
-                        if (wasDone == false) {
+                        if (!wasDone) {
                             Runnable runnable;
                             while ((runnable = runnables.poll()) != null) {
                                 executor.execute(runnable);

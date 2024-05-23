@@ -128,8 +128,6 @@ public class ApiShader {
                     return apiClasses.contains(member.getOwner());
                 }
             });
-            Map<String, Object> env = new HashMap<>();
-            env.put("create", "true");
             // step 4: create remapper for api classes to prefixed api classes
             Pair<Set<FullyQualifiedMemberNameAndDesc>, Set<String>> required = apiRefs.recursiveResolveFrom(inputRefs.getAllRefs());
             final Map<Type, Set<MemberNameAndDesc>> byType = byType(required.getFirst());

@@ -86,7 +86,7 @@ public class ReverseList<E> implements List<E> {
 
     @Override
     public boolean containsAll(@NotNull Collection<?> c) {
-        return original.containsAll(c);
+        return new HashSet<>(original).containsAll(c);
     }
 
     @Override
@@ -187,7 +187,7 @@ public class ReverseList<E> implements List<E> {
     @NotNull
     @Override
     public ListIterator<E> listIterator(int index) {
-        return new ListIterator<E>() {
+        return new ListIterator<>() {
             int pos = original.size() - index;
 
             @Override

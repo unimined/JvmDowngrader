@@ -58,7 +58,7 @@ public class DoubleArraySpliterator implements J_U_Spliterator.OfDouble {
     @Override
     public long estimateSize() {
         if (estimatedSize < 0) {
-            estimatedSize = (long) (fence - index);
+            estimatedSize = fence - index;
         }
         return estimatedSize;
     }

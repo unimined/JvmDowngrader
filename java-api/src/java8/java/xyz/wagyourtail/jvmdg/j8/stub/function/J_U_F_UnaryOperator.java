@@ -10,7 +10,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 public interface J_U_F_UnaryOperator<T> extends J_U_F_Function<T, T> {
 
 
-    public class UnaryOperatorStatic {
+    class UnaryOperatorStatic {
 
         @Stub(ref = @Ref("Ljava/util/function/UnaryOperator;"))
         public static <T> J_U_F_UnaryOperator<T> identity() {

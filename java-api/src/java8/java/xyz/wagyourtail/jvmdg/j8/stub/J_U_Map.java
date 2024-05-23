@@ -185,10 +185,8 @@ public class J_U_Map {
         if (newValue == null) {
             if (oldValue != null || self.containsKey(key)) {
                 self.remove(key);
-                return null;
-            } else {
-                return null;
             }
+            return null;
         } else {
             self.put(key, newValue);
             return newValue;

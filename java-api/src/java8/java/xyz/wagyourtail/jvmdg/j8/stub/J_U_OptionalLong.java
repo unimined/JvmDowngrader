@@ -87,7 +87,7 @@ public class J_U_OptionalLong {
         }
         J_U_OptionalLong other = (J_U_OptionalLong) obj;
         return (isPresent && other.isPresent
-                ? Long.compare(value, other.value) == 0
+                ? value == other.value
                 : isPresent == other.isPresent);
     }
 

@@ -18,7 +18,7 @@ public class J_L_R_AccessibleObject {
 
     @Stub
     public static boolean canAccess(AccessibleObject obj, Object target) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        if (!Member.class.isInstance(obj)) {
+        if (!(obj instanceof Member)) {
             return obj.isAccessible();
         }
 

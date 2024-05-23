@@ -28,7 +28,7 @@ public class J_L_R_Cleaner {
                     }
                 } catch (Throwable e) {
                     System.err.println("Error in Cleaner thread");
-                    e.printStackTrace();
+                    e.printStackTrace(System.err);
                 }
             }
         });

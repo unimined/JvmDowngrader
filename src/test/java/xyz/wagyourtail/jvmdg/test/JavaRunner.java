@@ -76,10 +76,10 @@ public class JavaRunner {
                         filteredNameParts.add(namePart);
                     }
                 }
-                if (filteredNameParts.get(0).startsWith("jdk")) {
-                    filteredNameParts.remove(0);
-                } else if (filteredNameParts.get(0).startsWith("zulu")) {
-                    filteredNameParts.remove(0);
+                if (filteredNameParts.getFirst().startsWith("jdk")) {
+                    filteredNameParts.removeFirst();
+                } else if (filteredNameParts.getFirst().startsWith("zulu")) {
+                    filteredNameParts.removeFirst();
                 }
                 String name = String.join("/", filteredNameParts);
                 if (entry.isDirectory()) {

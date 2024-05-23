@@ -25,7 +25,7 @@ public class TestLambda {
         System.out.println(test6.apply("test6"));
         Function<String, String> test7 = (s) -> s;
         System.out.println(test7.apply("test7"));
-        Function<String, String> test8 = new Function<String, String>() {
+        Function<String, String> test8 = new Function<>() {
             @Override
             public String apply(String s) {
                 return s + test5 + test9;
@@ -43,7 +43,7 @@ public class TestLambda {
     }
 
     public void test10() {
-        Function<String, String> test10 = new Function<String, String>() {
+        Function<String, String> test10 = new Function<>() {
             @Override
             public String apply(String s) {
                 return s + test9 + test11;

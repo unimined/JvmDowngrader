@@ -6,6 +6,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -45,7 +46,7 @@ public class J_L_Runtime {
             // Shortcut to avoid initializing VersionPattern when creating
             // feature-version constants during startup
             if (isSimpleNumber(s)) {
-                return new Version(Arrays.asList(Integer.parseInt(s)),
+                return new Version(Collections.singletonList(Integer.parseInt(s)),
                         Optional.empty(), Optional.empty(), Optional.empty());
             }
             Matcher m = VersionPattern.VSTR_PATTERN.matcher(s);
@@ -209,9 +210,7 @@ public class J_L_Runtime {
         private int compareBuild(Version obj) {
             Optional<Integer> oBuild = obj.build();
             if (oBuild.isPresent()) {
-                return (build.isPresent()
-                        ? build.get().compareTo(oBuild.get())
-                        : -1);
+                return (build.map(integer -> integer.compareTo(oBuild.get())).orElse(-1));
             } else if (build.isPresent()) {
                 return 1;
             }
@@ -224,9 +223,7 @@ public class J_L_Runtime {
                 if (oOpt.isPresent())
                     return -1;
             } else {
-                if (!oOpt.isPresent())
-                    return 1;
-                return optional.get().compareTo(oOpt.get());
+                return oOpt.map(s -> optional.get().compareTo(s)).orElse(1);
             }
             return 0;
         }
@@ -242,8 +239,7 @@ public class J_L_Runtime {
 
             if (build.isPresent()) {
                 sb.append("+").append(build.get());
-                if (optional.isPresent())
-                    sb.append("-").append(optional.get());
+                optional.ifPresent(s -> sb.append("-").append(s));
             } else {
                 if (optional.isPresent()) {
                     sb.append(pre.isPresent() ? "-" : "+-");

@@ -69,7 +69,7 @@ public class J_U_S_Collectors {
             }
         }
 
-        public Collector<T, PairBox, R> collector() {
+        public Collector<T, ?, R> collector() {
             return Collector.of(
                     PairBox::new,
                     PairBox::add,

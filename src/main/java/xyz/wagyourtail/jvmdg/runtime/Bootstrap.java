@@ -48,7 +48,7 @@ public class Bootstrap {
                     (Object) newArgs
             );
         } catch (Throwable t) {
-            t.printStackTrace();
+            t.printStackTrace(System.err);
         }
     }
 

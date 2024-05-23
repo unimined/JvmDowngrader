@@ -16,6 +16,7 @@ public class AsyncUtils {
     // basically a fork-join pool similar to the commonPool, since java 7 doesn't include it.
     private static final ForkJoinPool pool = new ForkJoinPool(Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() - 1), Short.MAX_VALUE), ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
 
+    @SafeVarargs
     public static <T> Future<List<T>> waitForFutures(Future<T>... futures) {
         return waitForFutures(new ArrayDeque<>(Arrays.asList(futures)));
     }

@@ -76,7 +76,7 @@ public class ArraySpliterator<T> implements J_U_Spliterator<T> {
     @Override
     public long estimateSize() {
         if (estimatedSize < 0) {
-            estimatedSize = (long) (fence - index);
+            estimatedSize = fence - index;
         }
         return estimatedSize;
     }

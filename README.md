@@ -153,10 +153,10 @@ This is what the bootstrap downgrader essentially uses internally.
 
 ```groovy
 // add jar to default downgrading classloader
-ClassDowngrader.getCurrentVersionDowngrader().getClassLoader().addDelegate(new URL[]{new File("jarname.jar").toURI().toURL()});
+ClassDowngrader.getCurrentVersionDowngrader().getClassLoader().addDelegate(new URL[] { new File("jarname.jar").toURI().toURL() });
 
 // call main method
-ClassDowngrader.getCurrentVersionDowngrader().getClassLoader().loadClass("mainclass").getMethod("main", String[].class).invoke(null, new Object[]{new String[]{"args"}});
+ClassDowngrader.getCurrentVersionDowngrader().getClassLoader().loadClass("mainclass").getMethod("main", String[].class).invoke(null, new Object[] { new String[] { "args" } });
 ```
 
 You can also create your own downgrading classloader, for more complicated environments.
@@ -165,7 +165,7 @@ You can also create your own downgrading classloader, for more complicated envir
 DowngradingClassLoader loader = new DowngradingClassLoader(ClassDowngrader.getCurrentVersionDowngrader(), parent);
 
 // adding jars
-loader.addDelegate(new URL[]{new File("jarname.jar").toURI().toURL()});
+loader.addDelegate(new URL[] { new File("jarname.jar").toURI().toURL() });
 ```
 
 ### inspired by

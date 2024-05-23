@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class JvmDowngraderTest {
     private static final Flags flags = new Flags();
-    private static Properties props = new Properties();
+    private static final Properties props = new Properties();
     private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + props.getProperty("version") + ".jar");
 
     static {

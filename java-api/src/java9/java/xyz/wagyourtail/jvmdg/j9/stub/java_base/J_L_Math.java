@@ -64,14 +64,14 @@ public class J_L_Math {
                 return a * b + c; // Handled signed zero cases
             } else {
                 return (
-                        new BigDecimal((double) a * (double) b) // Exact multiply
+                        BigDecimal.valueOf((double) a * (double) b) // Exact multiply
                                 .add(new BigDecimal(c))
                 )      // Exact sum
                         .floatValue();                            // One rounding
                 // to a float value
             }
         } else {
-            return (float) fma((double) a, (double) b, (double) c);
+            return (float) fma(a, b, (double) c);
         }
     }
 
