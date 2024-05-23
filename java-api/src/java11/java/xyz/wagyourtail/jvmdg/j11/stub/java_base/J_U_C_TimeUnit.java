@@ -11,8 +11,8 @@ public class J_U_C_TimeUnit {
     @Stub
     public static long convert(TimeUnit tu, Duration duration) {
         return tu.convert(duration.getSeconds(), TimeUnit.SECONDS) + tu.convert(
-            duration.getNano(),
-            TimeUnit.NANOSECONDS
+                duration.getNano(),
+                TimeUnit.NANOSECONDS
         );
     }
 

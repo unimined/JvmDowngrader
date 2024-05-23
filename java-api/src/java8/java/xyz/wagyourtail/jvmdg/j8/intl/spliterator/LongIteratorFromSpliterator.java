@@ -2,7 +2,6 @@ package xyz.wagyourtail.jvmdg.j8.intl.spliterator;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_PrimitiveIterator;
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_Spliterator;
-import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongConsumer;
 
 import java.util.NoSuchElementException;

@@ -2,7 +2,6 @@ package xyz.wagyourtail.jvmdg.j8.stub.stream;
 
 import xyz.wagyourtail.jvmdg.j8.stub.*;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
-import xyz.wagyourtail.jvmdg.util.BiFunction;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
@@ -76,55 +75,55 @@ public final class J_U_S_Collectors {
     @Stub(ref = @Ref("java/util/stream/Collectors"))
     public static <T> J_U_S_Collector<T, ?, Set<T>> toSet() {
         return J_U_S_Collector.CollectorStatics.of(new J_U_F_Supplier<Set<T>>() {
-            @Override
-            public Set<T> get() {
-                return new HashSet<>();
-            }
-        }, new J_U_F_BiConsumer.BiConsumerAdapter<Set<T>, T>() {
+                                                       @Override
+                                                       public Set<T> get() {
+                                                           return new HashSet<>();
+                                                       }
+                                                   }, new J_U_F_BiConsumer.BiConsumerAdapter<Set<T>, T>() {
 
-            @Override
-            public void accept(Set<T> collection, T t) {
-                collection.add(t);
-            }
-        }, new J_U_F_BinaryOperator.BinaryOperatorAdapter<Set<T>>() {
+                                                       @Override
+                                                       public void accept(Set<T> collection, T t) {
+                                                           collection.add(t);
+                                                       }
+                                                   }, new J_U_F_BinaryOperator.BinaryOperatorAdapter<Set<T>>() {
 
-            @Override
-            public Set<T> apply(Set<T> o, Set<T> o2) {
-                o.addAll(o2);
-                return o;
-            }
-        },
-        J_U_S_Collector.Characteristics.UNORDERED);
+                                                       @Override
+                                                       public Set<T> apply(Set<T> o, Set<T> o2) {
+                                                           o.addAll(o2);
+                                                           return o;
+                                                       }
+                                                   },
+                J_U_S_Collector.Characteristics.UNORDERED);
     }
 
     @Stub(ref = @Ref("java/util/stream/Collectors"))
     public static <T> J_U_S_Collector<T, ?, Set<T>> toUnmodifiableSet() {
         return J_U_S_Collector.CollectorStatics.of(new J_U_F_Supplier<Set<T>>() {
 
-               @Override
-               public Set<T> get() {
-                   return new HashSet<>();
-               }
-           }, new J_U_F_BiConsumer.BiConsumerAdapter<Set<T>, T>() {
+                                                       @Override
+                                                       public Set<T> get() {
+                                                           return new HashSet<>();
+                                                       }
+                                                   }, new J_U_F_BiConsumer.BiConsumerAdapter<Set<T>, T>() {
 
-               @Override
-               public void accept(Set<T> collection, T t) {
-                   collection.add(t);
-               }
-           }, new J_U_F_BinaryOperator.BinaryOperatorAdapter<Set<T>>() {
+                                                       @Override
+                                                       public void accept(Set<T> collection, T t) {
+                                                           collection.add(t);
+                                                       }
+                                                   }, new J_U_F_BinaryOperator.BinaryOperatorAdapter<Set<T>>() {
 
-               @Override
-               public Set<T> apply(Set<T> o, Set<T> o2) {
-                   o.addAll(o2);
-                   return o;
-               }
-           }, new J_U_F_Function.FunctionAdapter<Set<T>, Set<T>>() {
-               @Override
-               public Set<T> apply(Set<T> ts) {
-                   return Collections.unmodifiableSet(ts);
-               }
-           },
-            J_U_S_Collector.Characteristics.UNORDERED);
+                                                       @Override
+                                                       public Set<T> apply(Set<T> o, Set<T> o2) {
+                                                           o.addAll(o2);
+                                                           return o;
+                                                       }
+                                                   }, new J_U_F_Function.FunctionAdapter<Set<T>, Set<T>>() {
+                                                       @Override
+                                                       public Set<T> apply(Set<T> ts) {
+                                                           return Collections.unmodifiableSet(ts);
+                                                       }
+                                                   },
+                J_U_S_Collector.Characteristics.UNORDERED);
     }
 
 
@@ -328,7 +327,7 @@ public final class J_U_S_Collectors {
         );
     }
 
-    
+
     public static <T> J_U_S_Collector<T, ?, Double> averagingInt(final J_U_F_ToIntFunction<? super T> mapper) {
         return J_U_S_Collector.CollectorStatics.of(
                 new J_U_F_Supplier<long[]>() {
@@ -481,7 +480,7 @@ public final class J_U_S_Collectors {
         return new J_U_F_Supplier<T[]>() {
             @Override
             public T[] get() {
-                return (T[]) new Object[] { in };
+                return (T[]) new Object[]{in};
             }
         };
     }
@@ -576,11 +575,11 @@ public final class J_U_S_Collectors {
         }, downstream);
     }
 
-    private static <K, V, M extends Map<K,V>> J_U_F_BinaryOperator<M> mapMerger(final J_U_F_BinaryOperator<V> mergeFunction) {
+    private static <K, V, M extends Map<K, V>> J_U_F_BinaryOperator<M> mapMerger(final J_U_F_BinaryOperator<V> mergeFunction) {
         return new J_U_F_BinaryOperator.BinaryOperatorAdapter<M>() {
             @Override
             public M apply(M m1, M m2) {
-                for (Map.Entry<K,V> e : m2.entrySet())
+                for (Map.Entry<K, V> e : m2.entrySet())
                     J_U_Map.merge(m1, e.getKey(), e.getValue(), mergeFunction);
                 return m1;
             }
@@ -599,7 +598,7 @@ public final class J_U_S_Collectors {
             }
         };
         J_U_F_BinaryOperator<Map<K, A>> merger = J_U_S_Collectors.<K, A, Map<K, A>>mapMerger(downstream.combiner());
-        J_U_F_Supplier<Map<K, A>> mangledFactory = (J_U_F_Supplier<Map<K,A>>) mapFactory;
+        J_U_F_Supplier<Map<K, A>> mangledFactory = (J_U_F_Supplier<Map<K, A>>) mapFactory;
         if (downstream.characteristics().contains(J_U_S_Collector.Characteristics.IDENTITY_FINISH)) {
             return (J_U_S_Collector<T, ?, M>) J_U_S_Collector.CollectorStatics.of(
                     mangledFactory,
@@ -931,7 +930,6 @@ public final class J_U_S_Collectors {
                 }
         );
     }
-
 
 
     static class CollectorImpl<T, A, R> implements J_U_S_Collector<T, A, R> {

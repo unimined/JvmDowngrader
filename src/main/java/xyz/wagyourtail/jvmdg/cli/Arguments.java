@@ -24,6 +24,16 @@ public class Arguments {
         this.valueNames = valueNames;
     }
 
+    public static Map<String, List<String[]>> subCommandArgs(String prefix, Map<String, List<String[]>> args) {
+        Map<String, List<String[]>> ret = new HashMap<>();
+        for (Map.Entry<String, List<String[]>> entry : args.entrySet()) {
+            if (entry.getKey().startsWith(prefix + ":")) {
+                ret.put(entry.getKey().substring(prefix.length() + 1), entry.getValue());
+            }
+        }
+        return ret;
+    }
+
     public Arguments addChildren(Arguments... children) {
         for (Arguments child : children) {
             for (Set<String> strings : this.children.keySet()) {
@@ -110,16 +120,6 @@ public class Arguments {
                 break;
             } else {
                 throw new IllegalArgumentException("Unknown argument: " + arg);
-            }
-        }
-        return ret;
-    }
-
-    public static Map<String, List<String[]>> subCommandArgs(String prefix, Map<String, List<String[]>> args) {
-        Map<String, List<String[]>> ret = new HashMap<>();
-        for (Map.Entry<String, List<String[]>> entry : args.entrySet()) {
-            if (entry.getKey().startsWith(prefix + ":")) {
-                ret.put(entry.getKey().substring(prefix.length() + 1), entry.getValue());
             }
         }
         return ret;

@@ -89,15 +89,15 @@ public class J_T_LocalDate {
             long addMonths = months * steps;
             long addDays = days * steps;
             long maxAddMonths = months > 0 ? getProlepticMonth(LocalDate.MAX) - getProlepticMonth(from)
-                : getProlepticMonth(from) - getProlepticMonth(LocalDate.MIN);
+                    : getProlepticMonth(from) - getProlepticMonth(LocalDate.MIN);
             // adjust steps estimation
             if (addMonths * sign > maxAddMonths
-                || (from.plusMonths(addMonths).toEpochDay() + addDays) * sign >= end * sign) {
+                    || (from.plusMonths(addMonths).toEpochDay() + addDays) * sign >= end * sign) {
                 steps--;
                 addMonths -= months;
                 addDays -= days;
                 if (addMonths * sign > maxAddMonths
-                    || (from.plusMonths(addMonths).toEpochDay() + addDays) * sign >= end * sign) {
+                        || (from.plusMonths(addMonths).toEpochDay() + addDays) * sign >= end * sign) {
                     steps--;
                 }
             }

@@ -1,11 +1,9 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
-import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongSupplier;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import java.util.NoSuchElementException;
 
@@ -71,7 +69,7 @@ public class J_U_OptionalLong {
         return value;
     }
 
-    public<X extends Throwable> long orElseThrow(J_U_F_Supplier<? extends X> exceptionSupplier) throws X {
+    public <X extends Throwable> long orElseThrow(J_U_F_Supplier<? extends X> exceptionSupplier) throws X {
         if (isPresent) {
             return value;
         } else {
@@ -89,13 +87,13 @@ public class J_U_OptionalLong {
         }
         J_U_OptionalLong other = (J_U_OptionalLong) obj;
         return (isPresent && other.isPresent
-            ? Long.compare(value, other.value) == 0
-            : isPresent == other.isPresent);
+                ? Long.compare(value, other.value) == 0
+                : isPresent == other.isPresent);
     }
 
     @Override
     public int hashCode() {
-        return isPresent ? (int)(value ^ (value >>> 32)) : 0;
+        return isPresent ? (int) (value ^ (value >>> 32)) : 0;
     }
 
     @Override

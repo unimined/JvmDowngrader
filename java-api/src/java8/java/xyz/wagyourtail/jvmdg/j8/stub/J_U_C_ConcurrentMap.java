@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiFunction;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Function;
-import xyz.wagyourtail.jvmdg.util.BiFunction;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Map;
@@ -92,17 +91,18 @@ public class J_U_C_ConcurrentMap {
 
     @Stub
     public static <K, V> V compute(ConcurrentMap<K, V> map, K key, J_U_F_BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
-        retry: for (;;) {
+        retry:
+        for (; ; ) {
             V oldValue = map.get(key);
             // if putIfAbsent fails, opportunistically use its return value
-            haveOldValue: for (;;) {
+            haveOldValue:
+            for (; ; ) {
                 V newValue = remappingFunction.apply(key, oldValue);
                 if (newValue != null) {
                     if (oldValue != null) {
                         if (map.replace(key, oldValue, newValue))
                             return newValue;
-                    }
-                    else if ((oldValue = map.putIfAbsent(key, newValue)) == null)
+                    } else if ((oldValue = map.putIfAbsent(key, newValue)) == null)
                         return newValue;
                     else continue haveOldValue;
                 } else if (oldValue == null || map.remove(key, oldValue)) {
@@ -117,10 +117,12 @@ public class J_U_C_ConcurrentMap {
     public static <K, V> V merge(ConcurrentMap<K, V> map, K key, V value, J_U_F_BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         Objects.requireNonNull(remappingFunction);
         Objects.requireNonNull(value);
-        retry: for (;;) {
+        retry:
+        for (; ; ) {
             V oldValue = map.get(key);
             // if putIfAbsent fails, opportunistically use its return value
-            haveOldValue: for (;;) {
+            haveOldValue:
+            for (; ; ) {
                 if (oldValue != null) {
                     V newValue = remappingFunction.apply(oldValue, value);
                     if (newValue != null) {

@@ -18,7 +18,7 @@ public class J_U_Objects {
     public static long checkFromToIndex(long fromIndex, long toIndex, long length) {
         if (fromIndex < 0 || fromIndex > toIndex || toIndex > length) {
             throw new IndexOutOfBoundsException(
-                "Range [" + fromIndex + ", " + toIndex + ") out of bounds for length " + length);
+                    "Range [" + fromIndex + ", " + toIndex + ") out of bounds for length " + length);
         }
         return fromIndex;
     }
@@ -27,7 +27,7 @@ public class J_U_Objects {
     public static long checkFromIndexSize(long fromIndex, long size, long length) {
         if (fromIndex < 0 || size < 0 || fromIndex > length - size) {
             throw new IndexOutOfBoundsException(
-                "Range [" + fromIndex + ", " + (fromIndex + size) + ") out of bounds for length " + length);
+                    "Range [" + fromIndex + ", " + (fromIndex + size) + ") out of bounds for length " + length);
         }
         return fromIndex;
     }

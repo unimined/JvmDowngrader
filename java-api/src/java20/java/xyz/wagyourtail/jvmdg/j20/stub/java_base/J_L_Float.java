@@ -20,8 +20,8 @@ public class J_L_Float {
             return sign * (0x1p-24f * bin16SignifBits);
         } else if (bin16Exp == 16) {
             return (bin16SignifBits == 0) ?
-                sign * Float.POSITIVE_INFINITY :
-                Float.intBitsToFloat((bin16SignBit << 16) | 0x7f80_0000 | (bin16SignifBits << SIGNIF_SHIFT));
+                    sign * Float.POSITIVE_INFINITY :
+                    Float.intBitsToFloat((bin16SignBit << 16) | 0x7f80_0000 | (bin16SignifBits << SIGNIF_SHIFT));
         }
 
         int floatExpBits = (bin16Exp + 127) << 23;

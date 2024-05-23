@@ -1,11 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_DoubleConsumer;
-import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
-import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongConsumer;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 @Adapter("java/util/DoubleSummaryStatistics")
 public class J_U_DoubleSummaryStatistics implements J_U_F_DoubleConsumer {
@@ -15,6 +11,7 @@ public class J_U_DoubleSummaryStatistics implements J_U_F_DoubleConsumer {
     private double simpleSum; // Used to compute right sum for non-finite inputs
     private double min = Double.POSITIVE_INFINITY;
     private double max = Double.NEGATIVE_INFINITY;
+
     @Override
     public void accept(double value) {
         ++count;

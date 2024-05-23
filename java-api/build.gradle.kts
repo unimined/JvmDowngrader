@@ -181,7 +181,8 @@ fun JavaCompile.configCompile(version: JavaVersion) {
     }
 }
 
-val tempFile11 = project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("java-api-${project.version}-downgraded-11.jar")
+val tempFile11 =
+    project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("java-api-${project.version}-downgraded-11.jar")
 
 val downgradeJar11Exec by tasks.registering(JavaExec::class) {
     group = "jvmdg"
@@ -208,7 +209,8 @@ val downgradeJar11 by tasks.registering(Jar::class) {
     from(zipTree(tempFile11))
 }
 
-val tempFile8 = project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("java-api-${project.version}-downgraded-8.jar")
+val tempFile8 =
+    project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("java-api-${project.version}-downgraded-8.jar")
 
 val downgradeJar8Exec by tasks.registering(JavaExec::class) {
     group = "jvmdg"

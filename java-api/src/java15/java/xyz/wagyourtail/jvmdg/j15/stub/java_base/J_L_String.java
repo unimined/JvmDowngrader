@@ -80,9 +80,9 @@ public class J_L_String {
                             c = (char) code;
                         }
                         default -> throw new IllegalArgumentException(String.format(
-                            "Invalid escape sequence: \\%c \\\\u%04X",
-                            d,
-                            (int) d
+                                "Invalid escape sequence: \\%c \\\\u%04X",
+                                d,
+                                (int) d
                         ));
                     }
                 } else {

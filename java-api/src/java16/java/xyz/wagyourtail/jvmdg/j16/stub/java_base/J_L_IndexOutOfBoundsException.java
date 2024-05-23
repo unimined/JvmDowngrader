@@ -3,10 +3,12 @@ package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_IndexOutOfBoundsException {
 
@@ -16,15 +18,15 @@ public class J_L_IndexOutOfBoundsException {
         InsnList list = new InsnList();
         // string concat factory, "Index out of range: \u0001"
         list.add(new InvokeDynamicInsnNode(
-            "makeConcatWithConstants",
-            "(J)Ljava/lang/String;",
-            new Handle(
-                Opcodes.H_INVOKESTATIC,
-                "java/lang/invoke/StringConcatFactory",
                 "makeConcatWithConstants",
-                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"
-            ),
-            "Index out of range: \u0001"
+                "(J)Ljava/lang/String;",
+                new Handle(
+                        Opcodes.H_INVOKESTATIC,
+                        "java/lang/invoke/StringConcatFactory",
+                        "makeConcatWithConstants",
+                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"
+                ),
+                "Index out of range: \u0001"
         ));
         // call init
         list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/IndexOutOfBoundsException", "<init>", "(Ljava/lang/String;)V", false));

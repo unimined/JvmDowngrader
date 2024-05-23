@@ -48,7 +48,8 @@ allprojects {
         }
     }
 
-    version = if (project.hasProperty("version_snapshot")) "${project.properties["version"]}-SNAPSHOT" else project.properties["version"] as String
+    version =
+        if (project.hasProperty("version_snapshot")) "${project.properties["version"]}-SNAPSHOT" else project.properties["version"] as String
     group = project.properties["maven_group"] as String
 
     base {

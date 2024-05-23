@@ -6,7 +6,6 @@ import org.gradle.jvm.tasks.Jar
 import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.cli.Flags
-import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
@@ -15,10 +14,6 @@ import xyz.wagyourtail.jvmdg.util.LazyMutable
 import xyz.wagyourtail.jvmdg.util.defaultedMapOf
 import xyz.wagyourtail.jvmdg.util.toOpcode
 import java.io.File
-import java.nio.file.StandardOpenOption
-import java.util.zip.ZipInputStream
-import java.util.zip.ZipOutputStream
-import kotlin.io.path.outputStream
 
 abstract class JVMDowngraderExtension(val project: Project) {
 

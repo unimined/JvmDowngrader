@@ -1,8 +1,6 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
 import org.objectweb.asm.*;
-import xyz.wagyourtail.jvmdg.ClassDowngrader;
-import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -83,7 +81,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             }
             // check magic
             if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
-                bytes[3] != (byte) 0xBE) {
+                    bytes[3] != (byte) 0xBE) {
                 throw new IllegalClassFormatException(className);
             }
             // ignore minor version

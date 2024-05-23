@@ -1,11 +1,9 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
-import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_DoubleConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_DoubleSupplier;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import java.util.NoSuchElementException;
 
@@ -71,7 +69,7 @@ public class J_U_OptionalDouble {
         return value;
     }
 
-    public<X extends Throwable> double orElseThrow(J_U_F_Supplier<? extends X> exceptionSupplier) throws X {
+    public <X extends Throwable> double orElseThrow(J_U_F_Supplier<? extends X> exceptionSupplier) throws X {
         if (isPresent) {
             return value;
         } else {
@@ -89,8 +87,8 @@ public class J_U_OptionalDouble {
         }
         J_U_OptionalDouble other = (J_U_OptionalDouble) obj;
         return (isPresent && other.isPresent
-            ? Double.compare(value, other.value) == 0
-            : isPresent == other.isPresent);
+                ? Double.compare(value, other.value) == 0
+                : isPresent == other.isPresent);
     }
 
     @Override
@@ -100,7 +98,7 @@ public class J_U_OptionalDouble {
 
     private int hashCode(double value) {
         long bits = Double.doubleToLongBits(value);
-        return (int)(bits ^ (bits >>> 32));
+        return (int) (bits ^ (bits >>> 32));
     }
 
     @Override

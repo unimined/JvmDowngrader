@@ -12,8 +12,8 @@ public class J_U_SequencedSet {
 
     public static boolean jvmdg$instanceof(Object obj) {
         return obj instanceof LinkedHashSet<?> ||
-            obj instanceof SortedSet<?> ||
-            obj instanceof ReverseSet<?>;
+                obj instanceof SortedSet<?> ||
+                obj instanceof ReverseSet<?>;
     }
 
     public static <E> Set<E> jvmdg$checkcast(Object obj) {

@@ -33,7 +33,7 @@ public class J_U_S_DoubleStream {
             }
         }
         return DoubleStream.concat(DoubleStream.of(next),
-            StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
+                StreamSupport.doubleStream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
     }
 
     @Stub(ref = @Ref("Ljava/util/stream/DoubleStream;"))

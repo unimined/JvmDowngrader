@@ -76,6 +76,28 @@ public interface J_U_S_Stream<T> extends J_U_S_BaseStream<T, J_U_S_Stream<T>> {
 
     J_U_Optional<T> findAny();
 
+    @Adapter("Ljava/util/stream/Stream$Builder;")
+    interface Builder<T> extends J_U_F_Consumer<T> {
+
+        @Override
+        void accept(T t);
+
+        Builder<T> add(T t);
+
+        J_U_S_Stream<T> build();
+
+        class BuilderDefaults {
+
+            @Stub(abstractDefault = true)
+            public static <T> Builder<T> add(Builder<T> builder, T t) {
+                builder.accept(t);
+                return builder;
+            }
+
+        }
+
+    }
+
     class StreamStatics {
 
         @Stub(ref = @Ref("Ljava/util/stream/Stream;"))
@@ -123,29 +145,6 @@ public interface J_U_S_Stream<T> extends J_U_S_BaseStream<T, J_U_S_Stream<T>> {
             throw MissingStubError.create();
         }
 
-
-
-    }
-
-    @Adapter("Ljava/util/stream/Stream$Builder;")
-    interface Builder<T> extends J_U_F_Consumer<T> {
-
-        @Override
-        void accept(T t);
-
-        Builder<T> add(T t);
-
-        J_U_S_Stream<T> build();
-
-        class BuilderDefaults {
-
-            @Stub(abstractDefault = true)
-            public static <T> Builder<T> add(Builder<T> builder, T t) {
-                builder.accept(t);
-                return builder;
-            }
-
-        }
 
     }
 

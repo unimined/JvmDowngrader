@@ -16,7 +16,8 @@ public class J_L_M_ModuleDescriptor {
                 case OPEN -> flags.add(J_L_R_AccessFlag.OPEN);
                 case SYNTHETIC -> flags.add(J_L_R_AccessFlag.SYNTHETIC);
                 case MANDATED -> flags.add(J_L_R_AccessFlag.MANDATED);
-                case AUTOMATIC -> {}
+                case AUTOMATIC -> {
+                }
                 default -> throw new AssertionError();
             }
         }

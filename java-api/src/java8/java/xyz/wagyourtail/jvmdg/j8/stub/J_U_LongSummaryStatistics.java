@@ -3,8 +3,6 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongConsumer;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 @Adapter("java/util/LongSummaryStatistics")
 public class J_U_LongSummaryStatistics implements J_U_F_IntConsumer, J_U_F_LongConsumer {
@@ -49,7 +47,7 @@ public class J_U_LongSummaryStatistics implements J_U_F_IntConsumer, J_U_F_LongC
 
     @Override
     public String toString() {
-            return "IntSummaryStatistics{" +
+        return "IntSummaryStatistics{" +
                 "count=" + count +
                 ", sum=" + sum +
                 ", min=" + min +

@@ -1,17 +1,16 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j8.intl.collections.SynchronizedBackingSet;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiFunction;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Function;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
-import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.*;
 
 @Adapter("java/util/concurrent/CompletableFuture")
@@ -738,24 +737,6 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
         }
     }
 
-    private class AfterCompleteDelegatingExecutor implements Executor {
-        private final Executor executor;
-
-        public AfterCompleteDelegatingExecutor(Executor executor) {
-            this.executor = executor;
-        }
-
-        @Override
-        public void execute(final Runnable command) {
-            wrapped.after(new Runnable() {
-                @Override
-                public void run() {
-                    executor.execute(command);
-                }
-            });
-        }
-    }
-
     private static class AfterAllDelegatingExecutor implements Executor {
         private final Set<CompletableFutureTask<?>> tasks;
         private final Deque<Runnable> runnables = new ConcurrentLinkedDeque<>();
@@ -839,6 +820,24 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
                 }
                 executor.execute(command);
             }
+        }
+    }
+
+    private class AfterCompleteDelegatingExecutor implements Executor {
+        private final Executor executor;
+
+        public AfterCompleteDelegatingExecutor(Executor executor) {
+            this.executor = executor;
+        }
+
+        @Override
+        public void execute(final Runnable command) {
+            wrapped.after(new Runnable() {
+                @Override
+                public void run() {
+                    executor.execute(command);
+                }
+            });
         }
     }
 }

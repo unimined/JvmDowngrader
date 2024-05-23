@@ -10,9 +10,9 @@ import java.util.*;
 public class J_U_SequencedMap {
 
     public static boolean jvmdg$instanceof(Object obj) {
-        return obj instanceof LinkedHashMap<?,?> ||
-            obj instanceof SortedMap<?,?> ||
-            obj instanceof ReverseMap<?,?>;
+        return obj instanceof LinkedHashMap<?, ?> ||
+                obj instanceof SortedMap<?, ?> ||
+                obj instanceof ReverseMap<?, ?>;
     }
 
     public static Map<?, ?> jvmdg$checkcast(Object obj) {

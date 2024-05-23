@@ -15,7 +15,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.util.HashSet;
@@ -24,9 +23,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Bootstrap {
-    private static final Logger LOGGER = Logger.getLogger("JVMDowngrader");
     static final Flags flags = new Flags();
     static final ClassDowngrader currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(flags);
+    private static final Logger LOGGER = Logger.getLogger("JVMDowngrader");
 
     static {
         LOGGER.setLevel(flags.printDebug ? Level.ALL : Level.WARNING);
@@ -45,8 +44,8 @@ public class Bootstrap {
             }
             currentVersionDowngrader.getClassLoader().addDelegate(cp);
             Class.forName(mainClass, false, currentVersionDowngrader.getClassLoader()).getMethod("main", String[].class).invoke(
-                null,
-                (Object) newArgs
+                    null,
+                    (Object) newArgs
             );
         } catch (Throwable t) {
             t.printStackTrace();

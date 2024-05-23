@@ -17,11 +17,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
-import xyz.wagyourtail.jvmdg.util.deleteIfExists
-import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
-import xyz.wagyourtail.jvmdg.util.toOpcode
-import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
-import xyz.wagyourtail.jvmdg.util.LazyMutable
+import xyz.wagyourtail.jvmdg.util.*
 import java.nio.file.StandardOpenOption
 import kotlin.io.path.outputStream
 

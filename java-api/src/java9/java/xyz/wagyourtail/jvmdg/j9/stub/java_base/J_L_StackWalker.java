@@ -46,10 +46,10 @@ public class J_L_StackWalker {
 
     private static boolean isReflectionFrame(String className) {
         return className.equals(Method.class.getName()) ||
-            className.equals(Constructor.class.getName()) ||
-            className.startsWith("sun.reflect.") ||
-            className.startsWith("jdk.internal.reflect.") ||
-            className.startsWith("java.lang.invoke.LambdaForm");
+                className.equals(Constructor.class.getName()) ||
+                className.startsWith("sun.reflect.") ||
+                className.startsWith("jdk.internal.reflect.") ||
+                className.startsWith("java.lang.invoke.LambdaForm");
     }
 
     public <T> T walk(Function<? super Stream<StackFrame>, ? extends T> function) {

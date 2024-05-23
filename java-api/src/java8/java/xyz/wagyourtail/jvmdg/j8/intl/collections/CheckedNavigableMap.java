@@ -25,12 +25,12 @@ public class CheckedNavigableMap<K, V> extends BackingMap<K, V> implements Navig
 
     private String badKeyMsg(Object key) {
         return "Attempt to insert " + key.getClass() +
-            " key into map with key type " + keyType;
+                " key into map with key type " + keyType;
     }
 
     private String badValueMsg(Object value) {
         return "Attempt to insert " + value.getClass() +
-            " value into map with value type " + valueType;
+                " value into map with value type " + valueType;
     }
 
     @Override

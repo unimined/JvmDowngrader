@@ -11,8 +11,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
-        long[] a, int aFromIndex, int aToIndex,
-        long[] b, int bFromIndex, int bToIndex
+            long[] a, int aFromIndex, int aToIndex,
+            long[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -32,8 +32,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
-        int[] a, int aFromIndex, int aToIndex,
-        int[] b, int bFromIndex, int bToIndex
+            int[] a, int aFromIndex, int aToIndex,
+            int[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -53,8 +53,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
-        short[] a, int aFromIndex, int aToIndex,
-        short[] b, int bFromIndex, int bToIndex
+            short[] a, int aFromIndex, int aToIndex,
+            short[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -74,8 +74,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
-        char[] a, int aFromIndex, int aToIndex,
-        char[] b, int bFromIndex, int bToIndex
+            char[] a, int aFromIndex, int aToIndex,
+            char[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -95,8 +95,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
-        byte[] a, int aFromIndex, int aToIndex,
-        byte[] b, int bFromIndex, int bToIndex
+            byte[] a, int aFromIndex, int aToIndex,
+            byte[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -116,8 +116,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
-        boolean[] a, int aFromIndex, int aToIndex,
-        boolean[] b, int bFromIndex, int bToIndex
+            boolean[] a, int aFromIndex, int aToIndex,
+            boolean[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -137,8 +137,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
-        double[] a, int aFromIndex, int aToIndex,
-        double[] b, int bFromIndex, int bToIndex
+            double[] a, int aFromIndex, int aToIndex,
+            double[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -158,8 +158,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
-        float[] a, int aFromIndex, int aToIndex,
-        float[] b, int bFromIndex, int bToIndex
+            float[] a, int aFromIndex, int aToIndex,
+            float[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -179,8 +179,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static boolean equals(
-        Object[] a, int aFromIndex, int aToIndex,
-        Object[] b, int bFromIndex, int bToIndex
+            Object[] a, int aFromIndex, int aToIndex,
+            Object[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -200,7 +200,7 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T> boolean equals(
-        T[] a, T[] b, Comparator<? super T> comparator
+            T[] a, T[] b, Comparator<? super T> comparator
     ) {
         int aLength = a.length;
         int bLength = b.length;
@@ -220,9 +220,9 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T> boolean equals(
-        T[] a, int aFromIndex, int aToIndex,
-        T[] b, int bFromIndex, int bToIndex,
-        Comparator<? super T> comparator
+            T[] a, int aFromIndex, int aToIndex,
+            T[] b, int bFromIndex, int bToIndex,
+            Comparator<? super T> comparator
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -262,8 +262,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
-        boolean[] a, int aFromIndex, int aToIndex,
-        boolean[] b, int bFromIndex, int bToIndex
+            boolean[] a, int aFromIndex, int aToIndex,
+            boolean[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -299,8 +299,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
-        byte[] a, int aFromIndex, int aToIndex,
-        byte[] b, int bFromIndex, int bToIndex
+            byte[] a, int aFromIndex, int aToIndex,
+            byte[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -336,8 +336,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(
-        byte[] a, int aFromIndex, int aToIndex,
-        byte[] b, int bFromIndex, int bToIndex
+            byte[] a, int aFromIndex, int aToIndex,
+            byte[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -373,8 +373,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
-        short[] a, int aFromIndex, int aToIndex,
-        short[] b, int bFromIndex, int bToIndex
+            short[] a, int aFromIndex, int aToIndex,
+            short[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -410,8 +410,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(
-        short[] a, int aFromIndex, int aToIndex,
-        short[] b, int bFromIndex, int bToIndex
+            short[] a, int aFromIndex, int aToIndex,
+            short[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -447,8 +447,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
-        char[] a, int aFromIndex, int aToIndex,
-        char[] b, int bFromIndex, int bToIndex
+            char[] a, int aFromIndex, int aToIndex,
+            char[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -484,8 +484,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
-        int[] a, int aFromIndex, int aToIndex,
-        int[] b, int bFromIndex, int bToIndex
+            int[] a, int aFromIndex, int aToIndex,
+            int[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -521,8 +521,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(
-        int[] a, int aFromIndex, int aToIndex,
-        int[] b, int bFromIndex, int bToIndex
+            int[] a, int aFromIndex, int aToIndex,
+            int[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -558,8 +558,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
-        long[] a, int aFromIndex, int aToIndex,
-        long[] b, int bFromIndex, int bToIndex
+            long[] a, int aFromIndex, int aToIndex,
+            long[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -595,8 +595,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compareUnsigned(
-        long[] a, int aFromIndex, int aToIndex,
-        long[] b, int bFromIndex, int bToIndex
+            long[] a, int aFromIndex, int aToIndex,
+            long[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -632,8 +632,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
-        float[] a, int aFromIndex, int aToIndex,
-        float[] b, int bFromIndex, int bToIndex
+            float[] a, int aFromIndex, int aToIndex,
+            float[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -669,8 +669,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int compare(
-        double[] a, int aFromIndex, int aToIndex,
-        double[] b, int bFromIndex, int bToIndex
+            double[] a, int aFromIndex, int aToIndex,
+            double[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -713,8 +713,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T extends Comparable<? super T>> int compare(
-        T[] a, int aFromIndex, int aToIndex,
-        T[] b, int bFromIndex, int bToIndex
+            T[] a, int aFromIndex, int aToIndex,
+            T[] b, int bFromIndex, int bToIndex
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -750,9 +750,9 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T> int compare(
-        T[] a, int aFromIndex, int aToIndex,
-        T[] b, int bFromIndex, int bToIndex,
-        Comparator<? super T> c
+            T[] a, int aFromIndex, int aToIndex,
+            T[] b, int bFromIndex, int bToIndex,
+            Comparator<? super T> c
     ) {
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
@@ -785,8 +785,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
-        boolean[] a, int aFromIndex, int aToIndex,
-        boolean[] b, int bFromIndex, int bToIndex
+            boolean[] a, int aFromIndex, int aToIndex,
+            boolean[] b, int bFromIndex, int bToIndex
     ) {
         ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
         ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
@@ -823,8 +823,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
-        byte[] a, int aFromIndex, int aToIndex,
-        byte[] b, int bFromIndex, int bToIndex
+            byte[] a, int aFromIndex, int aToIndex,
+            byte[] b, int bFromIndex, int bToIndex
     ) {
         ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
         ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
@@ -861,8 +861,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
-        char[] a, int aFromIndex, int aToIndex,
-        char[] b, int bFromIndex, int bToIndex
+            char[] a, int aFromIndex, int aToIndex,
+            char[] b, int bFromIndex, int bToIndex
     ) {
         ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
         ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
@@ -899,8 +899,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
-        short[] a, int aFromIndex, int aToIndex,
-        short[] b, int bFromIndex, int bToIndex
+            short[] a, int aFromIndex, int aToIndex,
+            short[] b, int bFromIndex, int bToIndex
     ) {
         ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
         ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
@@ -937,8 +937,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
-        int[] a, int aFromIndex, int aToIndex,
-        int[] b, int bFromIndex, int bToIndex
+            int[] a, int aFromIndex, int aToIndex,
+            int[] b, int bFromIndex, int bToIndex
     ) {
         ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
         ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
@@ -975,8 +975,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
-        long[] a, int aFromIndex, int aToIndex,
-        long[] b, int bFromIndex, int bToIndex
+            long[] a, int aFromIndex, int aToIndex,
+            long[] b, int bFromIndex, int bToIndex
     ) {
         ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
         ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
@@ -1013,8 +1013,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
-        float[] a, int aFromIndex, int aToIndex,
-        float[] b, int bFromIndex, int bToIndex
+            float[] a, int aFromIndex, int aToIndex,
+            float[] b, int bFromIndex, int bToIndex
     ) {
         ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
         ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
@@ -1051,8 +1051,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
-        double[] a, int aFromIndex, int aToIndex,
-        double[] b, int bFromIndex, int bToIndex
+            double[] a, int aFromIndex, int aToIndex,
+            double[] b, int bFromIndex, int bToIndex
     ) {
         ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
         ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
@@ -1089,8 +1089,8 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static int mismatch(
-        Object[] a, int aFromIndex, int aToIndex,
-        Object[] b, int bFromIndex, int bToIndex
+            Object[] a, int aFromIndex, int aToIndex,
+            Object[] b, int bFromIndex, int bToIndex
     ) {
         ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
         ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
@@ -1127,9 +1127,9 @@ public class J_U_Arrays {
 
     @Stub(ref = @Ref("Ljava/util/Arrays;"))
     public static <T> int mismatch(
-        T[] a, int aFromIndex, int aToIndex,
-        T[] b, int bFromIndex, int bToIndex,
-        Comparator<? super T> comparator
+            T[] a, int aFromIndex, int aToIndex,
+            T[] b, int bFromIndex, int bToIndex,
+            Comparator<? super T> comparator
     ) {
         ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
         ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
@@ -1151,7 +1151,7 @@ public class J_U_Arrays {
         public static void rangeCheck(int arrayLength, int fromIndex, int toIndex) {
             if (fromIndex > toIndex) {
                 throw new IllegalArgumentException(
-                    "fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
+                        "fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
             }
             if (fromIndex < 0) {
                 throw new ArrayIndexOutOfBoundsException(fromIndex);

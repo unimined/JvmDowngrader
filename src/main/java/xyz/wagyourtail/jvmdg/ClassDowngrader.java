@@ -34,12 +34,11 @@ public class ClassDowngrader implements Closeable {
      * because parent is null, this is (essentially) a wrapper around the bootstrap classloader
      */
     public static final ClassLoader bootstrapClassLoader = new URLClassLoader(new URL[0], null);
-
-    private final Map<Integer, VersionProvider> downgraders;
-    private final DowngradingClassLoader classLoader;
-
+    private static ClassDowngrader currentVersionDowngrader = null;
     public final Flags flags;
     public final int target;
+    private final Map<Integer, VersionProvider> downgraders;
+    private final DowngradingClassLoader classLoader;
 
     protected ClassDowngrader(@NotNull Flags flags) {
         this.flags = flags;
@@ -65,8 +64,6 @@ public class ClassDowngrader implements Closeable {
     public static ClassDowngrader downgradeTo(@NotNull Flags flags) {
         return new ClassDowngrader(flags.copy());
     }
-
-    private static ClassDowngrader currentVersionDowngrader = null;
 
     @NotNull
     public static ClassDowngrader getCurrentVersionDowngrader() {
@@ -263,7 +260,7 @@ public class ClassDowngrader implements Closeable {
     public Map<String, byte[]> downgrade(/* in out */ AtomicReference<String> name, @NotNull byte[] bytes, boolean enableRuntime, final Function<String, byte[]> getExtraRead) throws IllegalClassFormatException {
         // check magic
         if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
-            bytes[3] != (byte) 0xBE) {
+                bytes[3] != (byte) 0xBE) {
             throw new IllegalClassFormatException(name.get());
         }
         // ignore minor version

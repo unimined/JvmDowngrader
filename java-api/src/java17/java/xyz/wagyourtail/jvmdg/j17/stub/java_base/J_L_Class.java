@@ -4,8 +4,6 @@ package xyz.wagyourtail.jvmdg.j17.stub.java_base;
 import xyz.wagyourtail.jvmdg.j17.PermittedSubClasses;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.lang.reflect.Field;
-
 public class J_L_Class {
 
     @Stub

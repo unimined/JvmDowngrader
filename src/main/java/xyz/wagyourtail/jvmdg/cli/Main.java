@@ -23,29 +23,29 @@ public class Main {
         Arguments input = new Arguments("--target", "input to output\n  (required)", new String[]{"-t"}, new String[]{"input jar|path", "output jar|path"});
         Arguments classpath = new Arguments("--classpath", "Classpath to use\n  (highly recommended)", new String[]{"-cp"}, new String[]{"classpath"});
         parser.addChildren(
-            new Arguments("--help", "Prints this help", new String[]{"-h"}, null),
-            new Arguments("--version", "Prints the version", new String[]{"-v"}, null),
-            new Arguments("--quiet", "Suppress all warnings", new String[]{"-q"}, null),
-            new Arguments("--api", "Provide a java-api jar", new String[]{"-a"}, new String[]{"jar"}),
-            new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
-            new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
-                new Arguments("--print", "Enable printing debug info", new String[]{"-p"}, null),
-                new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
-                new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
-            ),
-            new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
-                input,
-                classpath
-            ),
-            new Arguments("shade", "Shades necessary api's into targets", null, null).addChildren(
-                new Arguments("--prefix", "Prefix to use for shaded classes\n  (required)", new String[]{"-p"}, new String[]{"prefix"}),
-                new Arguments("--downgradedApi", "Pre-downgraded api jar", new String[]{"-d"}, new String[]{"jar"}),
-                input
-            ),
-            new Arguments("bootstrap", "Bootstraps a downgrading environment, unparsed args will get passed", null, null).addChildren(
-                new Arguments("--main", "Main class to run\n  (required)", new String[]{"-m"}, new String[]{"class"}),
-                classpath
-            )
+                new Arguments("--help", "Prints this help", new String[]{"-h"}, null),
+                new Arguments("--version", "Prints the version", new String[]{"-v"}, null),
+                new Arguments("--quiet", "Suppress all warnings", new String[]{"-q"}, null),
+                new Arguments("--api", "Provide a java-api jar", new String[]{"-a"}, new String[]{"jar"}),
+                new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
+                new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
+                        new Arguments("--print", "Enable printing debug info", new String[]{"-p"}, null),
+                        new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
+                        new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
+                ),
+                new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
+                        input,
+                        classpath
+                ),
+                new Arguments("shade", "Shades necessary api's into targets", null, null).addChildren(
+                        new Arguments("--prefix", "Prefix to use for shaded classes\n  (required)", new String[]{"-p"}, new String[]{"prefix"}),
+                        new Arguments("--downgradedApi", "Pre-downgraded api jar", new String[]{"-d"}, new String[]{"jar"}),
+                        input
+                ),
+                new Arguments("bootstrap", "Bootstraps a downgrading environment, unparsed args will get passed", null, null).addChildren(
+                        new Arguments("--main", "Main class to run\n  (required)", new String[]{"-m"}, new String[]{"class"}),
+                        classpath
+                )
         );
 
         List<String> argList = new ArrayList<>(Arrays.asList(args));

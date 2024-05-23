@@ -13,7 +13,9 @@ import xyz.wagyourtail.jvmdg.compile.PathDowngrader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.util.*
 import java.nio.file.FileSystem
-import kotlin.io.path.*
+import kotlin.io.path.exists
+import kotlin.io.path.isDirectory
+import kotlin.io.path.name
 
 abstract class DowngradeFiles : ConventionTask() {
     private val jvmdg by lazy {
@@ -73,17 +75,21 @@ abstract class DowngradeFiles : ConventionTask() {
 
             outputs.files.forEach { it.deleteRecursively() }
 
-            val downgraded = toDowngrade.map { temporaryDir.resolve(it.name) }.map { if (it.extension == "jar" || it.extension == "zip") {
-                val fs = Utils.openZipFileSystem(it.toPath(), mapOf("create" to "true"))
-                fileSystems.add(fs)
-                fs.getPath("/")
-            } else it.toPath() }
+            val downgraded = toDowngrade.map { temporaryDir.resolve(it.name) }.map {
+                if (it.extension == "jar" || it.extension == "zip") {
+                    val fs = Utils.openZipFileSystem(it.toPath(), mapOf("create" to "true"))
+                    fileSystems.add(fs)
+                    fs.getPath("/")
+                } else it.toPath()
+            }
 
-            toDowngrade = toDowngrade.map { if (it.isDirectory()) it else run {
-                val fs = Utils.openZipFileSystem(it, mapOf())
-                fileSystems.add(fs)
-                fs.getPath("/")
-            } }
+            toDowngrade = toDowngrade.map {
+                if (it.isDirectory()) it else run {
+                    val fs = Utils.openZipFileSystem(it, mapOf())
+                    fileSystems.add(fs)
+                    fs.getPath("/")
+                }
+            }
             ClassDowngrader.downgradeTo(flags).use {
                 PathDowngrader.downgradePaths(it, toDowngrade, downgraded, classpath.map { it.toURI().toURL() }.toSet())
             }

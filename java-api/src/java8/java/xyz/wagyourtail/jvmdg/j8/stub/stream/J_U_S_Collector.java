@@ -1,11 +1,9 @@
 package xyz.wagyourtail.jvmdg.j8.stub.stream;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BinaryOperator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Function;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
-import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;

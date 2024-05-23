@@ -8,10 +8,9 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.FilterReader
 import java.io.Reader
-import java.nio.CharBuffer
 import java.nio.charset.StandardCharsets
 
-class PackageRelocateReader(input: Reader): FilterReader(input) {
+class PackageRelocateReader(input: Reader) : FilterReader(input) {
 
     var remapper: PackageRelocator by MustSet()
 
@@ -22,7 +21,7 @@ class PackageRelocateReader(input: Reader): FilterReader(input) {
         input.close()
         out.toByteArray()
     }
-    
+
     val changedContents: Reader by lazy {
         val reader = ClassReader(contents)
         val writer = ClassWriter(0)

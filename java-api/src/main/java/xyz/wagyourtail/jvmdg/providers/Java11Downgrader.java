@@ -2,8 +2,6 @@ package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
-import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.j11.NestHost;
 import xyz.wagyourtail.jvmdg.j11.NestMembers;
 import xyz.wagyourtail.jvmdg.j11.stub.java_base.*;

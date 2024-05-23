@@ -6,7 +6,9 @@ import xyz.wagyourtail.jvmdg.util.Utils;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.*;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class ZipDowngrader {

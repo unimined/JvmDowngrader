@@ -4,8 +4,6 @@ import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
-import xyz.wagyourtail.jvmdg.Constants;
-import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.j17.PermittedSubClasses;
 import xyz.wagyourtail.jvmdg.j17.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.j17.stub.jdk_httpserver.C_S_N_H_Filter;

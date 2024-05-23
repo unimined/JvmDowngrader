@@ -70,12 +70,15 @@ abstract class GenerateCtSymTask : ConventionTask() {
         val toolchain = project.extensions.getByType(JavaToolchainService::class.java)
 
 
-        ZipArchiveOutputStream(ctSym.toPath().outputStream(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)).use { zos ->
+        ZipArchiveOutputStream(
+            ctSym.toPath().outputStream(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
+        ).use { zos ->
             val prevJava = mutableMapOf<String, ClassInfo>()
             for (java in (JavaVersion.VERSION_1_6..JavaVersion.VERSION_22).reversed()) {
                 val home = toolchain.getJavaHome(java)
                 project.logger.lifecycle("[ct.sym] Processing $java at $home")
-                for (path in home.walk().filter { it.exists() && it.isRegularFile() && it.extension in setOf("jar", "jmod") }) {
+                for (path in home.walk()
+                    .filter { it.exists() && it.isRegularFile() && it.extension in setOf("jar", "jmod") }) {
                     if (path.extension == "jar" && path.nameWithoutExtension != "rt") continue
                     // for each jar/jmod list its contents
                     project.logger.info("[ct.sym]   Found ${path.fileName}")

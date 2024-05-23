@@ -6,7 +6,6 @@ import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.all.RemovedInterfaces;
-import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
@@ -217,7 +216,8 @@ public abstract class VersionProvider {
                 try {
                     List<Pair<Type, Boolean>> types = superTypeResolver.apply(type);
                     if (types == null) {
-                        if (!downgrader.flags.quiet) System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
+                        if (!downgrader.flags.quiet)
+                            System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
                         types = Collections.emptyList();
                     }
                     List<ClassMapping> superTypes = new ArrayList<>();
@@ -424,22 +424,22 @@ public abstract class VersionProvider {
                 InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
                 indy.desc = stubClass(Type.getMethodType(indy.desc)).getDescriptor();
                 indy.bsm = new Handle(
-                    indy.bsm.getTag(),
-                    stubClass(Type.getObjectType(indy.bsm.getOwner())).getInternalName(),
-                    indy.bsm.getName(),
-                    stubClass(Type.getMethodType(indy.bsm.getDesc())).getDescriptor(),
-                    indy.bsm.isInterface()
+                        indy.bsm.getTag(),
+                        stubClass(Type.getObjectType(indy.bsm.getOwner())).getInternalName(),
+                        indy.bsm.getName(),
+                        stubClass(Type.getMethodType(indy.bsm.getDesc())).getDescriptor(),
+                        indy.bsm.isInterface()
                 );
                 for (int j = 0; j < indy.bsmArgs.length; j++) {
                     Object arg = indy.bsmArgs[j];
                     if (arg instanceof Handle) {
                         Handle handle = (Handle) arg;
                         handle = new Handle(
-                            handle.getTag(),
-                            stubClass(Type.getObjectType(handle.getOwner())).getInternalName(),
-                            handle.getName(),
-                            stubClass(Type.getType(handle.getDesc())).getDescriptor(),
-                            handle.isInterface()
+                                handle.getTag(),
+                                stubClass(Type.getObjectType(handle.getOwner())).getInternalName(),
+                                handle.getName(),
+                                stubClass(Type.getType(handle.getDesc())).getDescriptor(),
+                                handle.isInterface()
                         );
                         indy.bsmArgs[j] = handle;
                         switch (handle.getTag()) {
@@ -505,8 +505,7 @@ public abstract class VersionProvider {
                                                             h.getOwner().equals(handle.getOwner()) &&
                                                             h.getName().equals(handle.getName()) &&
                                                             h.getDesc().equals(handle.getDesc()) &&
-                                                            h.isInterface() == handle.isInterface())
-                                                    {
+                                                            h.isInterface() == handle.isInterface()) {
                                                         if (!mn.desc.equals(hStaticDesc.getDescriptor())) {
                                                             num++;
                                                         } else {
@@ -544,11 +543,11 @@ public abstract class VersionProvider {
                                             }
                                         }
                                         indy.bsmArgs[j] = new Handle(
-                                            Opcodes.H_INVOKESTATIC,
-                                            newOwner,
-                                            name,
-                                            desc,
-                                            intf
+                                                Opcodes.H_INVOKESTATIC,
+                                                newOwner,
+                                                name,
+                                                desc,
+                                                intf
                                         );
                                     }
                                 } else {
@@ -573,8 +572,7 @@ public abstract class VersionProvider {
                                                             h.getOwner().equals(handle.getOwner()) &&
                                                             h.getName().equals(handle.getName()) &&
                                                             h.getDesc().equals(handle.getDesc()) &&
-                                                            h.isInterface() == handle.isInterface())
-                                                    {
+                                                            h.isInterface() == handle.isInterface()) {
                                                         if (!mn.desc.equals(desc)) {
                                                             num++;
                                                         } else {
@@ -622,11 +620,11 @@ public abstract class VersionProvider {
                                             }
 
                                             indy.bsmArgs[j] = new Handle(
-                                                Opcodes.H_INVOKESTATIC,
-                                                owner.name,
-                                                name,
-                                                desc,
-                                                intf
+                                                    Opcodes.H_INVOKESTATIC,
+                                                    owner.name,
+                                                    name,
+                                                    desc,
+                                                    intf
                                             );
 
                                         }
@@ -842,7 +840,7 @@ public abstract class VersionProvider {
             boolean found = false;
             for (AnnotationNode an : clazz.visibleAnnotations) {
                 if (an.desc.equals(Type.getType(RemovedInterfaces.class).getDescriptor())) {
-                    ((List<String>)an.values.get(1)).addAll(removed);
+                    ((List<String>) an.values.get(1)).addAll(removed);
                     found = true;
                     break;
                 }

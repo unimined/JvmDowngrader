@@ -13,14 +13,6 @@ public interface TestInterface {
         test3();
     }
 
-    default void test2() {
-        test();
-    }
-
-    private void test() {
-        System.out.println("test");
-    }
-
     static void test3() {
         System.out.println("test3" + 4);
 
@@ -38,6 +30,14 @@ public interface TestInterface {
                 System.out.println("ignored");
                 break;
         }
+    }
+
+    default void test2() {
+        test();
+    }
+
+    private void test() {
+        System.out.println("test");
     }
 
 }

@@ -10,13 +10,13 @@ public class J_N_URL {
     static boolean isOverrideable(String protocol) {
         if (protocol.length() == 3) {
             return (Character.toLowerCase(protocol.charAt(0)) != 'j') ||
-                (Character.toLowerCase(protocol.charAt(1)) != 'r') ||
-                (Character.toLowerCase(protocol.charAt(2)) != 't');
+                    (Character.toLowerCase(protocol.charAt(1)) != 'r') ||
+                    (Character.toLowerCase(protocol.charAt(2)) != 't');
         } else if (protocol.length() == 4) {
             return (Character.toLowerCase(protocol.charAt(0)) != 'f') ||
-                (Character.toLowerCase(protocol.charAt(1)) != 'i') ||
-                (Character.toLowerCase(protocol.charAt(2)) != 'l') ||
-                (Character.toLowerCase(protocol.charAt(3)) != 'e');
+                    (Character.toLowerCase(protocol.charAt(1)) != 'i') ||
+                    (Character.toLowerCase(protocol.charAt(2)) != 'l') ||
+                    (Character.toLowerCase(protocol.charAt(3)) != 'e');
         }
         return true;
     }

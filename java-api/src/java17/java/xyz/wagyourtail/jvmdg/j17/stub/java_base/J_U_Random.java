@@ -43,13 +43,13 @@ public class J_U_Random {
     }
 
     @Stub
-    public double nextGaussian(Random random, double mean, double stdDev) {
-        return new BasicRandomGeneratorImpl(random).nextGaussian(mean, stdDev);
+    public static double nextExponential(Random random) {
+        return new BasicRandomGeneratorImpl(random).nextExponential();
     }
 
     @Stub
-    public static double nextExponential(Random random) {
-        return new BasicRandomGeneratorImpl(random).nextExponential();
+    public double nextGaussian(Random random, double mean, double stdDev) {
+        return new BasicRandomGeneratorImpl(random).nextGaussian(mean, stdDev);
     }
 
 }

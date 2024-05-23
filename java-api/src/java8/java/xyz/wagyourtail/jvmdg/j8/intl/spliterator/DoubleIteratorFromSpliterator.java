@@ -3,11 +3,10 @@ package xyz.wagyourtail.jvmdg.j8.intl.spliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_PrimitiveIterator;
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_Spliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_DoubleConsumer;
-import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongConsumer;
 
 import java.util.NoSuchElementException;
 
-        public class DoubleIteratorFromSpliterator implements J_U_F_DoubleConsumer, J_U_PrimitiveIterator.OfDouble {
+public class DoubleIteratorFromSpliterator implements J_U_F_DoubleConsumer, J_U_PrimitiveIterator.OfDouble {
     private final J_U_Spliterator.OfDouble spliterator;
 
     private boolean nextAvailable = false;

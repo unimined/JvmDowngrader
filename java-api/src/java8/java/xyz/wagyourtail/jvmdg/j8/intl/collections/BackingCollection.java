@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.j8.intl.collections;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
-import java.util.Set;
 
 public class BackingCollection<E> implements Collection<E> {
     private final Collection<E> backing;

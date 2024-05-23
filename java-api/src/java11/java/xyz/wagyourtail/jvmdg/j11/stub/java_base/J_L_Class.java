@@ -4,7 +4,6 @@ import xyz.wagyourtail.jvmdg.j11.NestHost;
 import xyz.wagyourtail.jvmdg.j11.NestMembers;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

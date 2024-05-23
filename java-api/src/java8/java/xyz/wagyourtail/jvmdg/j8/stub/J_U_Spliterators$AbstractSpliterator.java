@@ -1,8 +1,8 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.j8.intl.spliterator.ArraySpliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import java.util.Comparator;
 

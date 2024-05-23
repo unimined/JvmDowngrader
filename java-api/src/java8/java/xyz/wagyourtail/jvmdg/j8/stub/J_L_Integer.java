@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -30,7 +29,7 @@ public class J_L_Integer {
             char first = s.charAt(0);
             if (first == '-') {
                 throw new NumberFormatException(
-                    String.format("Illegal leading minus sign on unsigned string %s.", s));
+                        String.format("Illegal leading minus sign on unsigned string %s.", s));
             } else {
                 if (len <= 5 || (radix == 10 && len <= 9)) {
                     return Integer.parseInt(s, radix);
@@ -40,7 +39,7 @@ public class J_L_Integer {
                         return (int) ell;
                     } else {
                         throw new NumberFormatException(
-                            String.format("String value %s exceeds range of unsigned int.", s));
+                                String.format("String value %s exceeds range of unsigned int.", s));
                     }
                 }
             }

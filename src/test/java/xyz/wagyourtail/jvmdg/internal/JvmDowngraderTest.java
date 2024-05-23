@@ -3,8 +3,8 @@ package xyz.wagyourtail.jvmdg.internal;
 import org.junit.jupiter.api.Test;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
-import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
+import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.test.JavaRunner;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -20,7 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 
 public class JvmDowngraderTest {
+    private static final Flags flags = new Flags();
     private static Properties props = new Properties();
+    private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + props.getProperty("version") + ".jar");
+
     static {
         try (InputStream is = Files.newInputStream(Path.of("gradle.properties"))) {
             props.load(is);
@@ -28,9 +31,6 @@ public class JvmDowngraderTest {
             throw new RuntimeException(e);
         }
     }
-    private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + props.getProperty("version") + ".jar");
-
-    private static final Flags flags = new Flags();
 
     static {
 //        System.setProperty("jvmdg.java-api", javaApi.toString());
@@ -84,23 +84,23 @@ public class JvmDowngraderTest {
         StringBuilder originalLog = new StringBuilder();
 
         Integer ret2 = JavaRunner.runJarInSubprocess(
-            original,
-            new String[]{},
-            mainClass.replace("$jvmdg$StaticDefaults", ""),
-            Set.of(),
-            Path.of("."),
-            Map.of(),
-            true,
-            List.of(),
-            Utils.getCurrentClassVersion(),
-            (String it) -> {
-                originalLog.append(it).append("\n");
-                System.out.println(it);
-            },
-            (String it) -> {
-                originalLog.append(it).append("\n");
-                System.out.println(it);
-            }
+                original,
+                new String[]{},
+                mainClass.replace("$jvmdg$StaticDefaults", ""),
+                Set.of(),
+                Path.of("."),
+                Map.of(),
+                true,
+                List.of(),
+                Utils.getCurrentClassVersion(),
+                (String it) -> {
+                    originalLog.append(it).append("\n");
+                    System.out.println(it);
+                },
+                (String it) -> {
+                    originalLog.append(it).append("\n");
+                    System.out.println(it);
+                }
         );
 
         // only java <= 7 moves interface statics
@@ -113,23 +113,23 @@ public class JvmDowngraderTest {
 
         StringBuilder downgradedLog = new StringBuilder();
         Integer ret = JavaRunner.runJarInSubprocess(
-            downgraded,
-            new String[]{},
-            mainClass,
-            Set.of(downgradedJavaApi, mainClasses),
-            Path.of("."),
-            Map.of(),
-            true,
-            List.of(),
-            JavaRunner.JavaVersion.V1_8.toOpcode(),
-            (String it) -> {
-                downgradedLog.append(it).append("\n");
-                System.out.println(it);
-            },
-            (String it) -> {
-                downgradedLog.append(it).append("\n");
-                System.out.println(it);
-            }
+                downgraded,
+                new String[]{},
+                mainClass,
+                Set.of(downgradedJavaApi, mainClasses),
+                Path.of("."),
+                Map.of(),
+                true,
+                List.of(),
+                JavaRunner.JavaVersion.V1_8.toOpcode(),
+                (String it) -> {
+                    downgradedLog.append(it).append("\n");
+                    System.out.println(it);
+                },
+                (String it) -> {
+                    downgradedLog.append(it).append("\n");
+                    System.out.println(it);
+                }
         );
 
         System.out.println();
@@ -137,28 +137,28 @@ public class JvmDowngraderTest {
 
         StringBuilder shadedLog = new StringBuilder();
         Integer ret4 = JavaRunner.runJarInSubprocess(
-            shaded,
-            new String[]{},
-            mainClass,
-            Set.of(),
-            Path.of("."),
-            Map.of(),
-            true,
-            List.of(),
-            JavaRunner.JavaVersion.V1_8.toOpcode(),
-            (String it) -> {
-                shadedLog.append(it).append("\n");
-                System.out.println(it);
-            },
-            (String it) -> {
-                shadedLog.append(it).append("\n");
-                System.out.println(it);
-            }
+                shaded,
+                new String[]{},
+                mainClass,
+                Set.of(),
+                Path.of("."),
+                Map.of(),
+                true,
+                List.of(),
+                JavaRunner.JavaVersion.V1_8.toOpcode(),
+                (String it) -> {
+                    shadedLog.append(it).append("\n");
+                    System.out.println(it);
+                },
+                (String it) -> {
+                    shadedLog.append(it).append("\n");
+                    System.out.println(it);
+                }
         );
 
         Set<Path> classpathJars = new HashSet<>(Stream.of(System.getProperty("java.class.path").split(":"))
-            .map(Path::of)
-            .toList());
+                .map(Path::of)
+                .toList());
 
         System.out.println();
         System.out.println("Runtime Downgraded: ");
@@ -166,32 +166,32 @@ public class JvmDowngraderTest {
         StringBuilder runtimeDowngradeLog = new StringBuilder();
 
         Integer ret3 = JavaRunner.runJarInSubprocess(
-            null,
-            new String[]{
-                "-a",
-                javaApi.toString(),
-                "--quiet",
-                "bootstrap",
-                "--classpath",
-                original.toString(),
-                "-m",
-                mainClass
-            },
-            "xyz.wagyourtail.jvmdg.cli.Main",
-            classpathJars,
-            Path.of("."),
-            Map.of(),
-            true,
-            List.of(/*"-Djvmdg.debug=true", "-Djvmdg.java-api=" + javaApijvm, "-Djvmdg.log=false", "-Djvmdg.quiet=true" */),
-            JavaRunner.JavaVersion.V1_8.toOpcode(),
-            (String it) -> {
-                runtimeDowngradeLog.append(it).append("\n");
-                System.out.println(it);
-            },
-            (String it) -> {
-                runtimeDowngradeLog.append(it).append("\n");
-                System.out.println(it);
-            }
+                null,
+                new String[]{
+                        "-a",
+                        javaApi.toString(),
+                        "--quiet",
+                        "bootstrap",
+                        "--classpath",
+                        original.toString(),
+                        "-m",
+                        mainClass
+                },
+                "xyz.wagyourtail.jvmdg.cli.Main",
+                classpathJars,
+                Path.of("."),
+                Map.of(),
+                true,
+                List.of(/*"-Djvmdg.debug=true", "-Djvmdg.java-api=" + javaApijvm, "-Djvmdg.log=false", "-Djvmdg.quiet=true" */),
+                JavaRunner.JavaVersion.V1_8.toOpcode(),
+                (String it) -> {
+                    runtimeDowngradeLog.append(it).append("\n");
+                    System.out.println(it);
+                },
+                (String it) -> {
+                    runtimeDowngradeLog.append(it).append("\n");
+                    System.out.println(it);
+                }
         );
 
         if (ret2 != 0) {
@@ -222,6 +222,7 @@ public class JvmDowngraderTest {
     public void testBuffer() throws Exception {
         testDowngrade("xyz.wagyourtail.downgradetest.TestBuffer");
     }
+
     @Test
     public void testDowngradeRecord() throws Exception {
         testDowngrade("xyz.wagyourtail.downgradetest.TestRecord");

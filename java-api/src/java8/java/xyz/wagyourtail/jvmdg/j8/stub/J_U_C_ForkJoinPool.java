@@ -1,11 +1,9 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
 
 public class J_U_C_ForkJoinPool {
     private static final ForkJoinPool COMMON_POOL;

@@ -1,9 +1,9 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.j8.intl.spliterator.IntArraySpliterator;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Consumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import java.util.Comparator;
 
@@ -96,7 +96,6 @@ public abstract class J_U_Spliterators$AbstractIntSpliterator implements J_U_Spl
     public Comparator<? super Integer> getComparator() {
         throw new IllegalStateException();
     }
-
 
 
     static final class Holder extends J_U_F_IntConsumer.IntConsumerAdapter {

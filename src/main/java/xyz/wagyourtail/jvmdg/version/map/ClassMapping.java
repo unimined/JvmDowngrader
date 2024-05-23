@@ -119,11 +119,11 @@ public class ClassMapping {
                 }
                 Method m = newMin.getFirst();
                 insnList.add(new MethodInsnNode(
-                    Opcodes.INVOKESTATIC,
-                    Type.getType(m.getDeclaringClass()).getInternalName(),
-                    m.getName(),
-                    Type.getMethodDescriptor(m),
-                    false
+                        Opcodes.INVOKESTATIC,
+                        Type.getType(m.getDeclaringClass()).getInternalName(),
+                        m.getName(),
+                        Type.getMethodDescriptor(m),
+                        false
                 ));
                 method.instructions.insertBefore(min, insnList);
                 if (!returnType.equals(Type.getReturnType(m))) {

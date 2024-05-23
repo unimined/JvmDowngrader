@@ -2,7 +2,8 @@ package xyz.wagyourtail.jvmdg.j21.impl;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
 
 public class ReverseCollection<E> implements Collection<E> {
     final Collection<E> original;

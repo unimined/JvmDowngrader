@@ -14,6 +14,46 @@ import java.util.Map;
 
 public class AnnotationUtils {
 
+    // create annotation from AnnotationNode
+    @SuppressWarnings("unchecked")
+    public static <T extends Annotation> T createAnnotation(AnnotationNode classNode) throws ClassNotFoundException {
+        return (T) Proxy.newProxyInstance(
+                AnnotationUtils.class.getClassLoader(),
+                new Class[]{Class.forName(Type.getType(classNode.desc).getClassName())},
+                new Handler(classNode)
+        );
+    }
+
+    private static Object enumValueOf(String desc, String value) throws ClassNotFoundException {
+        return Enum.valueOf((Class<Enum>) AnnotationUtils.getClass(Type.getType(desc)), value);
+    }
+
+    private static Class<?> getClass(Type type) throws ClassNotFoundException {
+        switch (type.getSort()) {
+            case Type.VOID:
+                return void.class;
+            case Type.BOOLEAN:
+                return boolean.class;
+            case Type.CHAR:
+                return char.class;
+            case Type.BYTE:
+                return byte.class;
+            case Type.SHORT:
+                return short.class;
+            case Type.INT:
+                return int.class;
+            case Type.FLOAT:
+                return float.class;
+            case Type.LONG:
+                return long.class;
+            case Type.DOUBLE:
+                return double.class;
+            default:
+                return Class.forName(type.getClassName());
+        }
+
+    }
+
     static class Handler implements InvocationHandler {
         final Map<String, Object> values;
 
@@ -54,46 +94,6 @@ public class AnnotationUtils {
             }
             return (T) value;
         }
-    }
-
-    // create annotation from AnnotationNode
-    @SuppressWarnings("unchecked")
-    public static <T extends Annotation> T createAnnotation(AnnotationNode classNode) throws ClassNotFoundException {
-        return (T) Proxy.newProxyInstance(
-            AnnotationUtils.class.getClassLoader(),
-            new Class[] { Class.forName(Type.getType(classNode.desc).getClassName()) },
-            new Handler(classNode)
-        );
-    }
-
-    private static Object enumValueOf(String desc, String value) throws ClassNotFoundException {
-        return Enum.valueOf((Class<Enum>) AnnotationUtils.getClass(Type.getType(desc)), value);
-    }
-
-    private static Class<?> getClass(Type type) throws ClassNotFoundException {
-        switch (type.getSort()) {
-            case Type.VOID:
-                return void.class;
-            case Type.BOOLEAN:
-                return boolean.class;
-            case Type.CHAR:
-                return char.class;
-            case Type.BYTE:
-                return byte.class;
-            case Type.SHORT:
-                return short.class;
-            case Type.INT:
-                return int.class;
-            case Type.FLOAT:
-                return float.class;
-            case Type.LONG:
-                return long.class;
-            case Type.DOUBLE:
-                return double.class;
-            default:
-                return Class.forName(type.getClassName());
-        }
-
     }
 
 }

@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_BiFunction;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Function;
@@ -61,8 +60,8 @@ public class J_U_Map {
         }
         V v;
         return (((v = self.get(key)) != null) || self.containsKey(key))
-            ? v
-            : defaultValue;
+                ? v
+                : defaultValue;
     }
 
     @Stub
@@ -79,7 +78,7 @@ public class J_U_Map {
     }
 
     @Stub
-    public static  <T, U> void replaceAll(Map<T, U> self, J_U_F_BiFunction<T, U, U> function) {
+    public static <T, U> void replaceAll(Map<T, U> self, J_U_F_BiFunction<T, U, U> function) {
         if (self instanceof ConcurrentMap) {
             J_U_C_ConcurrentMap.replaceAll((ConcurrentMap<T, U>) self, function);
             return;
@@ -107,7 +106,7 @@ public class J_U_Map {
         }
         Object curValue = self.get(key);
         if (!Objects.equals(curValue, value) ||
-            (curValue == null && !self.containsKey(key))) {
+                (curValue == null && !self.containsKey(key))) {
             return false;
         }
         self.remove(key);
@@ -115,13 +114,13 @@ public class J_U_Map {
     }
 
     @Stub
-    public static  <K, V> boolean replace(Map<K, V> self, K key, V oldValue, V newValue) {
+    public static <K, V> boolean replace(Map<K, V> self, K key, V oldValue, V newValue) {
         if (self instanceof ConcurrentMap) {
             return J_U_C_ConcurrentMap.replace((ConcurrentMap<K, V>) self, key, oldValue, newValue);
         }
         Object curValue = self.get(key);
         if (!Objects.equals(curValue, oldValue) ||
-            (curValue == null && !self.containsKey(key))) {
+                (curValue == null && !self.containsKey(key))) {
             return false;
         }
         self.put(key, newValue);
@@ -141,7 +140,7 @@ public class J_U_Map {
     }
 
     @Stub
-    public static  <K, V> V computeIfAbsent(Map<K, V> self, K key, J_U_F_Function<? super K, ? extends V> mappingFunction) {
+    public static <K, V> V computeIfAbsent(Map<K, V> self, K key, J_U_F_Function<? super K, ? extends V> mappingFunction) {
         if (self instanceof ConcurrentMap) {
             return J_U_C_ConcurrentMap.computeIfAbsent((ConcurrentMap<K, V>) self, key, mappingFunction);
         }
@@ -203,7 +202,7 @@ public class J_U_Map {
         }
         V oldValue = self.get(key);
         V newValue = (oldValue == null) ? value :
-            remappingFunction.apply(oldValue, value);
+                remappingFunction.apply(oldValue, value);
         if (newValue == null) {
             self.remove(key);
         } else {

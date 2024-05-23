@@ -39,16 +39,6 @@ public class J_U_SplittableRandom {
     }
 
     @Stub
-    public Stream<J_U_R_RandomGenerator> rngs(SplittableRandom random) {
-        return new SplittableRandomGeneratorImpl(random).rngs();
-    }
-
-    @Stub
-    public Stream<J_U_R_RandomGenerator> rngs(SplittableRandom random, long size) {
-        return new SplittableRandomGeneratorImpl(random).rngs(size);
-    }
-
-    @Stub
     public static float nextFloat(SplittableRandom random) {
         return new SplittableRandomGeneratorImpl(random).nextFloat();
     }
@@ -76,6 +66,16 @@ public class J_U_SplittableRandom {
     @Stub
     public static double nextExponential(SplittableRandom random) {
         return new SplittableRandomGeneratorImpl(random).nextExponential();
+    }
+
+    @Stub
+    public Stream<J_U_R_RandomGenerator> rngs(SplittableRandom random) {
+        return new SplittableRandomGeneratorImpl(random).rngs();
+    }
+
+    @Stub
+    public Stream<J_U_R_RandomGenerator> rngs(SplittableRandom random, long size) {
+        return new SplittableRandomGeneratorImpl(random).rngs(size);
     }
 
 }

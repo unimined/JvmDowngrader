@@ -14,11 +14,8 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -301,10 +298,12 @@ public class ReferenceGraph {
                 Object o = condy.getBootstrapMethodArgument(i);
                 if (o instanceof Type) {
                     requiresInstance(member, (Type) o, filter);
-                } if (o instanceof Handle) {
+                }
+                if (o instanceof Handle) {
                     Handle h = (Handle) o;
                     requiresMember(member, new FullyQualifiedMemberNameAndDesc(Type.getObjectType(h.getOwner()), h.getName(), Type.getType(h.getDesc())), filter);
-                } if (o instanceof ConstantDynamic) {
+                }
+                if (o instanceof ConstantDynamic) {
                     requiresCondy(member, (ConstantDynamic) o, filter);
                 }
             }

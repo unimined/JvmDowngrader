@@ -79,7 +79,7 @@ public class J_N_H_HttpRequest {
         @Override
         public long contentLength() {
             long l = Arrays.stream(publishers).mapToLong(HttpRequest.BodyPublisher::contentLength).reduce(
-                AggregatePublisher::reduceLength).orElse(0L);
+                    AggregatePublisher::reduceLength).orElse(0L);
             if (l < 0) {
                 return -1;
             } else {

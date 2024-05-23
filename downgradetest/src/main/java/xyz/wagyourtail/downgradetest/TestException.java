@@ -1,7 +1,6 @@
 package xyz.wagyourtail.downgradetest;
 
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class TestException {
 

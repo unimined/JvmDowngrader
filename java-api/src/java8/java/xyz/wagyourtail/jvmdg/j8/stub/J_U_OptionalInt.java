@@ -1,11 +1,9 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
-import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntSupplier;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_Supplier;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import java.util.NoSuchElementException;
 
@@ -71,7 +69,7 @@ public class J_U_OptionalInt {
         return value;
     }
 
-    public<X extends Throwable> int orElseThrow(J_U_F_Supplier<? extends X> exceptionSupplier) throws X {
+    public <X extends Throwable> int orElseThrow(J_U_F_Supplier<? extends X> exceptionSupplier) throws X {
         if (isPresent) {
             return value;
         } else {
@@ -89,8 +87,8 @@ public class J_U_OptionalInt {
         }
         J_U_OptionalInt other = (J_U_OptionalInt) obj;
         return (isPresent && other.isPresent
-            ? Integer.compare(value, other.value) == 0
-            : isPresent == other.isPresent);
+                ? Integer.compare(value, other.value) == 0
+                : isPresent == other.isPresent);
     }
 
     @Override

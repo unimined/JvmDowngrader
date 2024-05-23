@@ -4,7 +4,6 @@ import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Pair;
-import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -55,10 +54,10 @@ public class J_L_Class {
 
     private static boolean isReflectionFrame(String className) {
         return className.equals(Method.class.getName()) ||
-            className.equals(Constructor.class.getName()) ||
-            className.startsWith("sun.reflect.") ||
-            className.startsWith("jdk.internal.reflect.") ||
-            className.startsWith("java.lang.invoke.LambdaForm");
+                className.equals(Constructor.class.getName()) ||
+                className.startsWith("sun.reflect.") ||
+                className.startsWith("jdk.internal.reflect.") ||
+                className.startsWith("java.lang.invoke.LambdaForm");
     }
 
     private static Class<?> getCaller() throws ClassNotFoundException {

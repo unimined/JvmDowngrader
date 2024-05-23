@@ -1,9 +1,6 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -38,7 +35,7 @@ public class J_U_Base64 {
         for (byte b : lineSeparator) {
             if (base64[b & 0xff] != -1)
                 throw new IllegalArgumentException(
-                    "Illegal base64 line separator character 0x" + Integer.toString(b, 16));
+                        "Illegal base64 line separator character 0x" + Integer.toString(b, 16));
         }
         // round down to nearest multiple of 4
         lineLength &= ~0b11;
@@ -73,6 +70,7 @@ public class J_U_Base64 {
         private final int linemax;
         private final boolean isURL;
         private final boolean doPadding;
+
         private Encoder(boolean isURL, byte[] newline, int linemax, boolean doPadding) {
             this.isURL = isURL;
             this.newline = newline;
@@ -129,9 +127,9 @@ public class J_U_Base64 {
             int ret = 0;
             if (buffer.hasArray()) {
                 ret = encode0(buffer.array(),
-                    buffer.arrayOffset() + buffer.position(),
-                    buffer.arrayOffset() + buffer.limit(),
-                    dst);
+                        buffer.arrayOffset() + buffer.position(),
+                        buffer.arrayOffset() + buffer.limit(),
+                        dst);
                 buffer.position(buffer.limit());
             } else {
                 byte[] src = new byte[buffer.remaining()];
@@ -233,6 +231,7 @@ public class J_U_Base64 {
 
         private final boolean isURL;
         private final boolean isMIME;
+
         private Decoder(boolean isURL, boolean isMIME) {
             this.isURL = isURL;
             this.isMIME = isMIME;
@@ -297,7 +296,7 @@ public class J_U_Base64 {
                 if (isMIME && base64[0] == -1)
                     return 0;
                 throw new IllegalArgumentException(
-                    "Input byte[] should at least have 2 bytes for base64 bytes");
+                        "Input byte[] should at least have 2 bytes for base64 bytes");
             }
             if (isMIME) {
                 int n = 0;
@@ -365,9 +364,9 @@ public class J_U_Base64 {
                 if ((b = base64[b]) < 0) {
                     if (b == -2) {
                         if (shiftto == 6 && (sp == sl || src[sp++] != '=') ||
-                            shiftto == 18) {
+                                shiftto == 18) {
                             throw new IllegalArgumentException(
-                                "Input byte array has wrong 4-byte ending unit");
+                                    "Input byte array has wrong 4-byte ending unit");
                         }
                         break;
                     }
@@ -375,8 +374,8 @@ public class J_U_Base64 {
                         continue;
                     else
                         throw new IllegalArgumentException(
-                            "Illegal base64 character " +
-                                Integer.toString(src[sp - 1], 16));
+                                "Illegal base64 character " +
+                                        Integer.toString(src[sp - 1], 16));
                 }
                 bits |= (b << shiftto);
                 shiftto -= 6;
@@ -395,13 +394,13 @@ public class J_U_Base64 {
                 dst[dp++] = (byte) (bits >> 8);
             } else if (shiftto == 12) {
                 throw new IllegalArgumentException(
-                    "Last unit does not have enough valid bits");
+                        "Last unit does not have enough valid bits");
             }
             while (sp < sl) {
                 if (isMIME && base64[src[sp++] & 0xff] < 0)
                     continue;
                 throw new IllegalArgumentException(
-                    "Input byte array has incorrect ending byte at " + sp);
+                        "Input byte array has incorrect ending byte at " + sp);
             }
             return dp;
         }
@@ -470,9 +469,9 @@ public class J_U_Base64 {
                 len--;
                 checkNewline();
                 writeb4(base64[b0 >> 2],
-                    base64[(b0 << 4) & 0x3f | (b1 >> 4)],
-                    base64[(b1 << 2) & 0x3f | (b2 >> 6)],
-                    base64[b2 & 0x3f]);
+                        base64[(b0 << 4) & 0x3f | (b1 >> 4)],
+                        base64[(b1 << 2) & 0x3f | (b2 >> 6)],
+                        base64[b2 & 0x3f]);
                 linepos += 4;
             }
             int nBits24 = len / 3;
@@ -485,8 +484,8 @@ public class J_U_Base64 {
                 int dp = 0;
                 for (int sp = off; sp < sl; ) {
                     int bits = (b[sp++] & 0xff) << 16 |
-                        (b[sp++] & 0xff) << 8 |
-                        (b[sp++] & 0xff);
+                            (b[sp++] & 0xff) << 8 |
+                            (b[sp++] & 0xff);
                     buf[dp++] = (byte) base64[(bits >>> 18) & 0x3f];
                     buf[dp++] = (byte) base64[(bits >>> 12) & 0x3f];
                     buf[dp++] = (byte) base64[(bits >>> 6) & 0x3f];
@@ -629,7 +628,7 @@ public class J_U_Base64 {
                             continue;
                         }
                         throw new IOException("Illegal base64 character 0x" +
-                            Integer.toHexString(i));
+                                Integer.toHexString(i));
                     }
                     return padding(b, off, pos, limit);
                 }

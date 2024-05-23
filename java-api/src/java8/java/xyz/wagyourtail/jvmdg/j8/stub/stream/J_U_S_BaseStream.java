@@ -1,10 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub.stream;
 
-import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_Spliterator;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Iterator;
 

@@ -2,7 +2,10 @@ package xyz.wagyourtail.jvmdg.j21.impl;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 public class SequencedSet<E> implements Set<E> {
     final Map<E, Boolean> map;

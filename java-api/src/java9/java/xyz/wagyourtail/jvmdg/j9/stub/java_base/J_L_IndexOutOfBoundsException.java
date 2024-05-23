@@ -5,7 +5,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_IndexOutOfBoundsException {
 

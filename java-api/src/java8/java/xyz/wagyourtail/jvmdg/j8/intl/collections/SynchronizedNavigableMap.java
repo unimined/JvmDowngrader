@@ -1,6 +1,9 @@
 package xyz.wagyourtail.jvmdg.j8.intl.collections;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.SortedMap;
 
 public class SynchronizedNavigableMap<K, V> extends SynchronizedBackingMap<K, V> implements NavigableMap<K, V> {
     private final NavigableMap<K, V> backing;
