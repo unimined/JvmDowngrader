@@ -715,7 +715,7 @@ public abstract class VersionProvider {
                         members = new HashSet<>();
                         for (MethodNode method : ro.methods) {
                             if ((method.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
-                            members.add(new MemberNameAndDesc(method.name, Type.getMethodType(method.desc)));
+                            members.add(new MemberNameAndDesc(method.name, downgrader.stubClass(ro.version, Type.getMethodType(method.desc))));
                         }
                     }
                 }
@@ -733,7 +733,7 @@ public abstract class VersionProvider {
                     ClassNode ro = getReadOnly.apply(o.getInternalName());
                     if (ro != null) {
                         types = new ArrayList<>();
-                        types.add(new Pair<>(Type.getObjectType(ro.superName), Boolean.FALSE));
+                        types.add(new Pair<>(downgrader.stubClass(ro.version, Type.getObjectType(ro.superName)), Boolean.FALSE));
                         for (String anInterface : ro.interfaces) {
                             types.add(new Pair<>(Type.getObjectType(anInterface), Boolean.TRUE));
                         }
