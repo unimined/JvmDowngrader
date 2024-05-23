@@ -462,7 +462,7 @@ public class J_L_I_StringConcatFactory {
                         node.name,
                         concatMethod.name,
                         concatMethod.desc,
-                        false
+                        (node.access & Opcodes.ACC_INTERFACE) != 0
                     ));
                     return list;
                 }
@@ -480,7 +480,7 @@ public class J_L_I_StringConcatFactory {
             node.name,
             method.name,
             method.desc,
-            false
+            (node.access & Opcodes.ACC_INTERFACE) != 0
         ));
         return list;
     }
