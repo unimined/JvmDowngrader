@@ -31,11 +31,15 @@ public class ZipDowngrader {
         for (File file : classpath) {
             classpathPaths.add(file.toURI().toURL());
         }
-        downgradeZip(ClassDowngrader.downgradeTo(opcVersion), input.toPath(), classpathPaths, output.toPath());
+        try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(opcVersion)) {
+            downgradeZip(downgrader, input.toPath(), classpathPaths, output.toPath());
+        }
     }
 
     public static void downgradeZip(int opcVersion, Path input, Set<URL> classpath, Path output) throws IOException {
-        downgradeZip(ClassDowngrader.downgradeTo(opcVersion), input, classpath, output);
+        try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(opcVersion)) {
+            downgradeZip(downgrader, input, classpath, output);
+        }
     }
 
     public static void downgradeZip(final ClassDowngrader downgrader, Path zip, Set<URL> classpath, final Path output) throws IOException {

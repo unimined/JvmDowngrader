@@ -46,7 +46,9 @@ public class PathDowngrader {
         for (File file : classpath) {
             classpathPaths.add(file.toURI().toURL());
         }
-        downgradePaths(ClassDowngrader.downgradeTo(opcVersion), inputRoots, outputRoots, classpathPaths);
+        try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(opcVersion)) {
+            downgradePaths(downgrader, inputRoots, outputRoots, classpathPaths);
+        }
     }
 
     public static void downgradePaths(final ClassDowngrader downgrader, final List<Path> inputRoots, List<Path> outputRoots, Set<URL> classpath) throws IOException {

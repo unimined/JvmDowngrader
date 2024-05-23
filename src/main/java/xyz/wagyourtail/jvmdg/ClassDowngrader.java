@@ -1,5 +1,7 @@
 package xyz.wagyourtail.jvmdg;
 
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -27,7 +29,7 @@ import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ClassDowngrader {
+public class ClassDowngrader implements Closeable {
     /**
      * because parent is null, this is (essentially) a wrapper around the bootstrap classloader
      */
@@ -39,33 +41,45 @@ public class ClassDowngrader {
     public final Flags flags;
     public final int target;
 
-    protected ClassDowngrader(Flags flags) {
+    protected ClassDowngrader(@NotNull Flags flags) {
         this.flags = flags;
         this.target = flags.classVersion;
         try {
-            classLoader = new DowngradingClassLoader(this, new URL[]{flags.findJavaApi().toUri().toURL()}, ClassDowngrader.class.getClassLoader());
+            classLoader = new DowngradingClassLoader(this, ClassDowngrader.class.getClassLoader());
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
         downgraders = collectProviders();
     }
 
+    @NotNull
+    @Contract("_ -> new")
     public static ClassDowngrader downgradeTo(int version) {
         Flags flags = new Flags();
         flags.classVersion = version;
         return new ClassDowngrader(flags);
     }
 
-    public static ClassDowngrader downgradeTo(Flags flags) {
+    @NotNull
+    @Contract("_ -> new")
+    public static ClassDowngrader downgradeTo(@NotNull Flags flags) {
         return new ClassDowngrader(flags.copy());
     }
 
+    private static ClassDowngrader currentVersionDowngrader = null;
+
+    @NotNull
     public static ClassDowngrader getCurrentVersionDowngrader() {
-        Flags flags = new Flags();
-        flags.classVersion = Utils.getCurrentClassVersion();
-        return new ClassDowngrader(flags);
+        if (currentVersionDowngrader == null) {
+            Flags flags = new Flags();
+            flags.classVersion = Utils.getCurrentClassVersion();
+            currentVersionDowngrader = new ClassDowngrader(flags);
+        }
+        return currentVersionDowngrader;
     }
 
+    @NotNull
+    @Contract("_ -> new")
     public static ClassDowngrader getCurrentVersionDowngrader(Flags flags) {
         flags = flags.copy();
         flags.classVersion = Utils.getCurrentClassVersion();
@@ -79,9 +93,7 @@ public class ClassDowngrader {
     public synchronized Map<Integer, VersionProvider> collectProviders() {
         Map<Integer, VersionProvider> downgraders = new HashMap<>();
         try {
-            Iterator<VersionProvider> providerIterator = ServiceLoader.load(VersionProvider.class, classLoader).iterator();
-            while (providerIterator.hasNext()) {
-                VersionProvider provider = providerIterator.next();
+            for (VersionProvider provider : ServiceLoader.load(VersionProvider.class, classLoader)) {
                 downgraders.put(provider.inputVersion, provider);
             }
         } catch (Throwable t) {
@@ -90,7 +102,7 @@ public class ClassDowngrader {
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Failed to load downgraders", e);
             }
-            t.printStackTrace();
+            t.printStackTrace(System.err);
             throw t;
         }
         return downgraders;
@@ -212,7 +224,7 @@ public class ClassDowngrader {
         return type;
     }
 
-    protected Set<ClassNode> downgrade(ClassNode clazz, boolean enableRuntime, Function<String, ClassNode> getReadOnly) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException, IOException {
+    protected Set<ClassNode> downgrade(ClassNode clazz, boolean enableRuntime, Function<String, ClassNode> getReadOnly) throws IOException {
         Set<ClassNode> classes = new HashSet<>();
         classes.add(clazz);
         int version = clazz.version;
@@ -248,7 +260,7 @@ public class ClassDowngrader {
         return providers;
     }
 
-    public Map<String, byte[]> downgrade(/* in out */ AtomicReference<String> name, byte[] bytes, boolean enableRuntime, final Function<String, byte[]> getExtraRead) throws IllegalClassFormatException {
+    public Map<String, byte[]> downgrade(/* in out */ AtomicReference<String> name, @NotNull byte[] bytes, boolean enableRuntime, final Function<String, byte[]> getExtraRead) throws IllegalClassFormatException {
         // check magic
         if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
             bytes[3] != (byte) 0xBE) {
@@ -296,7 +308,7 @@ public class ClassDowngrader {
                     } catch (IOException ignored) {
                     }
                 }
-                outputs.put(c.name, classNodeToBytes(c, getExtraRead));
+                outputs.put(c.name, classNodeToBytes(c));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to downgrade " + name.get(), e);
@@ -314,13 +326,13 @@ public class ClassDowngrader {
         return outputs;
     }
 
-    public byte[] classNodeToBytes(final ClassNode node, final Function<String, byte[]> getExtraRead) {
+    public byte[] classNodeToBytes(@NotNull final ClassNode node) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         node.accept(cw);
         return cw.toByteArray();
     }
 
-    public void writeBytesToDebug(String name, byte[] bytes) {
+    public void writeBytesToDebug(@NotNull String name, byte[] bytes) {
         File f = new File(Constants.DEBUG_DIR, name.replace('.', '/') + ".class");
         f.getParentFile().mkdirs();
         try (FileOutputStream fos = new FileOutputStream(f)) {
@@ -340,6 +352,11 @@ public class ClassDowngrader {
         if (vp == null) return null;
         vp.ensureInit(this);
         return vp;
+    }
+
+    @Override
+    public void close() throws IOException {
+        classLoader.close();
     }
 
 }

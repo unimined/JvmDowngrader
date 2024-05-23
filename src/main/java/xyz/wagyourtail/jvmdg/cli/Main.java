@@ -137,7 +137,9 @@ public class Main {
             if (args.get("downgradeApi").size() > 1) {
                 throw new IllegalArgumentException("Multiple output paths specified");
             }
-            ZipDowngrader.downgradeZip(ClassDowngrader.downgradeTo(flags), flags.api.toPath(), new HashSet<URL>(), new File(args.get("downgradeApi").get(0)[0]).toPath());
+            try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
+                ZipDowngrader.downgradeZip(downgrader, flags.api.toPath(), new HashSet<URL>(), new File(args.get("downgradeApi").get(0)[0]).toPath());
+            }
         }
     }
 
@@ -203,7 +205,9 @@ public class Main {
                 outputs.add(entry.getValue());
             }
 
-            PathDowngrader.downgradePaths(ClassDowngrader.downgradeTo(flags), inputs, outputs, getClasspath(args));
+            try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
+                PathDowngrader.downgradePaths(downgrader, inputs, outputs, getClasspath(args));
+            }
         } finally {
             for (FileSystem fileSystem : fileSystems) {
                 fileSystem.close();
@@ -250,7 +254,7 @@ public class Main {
         }
     }
 
-    public static void bootstrap(Map<String, List<String[]>> args, List<String> unparsed) throws MalformedURLException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public static void bootstrap(Map<String, List<String[]>> args, List<String> unparsed) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         if (!args.containsKey("--main")) {
             throw new IllegalArgumentException("No main class specified");
         }
@@ -261,13 +265,13 @@ public class Main {
 
         Set<URL> classpath = getClasspath(args);
 
-        ClassDowngrader currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(flags);
-
-        currentVersionDowngrader.getClassLoader().addDelegate(classpath.toArray(new URL[0]));
-        Class.forName(main, false, currentVersionDowngrader.getClassLoader()).getMethod("main", String[].class).invoke(
-            null,
-            (Object) unparsed.toArray(new String[0])
-        );
+        try (ClassDowngrader currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(flags)) {
+            currentVersionDowngrader.getClassLoader().addDelegate(classpath.toArray(new URL[0]));
+            Class.forName(main, false, currentVersionDowngrader.getClassLoader()).getMethod("main", String[].class).invoke(
+                    null,
+                    (Object) unparsed.toArray(new String[0])
+            );
+        }
     }
 
 }

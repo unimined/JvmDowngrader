@@ -96,13 +96,14 @@ abstract class DowngradeJar : Jar() {
         flags.printDebug = debugPrint.get()
         flags.classVersion = downgradeTo.toOpcode()
         flags.debugSkipStubs = debugSkipStubs.get().toSet()
-
-        ZipDowngrader.downgradeZip(
-            ClassDowngrader.downgradeTo(flags),
-            inputFile.asFile.get().toPath(),
-            classpath.files.map { it.toURI().toURL() }.toSet(),
-            tempOutput.toPath()
-        )
+        ClassDowngrader.downgradeTo(flags).use {
+            ZipDowngrader.downgradeZip(
+                it,
+                inputFile.asFile.get().toPath(),
+                classpath.files.map { it.toURI().toURL() }.toSet(),
+                tempOutput.toPath()
+            )
+        }
 
         inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->
             // write to temp file

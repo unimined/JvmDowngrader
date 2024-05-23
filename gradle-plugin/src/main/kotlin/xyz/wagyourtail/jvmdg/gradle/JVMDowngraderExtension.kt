@@ -66,7 +66,9 @@ abstract class JVMDowngraderExtension(val project: Project) {
         flags.classVersion = version.toOpcode()
         flags.debugSkipStubs = shadeDebugSkipStubs.toSet()
 
-        ZipDowngrader.downgradeZip(ClassDowngrader.downgradeTo(flags), flags.findJavaApi(), emptySet(), downgradedPath.toPath())
+        ClassDowngrader.downgradeTo(flags).use {
+            ZipDowngrader.downgradeZip(it, flags.findJavaApi(), emptySet(), downgradedPath.toPath())
+        }
         downgradedPath
     }
 

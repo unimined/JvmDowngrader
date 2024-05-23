@@ -84,8 +84,9 @@ abstract class DowngradeFiles : ConventionTask() {
                 fileSystems.add(fs)
                 fs.getPath("/")
             } }
-
-            PathDowngrader.downgradePaths(ClassDowngrader.downgradeTo(flags), toDowngrade, downgraded, classpath.map { it.toURI().toURL() }.toSet())
+            ClassDowngrader.downgradeTo(flags).use {
+                PathDowngrader.downgradePaths(it, toDowngrade, downgraded, classpath.map { it.toURI().toURL() }.toSet())
+            }
         } finally {
             fileSystems.forEach { it.close() }
         }

@@ -4,18 +4,23 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
+import java.io.Closeable;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class DowngradingClassLoader extends ClassLoader {
+public class DowngradingClassLoader extends ClassLoader implements Closeable {
+    private final ClassDowngrader holder;
     private final ClassDowngrader currentVersionDowngrader;
     private final List<ClassLoader> delegates = new ArrayList<>();
 
-    public DowngradingClassLoader(ClassDowngrader downgrader) {
+    public DowngradingClassLoader(ClassDowngrader downgrader) throws MalformedURLException {
         super();
+        delegates.add(new URLClassLoader(new URL[]{downgrader.flags.findJavaApi().toUri().toURL()}));
+        this.holder = downgrader;
         if (downgrader.target != Utils.getCurrentClassVersion()) {
             this.currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(downgrader.flags);
         } else {
@@ -23,8 +28,10 @@ public class DowngradingClassLoader extends ClassLoader {
         }
     }
 
-    public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) {
+    public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) throws MalformedURLException {
         super(parent);
+        delegates.add(new URLClassLoader(new URL[]{downgrader.flags.findJavaApi().toUri().toURL()}));
+        this.holder = downgrader;
         if (downgrader.target != Utils.getCurrentClassVersion()) {
             this.currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(downgrader.flags);
         } else {
@@ -32,12 +39,12 @@ public class DowngradingClassLoader extends ClassLoader {
         }
     }
 
-    public DowngradingClassLoader(ClassDowngrader downgrader, URL[] urls, ClassLoader parent) {
+    public DowngradingClassLoader(ClassDowngrader downgrader, URL[] urls, ClassLoader parent) throws MalformedURLException {
         this(downgrader, parent);
         delegates.add(new URLClassLoader(urls, getParent()));
     }
 
-    public DowngradingClassLoader(ClassDowngrader downgrader, URL[] urls) {
+    public DowngradingClassLoader(ClassDowngrader downgrader, URL[] urls) throws MalformedURLException {
         this(downgrader);
         delegates.add(new URLClassLoader(urls, getParent()));
     }
@@ -133,4 +140,15 @@ public class DowngradingClassLoader extends ClassLoader {
         return vector.elements();
     }
 
+    @Override
+    public void close() throws IOException {
+        if (holder != currentVersionDowngrader) {
+            currentVersionDowngrader.close();
+        }
+        for (ClassLoader delegate : delegates) {
+            if (delegate instanceof Closeable) {
+                ((Closeable) delegate).close();
+            }
+        }
+    }
 }

@@ -50,7 +50,9 @@ public class ApiShader {
     }
 
     public static void downgradedApi(Flags flags, Path api, Path targetPath) throws IOException {
-        ZipDowngrader.downgradeZip(ClassDowngrader.downgradeTo(flags), api, new HashSet<URL>(), targetPath);
+        try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
+            ZipDowngrader.downgradeZip(downgrader, api, new HashSet<URL>(), targetPath);
+        }
     }
 
     public static void shadeApis(Flags flags, String prefix, File input, File output, File downgradedApi) throws IOException {
