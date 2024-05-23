@@ -5,6 +5,8 @@ import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.all.RemovedInterfaces;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
@@ -491,18 +493,33 @@ public abstract class VersionProvider {
                                         if (!desc.equals(hStaticDesc.getDescriptor())) {
                                             // create wrapper as desc should exactly match.
                                             newOwner = owner.name;
-                                            name = "jvmdowngrader$call$" + name;
                                             desc = hStaticDesc.getDescriptor();
-                                            boolean found = false;
+                                            MethodNode found = null;
+                                            int num = 0;
                                             for (MethodNode mn : owner.methods) {
-                                                if (mn.name.equals(name)) {
-                                                    found = true;
-                                                    break;
+                                                if (mn instanceof HandleMethodNode) {
+                                                    Handle h = ((HandleMethodNode) mn).ref;
+                                                    if (h.getTag() == handle.getTag() &&
+                                                            h.getOwner().equals(handle.getOwner()) &&
+                                                            h.getName().equals(handle.getName()) &&
+                                                            h.getDesc().equals(handle.getDesc()) &&
+                                                            h.isInterface() == handle.isInterface())
+                                                    {
+                                                        if (!mn.desc.equals(hStaticDesc.getDescriptor())) {
+                                                            num++;
+                                                        } else {
+                                                            found = mn;
+                                                            break;
+                                                        }
+                                                    }
                                                 }
                                             }
-                                            // else
-                                            if (!found) {
-                                                MethodVisitor mv = owner.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, name, hStaticDesc.getDescriptor(), null, null);
+                                            if (found != null) {
+                                                name = found.name;
+                                            } else {
+                                                HandleMethodNode mv = new HandleMethodNode(method.name, handle, num);
+                                                mv.access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC;
+                                                mv.desc = hStaticDesc.getDescriptor();
                                                 mv.visitCode();
                                                 Type returnType = hStaticDesc.getReturnType();
                                                 Type[] arguments = hStaticDesc.getArgumentTypes();
@@ -520,6 +537,8 @@ public abstract class VersionProvider {
 
                                                 mv.visitMaxs(0, 0);
                                                 mv.visitEnd();
+                                                owner.methods.add(mv);
+                                                name = mv.name;
                                             }
                                         }
                                         indy.bsmArgs[j] = new Handle(
@@ -539,21 +558,41 @@ public abstract class VersionProvider {
                                             Type returnType = Type.getObjectType(handle.getOwner());
                                             Type[] arguments = hDesc.getArgumentTypes();
 
-                                            String name = "jvmdowngrader$construct";
+                                            String name;
                                             String desc = Type.getMethodDescriptor(returnType, arguments);
 
-                                            boolean found = false;
+                                            MethodNode found = null;
+                                            int num = 0;
                                             for (MethodNode mn : owner.methods) {
-                                                if (mn.name.equals(name) && mn.desc.equals(desc)) {
-                                                    found = true;
-                                                    break;
+                                                if (mn instanceof HandleMethodNode) {
+                                                    Handle h = ((HandleMethodNode) mn).ref;
+                                                    if (h.getTag() == handle.getTag() &&
+                                                            h.getOwner().equals(handle.getOwner()) &&
+                                                            h.getName().equals(handle.getName()) &&
+                                                            h.getDesc().equals(handle.getDesc()) &&
+                                                            h.isInterface() == handle.isInterface())
+                                                    {
+                                                        if (!mn.desc.equals(desc)) {
+                                                            num++;
+                                                        } else {
+                                                            found = mn;
+                                                            break;
+                                                        }
+                                                    }
                                                 }
+//                                                if (mn.name.equals(name) && mn.desc.equals(desc)) {
+//                                                    found = true;
+//                                                    break;
+//                                                }
                                             }
 
-                                            if (!found) {
-
+                                            if (found != null) {
+                                                name = found.name;
+                                            } else {
                                                 // construct wrapper
-                                                MethodNode mn = new MethodNode(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, name, desc, null, null);
+                                                HandleMethodNode mn = new HandleMethodNode(method.name, handle, num);
+                                                mn.access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
+                                                mn.desc = desc;
                                                 mn.visitCode();
                                                 mn.visitTypeInsn(Opcodes.NEW, returnType.getInternalName());
                                                 mn.visitInsn(Opcodes.DUP);
@@ -576,6 +615,7 @@ public abstract class VersionProvider {
                                                     throw new RuntimeException(e);
                                                 }
 
+                                                name = mn.name;
                                             }
 
                                             indy.bsmArgs[j] = new Handle(
@@ -792,12 +832,24 @@ public abstract class VersionProvider {
         }
 
         if (!removedInterfaces.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
+            List<String> removed = new ArrayList<>();
             for (String removedInterface : removedInterfaces) {
-                sb.append(removedInterface).append(";");
+                removed.add(Type.getObjectType(removedInterface).getClassName());
             }
-            if (!downgrader.flags.removeReflectionInfo) {
-                clazz.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, "jvmdg$removedInterfaces", "Ljava/lang/String;", null, sb.toString()).visitEnd();
+            boolean found = false;
+            for (AnnotationNode an : clazz.visibleAnnotations) {
+                if (an.desc.equals(Type.getType(RemovedInterfaces.class).getDescriptor())) {
+                    ((List<String>)an.values.get(1)).addAll(removed);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                AnnotationNode an = new AnnotationNode(Type.getType(RemovedInterfaces.class).getDescriptor());
+                an.values = new ArrayList<>();
+                an.values.add("value");
+                an.values.add(removed);
+                clazz.visibleAnnotations.add(an);
             }
         }
 
@@ -863,6 +915,22 @@ public abstract class VersionProvider {
         };
         reader.accept(writer);
         return writer.toString();
+    }
+
+    public static class HandleMethodNode extends MethodNode {
+        public final Handle ref;
+
+        public HandleMethodNode(String caller, Handle ref, int num) {
+            super(Opcodes.ASM9);
+            caller = caller.replace("<", "$").replace(">", "$");
+            this.ref = ref;
+            if (ref.getTag() == Opcodes.H_NEWINVOKESPECIAL) {
+                name = "jvmdowngrader$construct$";
+            } else {
+                name = "jvmdowngrader$call$";
+            }
+            name += caller + "$" + num;
+        }
     }
 
 }

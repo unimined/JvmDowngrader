@@ -27,7 +27,8 @@ public class J_L_R_ObjectMethods {
         for (int j = 2; j < indy.bsmArgs.length; j++) {
             getters.add((Handle) indy.bsmArgs[j]);
         }
-        var mname = "jvmdowngrader$" + indy.name;
+        var mname = "jvmdowngrader$" + mnode.name + "$" + indy.name;
+        mname = mname.replace("<", "$").replace(">", "$");
         switch (indy.name) {
             case "equals" -> makeEquals(cnode, mname, indy.desc, recordClass, getters);
             case "hashCode" -> makeHashCode(cnode, mname, indy.desc, recordClass, getters);

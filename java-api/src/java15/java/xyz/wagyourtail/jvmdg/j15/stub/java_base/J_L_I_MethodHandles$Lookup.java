@@ -67,7 +67,7 @@ public class J_L_I_MethodHandles$Lookup {
         return c;
     }
 
-    static class HiddenClassLoader extends ClassLoader implements Function<String, byte[]> {
+    public static class HiddenClassLoader extends ClassLoader implements Function<String, byte[]> {
 
         public HiddenClassLoader(ClassLoader parent) {
             super(parent);

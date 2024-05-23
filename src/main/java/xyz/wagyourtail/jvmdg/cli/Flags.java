@@ -23,7 +23,6 @@ public class Flags {
 
     // debug
     public boolean printDebug = Boolean.getBoolean(Constants.DEBUG);
-    public boolean removeReflectionInfo = Boolean.getBoolean(Constants.DEBUG_REMOVE_REFLECTION_INFO);
     public Set<Integer> debugSkipStubs = new HashSet<>(getDebugSkip());
 
     public Flags copy() {
@@ -33,7 +32,6 @@ public class Flags {
         flags.quiet = quiet;
         flags.allowMaven = allowMaven;
         flags.printDebug = printDebug;
-        flags.removeReflectionInfo = removeReflectionInfo;
         flags.debugSkipStubs = new HashSet<>(debugSkipStubs);
         return flags;
     }

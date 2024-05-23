@@ -12,6 +12,7 @@ public class Java10Downgrader extends VersionProvider {
 
     public void init() {
         // -- java.base --
+        stub(J_I_PrintStream.class);
         stub(J_I_PrintWriter.class);
         stub(J_I_Reader.class);
         stub(J_L_Runtime$Version.class);
@@ -24,6 +25,7 @@ public class Java10Downgrader extends VersionProvider {
         // DateTimeFormatter
         // DoubleSummaryStatistics
         // IntSummaryStatistics
+        stub(J_U_Formatter.class);
         stub(J_U_List.class);
         // LongSummaryStatistics
         stub(J_U_Map.class);
@@ -34,7 +36,7 @@ public class Java10Downgrader extends VersionProvider {
         // Properties
         stub(J_U_Scanner.class);
         stub(J_U_Set.class);
-        // SplittableRandom
+        stub(J_U_SplittableRandom.class);
         // StampedLock
         // JarEntry
         // JarFile

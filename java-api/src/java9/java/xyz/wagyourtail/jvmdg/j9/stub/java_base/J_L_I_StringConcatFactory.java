@@ -21,7 +21,7 @@ public class J_L_I_StringConcatFactory {
         for (int j = 0; j < args.length; j++) {
             chars[j] = '\u0001';
         }
-        InsnList list = makeConcatInternal3(cnode, new String(chars), new LinkedList<>(Arrays.asList(args)));
+        InsnList list = makeConcatInternal3(mnode.name, cnode, new String(chars), new LinkedList<>(Arrays.asList(args)));
         mnode.instructions.insertBefore(indy, list);
         mnode.instructions.remove(indy);
     }
@@ -31,7 +31,7 @@ public class J_L_I_StringConcatFactory {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         Type[] args = Type.getArgumentTypes(indy.desc);
         String chars = (String) indy.bsmArgs[0];
-        InsnList list = makeConcatInternal3(cnode, chars, new LinkedList<>(Arrays.asList(args)));
+        InsnList list = makeConcatInternal3(mnode.name, cnode, chars, new LinkedList<>(Arrays.asList(args)));
         mnode.instructions.insertBefore(indy, list);
         mnode.instructions.remove(indy);
     }
@@ -440,7 +440,7 @@ public class J_L_I_StringConcatFactory {
         return list;
     }
 
-    public static InsnList makeConcatInternal3(ClassNode node, String args, Deque<Type> types) {
+    public static InsnList makeConcatInternal3(String mname, ClassNode node, String args, Deque<Type> types) {
         if (!args.contains("\u0001")) {
             // no args
             InsnList list = new InsnList();
@@ -450,7 +450,7 @@ public class J_L_I_StringConcatFactory {
             }
         }
         // find if already exits
-        int count = 0;
+        int count = 1;
         String desc = Type.getMethodDescriptor(Type.getType(String.class), types.toArray(new Type[0]));
         for (MethodNode method : node.methods) {
             if (method.desc.equals(desc) && method instanceof StringConcatMethodNode) {
@@ -466,13 +466,13 @@ public class J_L_I_StringConcatFactory {
                     ));
                     return list;
                 }
-                if (concatMethod.name.startsWith("jvmdowngrader$concat")) {
+                if (concatMethod.name.startsWith("jvmdowngrader$concat$" + mname)) {
                     count++;
                 }
             }
         }
         // create new
-        StringConcatMethodNode method = new StringConcatMethodNode(args, types, count);
+        StringConcatMethodNode method = new StringConcatMethodNode(mname, args, types, count);
         node.methods.add(method);
         InsnList list = new InsnList();
         list.add(new MethodInsnNode(
@@ -489,13 +489,11 @@ public class J_L_I_StringConcatFactory {
 
         public final String args;
 
-        public StringConcatMethodNode(String args, Deque<Type> types, int index) {
+        public StringConcatMethodNode(String mname, String args, Deque<Type> types, int index) {
             super(Opcodes.ASM9);
+            mname = mname.replace("<", "$").replace(">", "$");
             this.args = args;
-            this.name = "jvmdowngrader$concat";
-            if (index > 0) {
-                this.name += index;
-            }
+            this.name = "jvmdowngrader$concat$" + mname + "$" + index;
             this.access = Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC;
             this.desc = Type.getMethodDescriptor(Type.getType(String.class), types.toArray(new Type[0]));
             init(args, types);

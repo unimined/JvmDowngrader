@@ -34,7 +34,7 @@ public class J_L_R_SwitchBootstraps {
                 types.add(bsmArg);
             }
         }
-        MethodInsnNode min = makeSwitchInternal(indy.desc, types, cnode);
+        MethodInsnNode min = makeSwitchInternal(mnode.name, indy.desc, types, cnode);
         mnode.instructions.set(indy, min);
     }
 
@@ -50,22 +50,25 @@ public class J_L_R_SwitchBootstraps {
                 types.add(bsmArg);
             }
         }
-        MethodInsnNode min = makeSwitchInternal(indy.desc, types, cnode);
+        MethodInsnNode min = makeSwitchInternal(mnode.name, indy.desc, types, cnode);
         mnode.instructions.set(indy, min);
     }
 
-    public static MethodInsnNode makeSwitchInternal(String desc, List<Object> types, ClassNode cnode) {
+    public static MethodInsnNode makeSwitchInternal(String holdingMethod, String desc, List<Object> types, ClassNode cnode) {
+        holdingMethod = holdingMethod.replace("<", "$").replace(">", "$");
         int i = 0;
         for (MethodNode mnode : cnode.methods) {
             if (mnode instanceof SwitchMethodNode smnode) {
                 if (smnode.types.equals(types)) {
                     return new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, mnode.name, mnode.desc, false);
                 }
-                i++;
+                if (mnode.name.equals("jvmdowngrader$switch$" + holdingMethod + "$" + i)) {
+                    i++;
+                }
             }
         }
 
-        String name = "jvmdg$switch$" + i;
+        String name = "jvmdowngrader$switch$" + holdingMethod + "$" + i;
         SwitchMethodNode smnode = new SwitchMethodNode(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, name, desc, types);
         smnode.visitCode();
 

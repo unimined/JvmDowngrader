@@ -37,6 +37,13 @@ public class J_L_StackWalker {
         return new J_L_StackWalker(EnumSet.copyOf(options));
     }
 
+    public static J_L_StackWalker getInstance(Set<Option> options, int i) {
+        if (i <= 0) {
+            throw new IllegalArgumentException("estimateDepth must be > 0");
+        }
+        return new J_L_StackWalker(EnumSet.copyOf(options));
+    }
+
     private static boolean isReflectionFrame(String className) {
         return className.equals(Method.class.getName()) ||
             className.equals(Constructor.class.getName()) ||

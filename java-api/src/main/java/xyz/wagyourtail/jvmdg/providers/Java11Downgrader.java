@@ -1,12 +1,11 @@
 package xyz.wagyourtail.jvmdg.providers;
 
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.cli.Flags;
+import xyz.wagyourtail.jvmdg.j11.NestHost;
+import xyz.wagyourtail.jvmdg.j11.NestMembers;
 import xyz.wagyourtail.jvmdg.j11.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -460,21 +459,13 @@ public class Java11Downgrader extends VersionProvider {
 
         // create nest members synthetic class
 
-        if (!downgrader.flags.removeReflectionInfo) {
-            StringBuilder sb = new StringBuilder();
-            for (String member : clazz.nestMembers) {
-                sb.append(member).append(";");
-            }
-            sb.deleteCharAt(sb.length() - 1);
-
-            clazz.visitField(
-                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-                "jvmdowngrader$nestMembers",
-                "Ljava/lang/String;",
-                null,
-                sb.toString()
-            ).visitEnd();
+        AnnotationVisitor av = clazz.visitAnnotation(Type.getType(NestMembers.class).getDescriptor(), true);
+        AnnotationVisitor values = av.visitArray("value");
+        for (String member : clazz.nestMembers) {
+            values.visit(null, Type.getObjectType(member));
         }
+        values.visitEnd();
+        av.visitEnd();
 
         Map<String, ClassNode> nestMembers = new HashMap<>();
         for (String member : clazz.nestMembers) {
@@ -494,16 +485,9 @@ public class Java11Downgrader extends VersionProvider {
             return;
         }
 
-        // create nest members synthetic class
-        if (!downgrader.flags.removeReflectionInfo) {
-            clazz.visitField(
-                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-                "jvmdowngrader$nestHost",
-                "Ljava/lang/String;",
-                null,
-                clazz.nestHostClass
-            ).visitEnd();
-        }
+        AnnotationVisitor av = clazz.visitAnnotation(Type.getType(NestHost.class).getDescriptor(), true);
+        av.visit("value", Type.getObjectType(clazz.nestHostClass));
+        av.visitEnd();
 
         Map<String, ClassNode> nestMembers = new HashMap<>();
         ClassNode nestHost = getReadOnly.apply(clazz.nestHostClass);
