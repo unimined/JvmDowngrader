@@ -9,7 +9,6 @@ public class Constants {
     public static final String ALLOW_MAVEN_LOOKUP = "jvmdg.maven";
 
     public static final String DEBUG = "jvmdg.debug";
-    public static final String DEBUG_REMOVE_REFLECTION_INFO = "jvmdg.debug.removeReflectionInfo";
     public static final String DEBUG_SKIP_STUBS = "jvmdg.debug.skipStubs";
 
 

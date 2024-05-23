@@ -1,8 +1,13 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.j11.NestHost;
+import xyz.wagyourtail.jvmdg.j11.NestMembers;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class J_L_Class {
 
@@ -11,13 +16,10 @@ public class J_L_Class {
         if (clazz.isPrimitive() || clazz.isArray()) {
             return clazz;
         }
-        try {
-            Field fd = clazz.getDeclaredField("jvmdowngrader$nestHost");
-            String host = (String) fd.get(null);
-            return Class.forName(host.replace('/', '.'));
-        } catch (NoSuchFieldException e) {
+        if (!clazz.isAnnotationPresent(NestHost.class)) {
             return clazz;
         }
+        return clazz.getAnnotation(NestHost.class).value();
     }
 
     @Stub
@@ -39,19 +41,14 @@ public class J_L_Class {
         if (clazz.isPrimitive() || clazz.isArray()) {
             return new Class<?>[]{clazz};
         }
-        try {
-            Class<?> host = getNestHost(clazz);
-            Field fd = host.getDeclaredField("jvmdowngrader$nestMembers");
-            String[] members = ((String) fd.get(null)).split(";");
-            Class<?>[] classes = new Class<?>[members.length + 1];
-            classes[0] = host;
-            for (int i = 0; i < members.length; i++) {
-                classes[i + 1] = Class.forName(members[i].replace('/', '.'));
-            }
-            return classes;
-        } catch (NoSuchFieldException e) {
-            return new Class<?>[]{clazz};
+        Class<?> host = getNestHost(clazz);
+        List<Class<?>> members = new ArrayList<>();
+        members.add(host);
+        if (!host.isAnnotationPresent(NestMembers.class)) {
+            return members.toArray(new Class<?>[0]);
         }
+        members.addAll(Arrays.asList(host.getAnnotation(NestMembers.class).value()));
+        return members.toArray(new Class<?>[0]);
     }
 
 }

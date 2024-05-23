@@ -5,6 +5,7 @@ import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.all.RemovedInterfaces;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.util.Function;
@@ -846,12 +847,24 @@ public abstract class VersionProvider {
         }
 
         if (!removedInterfaces.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
+            List<String> removed = new ArrayList<>();
             for (String removedInterface : removedInterfaces) {
-                sb.append(removedInterface).append(";");
+                removed.add(Type.getObjectType(removedInterface).getClassName());
             }
-            if (!Flags.removeReflectionInfo) {
-                clazz.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, "jvmdg$removedInterfaces", "Ljava/lang/String;", null, sb.toString()).visitEnd();
+            boolean found = false;
+            for (AnnotationNode an : clazz.visibleAnnotations) {
+                if (an.desc.equals(Type.getType(RemovedInterfaces.class).getDescriptor())) {
+                    ((List<String>)an.values.get(1)).addAll(removed);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                AnnotationNode an = new AnnotationNode(Type.getType(RemovedInterfaces.class).getDescriptor());
+                an.values = new ArrayList<>();
+                an.values.add("value");
+                an.values.add(removed);
+                clazz.visibleAnnotations.add(an);
             }
         }
 

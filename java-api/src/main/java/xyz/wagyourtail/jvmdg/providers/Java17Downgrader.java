@@ -1,9 +1,12 @@
 package xyz.wagyourtail.jvmdg.providers;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.cli.Flags;
+import xyz.wagyourtail.jvmdg.j17.PermittedSubClasses;
 import xyz.wagyourtail.jvmdg.j17.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.j17.stub.jdk_httpserver.C_S_N_H_Filter;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -85,21 +88,13 @@ public class Java17Downgrader extends VersionProvider {
     // TODO: add bytecode to check the seal and throw
     public void unseal(ClassNode node) {
         if (node.permittedSubclasses != null) {
-            if (!Flags.removeReflectionInfo) {
-                StringBuilder sb = new StringBuilder();
-                for (String s : node.permittedSubclasses) {
-                    sb.append(s).append(";");
-                }
-                sb.deleteCharAt(sb.length() - 1);
-                node.permittedSubclasses = null;
-                node.visitField(
-                    Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-                    "jvmdowngrader$permittedSubclasses",
-                    "Ljava/lang/String;",
-                    null,
-                    sb.toString()
-                ).visitEnd();
+            AnnotationVisitor av = node.visitAnnotation(Type.getType(PermittedSubClasses.class).getDescriptor(), true);
+            AnnotationVisitor values = av.visitArray("value");
+            for (String s : node.permittedSubclasses) {
+                values.visit(null, Type.getObjectType(s));
             }
+            values.visitEnd();
+            av.visitEnd();
         }
     }
 }
