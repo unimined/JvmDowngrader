@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -19,7 +20,10 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
 
     public DowngradingClassLoader(ClassDowngrader downgrader) throws MalformedURLException {
         super();
-        delegates.add(new URLClassLoader(new URL[]{downgrader.flags.findJavaApi().toUri().toURL()}));
+        Path apiJar = downgrader.flags.findJavaApi();
+        if (apiJar != null) {
+            delegates.add(new URLClassLoader(new URL[]{apiJar.toUri().toURL()}));
+        }
         this.holder = downgrader;
         if (downgrader.target != Utils.getCurrentClassVersion()) {
             this.currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(downgrader.flags);
@@ -30,7 +34,10 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
 
     public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) throws MalformedURLException {
         super(parent);
-        delegates.add(new URLClassLoader(new URL[]{downgrader.flags.findJavaApi().toUri().toURL()}));
+        Path apiJar = downgrader.flags.findJavaApi();
+        if (apiJar != null) {
+            delegates.add(new URLClassLoader(new URL[]{apiJar.toUri().toURL()}));
+        }
         this.holder = downgrader;
         if (downgrader.target != Utils.getCurrentClassVersion()) {
             this.currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(downgrader.flags);

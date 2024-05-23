@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -66,7 +67,7 @@ public class J_L_I_LambdaMetafactory {
 
     @Stub(ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "altMetafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
     public static CallSite altMetafactory(MethodHandles.Lookup caller, String invokedName, MethodType invokedType, Object... args) {
-        throw new UnsupportedOperationException("altMetafactory is not supported currently... because I don't know enough about how it works.");
+        throw new MissingStubError("altMetafactory is not supported currently... because I don't know enough about how it works.");
     }
 
     public static ClassNode lambdaMetafactoryCreatorInternal(String parentName, Type constructor, int nextAvailableAnonymous, String mname, String mdesc, String ifName, Type bridge, Handle invokedMethod, Type invokedType) {

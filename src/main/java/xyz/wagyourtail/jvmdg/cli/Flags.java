@@ -19,7 +19,7 @@ public class Flags {
     public int classVersion = Opcodes.V1_8;
     public File api = null;
     public boolean quiet = Boolean.getBoolean(Constants.QUIET);
-    public boolean allowMaven = System.getProperty(Constants.ALLOW_MAVEN_LOOKUP, "true").equalsIgnoreCase("true");
+    public boolean allowMaven = Boolean.getBoolean(Constants.ALLOW_MAVEN_LOOKUP);
 
     // debug
     public boolean printDebug = Boolean.getBoolean(Constants.DEBUG);
@@ -104,11 +104,18 @@ public class Flags {
             if (url == null && allowMaven) {
                 url = getJavaApiFromMaven();
             }
-            assert url != null;
-            try (InputStream in = url.openStream()) {
-                Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+            if (url != null) {
+                try (InputStream in = url.openStream()) {
+                    Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+                }
+                return tmp;
+            } else {
+                // failed to find java api
+                if (!quiet) {
+                    System.err.println("[JvmDowngrader] Failed to find java api jar!");
+                }
+                return null;
             }
-            return tmp;
         } catch (IOException e) {
             throw new RuntimeException("Failed to find java api", e);
         }
