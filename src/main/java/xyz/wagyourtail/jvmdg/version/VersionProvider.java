@@ -490,10 +490,12 @@ public abstract class VersionProvider {
                                         String newOwner = Type.getType(m.getDeclaringClass()).getInternalName();
                                         String name = m.getName();
                                         String desc = Type.getMethodDescriptor(m);
+                                        boolean intf = m.getDeclaringClass().isInterface();
                                         if (!desc.equals(hStaticDesc.getDescriptor())) {
                                             // create wrapper as desc should exactly match.
                                             newOwner = owner.name;
                                             desc = hStaticDesc.getDescriptor();
+                                            intf = (owner.access & Opcodes.ACC_INTERFACE) != 0;
                                             MethodNode found = null;
                                             int num = 0;
                                             for (MethodNode mn : owner.methods) {
@@ -546,7 +548,7 @@ public abstract class VersionProvider {
                                             newOwner,
                                             name,
                                             desc,
-                                            false
+                                            intf
                                         );
                                     }
                                 } else {
@@ -560,6 +562,7 @@ public abstract class VersionProvider {
 
                                             String name;
                                             String desc = Type.getMethodDescriptor(returnType, arguments);
+                                            boolean intf = (owner.access & Opcodes.ACC_INTERFACE) != 0;
 
                                             MethodNode found = null;
                                             int num = 0;
@@ -623,7 +626,7 @@ public abstract class VersionProvider {
                                                 owner.name,
                                                 name,
                                                 desc,
-                                                false
+                                                intf
                                             );
 
                                         }

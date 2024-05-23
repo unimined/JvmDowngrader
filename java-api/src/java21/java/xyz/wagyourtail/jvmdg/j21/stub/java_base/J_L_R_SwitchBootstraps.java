@@ -60,7 +60,7 @@ public class J_L_R_SwitchBootstraps {
         for (MethodNode mnode : cnode.methods) {
             if (mnode instanceof SwitchMethodNode smnode) {
                 if (smnode.types.equals(types)) {
-                    return new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, mnode.name, mnode.desc, false);
+                    return new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, mnode.name, mnode.desc, (cnode.access & Opcodes.ACC_INTERFACE) != 0);
                 }
                 if (mnode.name.equals("jvmdowngrader$switch$" + holdingMethod + "$" + i)) {
                     i++;
@@ -351,7 +351,7 @@ public class J_L_R_SwitchBootstraps {
         smnode.visitMaxs(0, 0);
         smnode.visitEnd();
         cnode.methods.add(smnode);
-        return new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, name, desc, false);
+        return new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, name, desc, (cnode.access & Opcodes.ACC_INTERFACE) != 0);
     }
 
 
