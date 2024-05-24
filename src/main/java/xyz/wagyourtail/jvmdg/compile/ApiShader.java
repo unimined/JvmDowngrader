@@ -96,7 +96,7 @@ public class ApiShader {
     }
 
     public static void downgradeApi(Flags flags, Path outputLocation) throws IOException {
-        downgradedApi(flags, flags.findJavaApi(), outputLocation);
+        downgradedApi(flags, flags.findJavaApi().toPath(), outputLocation);
     }
 
     public static Pair<ReferenceGraph, Set<Type>> scanApis(Path apiRoot) throws IOException {

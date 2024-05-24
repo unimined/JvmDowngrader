@@ -71,7 +71,7 @@ public class Bootstrap {
     public static void premain(String args, Instrumentation instrumentation) throws IOException, URISyntaxException, UnmodifiableClassException {
         LOGGER.info("Starting JVMDowngrader Bootstrap in agent mode.");
         // downgrade api
-        Path zip = flags.findJavaApi();
+        Path zip = flags.findJavaApi().toPath();
         String zipSha = sha1(zip);
         Path tmp = Constants.DIR.toPath().resolve("java-api-downgraded-" + currentVersionDowngrader.target + "-" + zipSha.substring(0, 8) + ".jar");
         boolean downgrade = false;

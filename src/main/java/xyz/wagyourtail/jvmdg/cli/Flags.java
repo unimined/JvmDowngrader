@@ -91,16 +91,16 @@ public class Flags {
         }
     }
 
-    public Path findJavaApi() {
+    public File findJavaApi() {
         try {
             if (api != null) {
-                return api.toPath();
+                return api;
             }
             Constants.DIR.mkdirs();
             Path tmp = Constants.DIR.toPath().resolve("jvmdg-api.jar");
             File prop = getJavaApiFromSystemProperty();
             if (prop != null) {
-                return prop.toPath();
+                return prop;
             }
             URL url = getJavaApiFromShade();
             if (url == null && allowMaven) {
@@ -110,7 +110,7 @@ public class Flags {
                 try (InputStream in = url.openStream()) {
                     Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
                 }
-                return tmp;
+                return tmp.toFile();
             } else {
                 // failed to find java api
                 if (!quiet) {

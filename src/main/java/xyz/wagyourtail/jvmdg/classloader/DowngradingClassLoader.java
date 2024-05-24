@@ -2,19 +2,20 @@ package xyz.wagyourtail.jvmdg.classloader;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.classloader.providers.ClassLoaderResourceProvider;
-import xyz.wagyourtail.jvmdg.classloader.providers.FileSystemResourceProvider;
+import xyz.wagyourtail.jvmdg.classloader.providers.JarFileResourceProvider;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.jar.JarFile;
 
 public class DowngradingClassLoader extends ClassLoader implements Closeable {
     private final ClassDowngrader holder;
@@ -23,9 +24,9 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
 
     public DowngradingClassLoader(ClassDowngrader downgrader) throws IOException {
         super();
-        Path apiJar = downgrader.flags.findJavaApi();
+        File apiJar = downgrader.flags.findJavaApi();
         if (apiJar != null) {
-            delegates.add(new FileSystemResourceProvider(Utils.openZipFileSystem(apiJar, false)));
+            delegates.add(new JarFileResourceProvider(new JarFile(apiJar)));
         }
         this.holder = downgrader;
         if (downgrader.target != Utils.getCurrentClassVersion()) {
@@ -37,9 +38,9 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
 
     public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) throws IOException {
         super(parent);
-        Path apiJar = downgrader.flags.findJavaApi();
+        File apiJar = downgrader.flags.findJavaApi();
         if (apiJar != null) {
-            delegates.add(new FileSystemResourceProvider(Utils.openZipFileSystem(apiJar, false)));
+            delegates.add(new JarFileResourceProvider(new JarFile(apiJar)));
         }
         this.holder = downgrader;
         if (downgrader.target != Utils.getCurrentClassVersion()) {
@@ -63,8 +64,8 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
         delegates.add(new ClassLoaderResourceProvider(loader));
     }
 
-    public void addDelegate(FileSystem jarFile) {
-        delegates.add(new FileSystemResourceProvider(jarFile));
+    public void addDelegate(JarFile jarFile) {
+        delegates.add(new JarFileResourceProvider(jarFile));
     }
 
     public void addDelegate(URL[] urls) {
