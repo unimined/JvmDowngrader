@@ -50,7 +50,7 @@ public class ApiCoverageChecker {
 
         Path home = Paths.get(sym.toURI());
 
-        try (var fs = Utils.openZipFileSystem(home, new HashMap<>())) {
+        try (var fs = Utils.openZipFileSystem(home, false)) {
             System.out.println("Successfully opened \"" + home + "\" for coverage.");
 
             var versions = new HashMap<Integer, List<Path>>();

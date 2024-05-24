@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 public class JvmDowngraderTest {
     private static final Flags flags = new Flags();
     private static final Properties props = new Properties();
-    private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + props.getProperty("version") + ".jar");
 
     static {
         try (InputStream is = Files.newInputStream(Path.of("gradle.properties"))) {
@@ -31,6 +30,9 @@ public class JvmDowngraderTest {
             throw new RuntimeException(e);
         }
     }
+
+
+    private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + props.getProperty("version") + ".jar");
 
     static {
 //        System.setProperty("jvmdg.java-api", javaApi.toString());

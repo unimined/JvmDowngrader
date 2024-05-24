@@ -45,12 +45,10 @@ public class ZipDowngrader {
     }
 
     public static void downgradeZip(final ClassDowngrader downgrader, Path zip, Set<URL> classpath, final Path output) throws IOException {
-        try (final FileSystem zipfs = Utils.openZipFileSystem(zip, new HashMap<String, Object>())) {
+        try (final FileSystem zipfs = Utils.openZipFileSystem(zip, false)) {
             Files.createDirectories(output.getParent());
             Files.deleteIfExists(output);
-            Map<String, Object> map = new HashMap<>();
-            map.put("create", "true");
-            try (final FileSystem outputZipFs = Utils.openZipFileSystem(output, map)) {
+            try (final FileSystem outputZipFs = Utils.openZipFileSystem(output, true)) {
                 PathDowngrader.downgradePaths(downgrader, Collections.singletonList(zipfs.getPath("/")), Collections.singletonList(outputZipFs.getPath("/")), classpath);
             }
         }

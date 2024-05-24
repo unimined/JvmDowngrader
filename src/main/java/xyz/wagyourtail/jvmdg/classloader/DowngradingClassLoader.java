@@ -1,6 +1,8 @@
 package xyz.wagyourtail.jvmdg.classloader;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.classloader.providers.ClassLoaderResourceProvider;
+import xyz.wagyourtail.jvmdg.classloader.providers.FileSystemResourceProvider;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -9,6 +11,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -16,13 +19,13 @@ import java.util.concurrent.atomic.AtomicReference;
 public class DowngradingClassLoader extends ClassLoader implements Closeable {
     private final ClassDowngrader holder;
     private final ClassDowngrader currentVersionDowngrader;
-    private final List<ClassLoader> delegates = new ArrayList<>();
+    private final List<ResourceProvider> delegates = new ArrayList<>();
 
-    public DowngradingClassLoader(ClassDowngrader downgrader) throws MalformedURLException {
+    public DowngradingClassLoader(ClassDowngrader downgrader) throws IOException {
         super();
         Path apiJar = downgrader.flags.findJavaApi();
         if (apiJar != null) {
-            delegates.add(new URLClassLoader(new URL[]{apiJar.toUri().toURL()}));
+            delegates.add(new FileSystemResourceProvider(Utils.openZipFileSystem(apiJar, false)));
         }
         this.holder = downgrader;
         if (downgrader.target != Utils.getCurrentClassVersion()) {
@@ -32,11 +35,11 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
         }
     }
 
-    public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) throws MalformedURLException {
+    public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) throws IOException {
         super(parent);
         Path apiJar = downgrader.flags.findJavaApi();
         if (apiJar != null) {
-            delegates.add(new URLClassLoader(new URL[]{apiJar.toUri().toURL()}));
+            delegates.add(new FileSystemResourceProvider(Utils.openZipFileSystem(apiJar, false)));
         }
         this.holder = downgrader;
         if (downgrader.target != Utils.getCurrentClassVersion()) {
@@ -46,22 +49,26 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
         }
     }
 
-    public DowngradingClassLoader(ClassDowngrader downgrader, URL[] urls, ClassLoader parent) throws MalformedURLException {
+    public DowngradingClassLoader(ClassDowngrader downgrader, List<ResourceProvider> providers, ClassLoader parent) throws IOException {
         this(downgrader, parent);
-        delegates.add(new URLClassLoader(urls, getParent()));
+        delegates.addAll(providers);
     }
 
-    public DowngradingClassLoader(ClassDowngrader downgrader, URL[] urls) throws MalformedURLException {
+    public DowngradingClassLoader(ClassDowngrader downgrader, List<ResourceProvider> providers) throws IOException {
         this(downgrader);
-        delegates.add(new URLClassLoader(urls, getParent()));
+        delegates.addAll(providers);
     }
 
     public void addDelegate(ClassLoader loader) {
-        delegates.add(loader);
+        delegates.add(new ClassLoaderResourceProvider(loader));
+    }
+
+    public void addDelegate(FileSystem jarFile) {
+        delegates.add(new FileSystemResourceProvider(jarFile));
     }
 
     public void addDelegate(URL[] urls) {
-        delegates.add(new URLClassLoader(urls, getParent()));
+        delegates.add(new ClassLoaderResourceProvider(new URLClassLoader(urls)));
     }
 
     @Override
@@ -126,25 +133,21 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
 
     @Override
     protected URL findResource(String name) {
-        for (ClassLoader delegate : delegates) {
-            URL resource = delegate.getResource(name);
-            if (resource != null) {
-                return resource;
-            }
-        }
-        return null;
+        return findResources(name).nextElement();
     }
 
     @Override
-    protected Enumeration<URL> findResources(String name) throws IOException {
-        Vector<URL> vector = new Vector<>();
-        for (ClassLoader delegate : delegates) {
-            Enumeration<URL> enumeration = delegate.getResources(name);
-            while (enumeration.hasMoreElements()) {
-                vector.add(enumeration.nextElement());
+    protected Enumeration<URL> findResources(final String name) {
+        return new FlatEnumeration<>(Collections.enumeration(delegates), new Function<ResourceProvider, Enumeration<URL>>() {
+            @Override
+            public Enumeration<URL> apply(ResourceProvider resourceProvider) {
+                try {
+                    return resourceProvider.getResources(name);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }
-        return vector.elements();
+        });
     }
 
     @Override
@@ -152,10 +155,8 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
         if (holder != currentVersionDowngrader) {
             currentVersionDowngrader.close();
         }
-        for (ClassLoader delegate : delegates) {
-            if (delegate instanceof Closeable) {
-                ((Closeable) delegate).close();
-            }
+        for (ResourceProvider delegate : delegates) {
+            delegate.close();
         }
     }
 }

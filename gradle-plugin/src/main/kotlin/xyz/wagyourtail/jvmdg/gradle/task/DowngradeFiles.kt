@@ -77,7 +77,7 @@ abstract class DowngradeFiles : ConventionTask() {
 
             val downgraded = toDowngrade.map { temporaryDir.resolve(it.name) }.map {
                 if (it.extension == "jar" || it.extension == "zip") {
-                    val fs = Utils.openZipFileSystem(it.toPath(), mapOf("create" to "true"))
+                    val fs = Utils.openZipFileSystem(it.toPath(), true)
                     fileSystems.add(fs)
                     fs.getPath("/")
                 } else it.toPath()
@@ -85,7 +85,7 @@ abstract class DowngradeFiles : ConventionTask() {
 
             toDowngrade = toDowngrade.map {
                 if (it.isDirectory()) it else run {
-                    val fs = Utils.openZipFileSystem(it, mapOf())
+                    val fs = Utils.openZipFileSystem(it, false)
                     fileSystems.add(fs)
                     fs.getPath("/")
                 }

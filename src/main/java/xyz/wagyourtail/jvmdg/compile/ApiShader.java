@@ -59,9 +59,9 @@ public class ApiShader {
         if (!prefix.endsWith("/")) {
             prefix += "/";
         }
-        try (FileSystem apiFs = Utils.openZipFileSystem(resolveDowngradedApi(flags, downgradedApi), Collections.<String, Object>emptyMap())) {
-            try (FileSystem inputFs = Utils.openZipFileSystem(input.toPath(), Collections.<String, Object>emptyMap())) {
-                try (FileSystem outputFs = Utils.openZipFileSystem(output.toPath(), Collections.<String, Object>singletonMap("create", "true"))) {
+        try (FileSystem apiFs = Utils.openZipFileSystem(resolveDowngradedApi(flags, downgradedApi), false)) {
+            try (FileSystem inputFs = Utils.openZipFileSystem(input.toPath(), false)) {
+                try (FileSystem outputFs = Utils.openZipFileSystem(output.toPath(), true)) {
                     Path apiRoot = apiFs.getPath("/");
                     Pair<ReferenceGraph, Set<Type>> api = scanApis(apiRoot);
                     shadeApis(prefix, inputFs.getPath("/"), outputFs.getPath("/"), apiRoot, api.getFirst(), api.getSecond());
@@ -75,7 +75,7 @@ public class ApiShader {
             prefix += "/";
         }
         Path downgradedApiPath = resolveDowngradedApi(flags, downgradedApi);
-        try (FileSystem apiFs = Utils.openZipFileSystem(downgradedApiPath, Collections.<String, Object>emptyMap())) {
+        try (FileSystem apiFs = Utils.openZipFileSystem(downgradedApiPath,false)) {
             Pair<ReferenceGraph, Set<Type>> api = scanApis(apiFs.getPath("/"));
             for (int i = 0; i < inputRoots.size(); i++) {
                 shadeApis(prefix, inputRoots.get(i), outputRoots.get(i), apiFs.getPath("/"), api.getFirst(), api.getSecond());

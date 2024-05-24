@@ -160,13 +160,13 @@ public class Main {
                     if (input.isDirectory()) {
                         inputPath = input.toPath();
                     } else {
-                        FileSystem fs = Utils.openZipFileSystem(input.toPath(), Collections.<String, Object>emptyMap());
+                        FileSystem fs = Utils.openZipFileSystem(input.toPath(), false);
                         fileSystems.add(fs);
                         inputPath = fs.getPath("/");
                     }
                     File output = new File(target[1]);
                     if (output.toString().endsWith(".jar") || output.toString().endsWith(".zip")) {
-                        FileSystem fs = Utils.openZipFileSystem(output.toPath(), Collections.<String, Object>singletonMap("create", "true"));
+                        FileSystem fs = Utils.openZipFileSystem(output.toPath(), true);
                         fileSystems.add(fs);
                         targets.put(inputPath, fs.getPath("/"));
                     } else {

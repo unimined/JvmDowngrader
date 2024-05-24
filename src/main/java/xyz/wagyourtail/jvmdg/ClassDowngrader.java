@@ -45,7 +45,7 @@ public class ClassDowngrader implements Closeable {
         this.target = flags.classVersion;
         try {
             classLoader = new DowngradingClassLoader(this, ClassDowngrader.class.getClassLoader());
-        } catch (MalformedURLException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
         downgraders = collectProviders();

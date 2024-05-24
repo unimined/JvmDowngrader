@@ -10,8 +10,9 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
+import java.util.zip.ZipOutputStream;
 
 public class Utils {
 
@@ -41,13 +42,11 @@ public class Utils {
         throw new UnsupportedOperationException("Unable to get MethodHandles.Lookup.IMPL_LOOKUP");
     }
 
-    public static FileSystem openZipFileSystem(Path path, Map<String, Object> options) throws IOException {
-        if (options.containsKey("create")) {
-            if (options.get("create") == Boolean.TRUE) {
-                options.put("create", "true");
-            }
+    public static FileSystem openZipFileSystem(Path path, boolean create) throws IOException {
+        if (create && !Files.exists(path)) {
+            new ZipOutputStream(Files.newOutputStream(path)).close();
         }
-        return FileSystems.newFileSystem(URI.create("jar:" + path.toUri()), options, null);
+        return FileSystems.newFileSystem(path, null);
     }
 
     public static byte[] readAllBytes(InputStream in) throws IOException {
