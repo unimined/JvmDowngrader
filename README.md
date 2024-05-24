@@ -32,7 +32,7 @@ in `build.gradle`:
 ```gradle
 // add the plugin
 plugins {
-    id 'xyz.wagyourtail.jvmdowngrader' version '0.3.0'
+    id 'xyz.wagyourtail.jvmdowngrader' version '0.5.0'
 }
 
 // optionally you can change some globals:
@@ -42,7 +42,7 @@ jvmdg.defaultMavens = false // stops from inserting my maven into the project re
 jvmdg.group = "xyz.wagyourtail.jvmdowngrader" // default
 jvmdg.coreArchiveName "jvmdowngrader" // default
 jvmdg.apiArchiveName "jvmdowngrader-java-api" // default
-jvmdg.version = "0.3.0" // default
+jvmdg.version = "0.5.0" // default
 jvmdg.asmVersion = "9.7" // default
 
 ```
@@ -80,9 +80,6 @@ task customDowngrade(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar) {
     downgradeTo = JavaVersion.VERSION_1_8 // default
     classpath = sourceSets.main.compileClasspath // default
     archiveClassifier = "downgraded-8"
-    configureDowngrade {
-        jvmArgs += ["-Djvmdg.quiet=true"]
-    }
 }
 
 task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeApi) {
@@ -90,11 +87,24 @@ task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeApi) 
     downgradeTo = JavaVersion.VERSION_1_8 // default
     shadePath = "${archiveBaseName}/jvmdg/api" // default, where the shaded classes will be placed
     archiveClassifier = "downgraded-8-shaded"
-    configureShade {
-        jvmArgs += ["-Djvmdg.quiet=true"]
-    }
 }
 ```
+
+you can also downgrade a `FileCollection`:
+
+```gradle
+task downgradeFileCollection(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeFiles) {
+    toDowngrade = files("file1.jar", "file2.jar")
+    downgradeTo = JavaVersion.VERSION_1_8 // default
+    classpath = sourceSets.main.runtimeClasspath // default
+}
+
+// get the output with
+downgradeFileCollection.outputCollection
+```
+
+Make sure the task is configured before trying to use the outputCollection, it's computed from the `toDowngrade` files.
+
 
 ## "Compile" Time Downgrading
 
