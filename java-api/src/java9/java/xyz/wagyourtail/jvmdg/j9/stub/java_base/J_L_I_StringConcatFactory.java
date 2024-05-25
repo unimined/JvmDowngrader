@@ -440,6 +440,7 @@ public class J_L_I_StringConcatFactory {
     }
 
     public static InsnList makeConcatInternal3(String mname, ClassNode node, String args, Deque<Type> types) {
+        mname = mname.replace("<", "$").replace(">", "$");
         if (!args.contains("\u0001")) {
             // no args
             InsnList list = new InsnList();
@@ -490,7 +491,6 @@ public class J_L_I_StringConcatFactory {
 
         public StringConcatMethodNode(String mname, String args, Deque<Type> types, int index) {
             super(Opcodes.ASM9);
-            mname = mname.replace("<", "$").replace(">", "$");
             this.args = args;
             this.name = "jvmdowngrader$concat$" + mname + "$" + index;
             this.access = Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC;

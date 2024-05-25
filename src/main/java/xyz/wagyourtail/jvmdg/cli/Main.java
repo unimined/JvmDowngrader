@@ -157,7 +157,7 @@ public class Main {
                         throw new IllegalArgumentException("input \"" + input + "\" does not exist");
                     }
                     Path inputPath;
-                    if (input.isDirectory()) {
+                    if (input.isDirectory() || input.toString().endsWith(".class")) {
                         inputPath = input.toPath();
                     } else {
                         FileSystem fs = Utils.openZipFileSystem(input.toPath(), false);

@@ -4,12 +4,21 @@ import java.util.Arrays;
 
 public class TestString {
 
+    static {
+        String a = "aaa";
+        System.out.println("testa " + a);
+        System.out.println("testb " + a);
+    }
+
     public static void main(String[] args) {
         String a = "1";
         double b = 2.000001d;
         String c = null;
         String withConstants = a + b + c + "wasd" + Arrays.asList(args);
         System.out.println(withConstants);
+
+        String withConstantsToo = a + b + c + "asdf" + Arrays.asList(args);
+        System.out.println(withConstantsToo);
 
         System.out.println("aaa" + b + "bbb" + Arrays.asList(args) + a);
 
