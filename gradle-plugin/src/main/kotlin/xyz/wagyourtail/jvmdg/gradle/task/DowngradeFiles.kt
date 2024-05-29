@@ -12,13 +12,16 @@ import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.util.*
+import java.io.File
 import java.nio.file.FileSystem
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 
 abstract class DowngradeFiles : ConventionTask() {
-    private val jvmdg by lazy {
+
+    @get:Internal
+    protected val jvmdg by lazy {
         project.extensions.getByType(JVMDowngraderExtension::class.java)
     }
 
@@ -27,21 +30,34 @@ abstract class DowngradeFiles : ConventionTask() {
     var downgradeTo by FinalizeOnRead(JavaVersion.VERSION_1_8)
 
     @get:InputFiles
-    var toDowngrade: FileCollection by FinalizeOnRead(MustSet())
+    open var toDowngrade: FileCollection by FinalizeOnRead(MustSet())
 
     @get:InputFiles
     var classpath: FileCollection by FinalizeOnRead(LazyMutable {
         project.extensions.getByType(SourceSetContainer::class.java).getByName("main").runtimeClasspath
     })
 
+    @get:Internal
+    val outputMap: Map<File, File>
+        get() = toDowngrade.associateWith { temporaryDir.resolve(it.name) }
+
     /**
-     * this is the output, gradle just doesn't have a
+     * this is the true output, gradle just doesn't have a
      * \@OutputDirectoriesAndFiles
      */
     @get:Internal
-    val outputCollection: FileCollection by lazy {
-        project.files(toDowngrade.map { temporaryDir.resolve(it.name) })
-    }
+    val outputCollection: FileCollection
+        get() = project.files(toDowngrade.map { temporaryDir.resolve(it.name) })
+
+    @get:OutputFiles
+    @get:ApiStatus.Internal
+    val outputFiles: FileCollection
+        get() = outputCollection.filter { it.isFile }
+
+    @get:OutputDirectories
+    @get:ApiStatus.Internal
+    val outputDirectories: FileCollection
+        get() = outputCollection.filter { it.isDirectory }
 
     @get:Input
     @get:Optional
@@ -60,7 +76,7 @@ abstract class DowngradeFiles : ConventionTask() {
 
     @TaskAction
     fun doDowngrade() {
-        var toDowngrade = toDowngrade.files.map { it.toPath() }.filter { it.exists() }
+        var toDowngrade = toDowngrade.map { it.toPath() }.filter { it.exists() }
         val classpath = classpath.files
 
         val fileSystems = mutableSetOf<FileSystem>()
@@ -98,5 +114,8 @@ abstract class DowngradeFiles : ConventionTask() {
         }
     }
 
+    fun forInputs(files: Set<File>): FileCollection {
+        return project.files(outputMap.filterKeys { it in files }.values)
+    }
 
 }

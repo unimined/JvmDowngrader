@@ -119,6 +119,10 @@ public class PathDowngrader {
                                 }
                             }
                         } else {
+                            // strip signatures since downgraded classes will not have the same signatures
+                            if (path.toString().startsWith("META-INF/") && (path.toString().endsWith(".SF") || path.toString().endsWith(".DSA") || path.toString().endsWith(".RSA"))) {
+                                return;
+                            }
                             Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
                         }
                     }

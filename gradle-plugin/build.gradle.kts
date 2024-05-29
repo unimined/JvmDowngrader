@@ -81,6 +81,8 @@ tasks.getByName<Jar>("sourcesJar") {
     isReproducibleFileOrder = true
 }
 
+signing.isRequired = !project.hasProperty("is_local")
+
 gradlePlugin {
     website = metadata.url
     vcsUrl = metadata.github.get().vcsUrl

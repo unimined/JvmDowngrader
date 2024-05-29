@@ -1,3 +1,4 @@
+import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
 import java.util.*
@@ -75,9 +76,19 @@ sourceSets {
     }
 }
 
+val jvmdg = extensions.getByType(JVMDowngraderExtension::class.java)
+val downgrade by configurations.creating
+jvmdg.dg(downgrade)
+
 dependencies {
     implementation("org.jetbrains:annotations-java5:24.1.0")
+
+    // first thing I could think of that's not java 8
+    downgrade("com.github.javakeyring:java-keyring:1.0.4")
+
+    implementation(files(downgrade.files))
 }
+
 
 val downgradeJar9 by tasks.creating(DowngradeJar::class) {
     inputFile.set(tasks.jar.get().archiveFile)

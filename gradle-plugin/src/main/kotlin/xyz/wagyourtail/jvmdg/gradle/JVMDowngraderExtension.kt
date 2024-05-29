@@ -2,6 +2,8 @@ package xyz.wagyourtail.jvmdg.gradle
 
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.attributes.Attribute
 import org.gradle.jvm.tasks.Jar
 import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.jvmdg.ClassDowngrader
@@ -9,6 +11,8 @@ import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
+import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeTransform
+import xyz.wagyourtail.jvmdg.gradle.transform.ShadeTransform
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.LazyMutable
 import xyz.wagyourtail.jvmdg.util.defaultedMapOf
@@ -68,5 +72,67 @@ abstract class JVMDowngraderExtension(val project: Project) {
     }
 
     fun getDowngradedApi(version: JavaVersion): File = downgradedApis[version]
+
+    var depDgVersion by FinalizeOnRead(JavaVersion.VERSION_1_8)
+
+    val downgradeAttribute by lazy {
+        val artifactType = Attribute.of("artifactType", String::class.java)
+        val downgrade = Attribute.of("downgrade", Boolean::class.javaObjectType)
+
+        project.dependencies.apply {
+            attributesSchema {
+                it.attribute(downgrade)
+            }
+            artifactTypes.getByName("jar") {
+                it.attributes.attribute(downgrade, false)
+            }
+            registerTransform(DowngradeTransform::class.java) { spec ->
+                spec.from.attribute(artifactType, "jar").attribute(downgrade, false)
+                spec.to.attribute(artifactType, "jar").attribute(downgrade, true)
+
+                spec.parameters {
+                    it.downgradeTo.set(depDgVersion)
+                    it.apiJar.set(apiJar)
+                }
+            }
+        }
+
+        downgrade
+    }
+
+    val shadeAttribute by lazy {
+        val artifactType = Attribute.of("artifactType", String::class.java)
+        val downgrade = Attribute.of("shadeDowngraded", Boolean::class.javaObjectType)
+
+        project.dependencies.apply {
+            attributesSchema {
+                it.attribute(downgrade)
+            }
+            artifactTypes.getByName("jar") {
+                it.attributes.attribute(downgrade, false)
+            }
+            registerTransform(ShadeTransform::class.java) { spec ->
+                spec.from.attribute(artifactType, "jar").attribute(downgrade, false).attribute(downgradeAttribute, true)
+                spec.to.attribute(artifactType, "jar").attribute(downgrade, true)
+
+                spec.parameters {
+                    it.downgradeTo.set(depDgVersion)
+                    it.apiJar.set(downgradedApis[depDgVersion]!!)
+                }
+            }
+        }
+
+        downgrade
+    }
+
+    @JvmOverloads
+    fun dg(dep: Configuration, shade: Boolean = true) {
+        dep.attributes {
+            it.attribute(downgradeAttribute, true)
+            if (shade) {
+                it.attribute(shadeAttribute, true)
+            }
+        }
+    }
 
 }

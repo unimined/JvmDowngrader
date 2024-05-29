@@ -55,3 +55,5 @@ fun JavaVersion.toOpcode(): Int = when (this) {
     JavaVersion.VERSION_22 -> Opcodes.V22
     else -> throw IllegalArgumentException("Unsupported Java Version: $this")
 }
+
+fun safeName(name: String): String = name.replace(Regex("[.;\\[/]"), "-")
