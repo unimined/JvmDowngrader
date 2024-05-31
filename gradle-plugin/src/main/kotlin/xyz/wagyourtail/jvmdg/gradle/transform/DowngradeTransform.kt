@@ -32,8 +32,6 @@ abstract class DowngradeTransform : TransformAction<DowngradeFlags> {
         val output = outputs.file("${input.nameWithoutExtension}-downgraded-${flags.downgradeTo.get()}.${input.extension}")
         val classpath = dependencies.files
 
-        System.out.println(this.input.get().javaClass)
-
         ClassDowngrader.downgradeTo(flags.toFlags()).use {
             ZipDowngrader.downgradeZip(it, input.toPath(), classpath.map { it.toURI().toURL() }.toSet(), output.toPath())
         }
