@@ -1,3 +1,4 @@
+@file:Suppress("DSL_SCOPE_VIOLATION")
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
@@ -18,6 +19,7 @@ buildscript {
             props.load(it)
             props
         }
+
         if (!project.hasProperty("runningTest")) {
             classpath("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-gradle-plugin:${props.getProperty("version")}")
             classpath("xyz.wagyourtail.jvmdowngrader:jvmdowngrader:${props.getProperty("version")}")
@@ -41,7 +43,12 @@ val props = projectDir.parentFile.parentFile.resolve("gradle.properties").inputS
 
 plugins {
     java
-    id("xyz.wagyourtail.jvmdowngrader")
+    if (project.hasProperty("runningTest")) {
+        id("xyz.wagyourtail.jvmdowngrader")
+    }
+}
+if (!project.hasProperty("runningTest")) {
+    apply(plugin = "xyz.wagyourtail.jvmdowngrader")
 }
 
 val testVersion: JavaVersion = JavaVersion.toVersion(props.getProperty("testVersion") as String)
