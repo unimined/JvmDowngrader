@@ -11,6 +11,7 @@ import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
+import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeTransform
 import xyz.wagyourtail.jvmdg.gradle.transform.ShadeTransform
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
@@ -75,62 +76,57 @@ abstract class JVMDowngraderExtension(val project: Project) {
 
     var depDgVersion by FinalizeOnRead(JavaVersion.VERSION_1_8)
 
-    val downgradeAttribute by lazy {
+    @JvmOverloads
+    fun dg(dep: Configuration, shade: Boolean = true, config: DowngradeFlags.() -> Unit = {}) {
         val artifactType = Attribute.of("artifactType", String::class.java)
-        val downgrade = Attribute.of("downgrade", Boolean::class.javaObjectType)
+        val downgradeAttr = Attribute.of("jvmdg.dg.${dep.name}", Boolean::class.javaObjectType)
+        val shadeAttr = Attribute.of("jvmdg.shade.${dep.name}", Boolean::class.javaObjectType)
+//        val javaVersion = Attribute.of("org.gradle.jvm.version", Int::class.javaObjectType)
 
         project.dependencies.apply {
             attributesSchema {
-                it.attribute(downgrade)
+                it.attribute(downgradeAttr)
             }
             artifactTypes.getByName("jar") {
-                it.attributes.attribute(downgrade, false)
+                it.attributes.attribute(downgradeAttr, false)
             }
             registerTransform(DowngradeTransform::class.java) { spec ->
-                spec.from.attribute(artifactType, "jar").attribute(downgrade, false)
-                spec.to.attribute(artifactType, "jar").attribute(downgrade, true)
+                spec.from.attribute(artifactType, "jar").attribute(downgradeAttr, false).attribute(shadeAttr, false)
+                spec.to.attribute(artifactType, "jar").attribute(downgradeAttr, true).attribute(shadeAttr, false)
 
                 spec.parameters {
                     it.downgradeTo.set(depDgVersion)
                     it.apiJar.set(apiJar)
+                    config(it)
                 }
             }
         }
 
-        downgrade
-    }
+        if (shade) {
+            project.dependencies.apply {
+                attributesSchema {
+                    it.attribute(shadeAttr)
+                }
+                artifactTypes.getByName("jar") {
+                    it.attributes.attribute(shadeAttr, false)
+                }
+                registerTransform(ShadeTransform::class.java) { spec ->
+                    spec.from.attribute(artifactType, "jar").attribute(shadeAttr, false).attribute(downgradeAttr, true)
+                    spec.to.attribute(artifactType, "jar").attribute(shadeAttr, true).attribute(downgradeAttr, true)
 
-    val shadeAttribute by lazy {
-        val artifactType = Attribute.of("artifactType", String::class.java)
-        val downgrade = Attribute.of("shadeDowngraded", Boolean::class.javaObjectType)
-
-        project.dependencies.apply {
-            attributesSchema {
-                it.attribute(downgrade)
-            }
-            artifactTypes.getByName("jar") {
-                it.attributes.attribute(downgrade, false)
-            }
-            registerTransform(ShadeTransform::class.java) { spec ->
-                spec.from.attribute(artifactType, "jar").attribute(downgrade, false).attribute(downgradeAttribute, true)
-                spec.to.attribute(artifactType, "jar").attribute(downgrade, true)
-
-                spec.parameters {
-                    it.downgradeTo.set(depDgVersion)
-                    it.apiJar.set(downgradedApis[depDgVersion]!!)
+                    spec.parameters {
+                        it.downgradeTo.set(depDgVersion)
+                        it.apiJar.set(downgradedApis[depDgVersion])
+                        config(it)
+                    }
                 }
             }
         }
 
-        downgrade
-    }
-
-    @JvmOverloads
-    fun dg(dep: Configuration, shade: Boolean = true) {
         dep.attributes {
-            it.attribute(downgradeAttribute, true)
+            it.attribute(downgradeAttr, true)
             if (shade) {
-                it.attribute(shadeAttribute, true)
+                it.attribute(shadeAttr, true)
             }
         }
     }
