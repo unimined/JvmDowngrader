@@ -105,6 +105,20 @@ downgradeFileCollection.outputCollection
 
 Make sure the task is configured before trying to use the outputCollection, it's computed from the `toDowngrade` files.
 
+you can downgrade a configuration:
+```gradle
+configurations {
+    downgrade
+    implementation.extendsFrom downgrade
+}
+
+jvmdg.dg(configurations.downgrade)
+
+dependencies {
+    downgrade "newer.java:version:1.0"
+}
+
+```
 
 ## "Compile" Time Downgrading
 
