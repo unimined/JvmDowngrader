@@ -18,8 +18,10 @@ buildscript {
             props.load(it)
             props
         }
-        classpath("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-gradle-plugin:${props.getProperty("version")}")
-        classpath("xyz.wagyourtail.jvmdowngrader:jvmdowngrader:${props.getProperty("version")}")
+        if (!project.hasProperty("runningTest")) {
+            classpath("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-gradle-plugin:${props.getProperty("version")}")
+            classpath("xyz.wagyourtail.jvmdowngrader:jvmdowngrader:${props.getProperty("version")}")
+        }
 
         classpath("org.apache.commons:commons-compress:1.26.1")
 
@@ -39,9 +41,8 @@ val props = projectDir.parentFile.parentFile.resolve("gradle.properties").inputS
 
 plugins {
     java
+    id("xyz.wagyourtail.jvmdowngrader")
 }
-
-apply(plugin = "xyz.wagyourtail.jvmdowngrader")
 
 val testVersion: JavaVersion = JavaVersion.toVersion(props.getProperty("testVersion") as String)
 
@@ -77,6 +78,11 @@ sourceSets {
 }
 
 val jvmdg = extensions.getByType(JVMDowngraderExtension::class.java)
+
+if (project.hasProperty("runningTest")) {
+    jvmdg.apiJar = project.file("../../java-api/build/libs/jvmdowngrader-java-api-${props.getProperty("version")}.jar")
+}
+
 val downgrade by configurations.creating
 jvmdg.dg(downgrade)
 

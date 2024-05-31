@@ -81,6 +81,10 @@ tasks.getByName<Jar>("sourcesJar") {
     isReproducibleFileOrder = true
 }
 
+tasks.test {
+    dependsOn(":java-api:build")
+}
+
 signing.isRequired = !project.hasProperty("is_local")
 
 gradlePlugin {
