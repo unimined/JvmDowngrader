@@ -56,12 +56,12 @@ you can change the downgrade version by doing:
 
 ```gradle
 downgradeJar {
-    downgradeVersion = JavaVersion.VERSION_1_11
+    downgradeTo = JavaVersion.VERSION_1_11
     archiveClassifier = "downgraded-11"
 }
 
 shadeDowngradedApi {
-    downgradeVersion = JavaVersion.VERSION_1_11
+    downgradeTo = JavaVersion.VERSION_1_11
     archiveClassifier = "downgraded-11-shaded"
 }
 ```

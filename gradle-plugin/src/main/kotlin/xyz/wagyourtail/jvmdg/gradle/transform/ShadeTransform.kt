@@ -28,7 +28,7 @@ abstract class ShadeTransform : TransformAction<DowngradeFlags> {
         val flags = parameters
         val output = outputs.file("${input.nameWithoutExtension}-shaded-${flags.downgradeTo.get()}.${input.extension}")
 
-        ApiShader.shadeApis(flags.toFlags(), input.nameWithoutExtension, input, output, flags.apiJar.get())
+        ApiShader.shadeApis(flags.toFlags(), input.nameWithoutExtension.replace(Regex("[.;\\[/]"), "-"), input, output, flags.apiJar.get())
     }
 
 }
