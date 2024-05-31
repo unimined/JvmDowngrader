@@ -66,7 +66,7 @@ shadeDowngradedApi {
 }
 ```
 
-Optionally, you can also depend on the sahdeDowngradedApi task when running build.
+Optionally, you can also depend on the shadeDowngradedApi task when running build.
 
 ```gradle
 assemble.dependsOn shadeDowngradedApi
