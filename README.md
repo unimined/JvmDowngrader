@@ -115,7 +115,6 @@ jvmdg.dg(configurations.downgrade)
 
 dependencies {
     downgrade "newer.java:version:1.0"
-    implementation "xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.0"
 }
 
 ```
