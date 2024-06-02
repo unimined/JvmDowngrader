@@ -24,7 +24,7 @@ abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
     }
 
     @get:InputFiles
-    open var inputCollection: FileCollection by FinalizeOnRead(MustSet())
+    var inputCollection: FileCollection by FinalizeOnRead(MustSet())
 
     @get:InputFiles
     var classpath: FileCollection by FinalizeOnRead(LazyMutable {

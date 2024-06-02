@@ -22,7 +22,7 @@ abstract class ShadeFiles : ConventionTask(), ShadeFlags {
     }
 
     @get:InputFiles
-    open var inputCollection: FileCollection by FinalizeOnRead(MustSet())
+    var inputCollection: FileCollection by FinalizeOnRead(MustSet())
 
     @get:Internal
     val outputMap: Map<File, File>
