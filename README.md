@@ -82,26 +82,35 @@ task customDowngrade(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar) {
     archiveClassifier = "downgraded-8"
 }
 
-task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeApi) {
+task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeJar) {
     inputFile = customDowngrade.archiveFile
     archiveClassifier = "downgraded-8-shaded"
 }
 ```
 
-you can also downgrade a `FileCollection`:
+you can also downgrade/shade a `FileCollection`:
 
 ```gradle
-task downgradeFileCollection(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeFiles) {
-    toDowngrade = files("file1.jar", "file2.jar")
+task downgradeFileCollection(type: xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles) {
+    inputCollection = files("file1.jar", "file2.jar")
     downgradeTo = JavaVersion.VERSION_1_8 // default
     classpath = sourceSets.main.runtimeClasspath // default
 }
 
 // get the output with
 downgradeFileCollection.outputCollection
+
+task shadeFileCollection(type: xyz.wagyourtail.jvmdg.gradle.task.files.ShadeFiles) {
+    inputCollection = downgradeFileCollection.outputCollection
+    downgradeTo = JavaVersion.VERSION_1_8 // default
+}
+
+// get the output with
+shadeFileCollection.outputCollection
 ```
 
-Make sure the task is configured before trying to use the outputCollection, it's computed from the `toDowngrade` files.
+Make sure the task is configured before trying to use the outputCollection,
+it's computed from the `toDowngrade` files.
 
 you can downgrade a configuration:
 

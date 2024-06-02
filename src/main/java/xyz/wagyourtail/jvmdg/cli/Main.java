@@ -232,7 +232,6 @@ public class Main {
                 throw new IllegalArgumentException("Downgraded api jar does not exist");
             }
         }
-        String prefix = args.get("--prefix").get(0)[0];
 
         Map<Path, Path> targets = new HashMap<>();
         List<FileSystem> fileSystems = new ArrayList<>();
@@ -246,7 +245,13 @@ public class Main {
                 outputs.add(entry.getValue());
             }
 
-            ApiShader.shadeApis(flags, prefix, inputs, outputs, downgradedApi);
+            List<String> prefixes = new ArrayList<>();
+            List<String[]> prefix = args.get("--prefix");
+            for (String[] strings : prefix) {
+                prefixes.add(strings[0]);
+            }
+
+            ApiShader.shadeApis(flags, prefixes, inputs, outputs, downgradedApi);
         } finally {
             for (FileSystem fileSystem : fileSystems) {
                 fileSystem.close();

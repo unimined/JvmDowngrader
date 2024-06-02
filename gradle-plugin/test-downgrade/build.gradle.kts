@@ -1,7 +1,9 @@
 @file:Suppress("DSL_SCOPE_VIOLATION")
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
-import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
+import xyz.wagyourtail.jvmdg.gradle.task.ShadeJar
+import xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles
+import xyz.wagyourtail.jvmdg.gradle.task.files.ShadeFiles
 import java.util.*
 
 buildscript {
@@ -91,7 +93,9 @@ if (project.hasProperty("runningTest")) {
 }
 
 val downgrade by configurations.creating
-jvmdg.dg(downgrade)
+jvmdg.dg(downgrade) {
+    downgradeTo = JavaVersion.VERSION_11
+}
 
 dependencies {
     implementation("org.jetbrains:annotations-java5:24.1.0")
@@ -102,6 +106,16 @@ dependencies {
     implementation(files(downgrade.files))
 }
 
+val downgradeFiles by tasks.creating(DowngradeFiles::class) {
+    inputCollection = sourceSets.main.get().runtimeClasspath
+    downgradeTo = JavaVersion.VERSION_1_8
+}
+
+val shadeFiles by tasks.creating(ShadeFiles::class) {
+    dependsOn(downgradeFiles)
+    inputCollection = downgradeFiles.outputCollection
+    downgradeTo = JavaVersion.VERSION_1_8
+}
 
 val downgradeJar9 by tasks.creating(DowngradeJar::class) {
     inputFile.set(tasks.jar.get().archiveFile)
@@ -111,7 +125,7 @@ val downgradeJar9 by tasks.creating(DowngradeJar::class) {
 //    destinationDirectory.set(temporaryDir)
 }
 
-val shadeDowngradedApi9 by tasks.creating(ShadeAPI::class) {
+val shadeDowngradedApi9 by tasks.creating(ShadeJar::class) {
     inputFile.set(downgradeJar9.archiveFile)
     archiveClassifier.set("downgraded-shaded-9")
     downgradeTo = JavaVersion.VERSION_1_9

@@ -1,13 +1,11 @@
-package xyz.wagyourtail.jvmdg.gradle.task
+package xyz.wagyourtail.jvmdg.gradle.task.files
 
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
 import org.gradle.api.tasks.*
-import org.jetbrains.annotations.ApiStatus
-import xyz.wagyourtail.jvmdg.ClassDowngrader
-import xyz.wagyourtail.jvmdg.compile.PathDowngrader
-import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
+import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
+import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.*
 import java.io.File
@@ -16,7 +14,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 
-abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
+abstract class ShadeFiles : ConventionTask(), ShadeFlags {
 
     @get:Internal
     protected val jvmdg by lazy {
@@ -24,34 +22,25 @@ abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
     }
 
     @get:InputFiles
-    open var toDowngrade: FileCollection by FinalizeOnRead(MustSet())
-
-    @get:InputFiles
-    var classpath: FileCollection by FinalizeOnRead(LazyMutable {
-        project.extensions.getByType(SourceSetContainer::class.java).getByName("main").runtimeClasspath
-    })
+    open var inputCollection: FileCollection by FinalizeOnRead(MustSet())
 
     @get:Internal
     val outputMap: Map<File, File>
-        get() = toDowngrade.associateWith { temporaryDir.resolve(it.name) }
+        get() = inputCollection.associateWith { temporaryDir.resolve(it.name) }
 
     /**
      * this is the true output, gradle just doesn't have a
      * \@OutputDirectoriesAndFiles
      */
     @get:Internal
-    val outputCollection: FileCollection
-        get() = project.files(toDowngrade.map { temporaryDir.resolve(it.name) })
+    val outputCollection: FileCollection by lazy {
+        val fd = inputCollection.map { it to temporaryDir.resolve(it.name) }
 
-    @get:OutputFiles
-    @get:ApiStatus.Internal
-    val outputFiles: FileCollection
-        get() = outputCollection.filter { it.isFile }
+        outputs.dirs(*fd.filter { it.first.isDirectory }.map { it.second }.toTypedArray())
+        outputs.files(*fd.filter { it.first.isFile }.map { it.second }.toTypedArray())
 
-    @get:OutputDirectories
-    @get:ApiStatus.Internal
-    val outputDirectories: FileCollection
-        get() = outputCollection.filter { it.isDirectory }
+        outputs.files
+    }
 
     init {
         downgradeTo.convention(jvmdg.downgradeTo).finalizeValueOnRead()
@@ -59,13 +48,12 @@ abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
         quiet.convention(jvmdg.quiet).finalizeValueOnRead()
         debug.convention(jvmdg.debug).finalizeValueOnRead()
         debugSkipStubs.convention(jvmdg.debugSkipStubs).finalizeValueOnRead()
+        shadePath.convention(jvmdg.shadePath).finalizeValueOnRead()
     }
 
     @TaskAction
     fun doDowngrade() {
-        var toDowngrade = toDowngrade.map { it.toPath() }.filter { it.exists() }
-        val classpath = classpath.files
-
+        val toDowngrade = inputCollection.map { it.toPath() }.filter { it.exists() }
         val fileSystems = mutableSetOf<FileSystem>()
 
         try {
@@ -80,15 +68,17 @@ abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
                 } else it.toPath()
             }
 
-            toDowngrade = toDowngrade.map {
+            val toDowngradePaths = toDowngrade.map {
                 if (it.isDirectory()) it else run {
                     val fs = Utils.openZipFileSystem(it, false)
                     fileSystems.add(fs)
                     fs.getPath("/")
                 }
             }
-            ClassDowngrader.downgradeTo(this.toFlags()).use {
-                PathDowngrader.downgradePaths(it, toDowngrade, downgraded, classpath.map { it.toURI().toURL() }.toSet())
+            for (i in toDowngradePaths.indices) {
+                val toDowngradeFile = toDowngradePaths[i]
+                val downgradedFile = downgraded[i]
+                ApiShader.shadeApis(this.toFlags(), shadePath.get().invoke(toDowngrade[i].name), toDowngradeFile, downgradedFile, jvmdg.downgradedApis[downgradeTo.get()])
             }
         } finally {
             fileSystems.forEach { it.close() }

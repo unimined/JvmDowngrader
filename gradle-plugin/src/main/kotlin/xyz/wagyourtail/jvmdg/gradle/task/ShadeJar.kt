@@ -15,7 +15,7 @@ import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
 import java.nio.file.StandardOpenOption
 import kotlin.io.path.outputStream
 
-abstract class ShadeAPI : Jar(), ShadeFlags {
+abstract class ShadeJar : Jar(), ShadeFlags {
 
     private val jvmdg by lazy {
         project.extensions.getByType(JVMDowngraderExtension::class.java)

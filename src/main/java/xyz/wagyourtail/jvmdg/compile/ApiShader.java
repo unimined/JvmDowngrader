@@ -70,15 +70,21 @@ public class ApiShader {
         }
     }
 
-    public static void shadeApis(Flags flags, String prefix, List<Path> inputRoots, List<Path> outputRoots, File downgradedApi) throws IOException {
-        if (!prefix.endsWith("/")) {
-            prefix += "/";
+    public static void shadeApis(Flags flags, String prefix, Path inputRoot, Path outputRoot, File downgradedApi) throws IOException {
+        shadeApis(flags, Collections.singletonList(prefix), Collections.singletonList(inputRoot), Collections.singletonList(outputRoot), downgradedApi);
+    }
+
+    public static void shadeApis(Flags flags, List<String> prefix, List<Path> inputRoots, List<Path> outputRoots, File downgradedApi) throws IOException {
+        for (String p : prefix) {
+            if (!p.endsWith("/")) {
+                throw new IllegalArgumentException("prefix \""+ p +"\" must end with /");
+            }
         }
         Path downgradedApiPath = resolveDowngradedApi(flags, downgradedApi);
         try (FileSystem apiFs = Utils.openZipFileSystem(downgradedApiPath,false)) {
             Pair<ReferenceGraph, Set<Type>> api = scanApis(apiFs.getPath("/"));
             for (int i = 0; i < inputRoots.size(); i++) {
-                shadeApis(prefix, inputRoots.get(i), outputRoots.get(i), apiFs.getPath("/"), api.getFirst(), api.getSecond());
+                shadeApis(prefix.get(i % prefix.size()), inputRoots.get(i), outputRoots.get(i), apiFs.getPath("/"), api.getFirst(), api.getSecond());
             }
         }
     }

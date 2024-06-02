@@ -12,7 +12,7 @@ import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
-import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
+import xyz.wagyourtail.jvmdg.gradle.task.ShadeJar
 import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeTransform
 import xyz.wagyourtail.jvmdg.gradle.transform.ShadeTransform
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
@@ -34,7 +34,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
     }
 
     @get:Internal
-    val defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeAPI::class.java).apply {
+    val defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeJar::class.java).apply {
         configure {
             it.inputFile.set(defaultTask.get().archiveFile)
             it.archiveClassifier.set("downgraded-shaded")
@@ -59,7 +59,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         quiet.convention(false).finalizeValueOnRead()
         debug.convention(false).finalizeValueOnRead()
         debugSkipStubs.convention(emptySet()).finalizeValueOnRead()
-        shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") }
+        shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/" }
     }
 
     @get:Internal
