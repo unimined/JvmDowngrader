@@ -1,16 +1,14 @@
 package xyz.wagyourtail.jvmdg.gradle.task
 
-import org.gradle.api.JavaVersion
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
-import org.gradle.api.provider.ListProperty
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.jvmdg.ClassDowngrader
-import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
+import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
+import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.*
 import java.io.File
 import java.nio.file.FileSystem
@@ -18,16 +16,12 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 
-abstract class DowngradeFiles : ConventionTask() {
+abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
 
     @get:Internal
     protected val jvmdg by lazy {
         project.extensions.getByType(JVMDowngraderExtension::class.java)
     }
-
-    @get:Input
-    @get:Optional
-    var downgradeTo by FinalizeOnRead(JavaVersion.VERSION_1_8)
 
     @get:InputFiles
     open var toDowngrade: FileCollection by FinalizeOnRead(MustSet())
@@ -59,19 +53,12 @@ abstract class DowngradeFiles : ConventionTask() {
     val outputDirectories: FileCollection
         get() = outputCollection.filter { it.isDirectory }
 
-    @get:Input
-    @get:Optional
-    @get:ApiStatus.Experimental
-    abstract val debugSkipStubs: ListProperty<Int>
-
-    @get:Input
-    @get:Optional
-    @get:ApiStatus.Experimental
-    abstract val debugPrint: Property<Boolean>
-
     init {
-        debugSkipStubs.convention(mutableListOf())
-        debugPrint.convention(false)
+        downgradeTo.convention(jvmdg.downgradeTo).finalizeValueOnRead()
+        apiJar.convention(jvmdg.apiJar).finalizeValueOnRead()
+        quiet.convention(jvmdg.quiet).finalizeValueOnRead()
+        debug.convention(jvmdg.debug).finalizeValueOnRead()
+        debugSkipStubs.convention(jvmdg.debugSkipStubs).finalizeValueOnRead()
     }
 
     @TaskAction
@@ -80,12 +67,6 @@ abstract class DowngradeFiles : ConventionTask() {
         val classpath = classpath.files
 
         val fileSystems = mutableSetOf<FileSystem>()
-
-        val flags = Flags()
-        flags.api = jvmdg.apiJar
-        flags.printDebug = debugPrint.get()
-        flags.classVersion = downgradeTo.toOpcode()
-        flags.debugSkipStubs = debugSkipStubs.get().toSet()
 
         try {
 
@@ -106,7 +87,7 @@ abstract class DowngradeFiles : ConventionTask() {
                     fs.getPath("/")
                 }
             }
-            ClassDowngrader.downgradeTo(flags).use {
+            ClassDowngrader.downgradeTo(this.toFlags()).use {
                 PathDowngrader.downgradePaths(it, toDowngrade, downgraded, classpath.map { it.toURI().toURL() }.toSet())
             }
         } finally {

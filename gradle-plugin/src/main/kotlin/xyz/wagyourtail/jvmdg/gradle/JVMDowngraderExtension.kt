@@ -4,43 +4,27 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
+import org.gradle.api.tasks.Internal
 import org.gradle.jvm.tasks.Jar
-import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.jvmdg.ClassDowngrader
-import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
+import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeAPI
-import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeTransform
 import xyz.wagyourtail.jvmdg.gradle.transform.ShadeTransform
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
-import xyz.wagyourtail.jvmdg.util.LazyMutable
 import xyz.wagyourtail.jvmdg.util.defaultedMapOf
-import xyz.wagyourtail.jvmdg.util.toOpcode
 import java.io.File
+import javax.inject.Inject
 
-abstract class JVMDowngraderExtension(val project: Project) {
+abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val project: Project) : ShadeFlags {
+    @get:Internal
+    val version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.7.0")
 
-    var version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.3.0")
-
-    var asmVersion by FinalizeOnRead("9.7")
-
-    var shadeDebugSkipStubs = mutableListOf<Int>()
-
-    var apiJar by FinalizeOnRead(LazyMutable {
-        JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar").use {
-            val apiJar = project.layout.buildDirectory.get().asFile.resolve("jvmdg/java-api-${version}.jar")
-            if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
-                apiJar.parentFile.mkdirs()
-                apiJar.outputStream().use { os ->
-                    it.copyTo(os)
-                }
-            }
-            apiJar
-        }
-    })
-
+    @get:Internal
     val defaultTask = project.tasks.register("downgradeJar", DowngradeJar::class.java).apply {
         configure {
             val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
@@ -49,6 +33,7 @@ abstract class JVMDowngraderExtension(val project: Project) {
         }
     }
 
+    @get:Internal
     val defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeAPI::class.java).apply {
         configure {
             it.inputFile.set(defaultTask.get().archiveFile)
@@ -56,25 +41,38 @@ abstract class JVMDowngraderExtension(val project: Project) {
         }
     }
 
-    @get:ApiStatus.Internal
+    init {
+        downgradeTo.convention(JavaVersion.VERSION_1_8).finalizeValueOnRead()
+        apiJar.convention(project.provider {
+            val apiJar = project.layout.buildDirectory.get().asFile.resolve("jvmdg/java-api-${version}.jar")
+            if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
+                apiJar.parentFile.mkdirs()
+                JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar").use { stream ->
+                    if (stream == null) throw IllegalStateException("java-api.jar not found in resources")
+                    apiJar.outputStream().use { os ->
+                        stream.copyTo(os)
+                    }
+                }
+            }
+            apiJar
+        }).finalizeValueOnRead()
+        quiet.convention(false).finalizeValueOnRead()
+        debug.convention(false).finalizeValueOnRead()
+        debugSkipStubs.convention(emptySet()).finalizeValueOnRead()
+        shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") }
+    }
+
+    @get:Internal
     internal val downgradedApis = defaultedMapOf<JavaVersion, File> { version ->
-        val downgradedPath = apiJar.resolveSibling("java-api-${version}-downgraded.jar")
+        val downgradedPath = apiJar.get().resolveSibling("java-api-${version}-downgraded.jar")
 
-        val flags = Flags()
-        flags.api = apiJar
-        flags.printDebug = false
-        flags.classVersion = version.toOpcode()
-        flags.debugSkipStubs = shadeDebugSkipStubs.toSet()
-
-        ClassDowngrader.downgradeTo(flags).use {
-            ZipDowngrader.downgradeZip(it, flags.findJavaApi().toPath(), emptySet(), downgradedPath.toPath())
+        ClassDowngrader.downgradeTo(this.toFlags()).use {
+            ZipDowngrader.downgradeZip(it, apiJar.get().toPath(), emptySet(), downgradedPath.toPath())
         }
         downgradedPath
     }
 
     fun getDowngradedApi(version: JavaVersion): File = downgradedApis[version]
-
-    var depDgVersion by FinalizeOnRead(JavaVersion.VERSION_1_8)
 
     @JvmOverloads
     fun dg(dep: Configuration, shade: Boolean = true, config: DowngradeFlags.() -> Unit = {}) {
@@ -95,8 +93,11 @@ abstract class JVMDowngraderExtension(val project: Project) {
                 spec.to.attribute(artifactType, "jar").attribute(downgradeAttr, true).attribute(shadeAttr, false)
 
                 spec.parameters {
-                    it.downgradeTo.set(depDgVersion)
+                    it.downgradeTo.set(downgradeTo)
                     it.apiJar.set(apiJar)
+                    it.quiet.set(quiet)
+                    it.debug.set(debug)
+                    it.debugSkipStubs.set(debugSkipStubs)
                     config(it)
                 }
             }
@@ -115,8 +116,14 @@ abstract class JVMDowngraderExtension(val project: Project) {
                     spec.to.attribute(artifactType, "jar").attribute(shadeAttr, true).attribute(downgradeAttr, true)
 
                     spec.parameters {
-                        it.downgradeTo.set(depDgVersion)
-                        it.apiJar.set(downgradedApis[depDgVersion])
+                        it.downgradeTo.set(downgradeTo)
+                        it.apiJar.set(project.provider {
+                            downgradedApis[it.downgradeTo.get()]
+                        })
+                        it.quiet.set(quiet)
+                        it.debug.set(debug)
+                        it.debugSkipStubs.set(debugSkipStubs)
+                        it.shadePath.set(shadePath)
                         config(it)
                     }
                 }

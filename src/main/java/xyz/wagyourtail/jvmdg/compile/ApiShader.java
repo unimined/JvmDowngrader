@@ -85,10 +85,10 @@ public class ApiShader {
 
     public static Path resolveDowngradedApi(Flags flags, @Nullable File downgradedApi) throws IOException {
         // step 1: downgrade the api to the target version
-        Path downgradedApiPath;
         Path temp = Constants.DIR.toPath();
+        Path downgradedApiPath = temp.resolve("downgraded-api.jar");
         if (downgradedApi == null) {
-            downgradeApi(flags, downgradedApiPath = temp.resolve("downgraded-api.jar"));
+            downgradeApi(flags, downgradedApiPath);
         } else {
             downgradedApiPath = downgradedApi.toPath();
         }

@@ -9,11 +9,12 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
-import org.gradle.api.tasks.CompileClasspath
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
+import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 
 @CacheableTransform
 abstract class DowngradeTransform : TransformAction<DowngradeFlags> {

@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.gradle.transform
+package xyz.wagyourtail.jvmdg.gradle.flags
 
 import org.gradle.api.JavaVersion
 import org.gradle.api.artifacts.transform.TransformParameters
@@ -10,33 +10,27 @@ import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.util.toOpcode
 import java.io.File
 
-abstract class DowngradeFlags : TransformParameters {
+interface DowngradeFlags : TransformParameters {
 
     @get:Input
     @get:Optional
-    abstract val downgradeTo: Property<JavaVersion>
-
-    @get:Input
-    abstract val apiJar: Property<File>
+    val downgradeTo: Property<JavaVersion>
 
     @get:Input
     @get:Optional
-    abstract val quiet: Property<Boolean>
+    val apiJar: Property<File>
 
     @get:Input
     @get:Optional
-    abstract val debug: Property<Boolean>
+    val quiet: Property<Boolean>
 
     @get:Input
     @get:Optional
-    abstract val debugSkipStubs: SetProperty<JavaVersion>
+    val debug: Property<Boolean>
 
-    init {
-        downgradeTo.convention(JavaVersion.VERSION_1_8)
-        quiet.convention(false)
-        debug.convention(false)
-        debugSkipStubs.convention(emptySet())
-    }
+    @get:Input
+    @get:Optional
+    val debugSkipStubs: SetProperty<JavaVersion>
 }
 
 fun DowngradeFlags.toFlags(): Flags {

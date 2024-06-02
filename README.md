@@ -32,19 +32,18 @@ in `build.gradle`:
 ```gradle
 // add the plugin
 plugins {
-    id 'xyz.wagyourtail.jvmdowngrader' version '0.5.0'
+    id 'xyz.wagyourtail.jvmdowngrader' version '0.7.0'
 }
 
-// optionally you can change some globals:
-
-jvmdg.defaultMavens = false // stops from inserting my maven into the project repositories
-
-jvmdg.group = "xyz.wagyourtail.jvmdowngrader" // default
-jvmdg.coreArchiveName "jvmdowngrader" // default
-jvmdg.apiArchiveName "jvmdowngrader-java-api" // default
-jvmdg.version = "0.5.0" // default
-jvmdg.asmVersion = "9.7" // default
-
+// optionally you can change some globals, here are their default values:
+jvmdg.downgradeTo = JavaVersion.VERSION_1_8
+jvmdg.apiJar = this.getClass().getResourceAsStream("jvmdg/java-api-${version}.jar").writeToFile("build/jvmdg/java-api-${version}.jar")
+jvmdg.quiet = false
+jvmdg.debug = false
+jvmdg.debugSkipStubs = [].toSet()
+jvmdg.shadePath = {
+    it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-")
+}
 ```
 
 This will create a default downgrade task for `jar` (or `shadowJar` if present) called `downgradeJar` that will
@@ -56,15 +55,16 @@ you can change the downgrade version by doing:
 
 ```gradle
 downgradeJar {
-    downgradeTo = JavaVersion.VERSION_1_11
-    archiveClassifier = "downgraded-11"
+    downgradeTo = JavaVersion.VERSION_11
 }
 
 shadeDowngradedApi {
-    downgradeTo = JavaVersion.VERSION_1_11
-    archiveClassifier = "downgraded-11-shaded"
+    downgradeTo = JavaVersion.VERSION_11
 }
 ```
+
+The tasks have all the same flags as the extension, so you can change them separately, 
+their default value is to use the global one from the extension.
 
 Optionally, you can also depend on the shadeDowngradedApi task when running build.
 
@@ -84,8 +84,6 @@ task customDowngrade(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar) {
 
 task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeApi) {
     inputFile = customDowngrade.archiveFile
-    downgradeTo = JavaVersion.VERSION_1_8 // default
-    shadePath = "${archiveBaseName}/jvmdg/api" // default, where the shaded classes will be placed
     archiveClassifier = "downgraded-8-shaded"
 }
 ```
@@ -106,6 +104,7 @@ downgradeFileCollection.outputCollection
 Make sure the task is configured before trying to use the outputCollection, it's computed from the `toDowngrade` files.
 
 you can downgrade a configuration:
+
 ```gradle
 configurations {
     downgrade
@@ -116,6 +115,7 @@ jvmdg.dg(configurations.downgrade)
 
 dependencies {
     downgrade "newer.java:version:1.0"
+    implementation "xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.0"
 }
 
 ```

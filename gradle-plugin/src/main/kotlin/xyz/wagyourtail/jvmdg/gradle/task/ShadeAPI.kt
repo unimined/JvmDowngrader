@@ -2,43 +2,23 @@
 
 package xyz.wagyourtail.jvmdg.gradle.task
 
-import org.gradle.api.JavaVersion
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.Property
-import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.tasks.Jar
-import org.jetbrains.annotations.ApiStatus
-import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
-import xyz.wagyourtail.jvmdg.util.*
+import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
+import xyz.wagyourtail.jvmdg.util.deleteIfExists
+import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
 import java.nio.file.StandardOpenOption
 import kotlin.io.path.outputStream
 
-abstract class ShadeAPI : Jar() {
+abstract class ShadeAPI : Jar(), ShadeFlags {
 
     private val jvmdg by lazy {
         project.extensions.getByType(JVMDowngraderExtension::class.java)
-    }
-
-    @get:Input
-    @get:Optional
-    var downgradeTo by FinalizeOnRead(JavaVersion.VERSION_1_8)
-
-    @get:Input
-    @get:Optional
-    @get:ApiStatus.Experimental
-    abstract val debugPrint: Property<Boolean>
-
-    @get:Input
-    @get:Optional
-    var shadePath by FinalizeOnRead(LazyMutable { archiveBaseName.get().replace(Regex("[ -]"), "_") + "/jvmdg/api" })
-
-    init {
-        debugPrint.convention(false)
     }
 
     /**
@@ -50,6 +30,13 @@ abstract class ShadeAPI : Jar() {
     init {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
+
+        downgradeTo.convention(jvmdg.downgradeTo).finalizeValueOnRead()
+        apiJar.convention(jvmdg.apiJar).finalizeValueOnRead()
+        quiet.convention(jvmdg.quiet).finalizeValueOnRead()
+        debug.convention(jvmdg.debug).finalizeValueOnRead()
+        debugSkipStubs.convention(jvmdg.debugSkipStubs).finalizeValueOnRead()
+        shadePath.convention(jvmdg.shadePath).finalizeValueOnRead()
     }
 
     @TaskAction
@@ -57,17 +44,12 @@ abstract class ShadeAPI : Jar() {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
 
-        val flags = Flags()
-        flags.classVersion = downgradeTo.toOpcode()
-        flags.api = jvmdg.apiJar
-        flags.printDebug = debugPrint.get()
-
         ApiShader.shadeApis(
-            flags,
-            shadePath,
+            this.toFlags(),
+            shadePath.get().invoke(archiveFileName.get()),
             inputFile.asFile.get(),
             tempOutput,
-            jvmdg.downgradedApis[downgradeTo]
+            jvmdg.downgradedApis[downgradeTo.get()]
         )
 
         inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->
