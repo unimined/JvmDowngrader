@@ -60,10 +60,18 @@ public class ClassMapping {
     }
 
     public void addStub(MemberNameAndDesc member, Method method, Stub stub) {
+        int modifiers = method.getModifiers();
+        if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
+            throw new RuntimeException("@Stub " + method + " must be public static");
+        }
         methodStub.put(member, new Pair<>(method, stub));
     }
 
     public void addModify(MemberNameAndDesc member, Method method, Modify modify) {
+        int modifiers = method.getModifiers();
+        if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
+            throw new RuntimeException("@Modify " + method + " must be public static");
+        }
         methodModify.put(member, new Pair<>(method, modify));
     }
 

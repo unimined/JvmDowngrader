@@ -69,12 +69,12 @@ public class J_U_SplittableRandom {
     }
 
     @Stub
-    public Stream<J_U_R_RandomGenerator> rngs(SplittableRandom random) {
+    public static Stream<J_U_R_RandomGenerator> rngs(SplittableRandom random) {
         return new SplittableRandomGeneratorImpl(random).rngs();
     }
 
     @Stub
-    public Stream<J_U_R_RandomGenerator> rngs(SplittableRandom random, long size) {
+    public static Stream<J_U_R_RandomGenerator> rngs(SplittableRandom random, long size) {
         return new SplittableRandomGeneratorImpl(random).rngs(size);
     }
 

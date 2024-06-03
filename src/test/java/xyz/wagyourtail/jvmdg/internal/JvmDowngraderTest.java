@@ -113,12 +113,18 @@ public class JvmDowngraderTest {
         System.out.println();
         System.out.println("Downgraded: ");
 
+        Set<Path> classpath = new HashSet<>(Stream.of(System.getProperty("java.class.path").split(":"))
+                .map(Path::of)
+                .toList());
+        classpath.add(downgradedJavaApi);
+        classpath.add(mainClasses);
+
         StringBuilder downgradedLog = new StringBuilder();
         Integer ret = JavaRunner.runJarInSubprocess(
                 downgraded,
                 new String[]{},
                 mainClass,
-                Set.of(downgradedJavaApi, mainClasses),
+                classpath,
                 Path.of("."),
                 Map.of(),
                 true,
@@ -303,6 +309,11 @@ public class JvmDowngraderTest {
     @Test
     public void testRandom() throws Exception {
         testDowngrade("xyz.wagyourtail.downgradetest.TestRandom");
+    }
+
+    @Test
+    public void testFile() throws Exception {
+        testDowngrade("xyz.wagyourtail.downgradetest.TestFile");
     }
 
 }

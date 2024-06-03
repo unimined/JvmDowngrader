@@ -10,8 +10,12 @@ public class TestFile {
 
     public static void main(String[] args) throws IOException {
         FileWriter writer = new FileWriter("build/test/test.txt", StandardCharsets.UTF_8);
-        writer.write("Hello World!");
+        writer.write("Hello World!\n");
         writer.close();
+
+        FileWriter writer2 = new FileWriter(new File("build/test/test.txt"), StandardCharsets.UTF_8, true);
+        writer2.write("Goodbye World!");
+        writer2.close();
 
         FileReader reader = new FileReader(new File("build/test/test.txt"), StandardCharsets.UTF_8);
         StringBuilder sb = new StringBuilder();

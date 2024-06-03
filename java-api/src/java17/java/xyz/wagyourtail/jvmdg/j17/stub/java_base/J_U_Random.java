@@ -48,7 +48,7 @@ public class J_U_Random {
     }
 
     @Stub
-    public double nextGaussian(Random random, double mean, double stdDev) {
+    public static double nextGaussian(Random random, double mean, double stdDev) {
         return new BasicRandomGeneratorImpl(random).nextGaussian(mean, stdDev);
     }
 

@@ -40,7 +40,7 @@ public class J_N_F_S_FileSystemProvider {
     }
 
     @Stub
-    public <A extends BasicFileAttributes> A readAttributesIfExists(FileSystemProvider provider, Path path, Class<A> type, LinkOption... options) throws IOException {
+    public static <A extends BasicFileAttributes> A readAttributesIfExists(FileSystemProvider provider, Path path, Class<A> type, LinkOption... options) throws IOException {
         try {
             return provider.readAttributes(path, type, options);
         } catch (NoSuchFileException ignored) {
