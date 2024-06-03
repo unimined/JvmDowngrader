@@ -17,7 +17,7 @@ public class TestFile {
         writer2.write("Goodbye World!");
         writer2.close();
 
-        FileReader reader = new FileReader(new File("build/test/test.txt"), StandardCharsets.UTF_8);
+        FileReader reader = new FileReader("build/test/test.txt", StandardCharsets.UTF_8);
         StringBuilder sb = new StringBuilder();
         int c;
         while ((c = reader.read()) != -1) {

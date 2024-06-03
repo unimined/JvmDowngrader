@@ -18,7 +18,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 
-//@Adapter("Ljava/io/FileWriter;")
 public class J_I_FileWriter {
     private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
     private static final MethodHandle seGetter;
@@ -45,15 +44,6 @@ public class J_I_FileWriter {
             Utils.sneakyThrow(t);
         }
     }
-
-//    public J_I_FileWriter(File file, Charset charset) throws IOException {
-//        super(new FileOutputStream(file), charset);
-//    }
-//
-//    public J_I_FileWriter(File file, Charset charset, boolean append) throws IOException {
-//        super(new FileOutputStream(file, append), charset);
-//    }
-
 
     @Modify(ref = @Ref(value = "java/io/FileWriter", member = "<init>", desc = "(Ljava/lang/String;Ljava/nio/charset/Charset;)V"))
     public static void init1(MethodNode mnode, int i) {
