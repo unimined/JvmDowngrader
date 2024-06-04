@@ -1,8 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.*
-import kotlin.io.path.isDirectory
 
 plugins {
     kotlin("jvm") version "1.9.22"
@@ -12,22 +9,8 @@ repositories {
     mavenCentral()
 }
 
-fun copyDirectory(sourceDirectoryLocation: File, destinationDirectoryLocation: File) {
-    Files.walk(sourceDirectoryLocation.toPath()).forEach { source ->
-        val relative = sourceDirectoryLocation.toPath().relativize(source)
-        val destination = destinationDirectoryLocation.toPath().resolve(relative.toString())
-        if (source.isDirectory()) {
-            Files.createDirectories(destination)
-        } else {
-            Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING)
-        }
-    }
-}
-
-copyDirectory(
-    file("../gradle-plugin/src/utils"),
-    file("src/utils")
-)
+file("src/utils").deleteRecursively()
+file("../gradle-plugin/src/utils").copyRecursively(file("src/utils"))
 
 val asmVersion: String = project.properties["asm_version"]?.toString() ?: run {
     projectDir.parentFile.resolve("gradle.properties").inputStream().use {
