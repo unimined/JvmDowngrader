@@ -14,7 +14,7 @@ import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.jvm.toolchain.JavaToolchainSpec
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.tree.ClassNode
-import xyz.wagyourtail.gradle.*
+import xyz.wagyourtail.jvmdg.util.*
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.zip.ZipFile

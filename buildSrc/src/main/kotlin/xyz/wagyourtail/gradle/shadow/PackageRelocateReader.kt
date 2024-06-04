@@ -3,7 +3,7 @@ package xyz.wagyourtail.gradle.shadow
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.commons.ClassRemapper
-import xyz.wagyourtail.gradle.MustSet
+import xyz.wagyourtail.jvmdg.util.MustSet
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.FilterReader

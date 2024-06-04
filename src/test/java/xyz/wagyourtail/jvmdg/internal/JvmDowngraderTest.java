@@ -21,25 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class JvmDowngraderTest {
     private static final Flags flags = new Flags();
-    private static final Properties props = new Properties();
-
-    static {
-        try (InputStream is = Files.newInputStream(Path.of("gradle.properties"))) {
-            props.load(is);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + props.getProperty("version") + ".jar");
+    private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + System.getProperty("jvmdg.test.version") + ".jar");
 
     static {
 //        System.setProperty("jvmdg.java-api", javaApi.toString());
         flags.api = javaApi.toFile();
     }
 
-    private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.fromMajor(Integer.parseInt(props.getProperty("testTargetVersion")));
+    private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.fromMajor(Integer.parseInt(System.getProperty("jvmdg.test.javaVersion")));
 
     private final Path mainClasses = Path.of("./build/classes/java/main");
 
@@ -94,7 +83,7 @@ public class JvmDowngraderTest {
                 Map.of(),
                 true,
                 List.of(),
-                Utils.getCurrentClassVersion(),
+                Path.of(System.getProperty("jvmdg.test.jvm")),
                 (String it) -> {
                     originalLog.append(it).append("\n");
                     System.out.println(it);
@@ -129,7 +118,7 @@ public class JvmDowngraderTest {
                 Map.of(),
                 true,
                 List.of(),
-                JavaRunner.JavaVersion.V1_8.toOpcode(),
+                Path.of(System.getProperty("jvmdg.test.targetJvm")),
                 (String it) -> {
                     downgradedLog.append(it).append("\n");
                     System.out.println(it);
@@ -153,7 +142,7 @@ public class JvmDowngraderTest {
                 Map.of(),
                 true,
                 List.of(),
-                JavaRunner.JavaVersion.V1_8.toOpcode(),
+                Path.of(System.getProperty("jvmdg.test.targetJvm")),
                 (String it) -> {
                     shadedLog.append(it).append("\n");
                     System.out.println(it);
@@ -190,8 +179,8 @@ public class JvmDowngraderTest {
                 Path.of("."),
                 Map.of(),
                 true,
-                List.of(/*"-Djvmdg.debug=true", "-Djvmdg.java-api=" + javaApijvm, "-Djvmdg.log=false", "-Djvmdg.quiet=true" */),
-                JavaRunner.JavaVersion.V1_8.toOpcode(),
+                List.of(/*"-Djvmdg.debug=true", "-Djvmdg.java-api=" + javaApi, "-Djvmdg.log=false", "-Djvmdg.quiet=true" */),
+                Path.of(System.getProperty("jvmdg.test.targetJvm")),
                 (String it) -> {
                     runtimeDowngradeLog.append(it).append("\n");
                     System.out.println(it);

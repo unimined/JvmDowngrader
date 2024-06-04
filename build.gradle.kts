@@ -172,6 +172,7 @@ tasks.javadoc {
 }
 
 val testVersion = project.properties["testVersion"] as String
+val testTargetVersion = project.properties["testTargetVersion"] as String
 
 tasks.compileTestJava {
     options.encoding = "UTF-8"
@@ -189,10 +190,20 @@ tasks.test {
         project(":downgradetest").tasks.build,
         project(":java-api").tasks.build
     )
-//    jvmArgs("-Djvmdg.debug=true")
     javaLauncher = javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
     }
+
+    jvmArgs(
+        "-Djvmdg.test.jvm=" + javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
+        }.get().executablePath.toString(),
+        "-Djvmdg.test.targetJvm=" + javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(testTargetVersion.toInt()))
+        }.get().executablePath.toString(),
+        "-Djvmdg.test.javaVersion=$testTargetVersion",
+        "-Djvmdg.test.version=$version",
+    )
 }
 
 project.evaluationDependsOnChildren()

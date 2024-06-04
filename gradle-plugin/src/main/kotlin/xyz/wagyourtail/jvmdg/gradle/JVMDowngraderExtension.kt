@@ -79,7 +79,9 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         val artifactType = Attribute.of("artifactType", String::class.java)
         val downgradeAttr = Attribute.of("jvmdg.dg.${dep.name}", Boolean::class.javaObjectType)
         val shadeAttr = Attribute.of("jvmdg.shade.${dep.name}", Boolean::class.javaObjectType)
-//        val javaVersion = Attribute.of("org.gradle.jvm.version", Int::class.javaObjectType)
+        val javaVersionAttr = Attribute.of("org.gradle.jvm.version", Int::class.javaObjectType)
+
+        lateinit var javaVersion: JavaVersion
 
         project.dependencies.apply {
             attributesSchema {
@@ -99,6 +101,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                     it.debug.set(debug)
                     it.debugSkipStubs.set(debugSkipStubs)
                     config(it)
+                    javaVersion = it.downgradeTo.get()
                 }
             }
         }

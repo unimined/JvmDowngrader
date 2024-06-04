@@ -1,5 +1,7 @@
-package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
+package xyz.wagyourtail.jvmdg.j11.impl;
 
+
+import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpClient;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -13,10 +15,10 @@ import java.util.concurrent.Executor;
 public class HttpClientBuilderImpl implements J_N_H_HttpClient.Builder {
     CookieHandler cookieHandler;
     Duration connectTimeout;
-    J_N_H_HttpClient.Redirect followRedirects;
+    J_N_H_HttpClient.Redirect followRedirects = J_N_H_HttpClient.Redirect.NORMAL;
     ProxySelector proxy;
     Authenticator authenticator;
-    J_N_H_HttpClient.Version version;
+    J_N_H_HttpClient.Version version = J_N_H_HttpClient.Version.HTTP_1_1;
     Executor executor;
     // Security parameters
     SSLContext sslContext;

@@ -16,124 +16,122 @@ import java.util.function.Consumer;
 import java.util.zip.GZIPInputStream;
 
 public class JavaRunner {
-
-    private static final String os = System.getProperty("os.name").toLowerCase();
-    private static final String arch = System.getProperty("os.arch");
-
-    private static String getOS() {
-        if (os.contains("darwin")) {
-            return "mac";
-        } else if (os.contains("win")) {
-            return "windows";
-        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-            return "linux";
-        } else {
-            return os;
-        }
-    }
-
-    private static String getArch() {
-        if (arch.contains("64")) {
-            return "x64";
-        } else if (arch.contains("86")) {
-            return "x86";
-        } else if (arch.contains("arm")) {
-            return "arm";
-        } else {
-            return arch;
-        }
-    }
-
-    private static InputStream downloadJavaFromAdopt(JavaVersion vers) throws IOException {
-        //                         https://api.adoptium.net/v3/binary/latest/8                             /ga/linux          /x64              /jdk/hotspot/normal/eclipse
-        URI download = URI.create("https://api.adoptium.net/v3/binary/latest/" + vers.getMajorVersion() + "/ga/" + getOS() + "/" + getArch() + "/jre/hotspot/normal/eclipse");
-        System.out.println("Attempting to download adoptium from " + download);
-        return download.toURL().openStream();
-    }
-
-    private static InputStream downloadJavaFromAzul(JavaVersion vers) throws IOException {
-        //                         https://api.azul.com/metadata/v1/zulu/packages/?java_version=7&os=windows&arch=x64&archive_type=zip&latest=true&distro_version=7&release_status=ga&availability_types=CA&certifications=tck&page=1&page_size=100
-        URI download = URI.create("https://api.azul.com/metadata/v1/zulu/packages/?java_version=" + vers.getMajorVersion() + "&os=" + getOS() + "&arch=" + getArch() + "&archive_type=" + (getOS().equals("windows") ? "zip" : "tar.gz") + "&latest=true&distro_version=" + vers.getMajorVersion() + "&release_status=ga&availability_types=CA&certifications=tck&page=1&page_size=100");
-        // parse json for url
-        System.out.println("getting download list from " + download);
-        try (InputStream stream = download.toURL().openStream()) {
-            String url = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonArray().get(0).getAsJsonObject().get("download_url").getAsString();
-            URI uri = URI.create(url);
-            System.out.println("Downloading from " + uri);
-            return uri.toURL().openStream();
-        }
-    }
-
-    private static void extractToJVMDir(InputStream stream, Path jvmdir) throws IOException {
-        try (ArchiveInputStream archiver = getOS().equals("windows") ? new ZipArchiveInputStream(stream) : new TarArchiveInputStream(new GZIPInputStream(stream))) {
-            var entry = archiver.getNextEntry();
-            while (entry != null) {
-                // remove first directory
-                String[] nameParts = entry.getName().split("/");
-                List<String> filteredNameParts = new ArrayList<>();
-                for (String namePart : nameParts) {
-                    if (!namePart.isEmpty()) {
-                        filteredNameParts.add(namePart);
-                    }
-                }
-                if (filteredNameParts.getFirst().startsWith("jdk")) {
-                    filteredNameParts.removeFirst();
-                } else if (filteredNameParts.getFirst().startsWith("zulu")) {
-                    filteredNameParts.removeFirst();
-                }
-                String name = String.join("/", filteredNameParts);
-                if (entry.isDirectory()) {
-                    Files.createDirectories(jvmdir.resolve(name));
-                } else {
-                    Files.copy(archiver, jvmdir.resolve(name));
-                }
-                entry = archiver.getNextEntry();
-            }
-        }
-    }
-
-    private static Path getJavaHome(JavaVersion vers) throws IOException {
-        Path jvmdir = Paths.get("./build/test/jvm/" + vers.getMajorVersion());
-        try {
-            if (!Files.exists(jvmdir)) {
-                Files.createDirectories(jvmdir);
-                InputStream stream;
-                try {
-                    stream = downloadJavaFromAdopt(vers);
-                    extractToJVMDir(stream, jvmdir);
-                } catch (IOException e) {
-                    stream = downloadJavaFromAzul(vers);
-                    extractToJVMDir(stream, jvmdir);
-                }
-            }
-        } catch (Throwable t) {
-            try {
-                Files.deleteIfExists(jvmdir);
-            } catch (IOException e) {
-                // Ignore exception
-            }
-            throw t;
-        }
-        return jvmdir;
-    }
-
-    public static Path getJava(int vers) throws IOException {
-        JavaVersion javaVersion = JavaVersion.fromClassVers(vers);
-        Path p = getJavaHome(javaVersion).resolve("bin").resolve("java" + (getOS().equals("windows") ? ".exe" : ""));
-        if (!Files.exists(p)) {
-            throw new IllegalStateException("java binary not found at " + p);
-        }
-        if (!getOS().equals("windows")) {
-            Files.setPosixFilePermissions(p, PosixFilePermissions.fromString("rwxr-xr-x"));
-        }
-        return p;
-    }
+//    private static final String os = System.getProperty("os.name").toLowerCase();
+//    private static final String arch = System.getProperty("os.arch");
+//
+//    private static String getOS() {
+//        if (os.contains("darwin")) {
+//            return "mac";
+//        } else if (os.contains("win")) {
+//            return "windows";
+//        } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+//            return "linux";
+//        } else {
+//            return os;
+//        }
+//    }
+//
+//    private static String getArch() {
+//        if (arch.contains("64")) {
+//            return "x64";
+//        } else if (arch.contains("86")) {
+//            return "x86";
+//        } else if (arch.contains("arm")) {
+//            return "arm";
+//        } else {
+//            return arch;
+//        }
+//    }
+//
+//    private static InputStream downloadJavaFromAdopt(JavaVersion vers) throws IOException {
+//        //                         https://api.adoptium.net/v3/binary/latest/8                             /ga/linux          /x64              /jdk/hotspot/normal/eclipse
+//        URI download = URI.create("https://api.adoptium.net/v3/binary/latest/" + vers.getMajorVersion() + "/ga/" + getOS() + "/" + getArch() + "/jre/hotspot/normal/eclipse");
+//        System.out.println("Attempting to download adoptium from " + download);
+//        return download.toURL().openStream();
+//    }
+//
+//    private static InputStream downloadJavaFromAzul(JavaVersion vers) throws IOException {
+//        //                         https://api.azul.com/metadata/v1/zulu/packages/?java_version=7&os=windows&arch=x64&archive_type=zip&latest=true&distro_version=7&release_status=ga&availability_types=CA&certifications=tck&page=1&page_size=100
+//        URI download = URI.create("https://api.azul.com/metadata/v1/zulu/packages/?java_version=" + vers.getMajorVersion() + "&os=" + getOS() + "&arch=" + getArch() + "&archive_type=" + (getOS().equals("windows") ? "zip" : "tar.gz") + "&latest=true&distro_version=" + vers.getMajorVersion() + "&release_status=ga&availability_types=CA&certifications=tck&page=1&page_size=100");
+//        // parse json for url
+//        System.out.println("getting download list from " + download);
+//        try (InputStream stream = download.toURL().openStream()) {
+//            String url = JsonParser.parseReader(new InputStreamReader(stream)).getAsJsonArray().get(0).getAsJsonObject().get("download_url").getAsString();
+//            URI uri = URI.create(url);
+//            System.out.println("Downloading from " + uri);
+//            return uri.toURL().openStream();
+//        }
+//    }
+//
+//    private static void extractToJVMDir(InputStream stream, Path jvmdir) throws IOException {
+//        try (ArchiveInputStream archiver = getOS().equals("windows") ? new ZipArchiveInputStream(stream) : new TarArchiveInputStream(new GZIPInputStream(stream))) {
+//            var entry = archiver.getNextEntry();
+//            while (entry != null) {
+//                // remove first directory
+//                String[] nameParts = entry.getName().split("/");
+//                List<String> filteredNameParts = new ArrayList<>();
+//                for (String namePart : nameParts) {
+//                    if (!namePart.isEmpty()) {
+//                        filteredNameParts.add(namePart);
+//                    }
+//                }
+//                if (filteredNameParts.getFirst().startsWith("jdk")) {
+//                    filteredNameParts.removeFirst();
+//                } else if (filteredNameParts.getFirst().startsWith("zulu")) {
+//                    filteredNameParts.removeFirst();
+//                }
+//                String name = String.join("/", filteredNameParts);
+//                if (entry.isDirectory()) {
+//                    Files.createDirectories(jvmdir.resolve(name));
+//                } else {
+//                    Files.copy(archiver, jvmdir.resolve(name));
+//                }
+//                entry = archiver.getNextEntry();
+//            }
+//        }
+//    }
+//
+//    private static Path getJavaHome(JavaVersion vers) throws IOException {
+//        Path jvmdir = Paths.get("./build/test/jvm/" + vers.getMajorVersion());
+//        try {
+//            if (!Files.exists(jvmdir)) {
+//                Files.createDirectories(jvmdir);
+//                InputStream stream;
+//                try {
+//                    stream = downloadJavaFromAdopt(vers);
+//                    extractToJVMDir(stream, jvmdir);
+//                } catch (IOException e) {
+//                    stream = downloadJavaFromAzul(vers);
+//                    extractToJVMDir(stream, jvmdir);
+//                }
+//            }
+//        } catch (Throwable t) {
+//            try {
+//                Files.deleteIfExists(jvmdir);
+//            } catch (IOException e) {
+//                // Ignore exception
+//            }
+//            throw t;
+//        }
+//        return jvmdir;
+//    }
+//
+//    public static Path getJava(int vers) throws IOException {
+//        JavaVersion javaVersion = JavaVersion.fromClassVers(vers);
+//        Path p = getJavaHome(javaVersion).resolve("bin").resolve("java" + (getOS().equals("windows") ? ".exe" : ""));
+//        if (!Files.exists(p)) {
+//            throw new IllegalStateException("java binary not found at " + p);
+//        }
+//        if (!getOS().equals("windows")) {
+//            Files.setPosixFilePermissions(p, PosixFilePermissions.fromString("rwxr-xr-x"));
+//        }
+//        return p;
+//    }
 
     public static Integer runJarInSubprocess(Path jar, String[] args, String mainClass, Set<Path> classPath,
-                                             Path workingDir, Map<String, String> env, boolean wait, List<String> jvmArgs, int javaVersion,
+                                             Path workingDir, Map<String, String> env, boolean wait, List<String> jvmArgs, Path javaBin,
                                              Consumer<String> output, Consumer<String> error) throws IOException, InterruptedException {
 
-        Path javaBin = getJava(javaVersion);
         if (!javaBin.toFile().exists()) {
             throw new IllegalStateException("java binary not found at " + javaBin);
         }

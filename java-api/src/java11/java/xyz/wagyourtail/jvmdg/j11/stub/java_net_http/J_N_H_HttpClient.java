@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 
+import xyz.wagyourtail.jvmdg.j11.impl.HttpClientBuilderImpl;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import javax.net.ssl.SSLContext;

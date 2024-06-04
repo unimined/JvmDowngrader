@@ -1,18 +1,44 @@
-package xyz.wagyourtail.gradle
+package xyz.wagyourtail.jvmdg.util
 
+import org.apache.commons.compress.archivers.zip.ZipFile
 import org.gradle.api.JavaVersion
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
+import java.io.File
 import java.io.InputStream
 import java.net.URI
 import java.nio.file.FileSystem
 import java.nio.file.FileSystems
+import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
 import java.util.zip.ZipOutputStream
+import kotlin.Pair
 import kotlin.io.path.exists
 import kotlin.io.path.outputStream
+
+fun File.deleteIfExists() {
+    if (exists()) {
+        delete()
+    }
+}
+
+fun <T> Path.readZipInputStreamFor(path: String, throwIfMissing: Boolean = true, action: (InputStream) -> T): T {
+    Files.newByteChannel(this).use {
+        ZipFile.builder().setIgnoreLocalFileHeader(true).setSeekableByteChannel(it).get().use { zip ->
+            val entry = zip.getEntry(path.replace("\\", "/"))
+            if (entry != null) {
+                return zip.getInputStream(entry).use(action)
+            } else {
+                if (throwIfMissing) {
+                    throw IllegalArgumentException("Missing file $path in $this")
+                }
+            }
+        }
+    }
+    return null as T
+}
 
 fun JavaVersion.sym() = this.majorVersion.toInt().toString(36).uppercase()
 
@@ -62,6 +88,7 @@ fun JavaVersion.toOpcode(): Int = when (this) {
     JavaVersion.VERSION_20 -> Opcodes.V20
     JavaVersion.VERSION_21 -> Opcodes.V21
     JavaVersion.VERSION_22 -> Opcodes.V22
+    JavaVersion.VERSION_23 -> Opcodes.V23
     else -> throw IllegalArgumentException("Unsupported Java Version: $this")
 }
 
@@ -70,3 +97,6 @@ operator fun JavaVersion.rangeTo(that: JavaVersion): Array<JavaVersion> {
 }
 
 val CONSTANT_TIME_FOR_ZIP_ENTRIES = GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).timeInMillis
+
+
+fun safeName(name: String): String = name.replace(Regex("[.;\\[/]"), "-")

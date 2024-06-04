@@ -23,6 +23,22 @@ repositories {
     mavenCentral()
 }
 
+sourceSets.main {
+    java.srcDirs("src/utils/java")
+    kotlin.srcDirs("src/utils/kotlin")
+}
+//
+//val utils by sourceSets.creating {
+//    compileClasspath += sourceSets["main"].compileClasspath
+//    runtimeClasspath += sourceSets["main"].runtimeClasspath
+//
+//    sourceSets["main"].compileClasspath += this.output
+//    sourceSets["main"].runtimeClasspath += this.output
+//
+//    sourceSets["test"].compileClasspath += this.output
+//    sourceSets["test"].runtimeClasspath += this.output
+//}
+
 val asmVersion: String = project.properties["asm_version"]?.toString() ?: run {
     projectDir.parentFile.resolve("gradle.properties").inputStream().use {
         val props = Properties()
@@ -32,6 +48,8 @@ val asmVersion: String = project.properties["asm_version"]?.toString() ?: run {
 }
 
 dependencies {
+    gradleApi()
+
     // commons compress
     implementation("org.apache.commons:commons-compress:1.26.1")
 
@@ -50,7 +68,6 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.jar {
-
     from(projectDir.parentFile.resolve("LICENSE.md"))
 
     // so we don't have to retrieve it.
@@ -82,7 +99,7 @@ tasks.getByName<Jar>("sourcesJar") {
 }
 
 tasks.test {
-    dependsOn(":java-api:build")
+    dependsOn(":java-api:assemble")
 }
 
 signing.isRequired = !project.hasProperty("is_local")

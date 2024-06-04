@@ -43,3 +43,4 @@ bin/
 .DS_Store
 
 **/.jvmdg
+buildSrc/src/utils

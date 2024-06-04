@@ -5,10 +5,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 public class TestFile {
 
     public static void main(String[] args) throws IOException {
+       new File("build/test").mkdirs();
         FileWriter writer = new FileWriter("build/test/test.txt", StandardCharsets.UTF_8);
         writer.write("Hello World!\n");
         writer.close();
