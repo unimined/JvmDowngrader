@@ -96,6 +96,10 @@ operator fun JavaVersion.rangeTo(that: JavaVersion): Array<JavaVersion> {
     return JavaVersion.entries.toTypedArray().copyOfRange(this.ordinal, that.ordinal + 1)
 }
 
+operator fun JavaVersion.plus(int: Int): JavaVersion {
+    return JavaVersion.entries[this.ordinal + int]
+}
+
 val CONSTANT_TIME_FOR_ZIP_ENTRIES = GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).timeInMillis
 
 

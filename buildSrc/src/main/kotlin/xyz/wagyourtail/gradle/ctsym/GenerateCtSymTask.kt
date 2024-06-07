@@ -35,8 +35,8 @@ abstract class GenerateCtSymTask : ConventionTask() {
 
     init {
         outputs.upToDateWhen { ctSym.exists() }
-        lowerVersion.set(JavaVersion.VERSION_1_6)
-        upperVersion.set(JavaVersion.VERSION_22)
+        lowerVersion.convention(JavaVersion.VERSION_1_6).finalizeValueOnRead()
+        upperVersion.convention(JavaVersion.VERSION_22).finalizeValueOnRead()
     }
 
     private fun ZipArchiveOutputStream.write(ci: ClassInfo) {
@@ -65,6 +65,7 @@ abstract class GenerateCtSymTask : ConventionTask() {
     @TaskAction
     @OptIn(ExperimentalPathApi::class)
     fun run() {
+        project.logger.lifecycle("[ct.sym] Generating for ${lowerVersion.get()} to ${upperVersion.get()}")
         val packageByMod = mutableMapOf<String, String>()
 
         val toolchain = project.extensions.getByType(JavaToolchainService::class.java)
@@ -74,7 +75,7 @@ abstract class GenerateCtSymTask : ConventionTask() {
             ctSym.toPath().outputStream(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
         ).use { zos ->
             val prevJava = mutableMapOf<String, ClassInfo>()
-            for (java in (JavaVersion.VERSION_1_6..JavaVersion.VERSION_22).reversed()) {
+            for (java in (lowerVersion.get()..upperVersion.get()).reversed()) {
                 val home = toolchain.getJavaHome(java)
                 project.logger.lifecycle("[ct.sym] Processing $java at $home")
                 for (path in home.walk()

@@ -66,8 +66,9 @@ public class ApiCoverageChecker {
 
             var classes = new HashMap<String, Pair<String, ClassNode>>();
 
+            var max = versions.keySet().stream().max(Integer::compareTo).orElseThrow();
             // load initial classes
-            compare(versions.get(21), classes, new ArrayList<>());
+            compare(versions.get(max), classes, new ArrayList<>());
 
             versions.keySet().stream().sorted((a, b) -> -a.compareTo(b)).skip(1).forEach(v -> {
                 var missingStubs = new ArrayList<MemberInfo>();

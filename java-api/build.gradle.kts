@@ -3,6 +3,7 @@ import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.tree.ClassNode
 import xyz.wagyourtail.gradle.ctsym.GenerateCtSymTask
 import xyz.wagyourtail.gradle.shadow.ShadowJar
+import xyz.wagyourtail.jvmdg.util.plus
 import xyz.wagyourtail.jvmdg.util.toOpcode
 
 buildscript {

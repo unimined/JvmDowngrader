@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 
-import jdk.incubator.http.HttpRequest;
 import xyz.wagyourtail.jvmdg.j11.impl.http.HttpClientBuilderImpl;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
@@ -46,11 +45,11 @@ public abstract class J_N_H_HttpClient {
 
     public abstract Optional<Executor> executor();
 
-    public abstract <T> J_N_H_HttpResponse<T> send(HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler) throws IOException, InterruptedException;
+    public abstract <T> J_N_H_HttpResponse<T> send(J_N_H_HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler) throws IOException, InterruptedException;
 
-    public abstract <T>CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler);
+    public abstract <T>CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(J_N_H_HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler);
 
-    public abstract <T> CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler, J_N_H_HttpResponse.PushPromiseHandler<T> pushPromiseHandler);
+    public abstract <T> CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(J_N_H_HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler, J_N_H_HttpResponse.PushPromiseHandler<T> pushPromiseHandler);
 
     @Adapter("Ljava/net/http/HttpClient$Redirect;")
     public enum Redirect {
