@@ -86,9 +86,7 @@ public class Java11Downgrader extends VersionProvider {
 //             stub(J_N_H_HttpClient.class);
         // HttpConnectTimeoutException
 //             stub(J_N_H_HttpRequest.class);
-//             stub(J_N_H_HttpRequest.Builder.class);
-//             stub(J_N_H_HttpRequest.BodyPublisher.class);
-        // HttpResponse
+//             stub(J_N_H_HttpResponse.class);
         // HttpTimeoutException
         // WebSocket
         // WebSocketHandshakeException

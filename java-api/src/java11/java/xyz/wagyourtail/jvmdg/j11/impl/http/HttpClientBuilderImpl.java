@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.j11.impl;
+package xyz.wagyourtail.jvmdg.j11.impl.http;
 
 
 import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpClient;

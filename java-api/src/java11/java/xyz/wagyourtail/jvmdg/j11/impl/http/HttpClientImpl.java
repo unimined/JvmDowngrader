@@ -1,14 +1,19 @@
-package xyz.wagyourtail.jvmdg.j11.impl;
+package xyz.wagyourtail.jvmdg.j11.impl.http;
 
+import jdk.incubator.http.HttpRequest;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpClient;
+import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpResponse;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import java.io.IOException;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 
@@ -83,6 +88,19 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         return Optional.ofNullable(executor);
     }
 
-    //TODO
+    @Override
+    public <T> J_N_H_HttpResponse<T> send(HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler) throws IOException, InterruptedException {
+        throw MissingStubError.create();
+    }
+
+    @Override
+    public <T> CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler) {
+        throw MissingStubError.create();
+    }
+
+    @Override
+    public <T> CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler, J_N_H_HttpResponse.PushPromiseHandler<T> pushPromiseHandler) {
+        throw MissingStubError.create();
+    }
 
 }

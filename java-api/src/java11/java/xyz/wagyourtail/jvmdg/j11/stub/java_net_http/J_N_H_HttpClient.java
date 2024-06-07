@@ -1,16 +1,19 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 
-import xyz.wagyourtail.jvmdg.j11.impl.HttpClientBuilderImpl;
+import jdk.incubator.http.HttpRequest;
+import xyz.wagyourtail.jvmdg.j11.impl.http.HttpClientBuilderImpl;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import java.io.IOException;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 @Adapter("Ljava/net/http/HttpClient;")
@@ -42,6 +45,12 @@ public abstract class J_N_H_HttpClient {
     public abstract Version version();
 
     public abstract Optional<Executor> executor();
+
+    public abstract <T> J_N_H_HttpResponse<T> send(HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler) throws IOException, InterruptedException;
+
+    public abstract <T>CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler);
+
+    public abstract <T> CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler, J_N_H_HttpResponse.PushPromiseHandler<T> pushPromiseHandler);
 
     @Adapter("Ljava/net/http/HttpClient$Redirect;")
     public enum Redirect {

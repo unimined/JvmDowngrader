@@ -79,7 +79,7 @@ public class J_L_I_MethodHandles$Lookup {
 
         @Override
         public byte[] apply(String s) {
-            URL url = findResource(s + ".class");
+            URL url = getResource(s + ".class");
             if (url == null) return null;
             try {
                 return Utils.readAllBytes(url.openStream());

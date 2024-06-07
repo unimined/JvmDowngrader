@@ -1,5 +1,8 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.j11.impl.http.IterablePublisher;
+import xyz.wagyourtail.jvmdg.j11.impl.http.StreamIterator;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import java.io.InputStream;
@@ -7,20 +10,21 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 
 @Adapter("Ljava/net/http/HttpRequest;")
 public abstract class J_N_H_HttpRequest {
     public J_N_H_HttpRequest() {
-        throw new UnsupportedOperationException("TODO");
+        throw MissingStubError.create();
     }
 
     public static Builder newBuilder() {
-        throw new UnsupportedOperationException("TODO");
+        throw MissingStubError.create();
     }
 
     public abstract Optional<BodyPublisher> bodyPublisher();
@@ -96,11 +100,23 @@ public abstract class J_N_H_HttpRequest {
         }
 
         public static BodyPublisher fromPublisher(Flow.Publisher<? extends ByteBuffer> publisher) {
-            throw new UnsupportedOperationException("TODO");
+            return fromPublisher(publisher, -1);
         }
 
         public static BodyPublisher fromPublisher(Flow.Publisher<? extends ByteBuffer> publisher, long contentLength) {
-            throw new UnsupportedOperationException("TODO");
+            Objects.requireNonNull(publisher);
+            return new BodyPublisher() {
+
+                @Override
+                public long contentLength() {
+                    return contentLength;
+                }
+
+                @Override
+                public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+                    publisher.subscribe(subscriber);
+                }
+            };
         }
 
         public static BodyPublisher ofString(String s) {
@@ -108,35 +124,263 @@ public abstract class J_N_H_HttpRequest {
         }
 
         public static BodyPublisher ofString(String s, Charset charset) {
-            throw new UnsupportedOperationException("TODO");
+            return ofByteArray(s.getBytes(charset));
         }
 
         public static BodyPublisher ofInputStream(Supplier<? extends InputStream> streamSupplier) {
-            throw new UnsupportedOperationException("TODO");
+            return new BodyPublisher() {
+                @Override
+                public long contentLength() {
+                    return -1;
+                }
+
+                @Override
+                public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+                    IterablePublisher<ByteBuffer> publisher;
+                    InputStream is = streamSupplier.get();
+                    if (is == null) {
+                        publisher = new IterablePublisher<>(null, new NullPointerException("InputStream supplier returned null"));
+                    } else {
+                        publisher = new IterablePublisher<>(() -> new StreamIterator(is));
+                    }
+                    publisher.subscribe(subscriber);
+                }
+            };
         }
 
         public static BodyPublisher ofByteArray(byte[] bytes) {
-            throw new UnsupportedOperationException("TODO");
+            return ofByteArray(bytes, 0, bytes.length);
         }
 
         public static BodyPublisher ofByteArray(byte[] bytes, int offset, int length) {
-            throw new UnsupportedOperationException("TODO");
+            return new BodyPublisher() {
+                @Override
+                public long contentLength() {
+                    return length;
+                }
+
+                @Override
+                public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+                    subscriber.onSubscribe(new Flow.Subscription() {
+                        private boolean completed;
+
+                        @Override
+                        public void request(long n) {
+                            if (n <= 0) {
+                                subscriber.onError(new IllegalArgumentException("n <= 0"));
+                                return;
+                            }
+                            if (completed) {
+                                return;
+                            }
+                            completed = true;
+                            ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
+                            subscriber.onNext(buffer);
+                            subscriber.onComplete();
+                        }
+
+                        @Override
+                        public void cancel() {
+                            completed = true;
+                        }
+                    });
+                }
+            };
         }
 
         public static BodyPublisher ofFile(Path file) {
-            throw new UnsupportedOperationException("TODO");
+            return new BodyPublisher() {
+                @Override
+                public long contentLength() {
+                    try {
+                        return Files.size(file);
+                    } catch (Exception e) {
+                        return -1;
+                    }
+                }
+
+                @Override
+                public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+                    subscriber.onSubscribe(new Flow.Subscription() {
+                        private boolean completed;
+
+                        @Override
+                        public void request(long n) {
+                            if (n <= 0) {
+                                subscriber.onError(new IllegalArgumentException("n <= 0"));
+                                return;
+                            }
+                            if (completed) {
+                                return;
+                            }
+                            completed = true;
+                            try (InputStream is = Files.newInputStream(file)) {
+                                ByteBuffer buffer = ByteBuffer.wrap(is.readAllBytes());
+                                subscriber.onNext(buffer);
+                                subscriber.onComplete();
+                            } catch (Exception e) {
+                                subscriber.onError(e);
+                            }
+                        }
+
+                        @Override
+                        public void cancel() {
+                            completed = true;
+                        }
+                    });
+                }
+            };
         }
 
         public static BodyPublisher ofByteArrays(Iterable<byte[]> byteArrays) {
-            throw new UnsupportedOperationException("TODO");
+            return new BodyPublisher() {
+                @Override
+                public long contentLength() {
+                    return -1;
+                }
+
+                @Override
+                public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+                    IterablePublisher<ByteBuffer> publisher = new IterablePublisher<>(() -> new Iterator<ByteBuffer>() {
+                        final Iterator<byte[]> iterator = byteArrays.iterator();
+
+                        @Override
+                        public boolean hasNext() {
+                            return iterator.hasNext();
+                        }
+
+                        @Override
+                        public ByteBuffer next() {
+                            return ByteBuffer.wrap(iterator.next());
+                        }
+                    });
+                    publisher.subscribe(subscriber);
+                }
+            };
         }
 
         public static BodyPublisher noBody() {
-            throw new UnsupportedOperationException("TODO");
+            return new BodyPublisher() {
+                @Override
+                public long contentLength() {
+                    return 0;
+                }
+
+                @Override
+                public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+                    subscriber.onSubscribe(new Flow.Subscription() {
+                        @Override
+                        public void request(long n) {
+                            subscriber.onComplete();
+                        }
+
+                        @Override
+                        public void cancel() {
+                        }
+                    });
+                }
+            };
         }
 
         public static BodyPublisher concat(BodyPublisher... publishers) {
-            throw new UnsupportedOperationException("TODO");
+            return new BodyPublisher() {
+                @Override
+                public long contentLength() {
+                    long sum = 0;
+                    for (BodyPublisher publisher : publishers) {
+                        sum += publisher.contentLength();
+                    }
+                    return sum;
+                }
+
+                @Override
+                public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
+                    subscriber.onSubscribe(new Flow.Subscription() {
+                        private final Iterator<BodyPublisher> iterator = List.of(publishers).iterator();
+                        private boolean completed;
+
+                        @Override
+                        public void request(long n) {
+                            if (n <= 0) {
+                                subscriber.onError(new IllegalArgumentException("n <= 0"));
+                                return;
+                            }
+                            if (completed) {
+                                return;
+                            }
+                            try {
+                                while (n > 0) {
+                                    if (!iterator.hasNext()) {
+                                        completed = true;
+                                        subscriber.onComplete();
+                                        return;
+                                    }
+                                    BodyPublisher publisher = iterator.next();
+                                    long contentLength = publisher.contentLength();
+                                    if (contentLength > 0) {
+                                        publisher.subscribe(new Flow.Subscriber<>() {
+                                            private long remaining = contentLength;
+
+                                            @Override
+                                            public void onSubscribe(Flow.Subscription subscription) {
+                                                subscription.request(Long.MAX_VALUE);
+                                            }
+
+                                            @Override
+                                            public void onNext(ByteBuffer item) {
+                                                subscriber.onNext(item);
+                                                remaining -= item.remaining();
+                                                if (remaining == 0) {
+                                                    subscriber.onComplete();
+                                                }
+                                            }
+
+                                            @Override
+                                            public void onError(Throwable throwable) {
+                                                subscriber.onError(throwable);
+                                            }
+
+                                            @Override
+                                            public void onComplete() {
+                                            }
+                                        });
+                                    } else {
+                                        publisher.subscribe(new Flow.Subscriber<>() {
+                                            @Override
+                                            public void onSubscribe(Flow.Subscription subscription) {
+                                                subscription.request(Long.MAX_VALUE);
+                                            }
+
+                                            @Override
+                                            public void onNext(ByteBuffer item) {
+                                                subscriber.onNext(item);
+                                            }
+
+                                            @Override
+                                            public void onError(Throwable throwable) {
+                                                subscriber.onError(throwable);
+                                            }
+
+                                            @Override
+                                            public void onComplete() {
+                                                subscriber.onComplete();
+                                            }
+                                        });
+                                    }
+                                    n--;
+                                }
+                            } catch (Throwable t) {
+                                subscriber.onError(t);
+                            }
+                        }
+
+                        @Override
+                        public void cancel() {
+                            completed = true;
+                        }
+                    });
+                }
+            };
         }
     }
 }

@@ -63,7 +63,7 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_L_Thread.class);
         // ElementType
         // MethodHandle
-        // MethodHandles
+        stub(J_L_I_MethodHandles.class);
         // MethodHandles$Lookup
         // StringConcatException
         stub(J_L_I_StringConcatFactory.class);

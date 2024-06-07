@@ -9,7 +9,8 @@ Note that certain things like reflection and dynamic class definition downgradin
 downgrading.
 dynamic class definitions being things like `MethodHandles$Lookup#defineClass` and classloader shenanigans.
 
-add my maven in `settings.gradle`:
+~~add my maven in `settings.gradle`:~~
+JvmDowngrader is now on the gradle plugin portal, so you can skip this step, unless you want to use a snapshot version.
 
 ```gradle
 pluginManagement {

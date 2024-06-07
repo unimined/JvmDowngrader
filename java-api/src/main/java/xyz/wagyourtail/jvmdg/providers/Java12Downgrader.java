@@ -19,7 +19,7 @@ public class Java12Downgrader extends VersionProvider {
         // Float
         // Integer
         // Long
-        // String
+        stub(J_L_String.class);
         // ClassDesc
         // ConstantDesc
         // ConstantDescs
