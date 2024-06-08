@@ -51,6 +51,10 @@ abstract class ShadeFiles : ConventionTask(), ShadeFlags {
         shadePath.convention(jvmdg.shadePath).finalizeValueOnRead()
     }
 
+//    fun setShadePath(path: String) {
+//        shadePath.set { path }
+//    }
+
     @TaskAction
     fun doDowngrade() {
         val toDowngrade = inputCollection.map { it.toPath() }.filter { it.exists() }
