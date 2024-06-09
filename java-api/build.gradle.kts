@@ -43,7 +43,7 @@ operator fun JavaVersion.minus(int: Int): JavaVersion {
 }
 
 val fromVersion = JavaVersion.toVersion(project.properties["stubFromVersion"]!!)
-val toVersion = JavaVersion.toVersion(project.properties["stubToVersion"]!!)
+val toVersion = JavaVersion.toVersion(project.properties["stubToVersion"]!!) + 1
 
 sourceSets {
     for (vers in fromVersion..toVersion) {

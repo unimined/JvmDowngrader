@@ -16,7 +16,8 @@ public class J_L_Class {
             case "long" -> long.class;
             case "float" -> float.class;
             case "double" -> double.class;
-            default -> throw new IllegalArgumentException("Unknown primitive type: " + name);
+            case "void" -> void.class;
+            default -> null;
         };
     }
 
