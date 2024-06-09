@@ -696,13 +696,13 @@ public abstract class VersionProvider {
         return initialized;
     }
 
-    public ClassNode downgrade(final ClassDowngrader downgrader, ClassNode clazz, Set<ClassNode> extra, boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws IOException {
+    public ClassNode downgrade(final ClassDowngrader downgrader, ClassNode clazz, final Set<ClassNode> extra, final boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws IOException {
         if (clazz.version != inputVersion)
             throw new IllegalArgumentException("Class " + clazz.name + " is not version " + inputVersion);
 
         ensureInit(downgrader);
 
-        IOFunction<Type, Set<MemberNameAndDesc>> getMembers = new IOFunction<Type, Set<MemberNameAndDesc>>() {
+        final IOFunction<Type, Set<MemberNameAndDesc>> getMembers = new IOFunction<Type, Set<MemberNameAndDesc>>() {
             @Override
             public Set<MemberNameAndDesc> apply(Type o) throws IOException {
                 Set<MemberNameAndDesc> members = downgrader.getMembers(inputVersion, o);
@@ -717,11 +717,23 @@ public abstract class VersionProvider {
                         }
                     }
                 }
+                // if not found in read-only, check extra
+                if (members == null) {
+                    for (ClassNode extraClass : extra) {
+                        if (extraClass.name.equals(o.getInternalName())) {
+                            members = new HashSet<>();
+                            for (MethodNode method : extraClass.methods) {
+                                if ((method.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
+                                members.add(new MemberNameAndDesc(method.name, downgrader.stubClass(extraClass.version, Type.getMethodType(method.desc))));
+                            }
+                        }
+                    }
+                }
                 return members;
             }
         };
 
-        IOFunction<Type, List<Pair<Type, Boolean>>> getSuperTypes = new IOFunction<Type, List<Pair<Type, Boolean>>>() {
+        final IOFunction<Type, List<Pair<Type, Boolean>>> getSuperTypes = new IOFunction<Type, List<Pair<Type, Boolean>>>() {
 
             @Override
             public List<Pair<Type, Boolean>> apply(Type o) throws IOException {
@@ -733,7 +745,19 @@ public abstract class VersionProvider {
                         types = new ArrayList<>();
                         types.add(new Pair<>(downgrader.stubClass(ro.version, Type.getObjectType(ro.superName)), Boolean.FALSE));
                         for (String anInterface : ro.interfaces) {
-                            types.add(new Pair<>(Type.getObjectType(anInterface), Boolean.TRUE));
+                            types.add(new Pair<>(downgrader.stubClass(ro.version, Type.getObjectType(anInterface)), Boolean.TRUE));
+                        }
+                    }
+                }
+                // if not found in read-only, check extra
+                if (types == null) {
+                    for (ClassNode extraClass : extra) {
+                        if (extraClass.name.equals(o.getInternalName())) {
+                            types = new ArrayList<>();
+                            types.add(new Pair<>(downgrader.stubClass(extraClass.version, Type.getObjectType(extraClass.superName)), Boolean.FALSE));
+                            for (String anInterface : extraClass.interfaces) {
+                                types.add(new Pair<>(downgrader.stubClass(extraClass.version, Type.getObjectType(anInterface)), Boolean.TRUE));
+                            }
                         }
                     }
                 }
@@ -743,13 +767,40 @@ public abstract class VersionProvider {
 
         clazz = stubClasses(clazz, enableRuntime);
         if (clazz == null) return null;
-        clazz = stubMethods(clazz, extra, enableRuntime, getMembers, getSuperTypes);
+        clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
+            @Override
+            public ClassNode apply(ClassNode classNode) throws IOException {
+                return stubMethods(classNode, extra, enableRuntime, getMembers, getSuperTypes);
+            }
+        });
         if (clazz == null) return null;
-        clazz = insertAbstractMethods(clazz, extra, getMembers, getSuperTypes);
+        clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
+            @Override
+            public ClassNode apply(ClassNode classNode) throws IOException {
+                return insertAbstractMethods(classNode, extra, getMembers, getSuperTypes);
+            }
+        });
         if (clazz == null) return null;
-        clazz = otherTransforms(clazz, extra, getReadOnly);
+        clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
+            @Override
+            public ClassNode apply(ClassNode classNode) throws IOException {
+                return otherTransforms(classNode, extra, getReadOnly);
+            }
+        });
         if (clazz == null) return null;
         clazz.version = inputVersion - 1;
+        return clazz;
+    }
+
+    public ClassNode stubWithExtras(ClassNode clazz, Set<ClassNode> extra, IOFunction<ClassNode, ClassNode> stubber) throws IOException {
+        clazz = stubber.apply(clazz);
+        if (clazz == null) return null;
+        for (ClassNode extraClass : new ArrayList<>(extra)) {
+            ClassNode extraRemapped = stubber.apply(extraClass);
+            extra.remove(extraClass);
+            if (extraRemapped == null) continue;
+            extra.add(extraRemapped);
+        }
         return clazz;
     }
 
@@ -757,8 +808,9 @@ public abstract class VersionProvider {
         if (clazz.name.equals("module-info")) {
             return clazz;
         }
-
-        Map<MemberNameAndDesc, Pair<Method, Stub>> members = getStubMapper(Type.getObjectType(clazz.name), (clazz.access & Opcodes.ACC_INTERFACE) != 0, getMembers, getSuperTypes).getAbstracts();
+        ClassMapping cm = getStubMapper(Type.getObjectType(clazz.name), (clazz.access & Opcodes.ACC_INTERFACE) != 0, getMembers, getSuperTypes);
+        cm.getMembers();
+        Map<MemberNameAndDesc, Pair<Method, Stub>> members = cm.getAbstracts();
         for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> member : members.entrySet()) {
             boolean contains = false;
             for (MethodNode method : clazz.methods) {

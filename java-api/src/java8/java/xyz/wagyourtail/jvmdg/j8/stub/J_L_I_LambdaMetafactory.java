@@ -62,7 +62,7 @@ public class J_L_I_LambdaMetafactory {
         mv.visitEnd();
 
         // replace invokedynamic with method call
-        mnode.instructions.set(indy, new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, "jvmdowngrader$lambda$" + mnode.name.replace("<", "$").replace(">", "$") + "$" + nextAnonymous, constructor.getDescriptor(), false));
+        mnode.instructions.set(indy, new MethodInsnNode(Opcodes.INVOKESTATIC, cnode.name, "jvmdowngrader$lambda$" + mnode.name.replace("<", "$").replace(">", "$") + "$" + nextAnonymous, constructor.getDescriptor(), (cnode.access & Opcodes.ACC_INTERFACE) != 0));
     }
 
     @Stub(ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "altMetafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
@@ -119,6 +119,7 @@ public class J_L_I_LambdaMetafactory {
             args[0] = Type.getObjectType(invokedMethod.getOwner());
             System.arraycopy(virtArgs, 0, args, 1, virtArgs.length);
         }
+        Type ret = Type.getReturnType(invokedMethod.getDesc());
 
         int n = 0;
         // load fields back into stack
@@ -157,7 +158,8 @@ public class J_L_I_LambdaMetafactory {
         }
         // invoke original synthetic created for lambda
         mv.visitMethodInsn(opcode, invokedMethod.getOwner(), invokedMethod.getName(), invokedMethod.getDesc(), invokedMethod.isInterface());
-        mv.visitInsn(bridge.getReturnType().getOpcode(Opcodes.IRETURN));
+        doCast(mv, invokedType.getReturnType(), ret);
+        mv.visitInsn(invokedType.getReturnType().getOpcode(Opcodes.IRETURN));
         mv.visitMaxs(0, 0);
         mv.visitEnd();
 
