@@ -148,7 +148,7 @@ tasks.getByName<Jar>("sourcesJar") {
 
 tasks.javadoc {
     javadocTool = javaToolchains.javadocToolFor {
-        languageVersion.set(JavaLanguageVersion.of(toVersion.majorVersion))
+        languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
     }
     for (vers in fromVersion..toVersion) {
         source += sourceSets["java${vers.ordinal + 1}"].allJava
