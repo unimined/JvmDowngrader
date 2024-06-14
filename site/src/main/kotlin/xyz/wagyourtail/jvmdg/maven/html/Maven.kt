@@ -27,7 +27,7 @@ class Maven : Template<HTML> {
                 +"JvmDowngrader Maven"
             }
             p {
-                +"This is a maven mirror that downgrades the bytecode of the jars requested from it."
+                +"This is a maven mirror that downgrades the bytecode of the jars requested from it. "
                 +"This is done by using the "
                 a(href = "https://github.com/unimined/JvmDowngrader") {
                     +"JvmDowngrader"
@@ -89,6 +89,13 @@ class Maven : Template<HTML> {
             p {
                 +"Please note that not all maven adding requests will be accepted, "
                 +"and that I reserve the right to blacklist any artifact for any reason."
+            }
+            p {
+                +"The source code for this mirror can be found on "
+                a(href = "https://github.com/unimined/JvmDowngrader/tree/lts/site") {
+                    +"the JvmDowngrader Github"
+                }
+                +"."
             }
             p {
                 +"THIS SERVICE  IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, "
