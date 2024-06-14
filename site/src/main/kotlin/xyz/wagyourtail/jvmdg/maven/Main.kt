@@ -8,6 +8,7 @@ import io.ktor.server.html.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.autohead.*
 import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.html.*
@@ -36,6 +37,7 @@ fun main() {
 //        }
         install(StatusPages) {
             exception<Throwable> { call, cause ->
+                LOGGER.error(cause) { "Failed to process request ${call.request.path()}" }
                 call.respondText(text = "500: $cause", status = HttpStatusCode.InternalServerError)
             }
             status(HttpStatusCode.NotFound) { call, status ->
@@ -74,8 +76,11 @@ fun main() {
                     call.respond(HttpStatusCode.NotFound)
                 } else {
                     val content = Cache.getOrPut("${major}/${mirrorPath}") { path ->
-                        MavenClient.get(mirrorPath)?.let {
-                            PomTransformer.transform(it, major, path)
+                        MavenClient.get(mirrorPath).let {
+                            Cache.recordPath(it.toPath())
+                            it.inputStream().use {
+                                PomTransformer.transform(it, major, path)
+                            }
                         }
                     }
                     if (content != null) {
@@ -99,8 +104,11 @@ fun main() {
                     call.respond(HttpStatusCode.NotFound)
                 } else {
                     val content = Cache.getOrPut("${major}/${mirrorPath}") { path ->
-                        MavenClient.get(mirrorPath)?.let {
-                            ModuleTransformer.transform(it, major, path)
+                        MavenClient.get(mirrorPath).let {
+                            Cache.recordPath(it.toPath())
+                            it.inputStream().use {
+                                ModuleTransformer.transform(it, major, path)
+                            }
                         }
                     }
                     if (content != null) {
@@ -123,12 +131,9 @@ fun main() {
                     call.respond(HttpStatusCode.NotFound)
                 } else {
                     val content = MavenClient.get(mirrorPath)
-                    if (content != null) {
-                        call.respondOutputStream {
-                            content.copyTo(this)
-                        }
-                    } else {
-                        call.respond(HttpStatusCode.NotFound)
+                    Cache.recordPath(content.toPath())
+                    call.respondOutputStream {
+                        content.inputStream().use { it.copyTo(this) }
                     }
                 }
             }
@@ -150,8 +155,9 @@ fun main() {
                         call.respond(HttpStatusCode.NotFound)
                     } else {
                         val content = Cache.getOrPut("${major}/${mirrorPath}") { path ->
-                            MavenClient.get(mirrorPath)?.let {
-                                JarTransformer.transform(it, major, mirrorPath, path)
+                            MavenClient.get(mirrorPath).let {
+                                Cache.recordPath(it.toPath())
+                                JarTransformer.transform(it.toPath(), major, mirrorPath, path)
                             }
                         }
                         if (content != null) {

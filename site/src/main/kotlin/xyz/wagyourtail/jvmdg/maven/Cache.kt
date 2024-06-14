@@ -16,7 +16,7 @@ import kotlin.time.measureTime
 object Cache {
     private val LOGGER = KotlinLogging.logger {  }
     private val lock = StringKeyLock()
-    private val cache = Path.of("cache").also {
+    val cache = Path.of("./cache").toAbsolutePath().also {
         if (!it.exists()) {
             it.createDirectories()
         }
@@ -42,11 +42,17 @@ object Cache {
         }.start()
     }
 
-    private fun updateAccessTime(path: String) {
+    fun updateAccessTime(path: String) {
         accessTimes[path] = System.currentTimeMillis()
         synchronized(accessTimes) {
             accessTimesFile.writeText(Json.encodeToString(serializer<Map<String, Long>>(), accessTimes))
         }
+    }
+
+    fun recordPath(path: Path): Path {
+        val key = path.relativeTo(cache).toString()
+        updateAccessTime(key)
+        return path
     }
 
     fun listContents(path: String): List<String>? {
@@ -112,7 +118,7 @@ object Cache {
                 var expiredCount = 0
                 for (file in files.filter { it.isRegularFile() }) {
                     val key = file.relativeTo(cache).toString()
-                    val lastAccess = accessTimes[key] ?: 0
+                    val lastAccess = accessTimes[key] ?: oldestAllowed
                     if (lastAccess < oldestAllowed) {
                         file.deleteIfExists()
                         accessTimes.remove(key)
@@ -123,7 +129,8 @@ object Cache {
 
                 // remove remaining files until size is less than maxSize
                 val maxSize = Settings.maxSize
-                val filesToDelete = files.filter { it.isRegularFile() }.sortedBy { accessTimes[it.relativeTo(cache).toString()] }
+                val current = System.currentTimeMillis()
+                val filesToDelete = files.filter { it.isRegularFile() }.sortedBy { accessTimes[it.relativeTo(cache).toString()] ?: current }
                 var currentSize = size
                 var deletedCount = 0
                 for (file in filesToDelete) {
