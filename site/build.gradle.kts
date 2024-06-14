@@ -10,6 +10,7 @@ repositories {
 }
 
 val ktorVersion by project.properties
+val mvnResolverVersion by project.properties
 
 dependencies {
     implementation("io.ktor:ktor-server-core:$ktorVersion")
@@ -24,6 +25,18 @@ dependencies {
 
     implementation("io.github.oshai:kotlin-logging-jvm:6.0.9")
     implementation("org.slf4j:slf4j-simple:2.0.13")
+
+    implementation("org.apache.maven:maven-core:3.8.5")
+    implementation("org.apache.maven:maven-resolver-provider:3.8.5")
+
+    implementation("org.apache.maven.resolver:maven-resolver-api:$mvnResolverVersion")
+    implementation("org.apache.maven.resolver:maven-resolver-spi:$mvnResolverVersion")
+    implementation("org.apache.maven.resolver:maven-resolver-impl:$mvnResolverVersion")
+    implementation("org.apache.maven.resolver:maven-resolver-connector-basic:$mvnResolverVersion")
+    implementation("org.apache.maven.resolver:maven-resolver-transport-http:$mvnResolverVersion")
+    implementation("org.apache.maven.resolver:maven-resolver-transport-file:$mvnResolverVersion")
+
+    implementation("org.slf4j:jcl-over-slf4j:1.7.28")
 
     implementation("org.jetbrains:markdown:0.7.3")
 
