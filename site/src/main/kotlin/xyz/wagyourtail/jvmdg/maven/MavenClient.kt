@@ -45,15 +45,15 @@ object MavenClient {
         locator.getService(RepositorySystem::class.java)
     }
 
-    fun remoteRepository(url: String, user: String? = null, pass: String? = null): RemoteRepository {
-        val builder = RemoteRepository.Builder("custom", "default", url)
+    fun remoteRepository(name: String, url: String, user: String? = null, pass: String? = null): RemoteRepository {
+        val builder = RemoteRepository.Builder(name, "default", url)
         if (user != null && pass != null) {
             builder.setAuthentication(AuthenticationBuilder().addUsername(user).addPassword(pass).build())
         }
         return builder.build()
     }
 
-    fun centralRepository() = remoteRepository("https://repo1.maven.org/maven2/")
+    fun centralRepository() = remoteRepository("maven central", "https://repo1.maven.org/maven2/")
 
     fun createSession(system: RepositorySystem, local: LocalRepository): DefaultRepositorySystemSession {
         val session = MavenRepositorySystemUtils.newSession()
@@ -67,7 +67,7 @@ object MavenClient {
     }
 
     val session = createSession(repo, LocalRepository(Cache.cache.resolve("orig").toFile()))
-    val repositories = Settings.mavens.map { remoteRepository(it.second) }
+    val repositories = Settings.mavens.map { remoteRepository(it.first, it.second) }
 
 
     fun resolve(artifact: DefaultArtifact): Pair<File, List<File>> {
