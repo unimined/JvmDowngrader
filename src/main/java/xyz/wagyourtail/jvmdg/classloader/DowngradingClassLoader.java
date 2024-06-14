@@ -99,29 +99,32 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
                 // doesn't need downgrading
                 return defineClass(name, bytes, 0, bytes.length);
             }
-            for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
-                if (entry.getKey().equals(internalName)) continue; // skip the main class (load later and returned)
-                String extraName = entry.getKey().replace('/', '.');
-                byte[] extraBytes = entry.getValue();
-                try {
-                    defineClass(extraName, extraBytes, 0, extraBytes.length);
-                } catch (ClassFormatError e) {
-                    currentVersionDowngrader.writeBytesToDebug(extraName, bytes);
-                    throw e;
-                }
-            }
+            Class<?> returnValue;
             try {
                 bytes = outputs.get(internalName);
                 if (bytes == null) {
                     throw new ClassNotFoundException("removed by downgrader: " + name);
                 }
-                return defineClass(name, bytes, 0, bytes.length);
+                returnValue = defineClass(name, bytes, 0, bytes.length);
             } catch (ClassFormatError e) {
                 currentVersionDowngrader.writeBytesToDebug(name, bytes);
 //                System.err.println("Failed to load class " + name + " with downgraded bytes, writing to debug folder.");
 //                throw e;
                 throw new ClassNotFoundException(name, e);
             }
+            for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
+                if (entry.getKey().equals(internalName)) continue; // skip the main class (load later and returned)
+                String extraName = entry.getKey().replace('/', '.');
+                byte[] extraBytes = entry.getValue();
+                try {
+                    defineClass(extraName, extraBytes, 0, extraBytes.length);
+                } catch (ClassFormatError | ClassCircularityError e) {
+                    System.err.println("Failed to load class " + extraName + " with downgraded bytes, writing to debug folder.");
+                    currentVersionDowngrader.writeBytesToDebug(extraName, bytes);
+                    throw e;
+                }
+            }
+            return returnValue;
         } catch (ClassFormatError e) {
             currentVersionDowngrader.writeBytesToDebug(name, bytes);
 //           System.err.println("Failed to load class " + name + " with original bytes, writing to debug folder.");

@@ -20,26 +20,29 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 
 public class JvmDowngraderTest {
-    private static final Flags flags = new Flags();
     private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + System.getProperty("jvmdg.test.version") + ".jar");
 
-    static {
-//        System.setProperty("jvmdg.java-api", javaApi.toString());
-        flags.api = javaApi.toFile();
-    }
+    private final Flags flags = new Flags();
 
     private final JavaRunner.JavaVersion target = JavaRunner.JavaVersion.fromMajor(Integer.parseInt(System.getProperty("jvmdg.test.javaVersion")));
 
     private final Path mainClasses = Path.of("./build/classes/java/main");
 
     private final Path original = Path.of("./downgradetest/build/libs/downgradetest-1.0.0.jar");
+    private final Path downgraded;
+    private final Path downgradedJavaApi;
 
-    private final Path downgraded = getDowngradedPath(original, "-downgraded-" + target.getMajorVersion() + ".jar");
-    private final Path downgradedJavaApi = getDowngradedJavaApi(javaApi, "-downgraded-" + target.getMajorVersion() + ".jar");
+    private final Path shaded;
 
-    private final Path shaded = getShadedPath(downgraded, downgradedJavaApi, "-shaded.jar");
+//        System.setProperty("jvmdg.java-api", javaApi.toString());
+
 
     public JvmDowngraderTest() throws Exception {
+        flags.api = javaApi.toFile();
+        flags.classVersion = target.toOpcode();
+        downgraded = getDowngradedPath(original, "-downgraded-" + target.getMajorVersion() + ".jar");
+        downgradedJavaApi = getDowngradedJavaApi(javaApi, "-downgraded-" + target.getMajorVersion() + ".jar");
+        shaded = getShadedPath(downgraded, downgradedJavaApi, "-shaded.jar");
     }
 
     private Path getDowngradedPath(Path originalPath, String suffix) throws Exception {

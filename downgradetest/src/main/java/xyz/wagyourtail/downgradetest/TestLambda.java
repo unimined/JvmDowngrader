@@ -32,6 +32,11 @@ public class TestLambda {
             }
         };
         System.out.println(test8.apply("test8"));
+
+        TestInterface<String, String> at = (a) -> a + ".5";
+        TestInterface<String, Double> bt = Double::parseDouble;
+        TestInterface<String, Double> ct = at.andThen(bt);
+        System.out.println(ct.get("1"));
     }
 
     public static String test2() {
@@ -65,6 +70,16 @@ public class TestLambda {
         public String get() {
             return "test4";
         }
+    }
+
+    public interface TestInterface<A, B> {
+
+        B get(A a);
+
+        default <C> TestInterface<A, C> andThen(TestInterface<B, C> after) {
+            return (a) -> after.get(get(a));
+        }
+
     }
 
 }

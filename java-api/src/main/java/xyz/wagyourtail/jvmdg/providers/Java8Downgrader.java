@@ -330,10 +330,14 @@ public class Java8Downgrader extends VersionProvider {
 
     @Override
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
-        try {
-            downgradeInterfaces(clazz, extra, getReadOnly);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        List<ClassNode> classes = new ArrayList<>(extra);
+        classes.add(clazz);
+        for (ClassNode cls : classes) {
+            try {
+                downgradeInterfaces(cls, extra, getReadOnly);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         return super.otherTransforms(clazz, extra, getReadOnly);
     }
@@ -357,11 +361,11 @@ public class Java8Downgrader extends VersionProvider {
                 mnodes.remove();
                 removed = true;
                 if ((mnode.access & Opcodes.ACC_STATIC) == 0) {
-                    // instance method
-                    if ((mnode.access & Opcodes.ACC_PRIVATE) == 0) {
+                    // public instance method
+                    if ((mnode.access & Opcodes.ACC_PUBLIC) != 0) {
                         // write back an abstract version
                         toAdd.add(new MethodNode(
-                                mnode.access | Opcodes.ACC_ABSTRACT,
+                                Opcodes.ACC_ABSTRACT | Opcodes.ACC_PUBLIC,
                                 mnode.name,
                                 mnode.desc,
                                 mnode.signature,

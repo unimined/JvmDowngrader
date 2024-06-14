@@ -206,6 +206,33 @@ tasks.test {
     )
 }
 
+val test7 by tasks.registering(Test::class) {
+    group = "verification"
+    description = "Runs the tests for Java 7"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform()
+
+    dependsOn(
+        project(":downgradetest").tasks.build,
+        project(":java-api").tasks.build
+    )
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
+    }
+
+    jvmArgs(
+        "-Djvmdg.test.jvm=" + javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
+        }.get().executablePath.toString(),
+        "-Djvmdg.test.targetJvm=" + javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(7))
+        }.get().executablePath.toString(),
+        "-Djvmdg.test.javaVersion=7",
+        "-Djvmdg.test.version=$version",
+    )
+}
+
 project.evaluationDependsOnChildren()
 
 val shadowJar by tasks.registering(ShadowJar::class) {

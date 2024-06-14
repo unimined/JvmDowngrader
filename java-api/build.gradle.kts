@@ -43,7 +43,7 @@ operator fun JavaVersion.minus(int: Int): JavaVersion {
 }
 
 val fromVersion = JavaVersion.toVersion(project.properties["stubFromVersion"]!!)
-val toVersion = JavaVersion.toVersion(project.properties["stubToVersion"]!!)
+val toVersion = JavaVersion.toVersion(project.properties["stubToVersion"]!!) + 1
 
 sourceSets {
     for (vers in fromVersion..toVersion) {
@@ -148,7 +148,7 @@ tasks.getByName<Jar>("sourcesJar") {
 
 tasks.javadoc {
     javadocTool = javaToolchains.javadocToolFor {
-        languageVersion.set(JavaLanguageVersion.of(toVersion.majorVersion))
+        languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
     }
     for (vers in fromVersion..toVersion) {
         source += sourceSets["java${vers.ordinal + 1}"].allJava

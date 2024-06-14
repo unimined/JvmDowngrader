@@ -1,6 +1,6 @@
 # JvmDowngrader
 
-downgrades modern java bytecode to older versions. at either compile or runtime.
+Downgrades modern java bytecode to older versions. at either compile or runtime.
 
 ## Gradle Plugin
 
@@ -10,6 +10,7 @@ downgrading.
 dynamic class definitions being things like `MethodHandles$Lookup#defineClass` and classloader shenanigans.
 
 ~~add my maven in `settings.gradle`:~~
+
 JvmDowngrader is now on the gradle plugin portal, so you can skip this step, unless you want to use a snapshot version.
 
 ```gradle
