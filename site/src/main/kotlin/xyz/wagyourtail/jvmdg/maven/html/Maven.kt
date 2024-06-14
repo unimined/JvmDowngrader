@@ -45,6 +45,18 @@ class Maven : Template<HTML> {
                 br {}
             }
             p {
+                +"You do also need to depend on jvmdowngrader's api. this can actually be done through the mirror as well."
+                br {}
+                +"Or you can depend on one of the "
+                a(href = "https://repo1.maven.org/maven2/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/0.7.1/") {
+                    +"pre-downgraded artifacts on central"
+                }
+                +"."
+            }
+            code {
+                +"xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.1:downgraded-8"
+            }
+            p {
                 +"It is "
                 b {
                     +"strongly"
