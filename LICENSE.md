@@ -6,7 +6,7 @@ This program is provided under 2 licenses:
 * [A Commercial License and Support Agreement](license/Commercial.md)
 
 If you are a non-commercial user, it is recommended to use the LGPLv2.1 license, as it is more permissive and allows you to use the software for free.
-If you are a commercial user, or need support with your use of the product, the commercial license is available for purchase.
+If you are a commercial user, or need support with your use of the product, the commercial license is available for purchase by contacting me at the email address above.
 
 If you are a non-commercial user, or your usecase is covered by the LGPLv2.1 license, 
 I would appreciate it if you would consider donating to support the project, but it is in no way required.
