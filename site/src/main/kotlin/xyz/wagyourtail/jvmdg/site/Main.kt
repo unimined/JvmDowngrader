@@ -26,6 +26,7 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 import kotlin.io.path.inputStream
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.outputStream
 import kotlin.time.Duration.Companion.days
 
@@ -211,7 +212,7 @@ fun main() {
                             it.inputStream().use { it.copyTo(path.outputStream()) }
                         }
                     }
-                    if (content != null) {
+                    if (content != null && content.isRegularFile()) {
                         call.respondOutputStream {
                             content.inputStream().use { it.copyTo(this) }
                             headers {
