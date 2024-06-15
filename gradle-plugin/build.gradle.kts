@@ -69,6 +69,9 @@ tasks.withType<JavaCompile> {
 
 tasks.jar {
     from(projectDir.parentFile.resolve("LICENSE.md"))
+    from(projectDir.parentFile.resolve("license")) {
+        into("license")
+    }
 
     // so we don't have to retrieve it.
     dependsOn(project.project(":java-api").tasks.jar.get())
@@ -93,6 +96,9 @@ tasks.jar {
 
 tasks.getByName<Jar>("sourcesJar") {
     from(projectDir.parentFile.resolve("LICENSE.md"))
+    from(projectDir.parentFile.resolve("license")) {
+        into("license")
+    }
 
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true

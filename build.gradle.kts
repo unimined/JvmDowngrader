@@ -142,6 +142,9 @@ java {
 tasks.jar {
     from(sourceSets["main"].output, sourceSets["shared"].output)
     from(rootDir.resolve("LICENSE.md"))
+    from(rootDir.resolve("license")) {
+        into("license")
+    }
 
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true
@@ -161,7 +164,7 @@ tasks.jar {
 
 tasks.getByName<Jar>("sourcesJar") {
     from(sourceSets["shared"].allSource)
-    from(rootDir.resolve("LICENSE.md"))
+    from(rootDir.resolve("LGPLv2.1.md"))
 
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true
@@ -237,7 +240,7 @@ project.evaluationDependsOnChildren()
 
 val shadowJar by tasks.registering(ShadowJar::class) {
     from(sourceSets["main"].output, sourceSets["shared"].output)
-    from(rootDir.resolve("LICENSE.md"))
+    from(rootDir.resolve("LGPLv2.1.md"))
 
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true

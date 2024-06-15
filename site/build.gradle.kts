@@ -64,6 +64,9 @@ tasks.getByName("run", JavaExec::class) {
 val myShadowJar by tasks.creating(ShadowJar::class) {
     from(sourceSets.main.get().output)
     from(projectDir.parentFile.resolve("LICENSE.md"))
+    from(projectDir.parentFile.resolve("license")) {
+        into("license")
+    }
     from(projectDir.parentFile.resolve("README.md"))
 
     shadowContents = listOf(project.configurations.compileClasspath.get())
