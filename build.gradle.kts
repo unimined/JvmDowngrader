@@ -30,7 +30,7 @@ allprojects {
         developers {
             register("wagyourtail") {
                 fullName.set("William Gray")
-                email.set("william.gray@wagyourtail.xyz")
+                email.set("jvmdowngrader@wagyourtail.xyz")
             }
         }
         github {
