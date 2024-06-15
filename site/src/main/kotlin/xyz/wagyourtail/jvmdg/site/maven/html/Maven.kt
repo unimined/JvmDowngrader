@@ -1,8 +1,8 @@
-package xyz.wagyourtail.jvmdg.maven.html
+package xyz.wagyourtail.jvmdg.site.maven.html
 
 import io.ktor.server.html.*
 import kotlinx.html.*
-import xyz.wagyourtail.jvmdg.maven.Settings
+import xyz.wagyourtail.jvmdg.site.maven.Settings
 
 class Maven : Template<HTML> {
 
@@ -38,34 +38,34 @@ class Maven : Template<HTML> {
                 +"To use this mirror, simply add the maven to your project's repositories: "
             }
             code {
-                +"https://jvmdowngrader.wagyourtail.xyz/maven/8/"
+                +"https://jvmdowngrader.wagyourtail.xyz/maven/"
             }
             p {
-                +"Obviously you can replace the 8 with other java major versions if needed."
+                +"Packages are prefixed with "
+                code {
+                    +"jvmdg-\${majorVersion}."
+                }
+                +" so for example, to get a java 9 version of jvmdowngrader-java-api, you would use "
+                code {
+                    +"jvmdg-9.xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.1"
+                }
                 br {}
+                +"If the artifact's artifactId startswith its groupId, the artifactId is also transformed in this way."
+                br {}
+                +"This does not transform transitive dependencies, so you will have to explicitly depend on the downgraded version, "
+                +"and exclude the original from the transitive dependencies."
             }
             p {
-                +"You do also need to depend on jvmdowngrader's api. this can actually be done through the mirror as well."
+                +"You do need to depend on jvmdowngrader's api manually, as inserting the dependency would be difficult."
                 br {}
-                +"Or you can depend on one of the "
+                +"You can also depend on one of the "
                 a(href = "https://repo1.maven.org/maven2/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/0.7.1/") {
                     +"pre-downgraded artifacts on central"
                 }
-                +"."
-            }
-            code {
-                +"xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.1:downgraded-8"
-            }
-            p {
-                +"It is "
-                b {
-                    +"strongly"
+                +". such as: "
+                code {
+                    +"xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.1:downgraded-8"
                 }
-                + " recommended that you use "
-                a(href = "https://docs.gradle.org/current/userguide/declaring_repositories.html#sec:repository-content-filtering") {
-                    +"repository content filtering"
-                }
-                +" to only use this mirror for the specific artifacts that you need downgraded."
             }
             p {
                 +"The following mavens are curently mirrored: "

@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.maven.html
+package xyz.wagyourtail.jvmdg.site.html
 
 import io.ktor.server.html.*
 import kotlinx.html.*

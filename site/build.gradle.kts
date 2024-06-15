@@ -51,7 +51,7 @@ java {
 }
 
 application {
-    mainClass = "xyz.wagyourtail.jvmdg.maven.MainKt"
+    mainClass = "xyz.wagyourtail.jvmdg.site.MainKt"
 }
 
 tasks.getByName("run", JavaExec::class) {
@@ -89,7 +89,7 @@ val myShadowJar by tasks.creating(ShadowJar::class) {
         attributes.putAll(
             mapOf(
                 "Implementation-Version" to project.version,
-                "Main-Class" to "xyz.wagyourtail.jvmdg.maven.MainKt"
+                "Main-Class" to "xyz.wagyourtail.jvmdg.site.MainKt"
             )
         )
     }

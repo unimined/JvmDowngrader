@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.maven.impl
+package xyz.wagyourtail.jvmdg.site.maven.impl
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.eclipse.aether.transfer.TransferEvent

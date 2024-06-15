@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.maven
+package xyz.wagyourtail.jvmdg.site.maven
 
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils
 import org.eclipse.aether.DefaultRepositorySystemSession
@@ -21,10 +21,18 @@ import org.eclipse.aether.spi.connector.transport.TransporterFactory
 import org.eclipse.aether.transport.file.FileTransporterFactory
 import org.eclipse.aether.transport.http.HttpTransporterFactory
 import org.eclipse.aether.util.repository.AuthenticationBuilder
-import xyz.wagyourtail.jvmdg.maven.impl.ConsoleRepositoryListener
-import xyz.wagyourtail.jvmdg.maven.impl.ConsoleTransferListener
+import org.w3c.dom.Document
+import xyz.wagyourtail.jvmdg.site.maven.impl.ConsoleRepositoryListener
+import xyz.wagyourtail.jvmdg.site.maven.impl.ConsoleTransferListener
 import java.io.File
 import java.io.InputStream
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import javax.xml.parsers.DocumentBuilderFactory
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 object MavenClient {
 
@@ -90,6 +98,25 @@ object MavenClient {
         return repo.resolveArtifact(session, request).artifact.file
     }
 
+    val metadataClient = HttpClient.newBuilder()
+        .connectTimeout(5.seconds.toJavaDuration())
+        .build()
+
+    fun resolveMetadata(path: String): Document? {
+        for (repo in repositories) {
+            var url = repo.url
+            if (!url.endsWith("/")) {
+                url += "/"
+            }
+            url += path
+            val request = metadataClient.send(HttpRequest.newBuilder(URI.create(url)).build(), HttpResponse.BodyHandlers.ofInputStream())
+            if (request.statusCode() == 200) {
+                return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(request.body())
+            }
+        }
+        return null
+    }
+
     fun resolveDeps(artifact: DefaultArtifact): List<File> {
         val depRequest = DependencyRequest()
         depRequest.collectRequest = CollectRequest(Dependency(artifact, "compile"), repositories)
@@ -102,7 +129,7 @@ object MavenClient {
         val folder = path.substringBeforeLast("/")
         val artifactFolder = folder.substringBeforeLast("/")
         val versionNumber = folder.substringAfterLast("/")
-        val artifactName = artifactFolder.substringAfterLast("/")
+        var artifactName = artifactFolder.substringAfterLast("/")
         val group = artifactFolder.substringBeforeLast("/")
         val classifier = path.substringAfterLast("/").let {
             if (!it.startsWith("$artifactName-$versionNumber-")) {

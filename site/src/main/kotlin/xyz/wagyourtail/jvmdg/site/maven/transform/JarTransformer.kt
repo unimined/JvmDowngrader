@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.maven.transform
+package xyz.wagyourtail.jvmdg.site.maven.transform
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.sync.Semaphore
@@ -6,9 +6,9 @@ import org.objectweb.asm.Opcodes
 import org.w3c.dom.Element
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
-import xyz.wagyourtail.jvmdg.maven.Cache
-import xyz.wagyourtail.jvmdg.maven.MavenClient
-import xyz.wagyourtail.jvmdg.maven.lock.StringKeyLock
+import xyz.wagyourtail.jvmdg.site.maven.Cache
+import xyz.wagyourtail.jvmdg.site.maven.MavenClient
+import xyz.wagyourtail.jvmdg.site.maven.lock.StringKeyLock
 import java.io.InputStream
 import java.nio.file.Path
 import java.util.*
@@ -30,13 +30,6 @@ object JarTransformer {
         }
         try {
             LOGGER.info { "Transforming $path to $majorVersion" }
-            // retrieve dependencies from module or pom
-            val folder = path.substringBeforeLast("/")
-            val artifactFolder = folder.substringBeforeLast("/")
-            val versionNumber = folder.substringAfterLast("/")
-            val artifactName = artifactFolder.substringAfterLast("/")
-            val group = artifactFolder.substringBeforeLast("/")
-            val classifier = path.substringAfterLast("/").removePrefix("$artifactName-$versionNumber-").removeSuffix(".jar")
             targetJar.createParentDirectories()
 
             val deps = MavenClient.getDependencies(path).filter { it != jar }

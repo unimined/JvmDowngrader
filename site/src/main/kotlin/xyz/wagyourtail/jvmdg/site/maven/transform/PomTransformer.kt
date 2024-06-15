@@ -1,5 +1,6 @@
-package xyz.wagyourtail.jvmdg.maven.transform
+package xyz.wagyourtail.jvmdg.site.maven.transform
 
+import kotlinx.html.dom.document
 import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.nio.file.Path
@@ -16,9 +17,9 @@ object PomTransformer {
         val dbf = DocumentBuilderFactory.newInstance()
         val db = dbf.newDocumentBuilder()
         val doc = db.parse(pom)
-        val root = doc.documentElement
+
         // find maven.compiler.target
-        val target = root.getElementsByTagName("maven.compiler.target").item(0)
+        val target = doc.getElementsByTagName("maven.compiler.target").item(0)
         if (target != null) {
             target.textContent = if (version < 9) {
                 "1.$version"
@@ -26,6 +27,9 @@ object PomTransformer {
                 version.toString()
             }
         }
+        MetadataTransformer.transform(doc, version)
+        // TODO: dependency transforms?
+
         val transformer = TransformerFactory.newInstance().newTransformer()
         cachePath.createParentDirectories()
         cachePath.outputStream().use {
