@@ -46,11 +46,12 @@ class Maven : Template<HTML> {
                     +"jvmdg-\${majorVersion}."
                 }
                 +" so for example, to get a java 9 version of jvmdowngrader-java-api, you would use "
+                br {}
                 code {
                     +"jvmdg-9.xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.1"
                 }
                 br {}
-                +"If the artifact's artifactId startswith its groupId, the artifactId is also transformed in this way."
+                +"If the artifact's artifactId starts with its groupId, the artifactId is also transformed in this way."
                 br {}
                 +"This does not transform transitive dependencies, so you will have to explicitly depend on the downgraded version, "
                 +"and exclude the original from the transitive dependencies."
@@ -63,6 +64,7 @@ class Maven : Template<HTML> {
                     +"pre-downgraded artifacts on central"
                 }
                 +". such as: "
+                br {}
                 code {
                     +"xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.1:downgraded-8"
                 }

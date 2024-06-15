@@ -15,10 +15,10 @@ class FolderContents(
         }
         body {
             h1 {
-                +folder
+                +"jvmdg-${majorVersion}/$folder"
             }
             for (file in files) {
-                if (file.startsWith(folder.removeSuffix("/").replace("/", "."))) {
+                if (folder.isNotEmpty() && file.startsWith(folder.removeSuffix("/").replace("/", "."))) {
                     p {
                         a(href = "/maven/jvmdg-$majorVersion/${folder}jvmdg-$majorVersion.$file") {
                             +"jvmdg-$majorVersion.$file"
