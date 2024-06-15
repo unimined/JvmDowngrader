@@ -247,7 +247,7 @@ val downgradeJar8 by tasks.registering(Jar::class) {
 
 val genCySym by tasks.registering(GenerateCtSymTask::class) {
     group = "jvmdg"
-    upperVersion = toVersion
+    upperVersion = toVersion - 1
 }
 
 val coverageReport by tasks.registering(JavaExec::class) {

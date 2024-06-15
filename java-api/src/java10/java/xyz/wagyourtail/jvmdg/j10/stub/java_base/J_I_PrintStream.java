@@ -37,4 +37,18 @@ public class J_I_PrintStream {
         mnode.instructions.remove(node);
     }
 
+    @Modify(ref = @Ref(value = "Ljava/io/PrintStream;", member = "<init>", desc = "(Ljava/lang/String;Ljava/nio/charset/Charset;)V"))
+    public static void init3(MethodNode mnode, int i) {
+        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
+        InsnList list = new InsnList();
+        // stack: PrintStream, String, Charset
+        list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/nio/charset/Charset", "name", "()Ljava/lang/String;", false));
+        // stack: PrintStream, String, String
+        // call init
+        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/io/PrintStream", "<init>", "(Ljava/lang/String;Ljava/lang/String;)V", false));
+
+        mnode.instructions.insert(node, list);
+        mnode.instructions.remove(node);
+    }
+
 }
