@@ -2,6 +2,10 @@
 
 Downgrades modern java bytecode to older versions. at either compile or runtime.
 
+This is currently capable of downgrading from Java 22 to Java 8. Java 7 may come in the future.
+
+Currently attempting to downgrade to Java 7 will produce valid class files, but some of the API stubs are broken, and many common ones dont exist.
+
 ## Gradle Plugin
 
 This downgrades the output of a jar task using another task.
