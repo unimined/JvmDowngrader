@@ -9,7 +9,7 @@ import org.intellij.markdown.parser.MarkdownParser
 class About : Template<HTML> {
     companion object {
         val flavor = GFMFlavourDescriptor()
-        val src = About::class.java.getResourceAsStream("/README.md")!!.bufferedReader().lines().skip(4).toList().joinToString("\n")
+        val src = About::class.java.getResourceAsStream("/README.md")!!.bufferedReader().lines().skip(3).toList().joinToString("\n")
         val parsed = MarkdownParser(flavor).buildMarkdownTreeFromString(src)
         val html = HtmlGenerator(src, parsed, flavor, false).generateHtml()
     }

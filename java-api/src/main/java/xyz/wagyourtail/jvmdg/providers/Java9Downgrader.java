@@ -528,14 +528,6 @@ public class Java9Downgrader extends VersionProvider {
         return clazz;
     }
 
-    private boolean assertMethod(String owner, String name, String desc, AbstractInsnNode node) {
-        if (node.getType() == AbstractInsnNode.METHOD_INSN) {
-            MethodInsnNode min = (MethodInsnNode) node;
-            return min.owner.equals(owner) && min.name.equals(name) && min.desc.equals(desc);
-        }
-        return false;
-    }
-
     public void fixPrivateMethodsInInterfaces(ClassNode node) {
         if ((node.access & Opcodes.ACC_INTERFACE) == 0) return;
 
