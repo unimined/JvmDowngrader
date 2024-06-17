@@ -12,6 +12,7 @@ public class Java10Downgrader extends VersionProvider {
 
     public void init() {
         // -- java.base --
+        stub(J_I_ByteArrayOutputStream.class);
         stub(J_I_PrintStream.class);
         stub(J_I_PrintWriter.class);
         stub(J_I_Reader.class);

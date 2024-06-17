@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.maven
+package xyz.wagyourtail.jvmdg.site
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.*
@@ -12,13 +12,22 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.html.*
-import xyz.wagyourtail.jvmdg.maven.html.About
-import xyz.wagyourtail.jvmdg.maven.html.Maven
-import xyz.wagyourtail.jvmdg.maven.html.FolderContents
-import xyz.wagyourtail.jvmdg.maven.transform.JarTransformer
-import xyz.wagyourtail.jvmdg.maven.transform.ModuleTransformer
-import xyz.wagyourtail.jvmdg.maven.transform.PomTransformer
+import xyz.wagyourtail.jvmdg.site.maven.Cache
+import xyz.wagyourtail.jvmdg.site.maven.MavenClient
+import xyz.wagyourtail.jvmdg.site.maven.Settings
+import xyz.wagyourtail.jvmdg.site.html.About
+import xyz.wagyourtail.jvmdg.site.maven.html.Maven
+import xyz.wagyourtail.jvmdg.site.maven.html.FolderContents
+import xyz.wagyourtail.jvmdg.site.maven.transform.JarTransformer
+import xyz.wagyourtail.jvmdg.site.maven.transform.MetadataTransformer
+import xyz.wagyourtail.jvmdg.site.maven.transform.ModuleTransformer
+import xyz.wagyourtail.jvmdg.site.maven.transform.PomTransformer
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
 import kotlin.io.path.inputStream
+import kotlin.io.path.isRegularFile
+import kotlin.io.path.outputStream
 import kotlin.time.Duration.Companion.days
 
 private val LOGGER = KotlinLogging.logger {  }
@@ -53,9 +62,9 @@ fun main() {
                 call.respondHtmlTemplate(Maven()) {}
             }
             // list existing mirrored content
-            get(Regex("maven/(?<major>\\d+)/(?<mirrorPath>(?:.+/)?)")) {
+            get(Regex("maven/jvmdg-(?<major>\\d+)/(?<mirrorPath>(?:.+/)?)")) {
                 val major = call.parameters["major"]!!.toInt()
-                val mirrorPath = call.parameters["mirrorPath"]!!
+                val mirrorPath = call.parameters["mirrorPath"]!!.replace("/jvmdg-${major}.", "/")
                 if (Settings.blacklist.any { mirrorPath.startsWith(it) }) {
                     call.respond(HttpStatusCode.NotFound)
                 } else {
@@ -69,9 +78,9 @@ fun main() {
             }
 
             // maven pom transformer
-            get(Regex("maven/(?<major>\\d+)/(?<mirrorPath>.+\\.pom)")) {
+            get(Regex("maven/jvmdg-(?<major>\\d+)/(?<mirrorPath>.+\\.pom)")) {
                 val major = call.parameters["major"]!!.toInt()
-                val mirrorPath = call.parameters["mirrorPath"]!!
+                val mirrorPath = call.parameters["mirrorPath"]!!.replace("/jvmdg-${major}.", "/")
                 if (Settings.blacklist.any { mirrorPath.startsWith(it) }) {
                     call.respond(HttpStatusCode.NotFound)
                 } else {
@@ -97,9 +106,9 @@ fun main() {
             }
 
             // gradle module transformer
-            get(Regex("maven/(?<major>\\d+)/(?<mirrorPath>.+\\.module)")) {
+            get(Regex("maven/jvmdg-(?<major>\\d+)/(?<mirrorPath>.+\\.module)")) {
                 val major = call.parameters["major"]!!.toInt()
-                val mirrorPath = call.parameters["mirrorPath"]!!
+                val mirrorPath = call.parameters["mirrorPath"]!!.replace("/jvmdg-${major}.", "/")
                 if (Settings.blacklist.any { mirrorPath.startsWith(it) }) {
                     call.respond(HttpStatusCode.NotFound)
                 } else {
@@ -125,32 +134,39 @@ fun main() {
             }
 
             // maven metadata, don't cache
-            get(Regex("maven/(?<major>\\d+)/(?<mirrorPath>.+\\.xml)")) {
-                val mirrorPath = call.parameters["mirrorPath"]!!
+            get(Regex("maven/jvmdg-(?<major>\\d+)/(?<mirrorPath>.+/maven-metadata\\.xml)")) {
+                val major = call.parameters["major"]!!.toInt()
+                val mirrorPath = call.parameters["mirrorPath"]!!.replace("/jvmdg-${major}.", "/")
                 if (Settings.blacklist.any { mirrorPath.startsWith(it) }) {
                     call.respond(HttpStatusCode.NotFound)
                 } else {
-                    val content = MavenClient.get(mirrorPath)
-                    Cache.recordPath(content.toPath())
-                    call.respondOutputStream {
-                        content.inputStream().use { it.copyTo(this) }
+                    val content = MavenClient.resolveMetadata(mirrorPath)
+                    if (content == null) {
+                        call.respond(HttpStatusCode.NotFound)
+                    } else {
+                        call.respondOutputStream {
+                            MetadataTransformer.transform(content, major)
+                            // write document to output stream
+                            val transformer = TransformerFactory.newInstance().newTransformer()
+                            transformer.transform(DOMSource(content), StreamResult(this))
+                        }
                     }
                 }
             }
 
             // don't include signature or checksums
-            get(Regex("maven/(?<major>\\d+)/(?<mirrorPath>.+\\.(?:md5|sha1|sha256|sha512))")) {
+            get(Regex("maven/jvmdg-(?<major>\\d+)/(?<mirrorPath>.+\\.(?:md5|sha1|sha256|sha512))")) {
                 call.respond(HttpStatusCode.NotFound)
             }
-            get(Regex("maven/(?<major>\\d+)/(?<mirrorPath>.+\\.asc)")) {
+            get(Regex("maven/jvmdg-(?<major>\\d+)/(?<mirrorPath>.+\\.asc)")) {
                 call.respond(HttpStatusCode.NotFound)
             }
 
             // jar transformer
-            get(Regex("maven/(?<major>\\d+)/(?<mirrorPath>.+\\.jar)")) {
+            get(Regex("maven/jvmdg-(?<major>\\d+)/(?<mirrorPath>.+\\.jar)")) {
                 try {
                     val major = call.parameters["major"]!!.toInt()
-                    val mirrorPath = call.parameters["mirrorPath"]!!
+                    val mirrorPath = call.parameters["mirrorPath"]!!.replace("/jvmdg-${major}.", "/")
                     if (Settings.blacklist.any { mirrorPath.startsWith(it) }) {
                         call.respond(HttpStatusCode.NotFound)
                     } else {
@@ -184,7 +200,30 @@ fun main() {
                     }
                 }
             }
-
+            get(Regex("maven/jvmdg-(?<major>\\d+)/(?<mirrorPath>.+)")) {
+                val major = call.parameters["major"]!!.toInt()
+                val mirrorPath = call.parameters["mirrorPath"]!!.replace("/jvmdg-${major}.", "/")
+                if (Settings.blacklist.any { mirrorPath.startsWith(it) }) {
+                    call.respond(HttpStatusCode.NotFound)
+                } else {
+                    val content = Cache.getOrPut("${major}/${mirrorPath}") { path ->
+                        MavenClient.get(mirrorPath).let {
+                            Cache.recordPath(it.toPath())
+                            it.inputStream().use { it.copyTo(path.outputStream()) }
+                        }
+                    }
+                    if (content != null && content.isRegularFile()) {
+                        call.respondOutputStream {
+                            content.inputStream().use { it.copyTo(this) }
+                            headers {
+                                cacheControl(CacheControl.MaxAge(7.days.inWholeSeconds.toInt()))
+                            }
+                        }
+                    } else {
+                        call.respond(HttpStatusCode.NotFound)
+                    }
+                }
+            }
         }
     }.start(wait = true)
 }

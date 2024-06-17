@@ -306,7 +306,7 @@ public class ApiCoverageChecker {
                             var ct = Type.getObjectType(cn.name);
                             outerA:
                             for (var m : oldCls.methods) {
-                                if ((m.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) continue;
+                                if ((m.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (m.access & Opcodes.ACC_SYNTHETIC) != 0) continue;
                                 if (m.name.equals("<clinit>")) continue;
                                 if (m.invisibleAnnotations != null) {
                                     for (var a : m.invisibleAnnotations) {
@@ -393,7 +393,7 @@ public class ApiCoverageChecker {
                     var oldCls = cls.getValue().getSecond();
                     outer:
                     for (var method : oldCls.methods) {
-                        if ((method.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) continue;
+                        if ((method.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (method.access & Opcodes.ACC_SYNTHETIC) != 0) continue;
                         if (method.name.equals("<clinit>")) continue;
                         if (method.invisibleAnnotations != null) {
                             for (var a : method.invisibleAnnotations) {

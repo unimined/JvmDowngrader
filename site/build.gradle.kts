@@ -51,7 +51,7 @@ java {
 }
 
 application {
-    mainClass = "xyz.wagyourtail.jvmdg.maven.MainKt"
+    mainClass = "xyz.wagyourtail.jvmdg.site.MainKt"
 }
 
 tasks.getByName("run", JavaExec::class) {
@@ -64,6 +64,9 @@ tasks.getByName("run", JavaExec::class) {
 val myShadowJar by tasks.creating(ShadowJar::class) {
     from(sourceSets.main.get().output)
     from(projectDir.parentFile.resolve("LICENSE.md"))
+    from(projectDir.parentFile.resolve("license")) {
+        into("license")
+    }
     from(projectDir.parentFile.resolve("README.md"))
 
     shadowContents = listOf(project.configurations.compileClasspath.get())
@@ -86,7 +89,7 @@ val myShadowJar by tasks.creating(ShadowJar::class) {
         attributes.putAll(
             mapOf(
                 "Implementation-Version" to project.version,
-                "Main-Class" to "xyz.wagyourtail.jvmdg.maven.MainKt"
+                "Main-Class" to "xyz.wagyourtail.jvmdg.site.MainKt"
             )
         )
     }

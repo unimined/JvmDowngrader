@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.maven
+package xyz.wagyourtail.jvmdg.site.maven
 
 import java.util.*
 import kotlin.time.Duration

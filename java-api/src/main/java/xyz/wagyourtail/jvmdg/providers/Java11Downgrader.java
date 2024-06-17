@@ -474,6 +474,7 @@ public class Java11Downgrader extends VersionProvider {
         createAccessors(clazz, determinePrivateFieldsAndMethodsReadByNestMembers(clazz, nestMembers.values()));
         useAccessors(clazz, nestMembers);
 
+        clazz.nestMembers = null;
     }
 
     public void fixNestsForChild(ClassNode clazz, Function<String, ClassNode> getReadOnly) {
@@ -502,5 +503,7 @@ public class Java11Downgrader extends VersionProvider {
 
         createAccessors(clazz, determinePrivateFieldsAndMethodsReadByNestMembers(clazz, nestMembers.values()));
         useAccessors(clazz, nestMembers);
+
+        clazz.nestHostClass = null;
     }
 }

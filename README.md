@@ -2,6 +2,10 @@
 
 Downgrades modern java bytecode to older versions. at either compile or runtime.
 
+This is currently capable of downgrading from Java 22 to Java 8. Java 7 may come in the future.
+
+Currently attempting to downgrade to Java 7 will produce valid class files, but some of the API stubs are broken, and many common ones dont exist.
+
 ## Gradle Plugin
 
 This downgrades the output of a jar task using another task.
@@ -148,19 +152,6 @@ you can specify multiple targets for bulk operations.
 ex. `java -jar JvmDowngrader-all.jar -c 52 shade -p "shade/prefix" -t input.jar output.jar`
 
 The class version can be replaced with a path to the pre-downgraded api jar to save time, using `-d`.
-
-#### License Concerns
-
-Some people think that shading would mean they're bound by the stricter GPL license. I don't belive this to be the case.
-
-For the purpose of Licensing, the produced jar from this task, or the downgrading task, should be considered a "Combined
-Work",
-as it contains the original code from the input jar and the shaded code from jvmdowngrader's api.
-
-And this does, usually, mean that you shouldn't need to use the *exact* same license.
-Running this tool, should be a thing the end-user is capable of doing, thus section 6.a should be satisfied as long as
-your project provides the unshaded/undowngraded jar as well, or alternatively provides source code to build said jar, or
-the post-shaded jar.
 
 ## Runtime Downgrading
 

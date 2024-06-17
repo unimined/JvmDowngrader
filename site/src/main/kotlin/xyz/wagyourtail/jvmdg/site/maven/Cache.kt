@@ -1,9 +1,9 @@
-package xyz.wagyourtail.jvmdg.maven
+package xyz.wagyourtail.jvmdg.site.maven
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
-import xyz.wagyourtail.jvmdg.maven.lock.StringKeyLock
+import xyz.wagyourtail.jvmdg.site.maven.lock.StringKeyLock
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Path

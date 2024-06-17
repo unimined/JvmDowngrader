@@ -135,6 +135,9 @@ tasks.jar {
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
     from(rootProject.sourceSets.getByName("shared").output)
     from(projectDir.parentFile.resolve("LICENSE.md"))
+    from(projectDir.parentFile.resolve("license")) {
+        into("license")
+    }
 
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true
@@ -144,6 +147,9 @@ tasks.getByName<Jar>("sourcesJar") {
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].allSource }).toTypedArray())
     from(rootProject.sourceSets.getByName("shared").allSource)
     from(projectDir.parentFile.resolve("LICENSE.md"))
+    from(projectDir.parentFile.resolve("license")) {
+        into("license")
+    }
 }
 
 tasks.javadoc {
@@ -201,6 +207,10 @@ val downgradeJar11Exec by tasks.registering(JavaExec::class) {
         apiJar,
         tempFile11.absolutePath
     )
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
+    }
 }
 
 val downgradeJar11 by tasks.registering(Jar::class) {
@@ -229,6 +239,10 @@ val downgradeJar8Exec by tasks.registering(JavaExec::class) {
         apiJar,
         tempFile8.absolutePath
     )
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
+    }
 }
 
 
@@ -241,7 +255,7 @@ val downgradeJar8 by tasks.registering(Jar::class) {
 
 val genCySym by tasks.registering(GenerateCtSymTask::class) {
     group = "jvmdg"
-    upperVersion = toVersion
+    upperVersion = toVersion - 1
 }
 
 val coverageReport by tasks.registering(JavaExec::class) {

@@ -44,7 +44,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
     init {
         downgradeTo.convention(JavaVersion.VERSION_1_8).finalizeValueOnRead()
         apiJar.convention(project.provider {
-            val apiJar = project.layout.buildDirectory.get().asFile.resolve("jvmdg/java-api-${version}.jar")
+            val apiJar = project.file(".gradle").resolve("jvmdg/java-api-${version}.jar")
             if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
                 apiJar.parentFile.mkdirs()
                 JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar").use { stream ->

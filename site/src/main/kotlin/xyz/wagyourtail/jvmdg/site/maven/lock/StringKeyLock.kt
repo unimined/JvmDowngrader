@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.maven.lock
+package xyz.wagyourtail.jvmdg.site.maven.lock
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
