@@ -207,6 +207,10 @@ val downgradeJar11Exec by tasks.registering(JavaExec::class) {
         apiJar,
         tempFile11.absolutePath
     )
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
+    }
 }
 
 val downgradeJar11 by tasks.registering(Jar::class) {
@@ -235,6 +239,10 @@ val downgradeJar8Exec by tasks.registering(JavaExec::class) {
         apiJar,
         tempFile8.absolutePath
     )
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
+    }
 }
 
 

@@ -809,7 +809,6 @@ public abstract class VersionProvider {
             return clazz;
         }
         ClassMapping cm = getStubMapper(Type.getObjectType(clazz.name), (clazz.access & Opcodes.ACC_INTERFACE) != 0, getMembers, getSuperTypes);
-        cm.getMembers();
         Map<MemberNameAndDesc, Pair<Method, Stub>> members = cm.getAbstracts();
         for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> member : members.entrySet()) {
             boolean contains = false;
