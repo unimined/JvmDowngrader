@@ -22,4 +22,9 @@ public class MissingStubError extends Error {
         }
     }
 
+    public static MissingStubError create(String targetName) {
+        StackTraceElement prev = new Error().getStackTrace()[1];
+        return new MissingStubError("Missing stub for " + targetName + " at " + prev.getFileName() + ":" + prev.getLineNumber());
+    }
+
 }
