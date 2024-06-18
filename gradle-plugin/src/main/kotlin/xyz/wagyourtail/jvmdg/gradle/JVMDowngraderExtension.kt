@@ -64,7 +64,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
 
     @get:Internal
     internal val downgradedApis = defaultedMapOf<JavaVersion, File> { version ->
-        val downgradedPath = apiJar.get().resolveSibling("java-api-${version}-downgraded.jar")
+        val downgradedPath = project.file(".gradle").resolve("jvmdg/java-api-${version}-downgraded.jar")
 
         ClassDowngrader.downgradeTo(this.toFlags()).use {
             ZipDowngrader.downgradeZip(it, apiJar.get().toPath(), emptySet(), downgradedPath.toPath())
