@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -14,6 +15,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
@@ -28,6 +30,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
 
 public class ClassDowngrader implements Closeable {
     /**
@@ -40,9 +43,13 @@ public class ClassDowngrader implements Closeable {
     private final Map<Integer, VersionProvider> downgraders;
     private final DowngradingClassLoader classLoader;
 
+    @ApiStatus.Internal
+    public final Logger logger;
+
     protected ClassDowngrader(@NotNull Flags flags) {
         this.flags = flags;
         this.target = flags.classVersion;
+        logger = new Logger(ClassDowngrader.class, flags.printDebug ? Logger.Level.DEBUG : flags.quiet ? Logger.Level.FATAL : Logger.Level.INFO, System.out);
         try {
             classLoader = new DowngradingClassLoader(this, ClassDowngrader.class.getClassLoader());
         } catch (IOException e) {
@@ -105,14 +112,14 @@ public class ClassDowngrader implements Closeable {
         return downgraders;
     }
 
-    public Set<MemberNameAndDesc> getMembers(int version, Type type) throws IOException {
+    public Set<MemberNameAndDesc> getMembers(int version, Type type, Set<String> warnings) throws IOException {
         for (int vers = version; vers > target; vers--) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
             downgrader.ensureInit(this);
-            Type stubbed = downgrader.stubClass(type);
+            Type stubbed = downgrader.stubClass(type, warnings);
             if (!stubbed.equals(type)) {
                 try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
                     if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
@@ -122,7 +129,7 @@ public class ClassDowngrader implements Closeable {
                     Set<MemberNameAndDesc> members = new HashSet<>();
                     for (MethodNode o : node.methods) {
                         if ((o.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
-                        members.add(new MemberNameAndDesc(o.name, stubClass(node.version, Type.getMethodType(o.desc))));
+                        members.add(new MemberNameAndDesc(o.name, stubClass(node.version, Type.getMethodType(o.desc), warnings)));
                     }
                     return members;
                 }
@@ -144,20 +151,20 @@ public class ClassDowngrader implements Closeable {
             Set<MemberNameAndDesc> members = new HashSet<>();
             for (MethodNode o : node.methods) {
                 if ((o.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
-                members.add(new MemberNameAndDesc(o.name, stubClass(node.version, Type.getMethodType(o.desc))));
+                members.add(new MemberNameAndDesc(o.name, stubClass(node.version, Type.getMethodType(o.desc), warnings)));
             }
             return members;
         }
     }
 
-    public List<Pair<Type, Boolean>> getSupertypes(int version, Type type) throws IOException {
+    public List<Pair<Type, Boolean>> getSupertypes(int version, Type type, Set<String> warnings) throws IOException {
         for (int vers = version; vers > target; vers--) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
             downgrader.ensureInit(this);
-            Type stubbed = downgrader.stubClass(type);
+            Type stubbed = downgrader.stubClass(type, warnings);
             if (!stubbed.equals(type)) {
                 try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
                     if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
@@ -183,14 +190,14 @@ public class ClassDowngrader implements Closeable {
         }
     }
 
-    public Boolean isInterface(int version, Type type) throws IOException {
+    public Boolean isInterface(int version, Type type, Set<String> warnings) throws IOException {
         for (int vers = version; vers > target; vers--) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
             downgrader.ensureInit(this);
-            Type stubbed = downgrader.stubClass(type);
+            Type stubbed = downgrader.stubClass(type, warnings);
             if (!stubbed.equals(type)) {
                 try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
                     if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
@@ -206,14 +213,14 @@ public class ClassDowngrader implements Closeable {
         }
     }
 
-    public Type stubClass(int version, Type type) {
+    public Type stubClass(int version, Type type, Set<String> warnings) {
         for (int vers = version; vers > target; vers--) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
             downgrader.ensureInit(this);
-            Type stubbed = downgrader.stubClass(type);
+            Type stubbed = downgrader.stubClass(type, warnings);
             if (!stubbed.equals(type)) {
                 return stubbed;
             }
@@ -310,12 +317,12 @@ public class ClassDowngrader implements Closeable {
         } catch (Exception e) {
             throw new RuntimeException("Failed to downgrade " + name.get(), e);
         }
-        if (flags.printDebug) {
+        if (logger.is(Logger.Level.DEBUG)) {
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 if (!entry.getKey().equals(name.get())) {
-                    System.out.println("Downgraded " + entry.getKey() + " from unknown to " + target);
+                    logger.debug("Downgraded " + entry.getKey() + " from unknown to " + target);
                 } else {
-                    System.out.println("Downgraded " + entry.getKey() + " from " + version + " to " + target);
+                    logger.debug("Downgraded " + entry.getKey() + " from " + version + " to " + target);
                 }
                 writeBytesToDebug(entry.getKey(), entry.getValue());
             }

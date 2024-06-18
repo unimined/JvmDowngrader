@@ -7,6 +7,7 @@ import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Lazy;
 import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.version.Coverage;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -25,9 +26,12 @@ public class ClassMapping {
     private final Map<MemberNameAndDesc, Pair<Method, Stub>> methodStub = new HashMap<>();
     private final Map<MemberNameAndDesc, Pair<Method, Modify>> methodModify = new HashMap<>();
 
-    public ClassMapping(final Lazy<List<ClassMapping>> parents, final Type current, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> members, VersionProvider vp) {
+    private final Coverage coverage;
+
+    public ClassMapping(final Coverage coverage, final Lazy<List<ClassMapping>> parents, final Type current, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> members, VersionProvider vp) {
         this.parents = parents;
         this.current = current;
+        this.coverage = coverage;
         this.members = new Lazy<Map<MemberNameAndDesc, Pair<Boolean, Type>>>() {
 
             @Override
@@ -75,7 +79,18 @@ public class ClassMapping {
         methodModify.put(member, new Pair<>(method, modify));
     }
 
-    public void transform(MethodNode method, int index, ClassNode classNode, Set<ClassNode> extra, boolean runtimeAvailable) {
+    public void warnMember(MemberNameAndDesc member, Set<String> warnings) {
+        FullyQualifiedMemberNameAndDesc fqn = member.toFullyQualified(current);
+        String mod = coverage.checkMember(fqn);
+        if (mod != null) {
+            coverage.warnMember(fqn, warnings);
+        }
+        for (ClassMapping parent : parents.get()) {
+            parent.warnMember(member, warnings);
+        }
+    }
+
+    public void transform(MethodNode method, int index, ClassNode classNode, Set<ClassNode> extra, boolean runtimeAvailable, Set<String> warnings) {
         AbstractInsnNode insn = method.instructions.get(index);
         if (insn instanceof MethodInsnNode) {
             MethodInsnNode min = (MethodInsnNode) insn;
@@ -83,7 +98,7 @@ public class ClassMapping {
             boolean isStatic = insn.getOpcode() == Opcodes.INVOKESTATIC;
             boolean isSpecial = insn.getOpcode() == Opcodes.INVOKESPECIAL;
 
-            Pair<Method, Stub> newMin = getStubFor(member, isStatic, runtimeAvailable, isSpecial);
+            Pair<Method, Stub> newMin = getStubFor(member, isStatic, runtimeAvailable, isSpecial, warnings);
             Type returnType = Type.getReturnType(min.desc);
             if (newMin != null) {
                 // handled specially, by inserting a call to the stub in the implementation if it's missing an implementation.
@@ -139,11 +154,12 @@ public class ClassMapping {
                 method.instructions.remove(min);
                 return;
             }
-            Pair<Method, Modify> m = methodModify.get(member);
+            Pair<Method, Modify> m = getModifyFor(member, isStatic, warnings);
             if (m != null) {
                 try {
                     List<Object> modifyArgs = Arrays.asList(method, index, classNode, extra);
                     m.getFirst().invoke(null, modifyArgs.subList(0, m.getFirst().getParameterTypes().length).toArray());
+                    return;
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
@@ -160,13 +176,14 @@ public class ClassMapping {
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
+                return;
             }
         }
     }
 
-    public Pair<Method, Stub> getParentStubFor(MemberNameAndDesc member, boolean runtimeAvailable, boolean special) {
+    public Pair<Method, Stub> getParentStubFor(MemberNameAndDesc member, boolean runtimeAvailable, boolean special, Set<String> warnings) {
         for (ClassMapping parent : parents.get()) {
-            Pair<Method, Stub> node = parent.getStubFor(member, false, runtimeAvailable, special);
+            Pair<Method, Stub> node = parent.getStubFor(member, false, runtimeAvailable, special, warnings);
             if (node != null) {
                 return node;
             }
@@ -174,7 +191,7 @@ public class ClassMapping {
         return null;
     }
 
-    public Pair<Method, Stub> getStubFor(MemberNameAndDesc member, boolean invoke_static, boolean runtimeAvailable, boolean special) {
+    public Pair<Method, Stub> getStubFor(MemberNameAndDesc member, boolean invoke_static, boolean runtimeAvailable, boolean special, Set<String> warnings) {
         try {
             Pair<Method, Stub> pair = methodStub.get(member);
             if (pair == null) {
@@ -186,13 +203,14 @@ public class ClassMapping {
 //                        }
                         return null;
                     }
-                    return getParentStubFor(member, runtimeAvailable, special);
+                    return getParentStubFor(member, runtimeAvailable, special, warnings);
                 }
+                warnMember(member, warnings);
                 return null;
             }
             Method m = pair.getFirst();
             if (!runtimeAvailable && pair.getSecond().requiresRuntime()) {
-                System.err.println("WARNING: " + m + " requires runtime transformation but runtime is not available...");
+                warnings.add(m + " requires runtime transformation but runtime is not available...");
             }
             if (special && pair.getSecond().noSpecial()) {
                 return null;
@@ -207,9 +225,9 @@ public class ClassMapping {
         }
     }
 
-    public Pair<Method, Modify> getParentModifyFor(MemberNameAndDesc member) {
+    public Pair<Method, Modify> getParentModifyFor(MemberNameAndDesc member, Set<String> warnings) {
         for (ClassMapping parent : parents.get()) {
-            Pair<Method, Modify> node = parent.getModifyFor(member, false);
+            Pair<Method, Modify> node = parent.getModifyFor(member, false, warnings);
             if (node != null) {
                 return node;
             }
@@ -217,7 +235,7 @@ public class ClassMapping {
         return null;
     }
 
-    public Pair<Method, Modify> getModifyFor(MemberNameAndDesc member, boolean invoke_static) {
+    public Pair<Method, Modify> getModifyFor(MemberNameAndDesc member, boolean invoke_static, Set<String> warnings) {
         try {
             Pair<Method, Modify> pair = methodModify.get(member);
             if (pair == null) {
@@ -226,8 +244,9 @@ public class ClassMapping {
                     if (members != null && members.containsKey(member)) {
                         return null;
                     }
-                    return getParentModifyFor(member);
+                    return getParentModifyFor(member, warnings);
                 }
+                warnMember(member, warnings);
                 return null;
             }
             Method m = pair.getFirst();

@@ -3,6 +3,7 @@ package xyz.wagyourtail.gradle.ctsym
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
 import org.gradle.api.JavaVersion
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.internal.ConventionTask
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -22,9 +23,9 @@ import kotlin.io.path.*
 
 abstract class GenerateCtSymTask : ConventionTask() {
 
-    @Optional
-    @OutputFile
-    var ctSym = temporaryDir.resolve("jvmdg").resolve("ct.sym")
+    @get:Optional
+    @get:OutputFile
+    abstract val ctSym: RegularFileProperty
 
     @get:Input
     @get:Optional
@@ -34,7 +35,7 @@ abstract class GenerateCtSymTask : ConventionTask() {
     abstract val upperVersion: Property<JavaVersion>
 
     init {
-        outputs.upToDateWhen { ctSym.exists() }
+        ctSym.set(temporaryDir.resolve("jvmdg").resolve("ct.sym"))
         lowerVersion.convention(JavaVersion.VERSION_1_6).finalizeValueOnRead()
         upperVersion.convention(JavaVersion.VERSION_22).finalizeValueOnRead()
     }
@@ -72,7 +73,7 @@ abstract class GenerateCtSymTask : ConventionTask() {
 
 
         ZipArchiveOutputStream(
-            ctSym.toPath().outputStream(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
+            ctSym.get().asFile.toPath().outputStream(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
         ).use { zos ->
             val prevJava = mutableMapOf<String, ClassInfo>()
             for (java in (lowerVersion.get()..upperVersion.get()).reversed()) {

@@ -1,6 +1,7 @@
 import xyz.wagyourtail.gradle.shadow.ShadowJar
 
 plugins {
+    kotlin("jvm") version "1.9.22" apply false
     java
     `maven-publish`
     `java-library`

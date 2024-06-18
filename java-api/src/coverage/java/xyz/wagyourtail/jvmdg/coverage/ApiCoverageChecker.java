@@ -92,7 +92,6 @@ public class ApiCoverageChecker {
                 System.out.println("Checking version " + stubVersion);
 
                 var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(value -> Stream.of(value.getMethodStubMap().values().stream(), value.getMethodModifyMap().values().stream()).flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
-
                 try {
                     var requiredStubs = new ArrayList<MemberInfo>();
                     compare(versions.get(v), classes, requiredStubs);
@@ -106,7 +105,13 @@ public class ApiCoverageChecker {
                         var stub = staticAndStub.fqm();
 
                         if (stub.getName() != null) {
-                            var stubProvider = versionProvider.getStubMapper(stub.getOwner());
+                            Set<String> warnings = new HashSet<>();
+                            var stubProvider = versionProvider.getStubMapper(stub.getOwner(), warnings);
+                            if (!warnings.isEmpty()) {
+                                for (var warning : warnings) {
+                                    System.err.println(warning);
+                                }
+                            }
                             // map classes in desc
                             var desc = stub.getDesc();
                             var descArgs = desc.getArgumentTypes();
@@ -261,6 +266,11 @@ public class ApiCoverageChecker {
         return null;
     }
 
+    private static final Set<String> excludedMods = Set.of(
+        "jdk.internal.vm.compiler",
+        "jdk.internal.vm.compiler.management"
+    );
+
     public static void compare(List<Path> moduleHolders, Map<String, Pair<String, ClassNode>> currentVersion, List<MemberInfo> removed) throws IOException {
         var mods = new ArrayList<Path>();
         for (var mod : moduleHolders) {
@@ -276,6 +286,8 @@ public class ApiCoverageChecker {
                 return;
             }
             var modName = mod.getFileName().toString();
+
+            if (excludedMods.contains(modName)) return;
             try (var files = Files.find(mod, Integer.MAX_VALUE, (p, a) -> !a.isDirectory())) {
                 files.parallel().forEach(p -> {
                     try {

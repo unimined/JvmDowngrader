@@ -109,10 +109,11 @@ public class J_L_Class {
         List<VersionProvider> versionProviders = ClassDowngrader.getCurrentVersionDowngrader().versionProviders(origVersion);
         List<Method> methods = new ArrayList<>(Arrays.asList(clazz.getMethods()));
         for (VersionProvider vp : versionProviders) {
+            Set<String> warnings = new HashSet<>();
             if (vp.classStubs.containsKey(target)) {
                 try {
                     ClassDowngrader downgrader = ClassDowngrader.getCurrentVersionDowngrader();
-                    List<Pair<Method, Stub>> targets = vp.getStubMapper(target, downgrader.isInterface(downgrader.target, target), getMethods, getSuperTypes).getStubTargets();
+                    List<Pair<Method, Stub>> targets = vp.getStubMapper(target, downgrader.isInterface(downgrader.target, target, warnings), getMethods, getSuperTypes).getStubTargets();
                     for (Pair<Method, Stub> t : targets) {
                         if (!methods.contains(t.getFirst())) {
                             methods.add(t.getFirst());
@@ -120,6 +121,11 @@ public class J_L_Class {
                     }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
+                }
+            }
+            if (!warnings.isEmpty()) {
+                for (String warning : warnings) {
+                    System.err.println(warning);
                 }
             }
         }

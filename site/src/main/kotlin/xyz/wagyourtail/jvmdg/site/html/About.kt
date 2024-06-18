@@ -18,28 +18,31 @@ class About : Template<HTML> {
         head {
             title("JvmDowngrader")
             style {
-                +"""
-                    body {
-                        max-width: 800px;
-                        margin:0 auto;
-                    }
-                    h1 {
-                        text-align: center;
-                    }
-                    .user-del {
-                        text-decoration: line-through;
-                    }
-                """.trimIndent()
+                unsafe {
+                    +"""
+                        body {
+                            max-width: 800px;
+                            margin:0 auto;
+                        }
+                        h1 {
+                            text-align: center;
+                        }
+                        .user-del {
+                            text-decoration: line-through;
+                        }
+                    """.trimIndent()
+                }
             }
             link(rel = "stylesheet", href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css")
             script(src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js") {}
             script(src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/gradle.min.js") {}
-            // <script>hljs.highlightAll();</script>
             script {
                 defer = true
-                +"""
-                    hljs.highlightAll();
-                """.trimIndent()
+                unsafe {
+                    +"""
+                        hljs.highlightAll();
+                    """.trimIndent()
+                }
             }
         }
         body {

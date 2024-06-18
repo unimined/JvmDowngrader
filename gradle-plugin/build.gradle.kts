@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.*
 
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm")
     `java-gradle-plugin`
     `java-library`
     `maven-publish`

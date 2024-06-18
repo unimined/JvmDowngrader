@@ -7,6 +7,7 @@ import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.all.RemovedInterfaces;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Lazy;
@@ -24,27 +25,26 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 public abstract class VersionProvider {
-
-    public final Map<Type, Pair<Type, Pair<Class<?>, Adapter>>> classStubs = new HashMap<>();
-    public final Map<Type, ClassMapping> stubMappings = new HashMap<>();
+    public final Map<Type, Pair<Type, Pair<Class<?>, Adapter>>> classStubs = new LinkedHashMap<>();
+    public final Map<Type, ClassMapping> stubMappings = new LinkedHashMap<>();
     public final int inputVersion;
     public final int outputVersion;
+
+    public final Coverage coverage;
 
     /**
      * lateinit
      * bound during ensureInit
      */
     protected ClassDowngrader downgrader;
+    protected Logger logger;
 
     private volatile boolean initialized = false;
 
     protected VersionProvider(int inputVersion, int outputVersion) {
         this.inputVersion = inputVersion;
         this.outputVersion = outputVersion;
-    }
-
-    public static void main(String[] args) {
-        System.out.println(Type.getType(boolean.class).getDescriptor());
+        this.coverage = new Coverage(inputVersion, this);
     }
 
     public FullyQualifiedMemberNameAndDesc resolveStubTarget(Member member, Ref ref) {
@@ -152,22 +152,24 @@ public abstract class VersionProvider {
     }
 
     public void afterInit() {
-        if (downgrader.flags.printDebug) {
+        if (logger.is(Logger.Level.DEBUG)) {
+            StringBuilder sb = new StringBuilder("Stubs: \n");
             for (Map.Entry<Type, Pair<Type, Pair<Class<?>, Adapter>>> stub : classStubs.entrySet()) {
-                System.out.println(stub.getKey().getInternalName() + " -> " + stub.getValue().getFirst());
+                sb.append(stub.getKey().getInternalName()).append(" -> ").append(stub.getValue().getFirst()).append("\n");
             }
             for (Map.Entry<Type, ClassMapping> entry : stubMappings.entrySet()) {
                 for (Map.Entry<MemberNameAndDesc, Pair<Method, Stub>> member : entry.getValue().getMethodStubMap().entrySet()) {
-                    System.out.println(entry.getKey().getInternalName() + "." + member.getKey().getName() + member.getKey().getDesc() + " -> " + member.getValue().getFirst().getDeclaringClass().getCanonicalName().replace('.', '/') + ";" + member.getValue().getFirst().getName() + Type.getMethodDescriptor(member.getValue().getFirst()));
+                    sb.append(entry.getKey().getInternalName())
+                        .append(".").append(member.getKey().getName())
+                        .append(member.getKey().getDesc()).append(" -> ")
+                        .append(member.getValue().getFirst().getDeclaringClass().getCanonicalName().replace('.', '/'))
+                        .append(";")
+                        .append(member.getValue().getFirst().getName())
+                        .append(Type.getMethodDescriptor(member.getValue().getFirst()))
+                        .append("\n");
                 }
             }
-//            for (Map.Entry<Type, Pair<Type, Stub>> entry : classStubs.entrySet()) {
-//                System.out.println(entry.getKey().getInternalName() + " -> " + entry.getValue().getFirst().getInternalName());
-//            }
-//            for (Map.Entry<String, Pair<Method, Stub>> entry : methodStubs.entrySet()) {
-//                System.out.println(entry.getKey() + " -> " + entry.getValue().getFirst().getDeclaringClass().getCanonicalName().replace('.', '/') + ";" + entry.getValue().getFirst().getName() + Type.getMethodDescriptor(entry.getValue()
-//                    .getFirst()));
-//            }
+            logger.debug(sb.toString());
         }
     }
 
@@ -179,27 +181,27 @@ public abstract class VersionProvider {
 
     public abstract void init();
 
-    public synchronized ClassMapping getStubMapper(Type type) throws IOException {
-        return getStubMapper(type, downgrader.isInterface(outputVersion, type) == Boolean.TRUE);
+    public synchronized ClassMapping getStubMapper(Type type, Set<String> warnings) throws IOException {
+        return getStubMapper(type, downgrader.isInterface(outputVersion, type, warnings) == Boolean.TRUE, warnings);
     }
 
-    public synchronized ClassMapping getStubMapper(Type type, boolean isInterface) throws IOException {
+    public synchronized ClassMapping getStubMapper(Type type, boolean isInterface, final Set<String> warnings) throws IOException {
         return getStubMapper(type, isInterface, new IOFunction<Type, Set<MemberNameAndDesc>>() {
 
             @Override
             public Set<MemberNameAndDesc> apply(Type o) throws IOException {
-                return downgrader.getMembers(inputVersion, o);
+                return downgrader.getMembers(inputVersion, o, warnings);
             }
 
-        });
+        }, warnings);
     }
 
-    public synchronized ClassMapping getStubMapper(Type type, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver) throws IOException {
+    public synchronized ClassMapping getStubMapper(Type type, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final Set<String> warnings) throws IOException {
         return getStubMapper(type, isInterface, memberResolver, new IOFunction<Type, List<Pair<Type, Boolean>>>() {
 
             @Override
             public List<Pair<Type, Boolean>> apply(Type o) throws IOException {
-                return downgrader.getSupertypes(inputVersion, o);
+                return downgrader.getSupertypes(inputVersion, o, warnings);
             }
 
         });
@@ -210,7 +212,7 @@ public abstract class VersionProvider {
             return stubMappings.get(type);
         }
         if (type.getSort() == Type.ARRAY) {
-            return new ClassMapping(new Lazy<List<ClassMapping>>() {
+            return new ClassMapping(coverage, new Lazy<List<ClassMapping>>() {
                 @Override
                 public List<ClassMapping> init() {
                     try {
@@ -222,7 +224,7 @@ public abstract class VersionProvider {
             }, type, isInterface, memberResolver, this);
         }
         if (type.getInternalName().equals("java/lang/Object")) {
-            ClassMapping mapping = new ClassMapping(new Lazy<List<ClassMapping>>() {
+            ClassMapping mapping = new ClassMapping(coverage, new Lazy<List<ClassMapping>>() {
                 @Override
                 public List<ClassMapping> init() {
                     return Collections.emptyList();
@@ -231,14 +233,13 @@ public abstract class VersionProvider {
             stubMappings.put(type, mapping);
             return mapping;
         }
-        ClassMapping mapping = new ClassMapping(new Lazy<List<ClassMapping>>() {
+        ClassMapping mapping = new ClassMapping(coverage, new Lazy<List<ClassMapping>>() {
             @Override
             public List<ClassMapping> init() {
                 try {
                     List<Pair<Type, Boolean>> types = superTypeResolver.apply(type);
                     if (types == null) {
-                        if (!downgrader.flags.quiet)
-                            System.err.println(VersionProvider.this.getClass().getName() + " Could not find class " + type.getInternalName());
+                        logger.error("Could not find class " + type.getInternalName());
                         types = Collections.emptyList();
                     }
                     List<ClassMapping> superTypes = new ArrayList<>();
@@ -256,6 +257,7 @@ public abstract class VersionProvider {
     }
 
     public void stub(Class<?> clazz) {
+        Set<String> warnings = new LinkedHashSet<>();
         try {
             if (clazz.isAnnotationPresent(Adapter.class)) {
                 Adapter stub = clazz.getAnnotation(Adapter.class);
@@ -292,7 +294,7 @@ public abstract class VersionProvider {
                             FullyQualifiedMemberNameAndDesc target = resolveStubTarget(method, stub.ref());
                             Type owner = target.getOwner();
                             MemberNameAndDesc member = target.toMemberNameAndDesc();
-                            getStubMapper(owner).addStub(member, method, stub);
+                            getStubMapper(owner, warnings).addStub(member, method, stub);
                         } else if (method.isAnnotationPresent(Modify.class)) {
                             Modify modify = method.getAnnotation(Modify.class);
                             FullyQualifiedMemberNameAndDesc target = resolveModifyTarget(method, modify.ref());
@@ -308,20 +310,14 @@ public abstract class VersionProvider {
                                     throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " parameter " + i + " must be of type " + Modify.MODIFY_SIG[i].getName());
                                 }
                             }
-                            getStubMapper(owner).addModify(member, method, modify);
+                            getStubMapper(owner, warnings).addModify(member, method, modify);
                         }
                     } catch (Throwable e) {
-                        if (!downgrader.flags.quiet) {
-                            System.out.println("ERROR: failed to create stub for " + clazz.getName() + " (" + e.getMessage().split("\n")[0] + ")");
-                            e.printStackTrace(System.err);
-                        }
+                        logger.warn("failed to create stub for " + clazz.getName(), e);
                     }
                 }
             } catch (Throwable e) {
-                if (!downgrader.flags.quiet) {
-                    System.out.println("ERROR: failed to resolve methods for " + clazz.getName());
-                    e.printStackTrace(System.err);
-                }
+                logger.warn("failed to resolve methods for " + clazz.getName(), e);
             }
             try {
                 // inner classes
@@ -329,20 +325,21 @@ public abstract class VersionProvider {
                     stub(inner);
                 }
             } catch (Throwable e) {
-                if (!downgrader.flags.quiet) {
-                    System.out.println("ERROR: failed to resolve inner classes for " + clazz.getName());
-                    e.printStackTrace(System.err);
-                }
+                logger.warn("failed to resolve inner classes for " + clazz.getName(), e);
             }
         } catch (Throwable e) {
-            if (!downgrader.flags.quiet) {
-                System.out.println("ERROR: failed to create stub(s) for " + clazz.getName());
-                e.printStackTrace(System.err);
+            logger.warn("failed to create stub(s) for " + clazz.getName(), e);
+        }
+        if (!warnings.isEmpty() && logger.is(Logger.Level.WARN)) {
+            StringBuilder sb = new StringBuilder();
+            for (String warning : warnings) {
+                sb.append("    ").append(warning).append("\n");
             }
+            logger.warn("Warnings for " + clazz.getName() + " (" + warnings.size() + ") : \n" + sb);
         }
     }
 
-    public MethodInsnNode stubTypeInsnNode(TypeInsnNode insn) {
+    public MethodInsnNode stubTypeInsnNode(TypeInsnNode insn, Set<String> warnings) {
         Type desc = Type.getObjectType(insn.desc);
         switch (desc.getSort()) {
             case Type.ARRAY:
@@ -350,10 +347,12 @@ public abstract class VersionProvider {
                 if (classStubs.containsKey(type)) {
                     type = classStubs.get(type).getFirst();
                 }
+                coverage.warnClass(type, warnings);
                 insn.desc = Type.getType(desc.getDescriptor().substring(0, desc.getDimensions()) + type.getDescriptor()).getInternalName();
                 return null;
             case Type.OBJECT:
-                if (classStubs.containsKey(Type.getObjectType(insn.desc))) {
+                Type t = Type.getObjectType(insn.desc);
+                if (classStubs.containsKey(t)) {
                     Pair<Type, Pair<Class<?>, Adapter>> stub = classStubs.get(Type.getObjectType(insn.desc));
                     // check if clazz has method `jvmdg$opcode
                     switch (insn.getOpcode()) {
@@ -374,21 +373,23 @@ public abstract class VersionProvider {
                         default:
                             insn.desc = stub.getFirst().getInternalName();
                     }
+                    return null;
                 }
+                coverage.warnClass(t, warnings);
                 break;
         }
         return null;
     }
 
-    public Type stubClass(Type desc) {
+    public Type stubClass(Type desc, Set<String> warnings) {
         switch (desc.getSort()) {
             case Type.METHOD:
                 Type[] args = desc.getArgumentTypes();
                 Type ret = desc.getReturnType();
                 for (int i = 0; i < args.length; i++) {
-                    args[i] = stubClass(args[i]);
+                    args[i] = stubClass(args[i], warnings);
                 }
-                ret = stubClass(ret);
+                ret = stubClass(ret, warnings);
                 return Type.getMethodType(ret, args);
             case Type.ARRAY:
                 Type type = desc.getElementType();
@@ -400,6 +401,7 @@ public abstract class VersionProvider {
                 if (classStubs.containsKey(desc)) {
                     return classStubs.get(desc).getFirst();
                 }
+//                coverage.warnClass(desc, warnings);
                 return desc;
             default:
                 return desc;
@@ -412,55 +414,63 @@ public abstract class VersionProvider {
         }
 
         for (MethodNode method : new ArrayList<>(owner.methods)) {
-            MethodNode newMethod = stubMethods(method, owner, extra, enableRuntime, memberResolver, superTypeResolver);
+            Set<String> warnings = new LinkedHashSet<>();
+            MethodNode newMethod = stubMethod(method, owner, extra, enableRuntime, memberResolver, superTypeResolver, warnings);
             if (newMethod != method) {
                 owner.methods.set(owner.methods.indexOf(method), newMethod);
+            }
+            if (!warnings.isEmpty() && logger.is(Logger.Level.WARN)) {
+                StringBuilder sb = new StringBuilder();
+                for (String warning : warnings) {
+                    sb.append("    ").append(warning).append("\n");
+                }
+                logger.warn("Warnings for " + owner.name + "." + method.name + method.desc + " (" + warnings.size() + ") : \n" + sb);
             }
         }
         return owner;
     }
 
-    public MethodNode stubMethods(MethodNode method, ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
+    public MethodNode stubMethod(MethodNode method, ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Set<String> warnings) throws IOException {
         for (int i = 0; i < method.instructions.size(); i++) {
             AbstractInsnNode insn = method.instructions.get(i);
             if (insn instanceof MethodInsnNode) {
                 MethodInsnNode min = (MethodInsnNode) insn;
-                min.owner = stubClass(Type.getObjectType(min.owner)).getInternalName();
-                min.desc = stubClass(Type.getMethodType(min.desc)).getDescriptor();
+                min.owner = stubClass(Type.getObjectType(min.owner), warnings).getInternalName();
+                min.desc = stubClass(Type.getMethodType(min.desc), warnings).getDescriptor();
                 if (!min.owner.startsWith("[")) {
-                    getStubMapper(Type.getObjectType(min.owner), min.itf, memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
+                    getStubMapper(Type.getObjectType(min.owner), min.itf, memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime, warnings);
                 }
             } else if (insn instanceof TypeInsnNode) {
                 TypeInsnNode tin = (TypeInsnNode) insn;
-                MethodInsnNode min = stubTypeInsnNode(tin);
+                MethodInsnNode min = stubTypeInsnNode(tin, warnings);
                 if (min != null) {
                     method.instructions.set(tin, min);
                 }
             } else if (insn instanceof FieldInsnNode) {
                 FieldInsnNode fin = (FieldInsnNode) insn;
-                fin.owner = stubClass(Type.getObjectType(fin.owner)).getInternalName();
-                fin.desc = stubClass(Type.getType(fin.desc)).getDescriptor();
+                fin.owner = stubClass(Type.getObjectType(fin.owner), warnings).getInternalName();
+                fin.desc = stubClass(Type.getType(fin.desc), warnings).getDescriptor();
                 //TODO: field stubs (upgrade to method)
             } else if (insn instanceof InvokeDynamicInsnNode) {
                 InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
-                indy.desc = stubClass(Type.getMethodType(indy.desc)).getDescriptor();
+                indy.desc = stubClass(Type.getMethodType(indy.desc), warnings).getDescriptor();
                 indy.bsm = new Handle(
-                        indy.bsm.getTag(),
-                        stubClass(Type.getObjectType(indy.bsm.getOwner())).getInternalName(),
-                        indy.bsm.getName(),
-                        stubClass(Type.getMethodType(indy.bsm.getDesc())).getDescriptor(),
-                        indy.bsm.isInterface()
+                    indy.bsm.getTag(),
+                    stubClass(Type.getObjectType(indy.bsm.getOwner()), warnings).getInternalName(),
+                    indy.bsm.getName(),
+                    stubClass(Type.getMethodType(indy.bsm.getDesc()), warnings).getDescriptor(),
+                    indy.bsm.isInterface()
                 );
                 for (int j = 0; j < indy.bsmArgs.length; j++) {
                     Object arg = indy.bsmArgs[j];
                     if (arg instanceof Handle) {
                         Handle handle = (Handle) arg;
                         handle = new Handle(
-                                handle.getTag(),
-                                stubClass(Type.getObjectType(handle.getOwner())).getInternalName(),
-                                handle.getName(),
-                                stubClass(Type.getType(handle.getDesc())).getDescriptor(),
-                                handle.isInterface()
+                            handle.getTag(),
+                            stubClass(Type.getObjectType(handle.getOwner()), warnings).getInternalName(),
+                            handle.getName(),
+                            stubClass(Type.getType(handle.getDesc()), warnings).getDescriptor(),
+                            handle.isInterface()
                         );
                         indy.bsmArgs[j] = handle;
                         switch (handle.getTag()) {
@@ -488,10 +498,10 @@ public abstract class VersionProvider {
                                 ClassMapping stubMapper = getStubMapper(hOwner, handle.isInterface(), memberResolver, superTypeResolver);
                                 boolean isStatic = handle.getTag() == Opcodes.H_INVOKESTATIC;
                                 boolean isSpecial = handle.getTag() == Opcodes.H_INVOKESPECIAL || handle.getTag() == Opcodes.H_NEWINVOKESPECIAL;
-                                Pair<Method, Stub> min = stubMapper.getStubFor(member, isStatic, enableRuntime, isSpecial);
+                                Pair<Method, Stub> min = stubMapper.getStubFor(member, isStatic, enableRuntime, isSpecial, warnings);
                                 if (min != null) {
                                     if (min.getSecond().downgradeVersion()) {
-                                        System.err.println("Invalid stub for indy handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
+                                        warnings.add("Invalid stub for indy handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
                                     } else if (!min.getSecond().abstractDefault()) {
                                         Type hStaticDesc;
                                         if (isStatic) {
@@ -523,10 +533,10 @@ public abstract class VersionProvider {
                                                 if (mn instanceof HandleMethodNode) {
                                                     Handle h = ((HandleMethodNode) mn).ref;
                                                     if (h.getTag() == handle.getTag() &&
-                                                            h.getOwner().equals(handle.getOwner()) &&
-                                                            h.getName().equals(handle.getName()) &&
-                                                            h.getDesc().equals(handle.getDesc()) &&
-                                                            h.isInterface() == handle.isInterface()) {
+                                                        h.getOwner().equals(handle.getOwner()) &&
+                                                        h.getName().equals(handle.getName()) &&
+                                                        h.getDesc().equals(handle.getDesc()) &&
+                                                        h.isInterface() == handle.isInterface()) {
                                                         if (!mn.desc.equals(hStaticDesc.getDescriptor())) {
                                                             num++;
                                                         } else {
@@ -564,18 +574,18 @@ public abstract class VersionProvider {
                                             }
                                         }
                                         indy.bsmArgs[j] = new Handle(
-                                                Opcodes.H_INVOKESTATIC,
-                                                newOwner,
-                                                name,
-                                                desc,
-                                                intf
+                                            Opcodes.H_INVOKESTATIC,
+                                            newOwner,
+                                            name,
+                                            desc,
+                                            intf
                                         );
                                     }
                                 } else {
-                                    Pair<Method, Modify> mod = stubMapper.getModifyFor(member, isStatic);
+                                    Pair<Method, Modify> mod = stubMapper.getModifyFor(member, isStatic, warnings);
                                     if (mod != null) {
                                         if (handle.getTag() != Opcodes.H_NEWINVOKESPECIAL) {
-                                            System.err.println("Invalid modify for indy handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
+                                            warnings.add("Invalid modify for indy handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
                                         } else {
                                             Type returnType = Type.getObjectType(handle.getOwner());
                                             Type[] arguments = hDesc.getArgumentTypes();
@@ -590,10 +600,10 @@ public abstract class VersionProvider {
                                                 if (mn instanceof HandleMethodNode) {
                                                     Handle h = ((HandleMethodNode) mn).ref;
                                                     if (h.getTag() == handle.getTag() &&
-                                                            h.getOwner().equals(handle.getOwner()) &&
-                                                            h.getName().equals(handle.getName()) &&
-                                                            h.getDesc().equals(handle.getDesc()) &&
-                                                            h.isInterface() == handle.isInterface()) {
+                                                        h.getOwner().equals(handle.getOwner()) &&
+                                                        h.getName().equals(handle.getName()) &&
+                                                        h.getDesc().equals(handle.getDesc()) &&
+                                                        h.isInterface() == handle.isInterface()) {
                                                         if (!mn.desc.equals(desc)) {
                                                             num++;
                                                         } else {
@@ -641,11 +651,11 @@ public abstract class VersionProvider {
                                             }
 
                                             indy.bsmArgs[j] = new Handle(
-                                                    Opcodes.H_INVOKESTATIC,
-                                                    owner.name,
-                                                    name,
-                                                    desc,
-                                                    intf
+                                                Opcodes.H_INVOKESTATIC,
+                                                owner.name,
+                                                name,
+                                                desc,
+                                                intf
                                             );
 
                                         }
@@ -656,17 +666,17 @@ public abstract class VersionProvider {
 
                     } else if (arg instanceof Type) {
                         Type type = (Type) arg;
-                        indy.bsmArgs[j] = stubClass(type);
+                        indy.bsmArgs[j] = stubClass(type, warnings);
                     }
                 }
-                getStubMapper(Type.getObjectType(indy.bsm.getOwner()), indy.bsm.isInterface(), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
+                getStubMapper(Type.getObjectType(indy.bsm.getOwner()), indy.bsm.isInterface(), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime, warnings);
             } else if (insn instanceof MultiANewArrayInsnNode) {
                 MultiANewArrayInsnNode manain = (MultiANewArrayInsnNode) insn;
-                manain.desc = stubClass(Type.getType(manain.desc)).getDescriptor();
+                manain.desc = stubClass(Type.getType(manain.desc), warnings).getDescriptor();
             } else if (insn instanceof LdcInsnNode) {
                 LdcInsnNode ldc = (LdcInsnNode) insn;
                 if (ldc.cst instanceof Type) {
-                    ldc.cst = stubClass((Type) ldc.cst);
+                    ldc.cst = stubClass((Type) ldc.cst, warnings);
                 } else if (ldc.cst instanceof ConstantDynamic) {
                     ConstantDynamic condy = (ConstantDynamic) ldc.cst;
                     Handle bsm = condy.getBootstrapMethod();
@@ -678,7 +688,7 @@ public abstract class VersionProvider {
                     for (int j = 0; j < fn.local.size(); j++) {
                         Object o = fn.local.get(j);
                         if (o instanceof String) {
-                            fn.local.set(j, stubClass(Type.getObjectType((String) o)).getInternalName());
+                            fn.local.set(j, stubClass(Type.getObjectType((String) o), warnings).getInternalName());
                         }
                     }
                 }
@@ -686,7 +696,7 @@ public abstract class VersionProvider {
                     for (int j = 0; j < fn.stack.size(); j++) {
                         Object o = fn.stack.get(j);
                         if (o instanceof String) {
-                            fn.stack.set(j, stubClass(Type.getObjectType((String) o)).getInternalName());
+                            fn.stack.set(j, stubClass(Type.getObjectType((String) o), warnings).getInternalName());
                         }
                     }
                 }
@@ -697,6 +707,7 @@ public abstract class VersionProvider {
 
     public void ensureInit(ClassDowngrader downgrader) {
         this.downgrader = downgrader;
+        this.logger = downgrader.logger.subLogger(getClass());
         if (!initialized) {
             synchronized (this) {
                 if (!initialized) {
@@ -722,11 +733,12 @@ public abstract class VersionProvider {
             throw new IllegalArgumentException("Class " + clazz.name + " is not version " + inputVersion);
 
         ensureInit(downgrader);
+        final Set<String> warnings = new LinkedHashSet<>();
 
         final IOFunction<Type, Set<MemberNameAndDesc>> getMembers = new IOFunction<Type, Set<MemberNameAndDesc>>() {
             @Override
             public Set<MemberNameAndDesc> apply(Type o) throws IOException {
-                Set<MemberNameAndDesc> members = downgrader.getMembers(inputVersion, o);
+                Set<MemberNameAndDesc> members = downgrader.getMembers(inputVersion, o, warnings);
                 // if not found in the classloader, check getReadOnly for it. this should really only happen with the ZipDowngrader
                 if (members == null) {
                     ClassNode ro = getReadOnly.apply(o.getInternalName());
@@ -734,7 +746,7 @@ public abstract class VersionProvider {
                         members = new HashSet<>();
                         for (MethodNode method : ro.methods) {
                             if ((method.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
-                            members.add(new MemberNameAndDesc(method.name, downgrader.stubClass(ro.version, Type.getMethodType(method.desc))));
+                            members.add(new MemberNameAndDesc(method.name, downgrader.stubClass(ro.version, Type.getMethodType(method.desc), warnings)));
                         }
                     }
                 }
@@ -745,7 +757,7 @@ public abstract class VersionProvider {
                             members = new HashSet<>();
                             for (MethodNode method : extraClass.methods) {
                                 if ((method.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
-                                members.add(new MemberNameAndDesc(method.name, downgrader.stubClass(extraClass.version, Type.getMethodType(method.desc))));
+                                members.add(new MemberNameAndDesc(method.name, downgrader.stubClass(extraClass.version, Type.getMethodType(method.desc), warnings)));
                             }
                         }
                     }
@@ -758,15 +770,15 @@ public abstract class VersionProvider {
 
             @Override
             public List<Pair<Type, Boolean>> apply(Type o) throws IOException {
-                List<Pair<Type, Boolean>> types = downgrader.getSupertypes(inputVersion, o);
+                List<Pair<Type, Boolean>> types = downgrader.getSupertypes(inputVersion, o, warnings);
                 // if not found in the classloader, check getReadOnly for it. this should really only happen with the ZipDowngrader
                 if (types == null) {
                     ClassNode ro = getReadOnly.apply(o.getInternalName());
                     if (ro != null) {
                         types = new ArrayList<>();
-                        types.add(new Pair<>(downgrader.stubClass(ro.version, Type.getObjectType(ro.superName)), Boolean.FALSE));
+                        types.add(new Pair<>(downgrader.stubClass(ro.version, Type.getObjectType(ro.superName), warnings), Boolean.FALSE));
                         for (String anInterface : ro.interfaces) {
-                            types.add(new Pair<>(downgrader.stubClass(ro.version, Type.getObjectType(anInterface)), Boolean.TRUE));
+                            types.add(new Pair<>(downgrader.stubClass(ro.version, Type.getObjectType(anInterface), warnings), Boolean.TRUE));
                         }
                     }
                 }
@@ -775,9 +787,9 @@ public abstract class VersionProvider {
                     for (ClassNode extraClass : extra) {
                         if (extraClass.name.equals(o.getInternalName())) {
                             types = new ArrayList<>();
-                            types.add(new Pair<>(downgrader.stubClass(extraClass.version, Type.getObjectType(extraClass.superName)), Boolean.FALSE));
+                            types.add(new Pair<>(downgrader.stubClass(extraClass.version, Type.getObjectType(extraClass.superName), warnings), Boolean.FALSE));
                             for (String anInterface : extraClass.interfaces) {
-                                types.add(new Pair<>(downgrader.stubClass(extraClass.version, Type.getObjectType(anInterface)), Boolean.TRUE));
+                                types.add(new Pair<>(downgrader.stubClass(extraClass.version, Type.getObjectType(anInterface), warnings), Boolean.TRUE));
                             }
                         }
                     }
@@ -786,31 +798,54 @@ public abstract class VersionProvider {
             }
         };
 
-        clazz = stubClasses(clazz, enableRuntime);
-        if (clazz == null) return null;
+        clazz = stubClasses(clazz, enableRuntime, warnings);
+        if (clazz == null) {
+            printWarnings(warnings, clazz.name);
+            return null;
+        }
         clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
             @Override
             public ClassNode apply(ClassNode classNode) throws IOException {
                 return stubMethods(classNode, extra, enableRuntime, getMembers, getSuperTypes);
             }
         });
-        if (clazz == null) return null;
+        if (clazz == null) {
+            printWarnings(warnings, clazz.name);
+            return null;
+        }
         clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
             @Override
             public ClassNode apply(ClassNode classNode) throws IOException {
                 return insertAbstractMethods(classNode, extra, getMembers, getSuperTypes);
             }
         });
-        if (clazz == null) return null;
+        if (clazz == null) {
+            printWarnings(warnings, clazz.name);
+            return null;
+        }
         clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
             @Override
             public ClassNode apply(ClassNode classNode) throws IOException {
-                return otherTransforms(classNode, extra, getReadOnly);
+                return otherTransforms(classNode, extra, getReadOnly, warnings);
             }
         });
-        if (clazz == null) return null;
+        if (clazz == null) {
+            printWarnings(warnings, clazz.name);
+            return null;
+        }
+        printWarnings(warnings, clazz.name);
         clazz.version = inputVersion - 1;
         return clazz;
+    }
+
+    private void printWarnings(Set<String> warnings, String className) {
+        if (!warnings.isEmpty() && logger.is(Logger.Level.WARN)) {
+            StringBuilder sb = new StringBuilder();
+            for (String warning : warnings) {
+                sb.append("    ").append(warning).append("\n");
+            }
+            logger.warn("Warnings for " + className + " (" + warnings.size() + ") : \n" + sb);
+        }
     }
 
     public ClassNode stubWithExtras(ClassNode clazz, Set<ClassNode> extra, IOFunction<ClassNode, ClassNode> stubber) throws IOException {
@@ -862,6 +897,11 @@ public abstract class VersionProvider {
         return clazz;
     }
 
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings) {
+        clazz = otherTransforms(clazz, extra, getReadOnly);
+        return clazz;
+    }
+
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
         clazz = otherTransforms(clazz, extra);
         return clazz;
@@ -876,7 +916,7 @@ public abstract class VersionProvider {
         return clazz;
     }
 
-    public ClassNode stubClasses(ClassNode clazz, boolean enableRuntime) {
+    public ClassNode stubClasses(ClassNode clazz, boolean enableRuntime, Set<String> warnings) {
         if (clazz.name.equals("module-info")) {
             return clazz;
         }
@@ -928,16 +968,16 @@ public abstract class VersionProvider {
 
         // signature
         if (clazz.signature != null) {
-            clazz.signature = transformSignature(clazz.signature);
+            clazz.signature = transformSignature(clazz.signature, warnings);
         }
 
         // field descriptor
         if (clazz.fields != null) {
             for (FieldNode field : clazz.fields) {
                 type = Type.getType(field.desc);
-                field.desc = stubClass(type).getDescriptor();
+                field.desc = stubClass(type, warnings).getDescriptor();
                 if (field.signature != null) {
-                    field.signature = transformSignature(field.signature);
+                    field.signature = transformSignature(field.signature, warnings);
                 }
             }
         }
@@ -946,16 +986,16 @@ public abstract class VersionProvider {
         if (clazz.methods != null) {
             for (MethodNode method : clazz.methods) {
                 type = Type.getMethodType(method.desc);
-                method.desc = stubClass(type).getDescriptor();
+                method.desc = stubClass(type, warnings).getDescriptor();
                 if (method.signature != null) {
-                    method.signature = transformSignature(method.signature);
+                    method.signature = transformSignature(method.signature, warnings);
                 }
                 if (method.localVariables != null) {
                     for (LocalVariableNode local : method.localVariables) {
                         type = Type.getType(local.desc);
-                        local.desc = stubClass(type).getDescriptor();
+                        local.desc = stubClass(type, warnings).getDescriptor();
                         if (local.signature != null) {
-                            local.signature = transformSignature(local.signature);
+                            local.signature = transformSignature(local.signature, warnings);
                         }
                     }
                 }
@@ -963,7 +1003,7 @@ public abstract class VersionProvider {
                     for (TryCatchBlockNode tryCatch : method.tryCatchBlocks) {
                         if (tryCatch.type != null) {
                             type = Type.getObjectType(tryCatch.type);
-                            tryCatch.type = stubClass(type).getInternalName();
+                            tryCatch.type = stubClass(type, warnings).getInternalName();
                         }
                     }
                 }
@@ -972,12 +1012,12 @@ public abstract class VersionProvider {
         return clazz;
     }
 
-    public String transformSignature(String signature) {
+    public String transformSignature(String signature, final Set<String> warnings) {
         SignatureReader reader = new SignatureReader(signature);
         SignatureWriter writer = new SignatureWriter() {
             @Override
             public void visitClassType(String name) {
-                super.visitClassType(stubClass(Type.getObjectType(name)).getInternalName());
+                super.visitClassType(stubClass(Type.getObjectType(name), warnings).getInternalName());
             }
 
             @Override

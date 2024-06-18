@@ -10,16 +10,17 @@ class Maven : Template<HTML> {
         head {
             title("JvmDowngrader Maven")
             style {
-                +"""
-                    body {
-                        max-width: 800px;
-                        margin:0 auto;
-                    }
-                    h1 {
-                        text-align: center;
-                    }
-                    
-                """.trimIndent()
+                unsafe {
+                    +"""
+                        body {
+                            max-width: 800px;
+                            margin:0 auto;
+                        }
+                        h1 {
+                            text-align: center;
+                        }
+                    """.trimIndent()
+                }
             }
         }
         body {

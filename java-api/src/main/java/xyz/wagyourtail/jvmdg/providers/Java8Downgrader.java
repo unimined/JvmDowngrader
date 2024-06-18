@@ -9,6 +9,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.j8.stub.*;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
 import xyz.wagyourtail.jvmdg.j8.stub.stream.*;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -29,7 +30,7 @@ public class Java8Downgrader extends VersionProvider {
     @Override
     public void ensureInit(ClassDowngrader downgrader) {
         if (!isInitialized()) {
-            if (!downgrader.flags.quiet) System.err.println("[WARNING] Java 8 -> 7 Stubs are VERY incomplete!");
+            if (!downgrader.flags.quiet) downgrader.logger.warn("Java 8 -> 7 Stubs are VERY incomplete!");
         }
         super.ensureInit(downgrader);
     }
@@ -329,12 +330,12 @@ public class Java8Downgrader extends VersionProvider {
     }
 
     @Override
-    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings) {
         List<ClassNode> classes = new ArrayList<>(extra);
         classes.add(clazz);
         for (ClassNode cls : classes) {
             try {
-                downgradeInterfaces(cls, extra, getReadOnly);
+                downgradeInterfaces(cls, extra, getReadOnly, warnings);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -342,15 +343,15 @@ public class Java8Downgrader extends VersionProvider {
         return super.otherTransforms(clazz, extra, getReadOnly);
     }
 
-    public void downgradeInterfaces(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) throws IOException {
+    public void downgradeInterfaces(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings) throws IOException {
         if ((clazz.access & Opcodes.ACC_INTERFACE) != 0) {
-            downgradeInterfaceMethods(clazz, extra, getReadOnly);
+            downgradeInterfaceMethods(clazz, extra, getReadOnly, warnings);
         } else {
-            downgradeInterfaceAccesses(clazz, extra, getReadOnly);
+            downgradeInterfaceAccesses(clazz, extra, getReadOnly, warnings);
         }
     }
 
-    private void downgradeInterfaceMethods(final ClassNode clazz, Set<ClassNode> extra, final Function<String, ClassNode> getReadOnly) throws IOException {
+    private void downgradeInterfaceMethods(final ClassNode clazz, Set<ClassNode> extra, final Function<String, ClassNode> getReadOnly, Set<String> warnings) throws IOException {
         ClassNode interfaceStaticDefaults = new ClassNode();
         boolean removed = false;
         Iterator<MethodNode> mnodes = clazz.methods.iterator();
@@ -410,14 +411,14 @@ public class Java8Downgrader extends VersionProvider {
                     }
                     return getReadOnly.apply(s);
                 }
-            });
+            }, warnings);
         }
     }
 
-    private void downgradeInterfaceAccesses(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) throws IOException {
+    private void downgradeInterfaceAccesses(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings) throws IOException {
         Map<MemberNameAndDesc, Type> members = new HashMap<>();
         if (!clazz.name.endsWith("$jvmdg$StaticDefaults")) {
-            ClassMapping stubMapper = getStubMapper(Type.getObjectType(clazz.name), (clazz.access & Opcodes.ACC_INTERFACE) != 0);
+            ClassMapping stubMapper = getStubMapper(Type.getObjectType(clazz.name), (clazz.access & Opcodes.ACC_INTERFACE) != 0, warnings);
             for (Map.Entry<MemberNameAndDesc, Pair<Boolean, Type>> member : stubMapper.getMembers().entrySet()) {
                 if (member.getValue().getFirst()) {
                     members.put(member.getKey(), member.getValue().getSecond());
@@ -435,7 +436,7 @@ public class Java8Downgrader extends VersionProvider {
                                 min.owner.startsWith("com/sun/")
                         ) {
                             if (min.getOpcode() == Opcodes.INVOKESTATIC || min.getOpcode() == Opcodes.INVOKESPECIAL) {
-                                System.err.println("[Java8 Interface Downgrader] Found java interface missing stub: " + FullyQualifiedMemberNameAndDesc.of(min));
+                                warnings.add("Found java interface missing stub: " + FullyQualifiedMemberNameAndDesc.of(min));
                             }
                             continue;
                         }
@@ -466,7 +467,7 @@ public class Java8Downgrader extends VersionProvider {
                                         handle.getOwner().startsWith("jdk/") ||
                                         handle.getOwner().startsWith("com/sun/")) {
                                     if (handle.getTag() == Opcodes.H_INVOKESTATIC || handle.getTag() == Opcodes.H_INVOKESPECIAL) {
-                                        System.err.println("[Java8 Interface Downgrader] Found java interface missing stub: " + FullyQualifiedMemberNameAndDesc.of(handle));
+                                        warnings.add("Found java interface missing stub: " + FullyQualifiedMemberNameAndDesc.of(handle));
                                     }
                                     continue;
                                 }
@@ -508,7 +509,7 @@ public class Java8Downgrader extends VersionProvider {
                     internalName.startsWith("sun/") ||
                     internalName.startsWith("jdk/") ||
                     internalName.startsWith("com/sun/")) {
-                System.err.println("[Java8 Interface Downgrader] Found java interface default missing implementation: " + member.getKey().toFullyQualified(member.getValue()));
+                warnings.add("[Java8 Interface Downgrader] Found java interface default missing implementation: " + member.getKey().toFullyQualified(member.getValue()));
                 continue;
             }
             // create method redirecting to static default

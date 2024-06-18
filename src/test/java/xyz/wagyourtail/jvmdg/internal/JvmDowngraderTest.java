@@ -170,7 +170,7 @@ public class JvmDowngraderTest {
                 new String[]{
                         "-a",
                         javaApi.toString(),
-                        "--quiet",
+//                        "--quiet",
                         "bootstrap",
                         "--classpath",
                         original.toString(),

@@ -3,6 +3,7 @@ package xyz.wagyourtail.jvmdg.classloader;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.classloader.providers.ClassLoaderResourceProvider;
 import xyz.wagyourtail.jvmdg.classloader.providers.JarFileResourceProvider;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -11,8 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarFile;
@@ -21,6 +20,8 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
     private final ClassDowngrader holder;
     private final ClassDowngrader currentVersionDowngrader;
     private final List<ResourceProvider> delegates = new ArrayList<>();
+
+    private final Logger logger;
 
     public DowngradingClassLoader(ClassDowngrader downgrader) throws IOException {
         super();
@@ -34,6 +35,7 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
         } else {
             this.currentVersionDowngrader = downgrader;
         }
+        logger = holder.logger.subLogger(DowngradingClassLoader.class);
     }
 
     public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) throws IOException {
@@ -48,6 +50,7 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
         } else {
             this.currentVersionDowngrader = downgrader;
         }
+        logger = holder.logger.subLogger(DowngradingClassLoader.class);
     }
 
     public DowngradingClassLoader(ClassDowngrader downgrader, List<ResourceProvider> providers, ClassLoader parent) throws IOException {
@@ -108,8 +111,7 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
                 returnValue = defineClass(name, bytes, 0, bytes.length);
             } catch (ClassFormatError e) {
                 currentVersionDowngrader.writeBytesToDebug(name, bytes);
-//                System.err.println("Failed to load class " + name + " with downgraded bytes, writing to debug folder.");
-//                throw e;
+                logger.fatal("Failed to load class " + name + " with downgraded bytes, writing to debug folder.", e);
                 throw new ClassNotFoundException(name, e);
             }
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
@@ -119,7 +121,7 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
                 try {
                     defineClass(extraName, extraBytes, 0, extraBytes.length);
                 } catch (ClassFormatError | ClassCircularityError e) {
-                    System.err.println("Failed to load class " + extraName + " with downgraded bytes, writing to debug folder.");
+                    logger.fatal("Failed to load class " + extraName + " with downgraded bytes, writing to debug folder.", e);
                     currentVersionDowngrader.writeBytesToDebug(extraName, bytes);
                     throw e;
                 }
@@ -127,8 +129,7 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
             return returnValue;
         } catch (ClassFormatError e) {
             currentVersionDowngrader.writeBytesToDebug(name, bytes);
-//           System.err.println("Failed to load class " + name + " with original bytes, writing to debug folder.");
-//           throw e;
+            logger.fatal("Failed to load class " + name + " with original bytes, writing to debug folder.", e);
             throw new ClassNotFoundException(name, e);
         } catch (Throwable e) {
             throw new ClassNotFoundException(name, e);

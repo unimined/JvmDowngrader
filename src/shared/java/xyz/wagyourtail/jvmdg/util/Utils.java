@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.util;
 
+import org.objectweb.asm.Opcodes;
 import sun.misc.Unsafe;
 
 import java.io.ByteArrayOutputStream;
@@ -69,6 +70,11 @@ public class Utils {
             }
         }
         throw new UnsupportedOperationException("Unable to determine current class version");
+    }
+
+    public static int classVersionToMajorVersion(int version) {
+        if (version == Opcodes.V1_1) return 1;
+        else return version - Opcodes.V1_2 + 2;
     }
 
     public static <T extends Throwable> void sneakyThrow(Throwable t) throws T {

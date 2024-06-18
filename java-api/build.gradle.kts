@@ -1,6 +1,7 @@
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.tree.ClassNode
+import xyz.wagyourtail.gradle.coverage.CoverageRunTask
 import xyz.wagyourtail.gradle.ctsym.GenerateCtSymTask
 import xyz.wagyourtail.gradle.shadow.ShadowJar
 import xyz.wagyourtail.jvmdg.util.plus
@@ -131,9 +132,38 @@ tasks.getByName<JavaCompile>("compileCoverageJava") {
     configCompile(testVersion)
 }
 
-tasks.jar {
+val coverageApiJar by tasks.registering(Jar::class) {
+    from(sourceSets.main.get().output)
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
     from(rootProject.sourceSets.getByName("shared").output)
+
+    destinationDirectory = temporaryDir
+}
+
+
+val genCtSym by tasks.registering(GenerateCtSymTask::class) {
+    group = "jvmdg"
+    upperVersion = toVersion - 1
+}
+
+val coverageReport by tasks.registering(CoverageRunTask::class) {
+    group = "jvmdg"
+    dependsOn(coverageApiJar, genCtSym)
+    apiJar.set(coverageApiJar.get().archiveFile.get().asFile)
+    classpath = coverage.runtimeClasspath
+    ctSym.set(genCtSym.get().ctSym)
+    javaVersion.set(testVersion)
+}
+
+tasks.jar {
+    dependsOn(coverageReport)
+    from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
+    from(rootProject.sourceSets.getByName("shared").output)
+    from(coverageReport.get().coverageReports) {
+        into("META-INF/coverage")
+        exclude("**/unmatched.txt")
+        exclude("**/parentOnly.txt")
+    }
     from(projectDir.parentFile.resolve("LICENSE.md"))
     from(projectDir.parentFile.resolve("license")) {
         into("license")
@@ -251,24 +281,6 @@ val downgradeJar8 by tasks.registering(Jar::class) {
     dependsOn(downgradeJar8Exec)
     archiveClassifier.set("downgraded-8")
     from(zipTree(tempFile8))
-}
-
-val genCySym by tasks.registering(GenerateCtSymTask::class) {
-    group = "jvmdg"
-    upperVersion = toVersion - 1
-}
-
-val coverageReport by tasks.registering(JavaExec::class) {
-    group = "jvmdg"
-    dependsOn(tasks.jar, genCySym)
-    javaLauncher.set(javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(testVersion.majorVersion))
-    })
-    mainClass = "xyz.wagyourtail.jvmdg.coverage.ApiCoverageChecker"
-    classpath = coverage.runtimeClasspath
-    jvmArgs("-Djvmdg.java-api=${tasks.jar.get().archiveFile.get().asFile.absolutePath}", "-Djvmdg.quiet=true")
-    args(genCySym.get().ctSym)
-    workingDir = project.layout.buildDirectory.get().asFile
 }
 
 tasks.assemble {
