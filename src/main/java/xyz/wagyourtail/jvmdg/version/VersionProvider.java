@@ -47,7 +47,7 @@ public abstract class VersionProvider {
         System.out.println(Type.getType(boolean.class).getDescriptor());
     }
 
-    public static FullyQualifiedMemberNameAndDesc resolveStubTarget(Member member, Ref ref) {
+    public FullyQualifiedMemberNameAndDesc resolveStubTarget(Member member, Ref ref) {
         if (member instanceof Method) {
             Method method = (Method) member;
             Type owner;
@@ -61,6 +61,27 @@ public abstract class VersionProvider {
                     if (a instanceof Coerce) {
                         Coerce c = (Coerce) a;
                         params.set(i, Type.getType(c.value()));
+                    }
+                }
+            }
+
+            Class<?>[] paramClasses = method.getParameterTypes();
+            for (int i = 0; i < params.size(); i++) {
+                Adapter a = paramClasses[i].getAnnotation(Adapter.class);
+                if (a != null) {
+                    String aRef = a.value();
+                    Type t;
+                    if (aRef.startsWith("L") && aRef.endsWith(";")) {
+                        t = Type.getType(aRef);
+                    } else {
+                        t = Type.getObjectType(aRef);
+                    }
+
+                    for (VersionProvider versionProvider : downgrader.versionProviders(this.outputVersion)) {
+                        if (versionProvider.classStubs.containsKey(t)) {
+                            params.set(i, t);
+                            break;
+                        }
                     }
                 }
             }
@@ -404,9 +425,9 @@ public abstract class VersionProvider {
             AbstractInsnNode insn = method.instructions.get(i);
             if (insn instanceof MethodInsnNode) {
                 MethodInsnNode min = (MethodInsnNode) insn;
+                min.owner = stubClass(Type.getObjectType(min.owner)).getInternalName();
+                min.desc = stubClass(Type.getMethodType(min.desc)).getDescriptor();
                 if (!min.owner.startsWith("[")) {
-                    min.owner = stubClass(Type.getObjectType(min.owner)).getInternalName();
-                    min.desc = stubClass(Type.getMethodType(min.desc)).getDescriptor();
                     getStubMapper(Type.getObjectType(min.owner), min.itf, memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
                 }
             } else if (insn instanceof TypeInsnNode) {
