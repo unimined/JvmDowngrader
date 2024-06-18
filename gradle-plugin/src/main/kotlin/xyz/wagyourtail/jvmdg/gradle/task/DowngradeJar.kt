@@ -56,7 +56,7 @@ abstract class DowngradeJar : Jar(), DowngradeFlags {
             )
         }
 
-        inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->
+        tempOutput.toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->
             // write to temp file
             val inpTmp = temporaryDir.toPath().resolve("input-manifest.MF")
             inpTmp.outputStream(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).use { out ->

@@ -1,11 +1,13 @@
 package xyz.wagyourtail.jvmdg.compile;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.util.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.instrument.IllegalClassFormatException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -16,6 +18,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 public class PathDowngrader {
 
@@ -116,6 +120,17 @@ public class PathDowngrader {
                                     }
                                 } catch (IllegalClassFormatException e) {
                                     throw new IOException("Failed to downgrade " + path, e);
+                                }
+                            }
+                        } else if (path.toString().equals("META-INF/MANIFEST.MF")) {
+                            // add version number to manifest
+                            try(InputStream is = Files.newInputStream(path)) {
+                                Manifest manifest = new Manifest(is);
+                                Attributes attr = manifest.getMainAttributes();
+                                attr.put("JvmDowngrader-Version", Flags.jvmdgVersion);
+
+                                try (OutputStream os = Files.newOutputStream(outFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                                    manifest.write(os);
                                 }
                             }
                         } else {

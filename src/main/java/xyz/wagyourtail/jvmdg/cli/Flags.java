@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class Flags {
+    public static final String jvmdgVersion = Flags.class.getPackage().getImplementationVersion();
+
     public int classVersion = Opcodes.V1_8;
     public File api = null;
     public boolean quiet = Boolean.getBoolean(Constants.QUIET);
