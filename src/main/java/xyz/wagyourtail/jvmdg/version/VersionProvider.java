@@ -54,6 +54,19 @@ public abstract class VersionProvider {
             String name;
             List<Type> params = new ArrayList<>(Arrays.asList(Type.getArgumentTypes(method)));
 
+            Class<?>[] paramClasses = method.getParameterTypes();
+            for (int i = 0; i < params.size(); i++) {
+                Adapter a = paramClasses[i].getAnnotation(Adapter.class);
+                if (a != null) {
+                    String aRef = a.value();
+                    if (aRef.startsWith("L") && aRef.endsWith(";")) {
+                        params.set(i, Type.getType(aRef));
+                    } else {
+                        params.set(i, Type.getObjectType(aRef));
+                    }
+                }
+            }
+
             Annotation[][] annotations = method.getParameterAnnotations();
             for (int i = 0; i < params.size(); i++) {
                 Annotation[] param = annotations[i];
@@ -405,10 +418,10 @@ public abstract class VersionProvider {
             if (insn instanceof MethodInsnNode) {
                 MethodInsnNode min = (MethodInsnNode) insn;
                 if (!min.owner.startsWith("[")) {
-                    min.owner = stubClass(Type.getObjectType(min.owner)).getInternalName();
-                    min.desc = stubClass(Type.getMethodType(min.desc)).getDescriptor();
                     getStubMapper(Type.getObjectType(min.owner), min.itf, memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime);
                 }
+                min.owner = stubClass(Type.getObjectType(min.owner)).getInternalName();
+                min.desc = stubClass(Type.getMethodType(min.desc)).getDescriptor();
             } else if (insn instanceof TypeInsnNode) {
                 TypeInsnNode tin = (TypeInsnNode) insn;
                 MethodInsnNode min = stubTypeInsnNode(tin);
