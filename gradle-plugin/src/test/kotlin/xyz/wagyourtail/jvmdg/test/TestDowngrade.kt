@@ -3,9 +3,14 @@ package xyz.wagyourtail.jvmdg.test
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.Test
 import java.io.File
-import java.nio.file.Path
+import kotlin.test.BeforeTest
 
 class TestDowngrade {
+
+    @BeforeTest
+    fun clean() {
+        File("test-downgrade/.gradle/jvmdg").deleteRecursively()
+    }
 
     @Test
     fun testDowngrade() {
