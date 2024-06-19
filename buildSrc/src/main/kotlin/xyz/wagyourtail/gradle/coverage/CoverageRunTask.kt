@@ -30,7 +30,7 @@ abstract class CoverageRunTask : ConventionTask() {
 
     init {
         group = "jvmdg"
-        coverageReports = project.files(temporaryDir.resolve("coverage"))
+        coverageReports = project.files(project.layout.buildDirectory.asFile.get().resolve("coverage"))
     }
 
     @TaskAction
@@ -42,7 +42,7 @@ abstract class CoverageRunTask : ConventionTask() {
                 it.languageVersion.set(JavaLanguageVersion.of(javaVersion.get().majorVersion))
             }.get().executablePath.asFile.absolutePath
 
-            spec.workingDir = temporaryDir
+            spec.workingDir = project.layout.buildDirectory.asFile.get()
             spec.mainClass.set("xyz.wagyourtail.jvmdg.coverage.ApiCoverageChecker")
             spec.classpath = classpath
             spec.jvmArgs("-Djvmdg.java-api=${apiJar.get().asFile.absolutePath}", "-Djvmdg.quiet=true")

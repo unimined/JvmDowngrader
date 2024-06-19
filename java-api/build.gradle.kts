@@ -148,7 +148,7 @@ val genCtSym by tasks.registering(GenerateCtSymTask::class) {
 
 val coverageReport by tasks.registering(CoverageRunTask::class) {
     group = "jvmdg"
-    dependsOn(coverageApiJar, genCtSym)
+    dependsOn(coverageApiJar, genCtSym, tasks.getByName("compileCoverageJava"))
     apiJar.set(coverageApiJar.get().archiveFile.get().asFile)
     classpath = coverage.runtimeClasspath
     ctSym.set(genCtSym.get().ctSym)
