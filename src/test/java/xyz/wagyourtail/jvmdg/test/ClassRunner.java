@@ -109,8 +109,6 @@ public class ClassRunner {
     @BeforeAll
     public static void runOriginal() throws IOException, InterruptedException {
         for (String main : mainClasses()) {
-            System.out.println("Running original: " + main);
-
             StringBuilder originalLog = new StringBuilder();
             Integer exitCode = JavaRunner.runJarInSubprocess(
                 original,
