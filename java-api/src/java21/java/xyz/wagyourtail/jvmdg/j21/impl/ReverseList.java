@@ -242,4 +242,9 @@ public class ReverseList<E> implements List<E> {
     public List<E> subList(int fromIndex, int toIndex) {
         return new ReverseList<>(original.subList(original.size() - toIndex, original.size() - fromIndex));
     }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(toArray());
+    }
 }

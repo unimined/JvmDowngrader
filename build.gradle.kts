@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import xyz.wagyourtail.gradle.shadow.ShadowJar
 
 plugins {
@@ -118,11 +119,12 @@ sourceSets {
 }
 
 dependencies {
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.2")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
     testImplementation("com.google.code.gson:gson:2.10")
     testImplementation("org.apache.commons:commons-compress:1.26.1")
-
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.2")
+    testImplementation("io.github.java-diff-utils:java-diff-utils:4.12")
 
     val api by configurations.getting
 
@@ -187,7 +189,6 @@ tasks.compileTestJava {
 }
 
 tasks.test {
-    outputs.upToDateWhen { false }
     useJUnitPlatform()
 
     dependsOn(
@@ -198,43 +199,25 @@ tasks.test {
         languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
     }
 
-    jvmArgs(
-        "-Djvmdg.test.jvm=" + javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
-        }.get().executablePath.toString(),
-        "-Djvmdg.test.targetJvm=" + javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(testTargetVersion.toInt()))
-        }.get().executablePath.toString(),
-        "-Djvmdg.test.javaVersion=$testTargetVersion",
-        "-Djvmdg.test.version=$version",
-    )
-}
-
-val test7 by tasks.registering(Test::class) {
-    group = "verification"
-    description = "Runs the tests for Java 7"
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
-    useJUnitPlatform()
-
-    dependsOn(
-        project(":downgradetest").tasks.build,
-        project(":java-api").tasks.build
-    )
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
+    val versions = listOf(testVersion, testTargetVersion, "7").associateWith {
+        javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of(it.toInt()))
+        }.get().executablePath.toString()
     }
 
     jvmArgs(
-        "-Djvmdg.test.jvm=" + javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
-        }.get().executablePath.toString(),
-        "-Djvmdg.test.targetJvm=" + javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(7))
-        }.get().executablePath.toString(),
-        "-Djvmdg.test.javaVersion=7",
         "-Djvmdg.test.version=$version",
+        "-Djvmdg.test.originalVersion=$testVersion",
+        "-Djvmdg.test.javaVersion=${versions.keys.joinToString(File.pathSeparator)}",
+        "-Djvmdg.test.launcher=${versions.values.joinToString(File.pathSeparator)}",
+        "-Djvmdg.test.downgradeClasspath=${shared.compileClasspath.joinToString(File.pathSeparator) { it.absolutePath }}",
     )
+
+    testLogging {
+        events.add(TestLogEvent.PASSED)
+        events.add(TestLogEvent.SKIPPED)
+        events.add(TestLogEvent.FAILED)
+    }
 }
 
 project.evaluationDependsOnChildren()

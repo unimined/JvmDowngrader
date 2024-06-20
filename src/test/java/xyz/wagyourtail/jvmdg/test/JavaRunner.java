@@ -251,5 +251,9 @@ public class JavaRunner {
         public int toOpcode() {
             return this.ordinal() + 45;
         }
+
+        public static JavaVersion fromOpcode(int opcode) {
+            return JavaVersion.values()[opcode - 45];
+        }
     }
 }

@@ -198,4 +198,9 @@ public class ReverseDeque<E> implements Deque<E> {
     public Iterator<E> descendingIterator() {
         return original.iterator();
     }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(toArray());
+    }
 }

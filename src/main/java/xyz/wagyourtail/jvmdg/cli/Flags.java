@@ -3,6 +3,8 @@ package xyz.wagyourtail.jvmdg.cli;
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.util.Consumer;
+import xyz.wagyourtail.jvmdg.util.Function;
 
 import java.beans.XMLDecoder;
 import java.io.File;
@@ -38,6 +40,24 @@ public class Flags {
         flags.printDebug = printDebug;
         flags.debugSkipStubs = new HashSet<>(debugSkipStubs);
         return flags;
+    }
+
+    public Flags copy(Consumer<Flags> modifier) {
+        Flags flags = copy();
+        modifier.accept(flags);
+        return flags;
+    }
+
+    @Override
+    public String toString() {
+        return "Flags{" +
+            "classVersion=" + classVersion +
+            ", api=" + api +
+            ", quiet=" + quiet +
+            ", allowMaven=" + allowMaven +
+            ", printDebug=" + printDebug +
+            ", debugSkipStubs=" + debugSkipStubs +
+            '}';
     }
 
     private Set<Integer> getDebugSkip() {
