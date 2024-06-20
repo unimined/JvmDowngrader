@@ -70,7 +70,7 @@ public class ClassRunner {
         flags.api = javaApi.toFile();
 
         return Stream.of(
-            new FlagsAndRunner(flags.copy(e -> e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode()), JavaRunner.JavaVersion.V1_8),
+            new FlagsAndRunner(flags.copy(e -> e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode()), JavaRunner.JavaVersion.V1_8)
 //            new FlagsAndRunner(flags.copy(e -> {
 //                e.classVersion = JavaRunner.JavaVersion.V1_7.toOpcode();
 //                e.debugSkipStubs = Set.of(JavaRunner.JavaVersion.V1_8.toOpcode());
