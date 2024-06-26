@@ -13,6 +13,7 @@ plugins {
 }
 
 allprojects {
+    if (project.name == "native") return@allprojects
     apply(plugin = "java")
     apply(plugin = "signing")
     apply(plugin = "maven-publish")

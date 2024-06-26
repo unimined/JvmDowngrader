@@ -6,6 +6,7 @@ include("downgradetest")
 include("gradle-plugin")
 include("java-api")
 include("site")
+include("native")
 
 rootProject.name = "JvmDowngrader"
 
