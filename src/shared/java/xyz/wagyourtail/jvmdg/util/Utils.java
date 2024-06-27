@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -22,7 +23,7 @@ public class Utils {
             f.setAccessible(true);
             return (Unsafe) f.get(null);
         } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
+            throw new UnsupportedOperationException("Unable to get Unsafe instance", e);
         }
     }
 
@@ -36,10 +37,18 @@ public class Utils {
             MethodHandles.Lookup IMPL_LOOKUP;
             IMPL_LOOKUP = (MethodHandles.Lookup) unsafe.getObject(MethodHandles.Lookup.class, unsafe.staticFieldOffset(implLookupField));
             if (IMPL_LOOKUP != null) return IMPL_LOOKUP;
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
+            throw new NullPointerException();
+        } catch (Throwable e) {
+            try {
+                // try to create a new lookup
+                Constructor<MethodHandles.Lookup> constructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class, int.class);
+                constructor.setAccessible(true);
+                return constructor.newInstance(Object.class, -1);
+            } catch (Throwable e2) {
+                e.addSuppressed(e2);
+            }
+            throw new UnsupportedOperationException("Unable to get MethodHandles.Lookup.IMPL_LOOKUP", e);
         }
-        throw new UnsupportedOperationException("Unable to get MethodHandles.Lookup.IMPL_LOOKUP");
     }
 
     public static FileSystem openZipFileSystem(Path path, boolean create) throws IOException {
