@@ -12,44 +12,48 @@ object ModuleTransformer {
         val content = Json.parseToJsonElement(module.readBytes().decodeToString()).jsonObject
         val json = buildJsonObject {
             for (entry in content) {
-                if (entry.key == "variant") {
-                    put(entry.key, buildJsonArray {
-                        for (variant in entry.value.jsonArray) {
-                            add(buildJsonObject {
-                                for (varkey in variant.jsonObject) {
-                                    if (varkey.key == "attributes") {
-                                        put(varkey.key, buildJsonObject {
-                                            for (attr in varkey.value.jsonObject) {
-                                                if (attr.key == "org.gradle.jvm.version") {
-                                                    put(attr.key, version)
-                                                } else {
-                                                    put(attr.key, attr.value)
+                when (entry.key) {
+                    "variants" -> {
+                        put(entry.key, buildJsonArray {
+                            for (variant in entry.value.jsonArray) {
+                                add(buildJsonObject {
+                                    for (varkey in variant.jsonObject) {
+                                        if (varkey.key == "attributes") {
+                                            put(varkey.key, buildJsonObject {
+                                                for (attr in varkey.value.jsonObject) {
+                                                    if (attr.key == "org.gradle.jvm.version") {
+                                                        put(attr.key, version)
+                                                    } else {
+                                                        put(attr.key, attr.value)
+                                                    }
                                                 }
-                                            }
-                                        })
-                                    // TODO: dependency transforms?
-//                                    } else if (varkey.key == "dependencies") {
-                                    } else {
-                                        put(varkey.key, varkey.value)
+                                            })
+                                            // TODO: dependency transforms?
+            //                                    } else if (varkey.key == "dependencies") {
+                                        } else {
+                                            put(varkey.key, varkey.value)
+                                        }
                                     }
-                                }
-                            })
-                        }
-                    })
-                } else if (entry.key == "component") {
-                    put(entry.key, buildJsonObject {
-                        for ((key, value) in entry.value.jsonObject) {
-                            if (key == "group") {
-                                put(key, "jvmdg-$version.${value.jsonPrimitive.content}")
-                            } else if (key == "module" && entry.value.jsonObject["group"]?.jsonPrimitive?.content?.let { value.jsonPrimitive.content.startsWith(it) } == true) {
-                                put(key, "jvmdg-$version.${value.jsonPrimitive.content}")
-                            } else {
-                                put(key, value)
+                                })
                             }
-                        }
-                    })
-                } else {
-                    put(entry.key, entry.value)
+                        })
+                    }
+                    "component" -> {
+                        put(entry.key, buildJsonObject {
+                            for ((key, value) in entry.value.jsonObject) {
+                                if (key == "group") {
+                                    put(key, "jvmdg-$version.${value.jsonPrimitive.content}")
+                                } else if (key == "module" && entry.value.jsonObject["group"]?.jsonPrimitive?.content?.let { value.jsonPrimitive.content.startsWith(it) } == true) {
+                                    put(key, "jvmdg-$version.${value.jsonPrimitive.content}")
+                                } else {
+                                    put(key, value)
+                                }
+                            }
+                        })
+                    }
+                    else -> {
+                        put(entry.key, entry.value)
+                    }
                 }
             }
         }

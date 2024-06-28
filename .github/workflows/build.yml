@@ -46,6 +46,14 @@ jobs:
           name: gradle
           path: gradle-plugin/build/libs
 
+      - name: Build Site
+        run: ./gradlew :site:build
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: site
+          path: site/build/libs
+
       - name: Load Gradle Properties
         uses: christian-draeger/read-properties@1.1.1
         id: gradle_properties
