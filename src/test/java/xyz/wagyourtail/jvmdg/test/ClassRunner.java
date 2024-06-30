@@ -24,6 +24,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -104,7 +105,7 @@ public class ClassRunner {
             .unwrap();
     }
 
-    private static final Map<String, Map.Entry<Integer, String>> originalResults = new HashMap<>();
+    private static final Map<String, Map.Entry<Integer, String>> originalResults = new ConcurrentHashMap<>();
 
     @BeforeAll
     public static void runOriginal() throws IOException, InterruptedException {
@@ -128,7 +129,7 @@ public class ClassRunner {
         }
     }
 
-    private static final Map<FlagsAndRunner, Path> downgradedPaths = new HashMap<>();
+    private static final Map<FlagsAndRunner, Path> downgradedPaths = new ConcurrentHashMap<>();
 
     private static Path getDowngradedPath(FlagsAndRunner flags) {
         String fName = original.getFileName().toString();
@@ -137,7 +138,7 @@ public class ClassRunner {
         return original.resolveSibling(withoutExt + "-downgrade-" + flags.readableSlug() + ext);
     }
 
-    private static final Map<FlagsAndRunner, Path> shadedPaths = new HashMap<>();
+    private static final Map<FlagsAndRunner, Path> shadedPaths = new ConcurrentHashMap<>();
 
     private static Path getShadedPath(FlagsAndRunner flags) {
         String fName = original.getFileName().toString();
@@ -163,7 +164,7 @@ public class ClassRunner {
         });
     }
 
-    private static final Map<FlagsAndRunner, Path> apiPaths = new HashMap<>();
+    private static final Map<FlagsAndRunner, Path> apiPaths = new ConcurrentHashMap<>();
 
     private static synchronized Path getShadedJar(FlagsAndRunner flags) {
         return apiPaths.computeIfAbsent(flags, e -> {

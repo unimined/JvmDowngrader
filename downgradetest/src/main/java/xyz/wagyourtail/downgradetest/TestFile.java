@@ -10,16 +10,17 @@ import java.nio.file.Files;
 public class TestFile {
 
     public static void main(String[] args) throws IOException {
-       new File("build/test").mkdirs();
-        FileWriter writer = new FileWriter("build/test/test.txt", StandardCharsets.UTF_8);
+        var temp = Files.createTempFile("temp", "txt");
+        Files.deleteIfExists(temp);
+        FileWriter writer = new FileWriter(temp.toAbsolutePath().toString(), StandardCharsets.UTF_8);
         writer.write("Hello World!\n");
         writer.close();
 
-        FileWriter writer2 = new FileWriter(new File("build/test/test.txt"), StandardCharsets.UTF_8, true);
+        FileWriter writer2 = new FileWriter(temp.toFile(), StandardCharsets.UTF_8, true);
         writer2.write("Goodbye World!");
         writer2.close();
 
-        FileReader reader = new FileReader("build/test/test.txt", StandardCharsets.UTF_8);
+        FileReader reader = new FileReader(temp.toAbsolutePath().toString(), StandardCharsets.UTF_8);
         StringBuilder sb = new StringBuilder();
         int c;
         while ((c = reader.read()) != -1) {
@@ -27,6 +28,7 @@ public class TestFile {
         }
         reader.close();
         System.out.println(sb.toString());
+        Files.deleteIfExists(temp);
     }
 
 }
