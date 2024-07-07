@@ -221,6 +221,7 @@ public class ClassRunner {
     @MethodSource({"xyz.wagyourtail.jvmdg.test.ClassRunner#arguments"})
     @Execution(ExecutionMode.CONCURRENT)
     public void testDowngrade(String mainClass, FlagsAndRunner javaVersion) throws IOException, InterruptedException {
+        System.out.println("TEST_DOWNGRADE: Running " + mainClass + " on " + javaVersion.readableSlug());
         Map.Entry<Integer, String> original = originalResults.get(mainClass);
         System.out.println("Original: ");
         System.out.println(original.getValue());
@@ -276,6 +277,7 @@ public class ClassRunner {
     @MethodSource({"arguments"})
     @Execution(ExecutionMode.CONCURRENT)
     public void testShade(String mainClass, FlagsAndRunner javaVersion) throws IOException, InterruptedException {
+        System.out.println("TEST_SHADE: Running " + mainClass + " on " + javaVersion.readableSlug());
         Map.Entry<Integer, String> original = originalResults.get(mainClass);
         System.out.println("Original: ");
         System.out.println(original.getValue());
@@ -332,6 +334,7 @@ public class ClassRunner {
     @MethodSource({"arguments"})
     @Execution(ExecutionMode.CONCURRENT)
     public void testRuntime(String mainClass, FlagsAndRunner javaVersion) throws IOException, InterruptedException {
+        System.out.println("TEST_RUNTIME: Running " + mainClass + " on " + javaVersion.readableSlug());
         Map.Entry<Integer, String> original = originalResults.get(mainClass);
         System.out.println("Original: ");
         System.out.println(original.getValue());

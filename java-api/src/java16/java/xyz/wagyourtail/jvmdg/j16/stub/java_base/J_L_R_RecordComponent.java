@@ -13,12 +13,22 @@ public class J_L_R_RecordComponent {
     private final Field field;
     private final Method accessor;
 
-    public J_L_R_RecordComponent(Class<?> declaring, Field field) {
+    public J_L_R_RecordComponent(Class<?> declaring, String field, Class<?> type) {
         this.declaring = declaring;
 
-        this.field = field;
+        Field fd = null;
+        for (Field f : declaring.getDeclaredFields()) {
+            if (f.getName().equals(field) && f.getType() == type) {
+                fd = f;
+                break;
+            }
+        }
+        this.field = fd;
+        if (this.field == null) {
+            throw new RuntimeException("no field found for " + field);
+        }
         for (Method m : declaring.getDeclaredMethods()) {
-            if (m.getName().equals(field.getName()) && m.getReturnType() == field.getType()) {
+            if (m.getName().equals(field) && m.getParameterCount() == 0 && m.getReturnType() == type) {
                 this.accessor = m;
                 return;
             }
