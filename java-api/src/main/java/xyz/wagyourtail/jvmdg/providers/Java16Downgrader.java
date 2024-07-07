@@ -123,7 +123,7 @@ public class Java16Downgrader extends VersionProvider {
             for (RecordComponentNode rcn : node.recordComponents) {
                 AnnotationVisitor value = values.visitAnnotation(null, Type.getType(RecordComponents.Value.class).getDescriptor());
                 value.visit("name", rcn.name);
-                value.visit("type", Type.getObjectType(rcn.descriptor));
+                value.visit("type", Type.getType(rcn.descriptor));
                 value.visitEnd();
             }
             values.visitEnd();
