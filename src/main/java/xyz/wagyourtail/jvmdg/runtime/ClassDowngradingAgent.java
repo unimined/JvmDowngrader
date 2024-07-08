@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
 import org.objectweb.asm.*;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -13,18 +14,12 @@ import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class ClassDowngradingAgent implements ClassFileTransformer {
     public static final MethodHandle defineClass;
     public static final boolean DUMP_CLASSES = Boolean.parseBoolean(System.getProperty("jvmdg.dump", "false"));
-    private static final Logger LOGGER = Logger.getLogger("JVMDowngrader/Agent");
+    private static final Logger LOGGER = Bootstrap.LOGGER.subLogger("Agent");
     private static final int currentVersion;
-
-    static {
-        LOGGER.setLevel(Bootstrap.flags.printDebug ? Level.ALL : Level.OFF);
-    }
 
     static {
         Method md;
@@ -89,10 +84,10 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             int version = ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF);
             if (version <= currentVersion) {
                 // already at or below the target version
-                LOGGER.finer("Ignoring " + className + " as it is already at or below the target version");
+                LOGGER.trace("Ignoring " + className + " as it is already at or below the target version");
                 return null;
             }
-            LOGGER.fine("Transforming " + className + " from " + version + " to " + currentVersion);
+            LOGGER.trace("Transforming " + className + " from " + version + " to " + currentVersion);
 //        if (loader instanceof DowngradingClassLoader) return bytes; // already handled
             Map<String, byte[]> outputs = Bootstrap.currentVersionDowngrader.downgrade(new AtomicReference<>(className), bytes, true, new Function<String, byte[]>() {
                 @Override
@@ -106,11 +101,11 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                     }
                 }
             });
-            LOGGER.fine("transform size: " + (outputs == null ? null : outputs.size()));
+            LOGGER.trace("transform size: " + (outputs == null ? null : outputs.size()));
             if (outputs == null) return bytes;
             bytes = null;
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
-                LOGGER.fine("Loading " + entry.getKey() + " into " + loader);
+                LOGGER.trace("Loading " + entry.getKey() + " into " + loader);
                 if (DUMP_CLASSES) {
                     Bootstrap.currentVersionDowngrader.writeBytesToDebug(entry.getKey(), entry.getValue());
                 }

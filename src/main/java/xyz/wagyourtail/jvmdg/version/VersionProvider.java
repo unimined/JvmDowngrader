@@ -840,8 +840,9 @@ public abstract class VersionProvider {
         return clazz;
     }
 
-    private void printWarnings(Set<String> warnings, String className) {
+    public void printWarnings(Set<String> warnings, String className) {
         if (!warnings.isEmpty() && logger.is(Logger.Level.WARN)) {
+            if (downgrader.flags.checkInIgnoreWarnings(className)) return;
             StringBuilder sb = new StringBuilder();
             for (String warning : warnings) {
                 sb.append("    ").append(warning).append("\n");

@@ -49,7 +49,7 @@ public class ClassDowngrader implements Closeable {
     protected ClassDowngrader(@NotNull Flags flags) {
         this.flags = flags;
         this.target = flags.classVersion;
-        logger = new Logger(ClassDowngrader.class, flags.printDebug ? Logger.Level.DEBUG : flags.quiet ? Logger.Level.FATAL : Logger.Level.INFO, System.out);
+        logger = new Logger(ClassDowngrader.class, flags.getLogLevel(), flags.logAnsiColors, System.out);
         try {
             classLoader = new DowngradingClassLoader(this, ClassDowngrader.class.getClassLoader());
         } catch (IOException e) {
@@ -286,7 +286,7 @@ public class ClassDowngrader implements Closeable {
         }
         Map<String, byte[]> outputs = new HashMap<>();
         try {
-            if (flags.printDebug) System.out.println("Transforming " + name.get());
+            logger.trace("Transforming " + name.get());
             Set<ClassNode> extra = downgrade(node, enableRuntime, new Function<String, ClassNode>() {
 
                 @Override
@@ -303,28 +303,31 @@ public class ClassDowngrader implements Closeable {
                 }
             });
             for (ClassNode c : extra) {
-                if (flags.printDebug) {
-                    File f = new File(Constants.DEBUG_DIR, c.name + ".javasm");
-                    f.getParentFile().mkdirs();
-                    try (FileOutputStream fos = new FileOutputStream(f)) {
-                        TraceClassVisitor tcv = new TraceClassVisitor(null, new Textifier(), new PrintWriter(fos));
-                        c.accept(tcv);
-                    } catch (IOException ignored) {
-                    }
-                }
+                // TODO: uncomment with asm 9.8
+//                if (flags.debugDumpClasses) {
+//                    File f = new File(Constants.DEBUG_DIR, c.name + ".javasm");
+//                    f.getParentFile().mkdirs();
+//                    try (FileOutputStream fos = new FileOutputStream(f)) {
+//                        TraceClassVisitor tcv = new TraceClassVisitor(null, new Textifier(), new PrintWriter(fos));
+//                        c.accept(tcv);
+//                    } catch (IOException ignored) {
+//                    }
+//                }
                 outputs.put(c.name, classNodeToBytes(c));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to downgrade " + name.get(), e);
         }
-        if (logger.is(Logger.Level.DEBUG)) {
+        if (logger.is(Logger.Level.DEBUG) || flags.debugDumpClasses) {
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 if (!entry.getKey().equals(name.get())) {
                     logger.debug("Downgraded " + entry.getKey() + " from unknown to " + target);
                 } else {
                     logger.debug("Downgraded " + entry.getKey() + " from " + version + " to " + target);
                 }
-                writeBytesToDebug(entry.getKey(), entry.getValue());
+                if (flags.debugDumpClasses) {
+                    writeBytesToDebug(entry.getKey(), entry.getValue());
+                }
             }
         }
         return outputs;

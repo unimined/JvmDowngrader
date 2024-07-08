@@ -4,6 +4,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
@@ -19,17 +20,11 @@ import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.util.HashSet;
 import java.util.jar.JarFile;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Bootstrap {
     static final Flags flags = new Flags();
     static final ClassDowngrader currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(flags);
-    private static final Logger LOGGER = Logger.getLogger("JVMDowngrader");
-
-    static {
-        LOGGER.setLevel(flags.printDebug ? Level.ALL : Level.WARNING);
-    }
+    static final Logger LOGGER = new Logger("JVMDowngrader", flags.getLogLevel(), flags.logAnsiColors, System.out);
 
     public static void main(String[] args) {
         LOGGER.info("Starting JVMDowngrader Bootstrap in standalone mode.");
@@ -76,7 +71,7 @@ public class Bootstrap {
         Path tmp = Constants.DIR.toPath().resolve("java-api-downgraded-" + currentVersionDowngrader.target + "-" + zipSha.substring(0, 8) + ".jar");
         boolean downgrade = false;
         if (!Files.exists(tmp)) {
-            LOGGER.warning("Downgrading java-api.jar as its hash changed or this is first launch, this may take a minute...");
+            LOGGER.warn("Downgrading java-api.jar as its hash changed or this is first launch, this may take a minute...");
             downgrade = true;
         }
         if (downgrade) {
@@ -94,7 +89,7 @@ public class Bootstrap {
         instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(self.toURI().getPath()));
         instrumentation.addTransformer(new ClassDowngradingAgent(), instrumentation.isRetransformClassesSupported());
         if (!instrumentation.isModifiableClass(CodeSource.class) || !instrumentation.isRetransformClassesSupported()) {
-            LOGGER.severe("CodeSource is not modifiable, this will prevent loading signed classes properly!!!");
+            LOGGER.fatal("CodeSource is not modifiable, this will prevent loading signed classes properly!!!");
         } else {
             LOGGER.info("CodeSource is modifiable, attempting to retransform it to fix code signing.");
             instrumentation.retransformClasses(CodeSource.class);

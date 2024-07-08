@@ -4,6 +4,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
@@ -25,12 +26,15 @@ public class Main {
         parser.addChildren(
                 new Arguments("--help", "Prints this help", new String[]{"-h"}, null),
                 new Arguments("--version", "Prints the version", new String[]{"-v"}, null),
-                new Arguments("--quiet", "Suppress all warnings", new String[]{"-q"}, null),
+                new Arguments("--logLevel", "Set the log level", new String[]{"-l"}, new String[]{"level"}),
+                new Arguments("--quiet", "[Deprecated] Suppress all warnings", new String[]{"-q"}, null),
+                new Arguments("--ignoreWarningsIn", "Ignore warnings of missing class/member stubs in package/class matching", new String[]{"-i"}, new String[]{"package or class identifier"}),
                 new Arguments("--api", "Provide a java-api jar", new String[]{"-a"}, new String[]{"jar"}),
                 new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
                 new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
-                        new Arguments("--print", "Enable printing debug info", new String[]{"-p"}, null),
+                        new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
                         new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
+                        new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
                         new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
                 ),
                 new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
@@ -73,11 +77,24 @@ public class Main {
                 case "--quiet":
                     flags.quiet = true;
                     break;
+                case "--logLevel":
+                    if (entry.getValue().size() > 1) {
+                        throw new IllegalArgumentException("Multiple log levels specified");
+                    }
+                    flags.logLevel = Logger.Level.valueOf(entry.getValue().get(0)[0].toUpperCase());
+                    break;
                 case "--classVersion":
                     if (entry.getValue().size() > 1) {
                         throw new IllegalArgumentException("Multiple class versions specified");
                     }
                     flags.classVersion = Integer.parseInt(entry.getValue().get(0)[0]);
+                    break;
+                case "--ignoreWarningsIn":
+                    for (String[] s : entry.getValue()) {
+                        for (String string : s) {
+                            flags.addIgnore(string);
+                        }
+                    }
                     break;
                 case "--api":
                     if (entry.getValue().size() > 1) {
@@ -122,6 +139,9 @@ public class Main {
             switch (entry.getKey()) {
                 case "--print":
                     flags.printDebug = true;
+                    break;
+                case "--dumpClasses":
+                    flags.debugDumpClasses = true;
                     break;
                 case "--skipStubs":
                     for (String[] s : entry.getValue()) {

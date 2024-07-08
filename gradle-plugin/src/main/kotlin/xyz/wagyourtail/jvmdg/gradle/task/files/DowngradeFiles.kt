@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.gradle.task.files
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
 import org.gradle.api.tasks.*
-import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
@@ -50,11 +49,7 @@ abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
     }
 
     init {
-        downgradeTo.convention(jvmdg.downgradeTo).finalizeValueOnRead()
-        apiJar.convention(jvmdg.apiJar).finalizeValueOnRead()
-        quiet.convention(jvmdg.quiet).finalizeValueOnRead()
-        debug.convention(jvmdg.debug).finalizeValueOnRead()
-        debugSkipStubs.convention(jvmdg.debugSkipStubs).finalizeValueOnRead()
+        jvmdg.convention(this)
     }
 
     @TaskAction

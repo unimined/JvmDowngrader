@@ -57,9 +57,26 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
             apiJar
         }).finalizeValueOnRead()
         quiet.convention(false).finalizeValueOnRead()
+        logAnsiColors.convention(true).finalizeValueOnRead()
+        logLevel.convention("INFO").finalizeValueOnRead()
+        ignoreWarningsIn.convention(emptySet()).finalizeValueOnRead()
         debug.convention(false).finalizeValueOnRead()
         debugSkipStubs.convention(emptySet()).finalizeValueOnRead()
+        debugDumpClasses.convention(false).finalizeValueOnRead()
         shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/" }
+    }
+
+    fun convention(flags: ShadeFlags) {
+        convention(flags as DowngradeFlags)
+        flags.shadePath.convention(shadePath).finalizeValueOnRead()
+    }
+
+    fun convention(flags: DowngradeFlags) {
+        flags.downgradeTo.convention(downgradeTo).finalizeValueOnRead()
+        flags.apiJar.convention(apiJar).finalizeValueOnRead()
+        flags.quiet.convention(quiet).finalizeValueOnRead()
+        flags.debug.convention(debug).finalizeValueOnRead()
+        flags.debugSkipStubs.convention(debugSkipStubs).finalizeValueOnRead()
     }
 
     @get:Internal
@@ -97,11 +114,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                 spec.to.attribute(artifactType, "jar").attribute(downgradeAttr, true).attribute(shadeAttr, false)
 
                 spec.parameters {
-                    it.downgradeTo.set(downgradeTo)
-                    it.apiJar.set(apiJar)
-                    it.quiet.set(quiet)
-                    it.debug.set(debug)
-                    it.debugSkipStubs.set(debugSkipStubs)
+                    this@JVMDowngraderExtension.convention(it)
                     config(it)
                     javaVersion = it.downgradeTo.get()
                 }
@@ -121,14 +134,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                     spec.to.attribute(artifactType, "jar").attribute(shadeAttr, true).attribute(downgradeAttr, true)
 
                     spec.parameters {
-                        it.downgradeTo.set(downgradeTo)
-                        it.apiJar.set(project.provider {
-                            downgradedApis[it.downgradeTo.get()]
-                        })
-                        it.quiet.set(quiet)
-                        it.debug.set(debug)
-                        it.debugSkipStubs.set(debugSkipStubs)
-                        it.shadePath.set(shadePath)
+                        this@JVMDowngraderExtension.convention(it)
                         config(it)
                     }
                 }
