@@ -193,6 +193,9 @@ public class Flags {
     }
 
     public boolean checkInIgnoreWarnings(String className) {
+        // find the entry that is <= the className, because a treeSet is sorted, this is either className,
+        // a prefix of classname, a random other string that is less than className, ie. "aaa" < "bbb", or null if there
+        // is no entries that are <= className in the map
         Map.Entry<String, Flags.WildcardType> entry = ignoreWarningsIn.floorEntry(className);
         if (entry != null && className.startsWith(entry.getKey())) {
             switch (entry.getValue()) {
