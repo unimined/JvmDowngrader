@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.gradle.flags
 
 import org.gradle.api.JavaVersion
 import org.gradle.api.artifacts.transform.TransformParameters
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
@@ -63,7 +64,7 @@ interface DowngradeFlags : TransformParameters {
      */
     @get:Input
     @get:Optional
-    val ignoreWarningsIn: SetProperty<String>
+    val ignoreWarningsIn: ListProperty<String>
 
     /**
      * sets if the logger should print debug messages
@@ -101,8 +102,8 @@ fun DowngradeFlags.toFlags(): Flags {
     flags.logLevel = Logger.Level.valueOf(logLevel.getOrElse("INFO").uppercase())
     flags.printDebug = debug.getOrElse(false)
     flags.classVersion = downgradeTo.getOrElse(JavaVersion.VERSION_1_8).toOpcode()
-    flags.debugSkipStubs = debugSkipStubs.getOrElse(emptySet()).map { it.toOpcode() }.toSet()
-    ignoreWarningsIn.getOrElse(emptySet()).forEach { flags.addIgnore(it) }
+    flags.debugSkipStubs = debugSkipStubs.getOrElse(emptyList()).map { it.toOpcode() }.toSet()
+    ignoreWarningsIn.getOrElse(emptyList()).forEach { flags.addIgnore(it) }
     flags.debugDumpClasses = debugDumpClasses.getOrElse(false)
     return flags
 }
