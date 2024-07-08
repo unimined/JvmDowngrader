@@ -729,8 +729,10 @@ public abstract class VersionProvider {
     }
 
     public ClassNode downgrade(final ClassDowngrader downgrader, ClassNode clazz, final Set<ClassNode> extra, final boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws IOException {
+        String className = clazz.name;
+
         if (clazz.version != inputVersion)
-            throw new IllegalArgumentException("Class " + clazz.name + " is not version " + inputVersion);
+            throw new IllegalArgumentException("Class " + className + " is not version " + inputVersion);
 
         ensureInit(downgrader);
         final Set<String> warnings = new LinkedHashSet<>();
@@ -800,7 +802,7 @@ public abstract class VersionProvider {
 
         clazz = stubClasses(clazz, enableRuntime, warnings);
         if (clazz == null) {
-            printWarnings(warnings, clazz.name);
+            printWarnings(warnings, className);
             return null;
         }
         clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
@@ -810,7 +812,7 @@ public abstract class VersionProvider {
             }
         });
         if (clazz == null) {
-            printWarnings(warnings, clazz.name);
+            printWarnings(warnings, className);
             return null;
         }
         clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
@@ -820,7 +822,7 @@ public abstract class VersionProvider {
             }
         });
         if (clazz == null) {
-            printWarnings(warnings, clazz.name);
+            printWarnings(warnings, className);
             return null;
         }
         clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
@@ -830,10 +832,10 @@ public abstract class VersionProvider {
             }
         });
         if (clazz == null) {
-            printWarnings(warnings, clazz.name);
+            printWarnings(warnings, className);
             return null;
         }
-        printWarnings(warnings, clazz.name);
+        printWarnings(warnings, className);
         clazz.version = inputVersion - 1;
         return clazz;
     }
