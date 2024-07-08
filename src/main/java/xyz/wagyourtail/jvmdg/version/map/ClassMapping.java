@@ -79,14 +79,16 @@ public class ClassMapping {
         methodModify.put(member, new Pair<>(method, modify));
     }
 
-    public void warnMember(MemberNameAndDesc member, Set<String> warnings) {
+    public void warnMember(MemberNameAndDesc member, Set<String> warnings, boolean invoke_static) {
         FullyQualifiedMemberNameAndDesc fqn = member.toFullyQualified(current);
         String mod = coverage.checkMember(fqn);
         if (mod != null) {
             coverage.warnMember(fqn, warnings);
         }
-        for (ClassMapping parent : parents.get()) {
-            parent.warnMember(member, warnings);
+        if (!invoke_static && !member.getName().equals("<init>")) {
+            for (ClassMapping parent : parents.get()) {
+                parent.warnMember(member, warnings, false);
+            }
         }
     }
 
@@ -205,7 +207,7 @@ public class ClassMapping {
                     }
                     return getParentStubFor(member, runtimeAvailable, special, warnings);
                 }
-                warnMember(member, warnings);
+                warnMember(member, warnings, invoke_static);
                 return null;
             }
             Method m = pair.getFirst();
@@ -246,7 +248,7 @@ public class ClassMapping {
                     }
                     return getParentModifyFor(member, warnings);
                 }
-                warnMember(member, warnings);
+                warnMember(member, warnings, invoke_static);
                 return null;
             }
             Method m = pair.getFirst();

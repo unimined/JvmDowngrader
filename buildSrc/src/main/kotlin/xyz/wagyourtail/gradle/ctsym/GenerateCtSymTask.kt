@@ -81,7 +81,6 @@ abstract class GenerateCtSymTask : ConventionTask() {
                 project.logger.lifecycle("[ct.sym] Processing $java at $home")
                 for (path in home.walk()
                     .filter { it.exists() && it.isRegularFile() && it.extension in setOf("jar", "jmod") }) {
-                    if (path.extension == "jar" && path.nameWithoutExtension != "rt") continue
                     // for each jar/jmod list its contents
                     project.logger.info("[ct.sym]   Found ${path.fileName}")
                     val modName = path.fileName.toString().removeSuffix(".jmod")
