@@ -219,7 +219,7 @@ public class ClassRunner {
     }
 
     @ParameterizedTest
-    @MethodSource({"xyz.wagyourtail.jvmdg.test.ClassRunner#arguments"})
+    @MethodSource({"xyz.wagyourtail.jvmdg.test.integration.ClassRunner#arguments"})
     @Execution(ExecutionMode.CONCURRENT)
     public void testDowngrade(String mainClass, FlagsAndRunner javaVersion) throws IOException, InterruptedException {
         System.out.println("TEST_DOWNGRADE: Running " + mainClass + " on " + javaVersion.readableSlug());
