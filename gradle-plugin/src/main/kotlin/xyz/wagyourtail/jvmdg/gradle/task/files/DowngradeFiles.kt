@@ -22,8 +22,20 @@ abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
         project.extensions.getByType(JVMDowngraderExtension::class.java)
     }
 
+    private var _inputCollection: FileCollection by FinalizeOnRead(MustSet())
+
     @get:InputFiles
-    var inputCollection: FileCollection by FinalizeOnRead(MustSet())
+    var inputCollection: FileCollection
+        get() = _inputCollection
+        set(value) {
+            _inputCollection = value
+
+            // use _inputCollection to finalize it immediately
+            val fd = _inputCollection.map { it to temporaryDir.resolve(it.name) }
+            outputs.dirs(*fd.filter { it.first.isDirectory }.map { it.second }.toTypedArray())
+            outputs.files(*fd.filter { it.first.isFile }.map { it.second }.toTypedArray())
+
+        }
 
     @get:InputFiles
     var classpath: FileCollection by FinalizeOnRead(LazyMutable {
@@ -40,11 +52,6 @@ abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
      */
     @get:Internal
     val outputCollection: FileCollection by lazy {
-        val fd = inputCollection.map { it to temporaryDir.resolve(it.name) }
-
-        outputs.dirs(*fd.filter { it.first.isDirectory }.map { it.second }.toTypedArray())
-        outputs.files(*fd.filter { it.first.isFile }.map { it.second }.toTypedArray())
-
         outputs.files
     }
 

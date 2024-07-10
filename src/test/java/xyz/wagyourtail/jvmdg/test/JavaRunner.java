@@ -234,7 +234,8 @@ public class JavaRunner {
         V19,
         V20,
         V21,
-        V22;
+        V22,
+        V23;
 
         public static JavaVersion fromClassVers(int vers) {
             return JavaVersion.values()[vers - 45];

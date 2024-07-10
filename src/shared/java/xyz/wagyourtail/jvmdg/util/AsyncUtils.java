@@ -133,14 +133,6 @@ public class AsyncUtils {
                 return FileVisitResult.CONTINUE;
             }
         });
-//        while (!futures.isEmpty()) {
-//            try {
-//                futures.poll().get();
-//            } catch (InterruptedException | ExecutionException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }
-//        return null;
         return (Future) waitForFutures(futures);
     }
 
