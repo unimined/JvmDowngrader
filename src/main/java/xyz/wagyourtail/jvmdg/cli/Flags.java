@@ -114,39 +114,44 @@ public class Flags {
         }
     }
 
+    private static File foundApi = null;
+
     public File findJavaApi() {
         try {
             if (api != null) {
                 return api;
             }
-            Constants.DIR.mkdirs();
-            Path tmp = Constants.DIR.toPath().resolve("jvmdg-api.jar");
-            File prop = getJavaApiFromSystemProperty();
-            if (prop != null) {
-                return prop;
+            if (foundApi != null) {
+                api = foundApi;
+                return foundApi;
             }
-            URL url = getJavaApiFromShade();
-            if (url == null && allowMaven) {
-                url = getJavaApiFromMaven();
-            }
-            if (url != null) {
-                if (Files.exists(tmp)) {
+            synchronized (Flags.class) {
+                Constants.DIR.mkdirs();
+                Path tmp = Constants.DIR.toPath().resolve("jvmdg-api.jar");
+                File prop = getJavaApiFromSystemProperty();
+                if (prop != null) {
+                    return prop;
+                }
+                URL url = getJavaApiFromShade();
+                if (url == null && allowMaven) {
+                    url = getJavaApiFromMaven();
+                }
+                if (url != null) {
+//                    if (Files.exists(tmp)) {
+//                        try (InputStream in = url.openStream()) {
+//                            try (InputStream in2 = Files.newInputStream(tmp)) {
+//                                if (hash(in).equals(hash(in2))) {
+//                                    foundApi = tmp.toFile();
+//                                    return tmp.toFile();
+//                                }
+//                            }
+//                        }
+//                    }
                     try (InputStream in = url.openStream()) {
-                        try (InputStream in2 = Files.newInputStream(tmp)) {
-                            if (hash(in).equals(hash(in2))) {
-                                return tmp.toFile();
-                            }
-                        }
+                        Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+                        foundApi = tmp.toFile();
+                        return tmp.toFile();
                     }
-                }
-                try (InputStream in = url.openStream()) {
-                    Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
-                }
-                return tmp.toFile();
-            } else {
-                // failed to find java api
-                if (!quiet) {
-                    System.err.println("[JvmDowngrader] Failed to find java api jar!");
                 }
                 return null;
             }
@@ -155,23 +160,23 @@ public class Flags {
         }
     }
 
-    private String hash(InputStream is) {
-        MessageDigest digest = null;
-        try {
-            digest = MessageDigest.getInstance("SHA-1");
-            byte[] buffer = new byte[8192];
-            int read = 0;
-            while ((read = is.read(buffer)) > 0) {
-                digest.update(buffer, 0, read);
-            }
-            byte[] hash = digest.digest();
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to hash", e);
-        }
-    }
+//    private String hash(InputStream is) {
+//        MessageDigest digest = null;
+//        try {
+//            digest = MessageDigest.getInstance("SHA-1");
+//            byte[] buffer = new byte[8192];
+//            int read = 0;
+//            while ((read = is.read(buffer)) > 0) {
+//                digest.update(buffer, 0, read);
+//            }
+//            byte[] hash = digest.digest();
+//            StringBuilder sb = new StringBuilder();
+//            for (byte b : hash) {
+//                sb.append(String.format("%02x", b));
+//            }
+//            return sb.toString();
+//        } catch (Exception e) {
+//            throw new RuntimeException("Failed to hash", e);
+//        }
+//    }
 }
