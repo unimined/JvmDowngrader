@@ -15,6 +15,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -129,6 +130,15 @@ public class Flags {
                 url = getJavaApiFromMaven();
             }
             if (url != null) {
+                if (Files.exists(tmp)) {
+                    try (InputStream in = url.openStream()) {
+                        try (InputStream in2 = Files.newInputStream(tmp)) {
+                            if (hash(in).equals(hash(in2))) {
+                                return tmp.toFile();
+                            }
+                        }
+                    }
+                }
                 try (InputStream in = url.openStream()) {
                     Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
                 }
@@ -142,6 +152,26 @@ public class Flags {
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to find java api", e);
+        }
+    }
+
+    private String hash(InputStream is) {
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-1");
+            byte[] buffer = new byte[8192];
+            int read = 0;
+            while ((read = is.read(buffer)) > 0) {
+                digest.update(buffer, 0, read);
+            }
+            byte[] hash = digest.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to hash", e);
         }
     }
 }
