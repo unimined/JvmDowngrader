@@ -22,6 +22,7 @@ It is recommended that you use `publishToMavenLocal` if you need to test a fix f
 ## Stub Guidelines
 
 For licensing reasons, please do not directly copy code from the JDK.
+please refer to [Bytecode Manipulation](Bytecode%20Manipulation.md) for more information on how to create stubs.
 
 # Troubleshooting
 
