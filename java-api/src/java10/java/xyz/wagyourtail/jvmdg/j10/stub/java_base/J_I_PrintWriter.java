@@ -36,12 +36,10 @@ public class J_I_PrintWriter {
         list.add(new TypeInsnNode(Opcodes.NEW, "java/io/BufferedWriter"));
         // stack: PrintWriter, boolean, OutputStreamWriter, (U) BufferedWriter
         list.add(new InsnNode(Opcodes.DUP_X2));
-        // stack: PrintWriter, boolean, (U) BufferedWriter, OutputStreamWriter, (U) BufferedWriter
+        // stack: PrintWriter, (U) BufferedWriter, boolean, OutputStreamWriter, (U) BufferedWriter
         list.add(new InsnNode(Opcodes.SWAP));
-        // stack: PrintWriter, boolean, (U) BufferedWriter, (U) BufferedWriter, OutputStreamWriter
+        // stack: PrintWriter, (U) BufferedWriter, boolean, (U) BufferedWriter, OutputStreamWriter
         list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/io/BufferedWriter", "<init>", "(Ljava/io/Writer;)V", false));
-        // stack: PrintWriter, boolean, BufferedWriter
-        list.add(new InsnNode(Opcodes.SWAP));
         // stack: PrintWriter, BufferedWriter, boolean
         list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/io/PrintWriter", "<init>", "(Ljava/io/Writer;Z)V", false));
 
