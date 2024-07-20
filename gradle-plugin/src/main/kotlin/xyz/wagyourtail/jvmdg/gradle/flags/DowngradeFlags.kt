@@ -6,9 +6,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.*
 import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.logging.Logger
 import xyz.wagyourtail.jvmdg.util.toOpcode
@@ -29,6 +27,7 @@ interface DowngradeFlags : TransformParameters {
      * default is null
      */
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.ABSOLUTE)
     @get:Optional
     val apiJar: ListProperty<File>
 
