@@ -839,7 +839,7 @@ public abstract class VersionProvider {
             return null;
         }
         printWarnings(warnings, className);
-        clazz.version = inputVersion - 1;
+        clazz.version = outputVersion;
         return clazz;
     }
 
