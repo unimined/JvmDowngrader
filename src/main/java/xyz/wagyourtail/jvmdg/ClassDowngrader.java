@@ -113,11 +113,12 @@ public class ClassDowngrader implements Closeable {
     }
 
     public Set<MemberNameAndDesc> getMembers(int version, Type type, Set<String> warnings) throws IOException {
-        for (int vers = version; vers > target; vers--) {
+        for (int vers = version; vers > target; ) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
+            vers = downgrader.outputVersion;
             downgrader.ensureInit(this);
             Type stubbed = downgrader.stubClass(type, warnings);
             if (!stubbed.equals(type)) {
@@ -158,11 +159,12 @@ public class ClassDowngrader implements Closeable {
     }
 
     public List<Pair<Type, Boolean>> getSupertypes(int version, Type type, Set<String> warnings) throws IOException {
-        for (int vers = version; vers > target; vers--) {
+        for (int vers = version; vers > target;) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
+            vers = downgrader.outputVersion;
             downgrader.ensureInit(this);
             Type stubbed = downgrader.stubClass(type, warnings);
             if (!stubbed.equals(type)) {
@@ -191,11 +193,12 @@ public class ClassDowngrader implements Closeable {
     }
 
     public Boolean isInterface(int version, Type type, Set<String> warnings) throws IOException {
-        for (int vers = version; vers > target; vers--) {
+        for (int vers = version; vers > target; ) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
+            vers = downgrader.outputVersion;
             downgrader.ensureInit(this);
             Type stubbed = downgrader.stubClass(type, warnings);
             if (!stubbed.equals(type)) {
@@ -214,11 +217,12 @@ public class ClassDowngrader implements Closeable {
     }
 
     public Type stubClass(int version, Type type, Set<String> warnings) {
-        for (int vers = version; vers > target; vers--) {
+        for (int vers = version; vers > target;) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
             }
+            vers = downgrader.outputVersion;
             downgrader.ensureInit(this);
             Type stubbed = downgrader.stubClass(type, warnings);
             if (!stubbed.equals(type)) {

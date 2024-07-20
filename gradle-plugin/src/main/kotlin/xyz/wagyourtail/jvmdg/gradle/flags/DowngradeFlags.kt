@@ -27,7 +27,7 @@ interface DowngradeFlags : TransformParameters {
      * default is null
      */
     @get:InputFiles
-    @get:PathSensitive(PathSensitivity.ABSOLUTE)
+    @get:PathSensitive(PathSensitivity.NONE)
     @get:Optional
     val apiJar: ListProperty<File>
 
