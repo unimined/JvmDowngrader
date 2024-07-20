@@ -30,7 +30,7 @@ interface DowngradeFlags : TransformParameters {
      */
     @get:InputFiles
     @get:Optional
-    var apiJar: ListProperty<File>
+    val apiJar: ListProperty<File>
 
     /**
      * sets the log level to [Logger.Level.FATAL]
