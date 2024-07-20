@@ -42,92 +42,127 @@ public class ApiShader {
         }
         Flags flags = new Flags();
         flags.classVersion = target;
-        shadeApis(flags, prefix, input, output, downgradedApi);
+        shadeApis(flags, prefix, input, output, Collections.singleton(downgradedApi));
         System.out.println("Shaded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
-    public static void downgradedApi(Flags flags, Path api, Path targetPath) throws IOException {
-        try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
-            ZipDowngrader.downgradeZip(downgrader, api, new HashSet<URL>(), targetPath);
-        }
-    }
-
-    public static void shadeApis(Flags flags, String prefix, File input, File output, File downgradedApi) throws IOException {
+    public static void shadeApis(Flags flags, String prefix, File input, File output, Set<File> downgradedApi) throws IOException {
         if (output.exists()) {
             output.delete();
         }
         if (!prefix.endsWith("/")) {
             prefix += "/";
         }
-        try (FileSystem apiFs = Utils.openZipFileSystem(resolveDowngradedApi(flags, downgradedApi), false)) {
+        List<FileSystem> apiFs = new ArrayList<>();
+        try {
+            for (File file : downgradedApi) {
+                apiFs.add(Utils.openZipFileSystem(file.toPath(), false));
+            }
+
             try (FileSystem inputFs = Utils.openZipFileSystem(input.toPath(), false)) {
                 try (FileSystem outputFs = Utils.openZipFileSystem(output.toPath(), true)) {
-                    Path apiRoot = apiFs.getPath("/");
-                    Pair<ReferenceGraph, Set<Type>> api = scanApis(apiRoot);
-                    shadeApis(prefix, inputFs.getPath("/"), outputFs.getPath("/"), apiRoot, api.getFirst(), api.getSecond());
+                    List<Path> apiRoots = new ArrayList<>();
+                    for (FileSystem fs : apiFs) {
+                        apiRoots.add(fs.getPath("/"));
+                    }
+                    Pair<ReferenceGraph, Set<Type>> api = scanApis(apiRoots);
+                    shadeApis(prefix, inputFs.getPath("/"), outputFs.getPath("/"), apiRoots, api.getFirst(), api.getSecond());
                 }
+            }
+        } finally {
+            for (FileSystem fs : apiFs) {
+                fs.close();
             }
         }
     }
 
-    public static void shadeApis(Flags flags, String prefix, Path inputRoot, Path outputRoot, File downgradedApi) throws IOException {
+    public static void shadeApis(Flags flags, String prefix, Path inputRoot, Path outputRoot, Set<File> downgradedApi) throws IOException {
         shadeApis(flags, Collections.singletonList(prefix), Collections.singletonList(inputRoot), Collections.singletonList(outputRoot), downgradedApi);
     }
 
-    public static void shadeApis(Flags flags, List<String> prefix, List<Path> inputRoots, List<Path> outputRoots, File downgradedApi) throws IOException {
+    public static void shadeApis(Flags flags, List<String> prefix, List<Path> inputRoots, List<Path> outputRoots, Set<File> downgradedApi) throws IOException {
         for (String p : prefix) {
             if (!p.endsWith("/")) {
                 throw new IllegalArgumentException("prefix \""+ p +"\" must end with /");
             }
         }
-        Path downgradedApiPath = resolveDowngradedApi(flags, downgradedApi);
-        try (FileSystem apiFs = Utils.openZipFileSystem(downgradedApiPath,false)) {
-            Pair<ReferenceGraph, Set<Type>> api = scanApis(apiFs.getPath("/"));
+        Set<Path> downgradedApiPath = resolveDowngradedApi(flags, downgradedApi);
+        List<FileSystem> apiFs = new ArrayList<>();
+        try {
+            for (File file : downgradedApi) {
+                apiFs.add(Utils.openZipFileSystem(file.toPath(), false));
+            }
+            List<Path> apiRoots = new ArrayList<>();
+            for (FileSystem fs : apiFs) {
+                apiRoots.add(fs.getPath("/"));
+            }
+            Pair<ReferenceGraph, Set<Type>> api = scanApis(apiRoots);
             for (int i = 0; i < inputRoots.size(); i++) {
-                shadeApis(prefix.get(i % prefix.size()), inputRoots.get(i), outputRoots.get(i), apiFs.getPath("/"), api.getFirst(), api.getSecond());
+                shadeApis(prefix.get(i % prefix.size()), inputRoots.get(i), outputRoots.get(i), apiRoots, api.getFirst(), api.getSecond());
+            }
+        } finally {
+            for (FileSystem fs : apiFs) {
+                fs.close();
             }
         }
     }
 
-    public static Path resolveDowngradedApi(Flags flags, @Nullable File downgradedApi) throws IOException {
+    public static Set<Path> resolveDowngradedApi(Flags flags, @Nullable Set<File> downgradedApi) throws IOException {
         // step 1: downgrade the api to the target version
-        Path temp = Constants.DIR.toPath();
-        Path downgradedApiPath = temp.resolve("downgraded-api.jar");
+        Set<Path> downgradedApis = new HashSet<>();
         if (downgradedApi == null) {
-            downgradeApi(flags, downgradedApiPath);
+            try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
+                for (File file : flags.findJavaApi()) {
+                    String name = file.getName();
+                    int idx = name.lastIndexOf('.');
+                    if (idx == -1) {
+                        throw new IllegalArgumentException("File has no extension: " + name);
+                    }
+                    String beforeExt = name.substring(0, idx);
+                    String ext = name.substring(idx);
+                    Path targetPath = file.toPath().resolveSibling(beforeExt + "-downgraded" + flags.classVersion + ext);
+                    ZipDowngrader.downgradeZip(downgrader, file.toPath(), new HashSet<URL>(), targetPath);
+                    downgradedApis.add(targetPath);
+                }
+            }
         } else {
-            downgradedApiPath = downgradedApi.toPath();
+            for (File file : downgradedApi) {
+                downgradedApis.add(file.toPath());
+            }
         }
-        return downgradedApiPath;
+        return downgradedApis;
     }
 
-    public static void downgradeApi(Flags flags, Path outputLocation) throws IOException {
-        downgradedApi(flags, flags.findJavaApi().toPath(), outputLocation);
-    }
-
-    public static Pair<ReferenceGraph, Set<Type>> scanApis(Path apiRoot) throws IOException {
+    public static Pair<ReferenceGraph, Set<Type>> scanApis(List<Path> apiRoots) throws IOException {
         // step 2: collect classes in the api and their references
         try {
             ReferenceGraph apiRefs = new ReferenceGraph();
-            Map<Path, Type> preScan = apiRefs.preScan(apiRoot);
-            final Set<Type> apiClasses = new HashSet<>(preScan.values());
-            apiRefs.scan(preScan, new ReferenceGraph.Filter() {
-                @Override
-                public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
-                    return apiClasses.contains(member.getOwner());
-                }
-            });
+            List<Map<Path, Type>> preScans = new ArrayList<>();
+            final Set<Type> apiClasses = new HashSet<>();
+            for (Path apiRoot : apiRoots) {
+                Map<Path, Type> preScan = apiRefs.preScan(apiRoot);
+                preScans.add(preScan);
+                apiClasses.addAll(preScan.values());
+            }
+            for (Map<Path, Type> preScan : preScans) {
+                apiRefs.scan(preScan, new ReferenceGraph.Filter() {
+                    @Override
+                    public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
+                        return apiClasses.contains(member.getOwner());
+                    }
+                });
+            }
             return new Pair<>(apiRefs, apiClasses);
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static void shadeApis(final String prefix, final Path inputRoot, final Path outputRoot, final Path apiRoot, final ReferenceGraph apiRefs, final Set<Type> apiClasses) throws IOException {
+public static void shadeApis(final String prefix, final Path inputRoot, final Path outputRoot, final List<Path> apiRoots, final ReferenceGraph apiRefs, final Set<Type> apiClasses) throws IOException {
         if (!prefix.endsWith("/")) throw new IllegalArgumentException("prefix must end with /");
         try {
             // step 3: traverse the input classes for references to the api
-            final ReferenceGraph inputRefs = new ReferenceGraph();
+            final ReferenceGraph inputRefs = new ReferenceGraph(false);
             inputRefs.scan(inputRoot, new ReferenceGraph.Filter() {
                 @Override
                 public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
@@ -183,13 +218,18 @@ public class ApiShader {
             Future<Void> resourceWrite = AsyncUtils.forEachAsync(required.getSecond(), new IOConsumer<String>() {
                 @Override
                 public void accept(String resource) throws IOException {
-                    Path inPath = apiRoot.resolve(resource);
-                    Path outPath = outputRoot.resolve(resource);
-                    Path parent = outPath.getParent();
-                    if (parent != null) {
-                        Files.createDirectories(parent);
+                    for (Path apiRoot : apiRoots) {
+                        Path inPath = apiRoot.resolve(resource);
+                        if (Files.exists(inPath)) {
+                            Path outPath = outputRoot.resolve(resource);
+                            Path parent = outPath.getParent();
+                            if (parent != null) {
+                                Files.createDirectories(parent);
+                            }
+                            Files.copy(inPath, outPath, StandardCopyOption.REPLACE_EXISTING);
+                            return;
+                        }
                     }
-                    Files.copy(inPath, outPath, StandardCopyOption.REPLACE_EXISTING);
                 }
             });
 

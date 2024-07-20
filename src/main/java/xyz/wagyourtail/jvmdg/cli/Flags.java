@@ -18,6 +18,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -34,7 +36,7 @@ public class Flags {
     /**
      * sets the api jar to use, if null will attempt to automatically find it
      */
-    public File api = null;
+    public Set<File> api = null;
 
     /**
      * sets the log level to {@link Logger.Level#FATAL}
@@ -159,31 +161,51 @@ public class Flags {
     /**
      * internal method to resolve the java api jar
      */
-    @ApiStatus.Internal
-    public File findJavaApi() {
+    private static Set<File> foundApi = null;
+
+    public Set<File> findJavaApi() {
         try {
             if (api != null) {
                 return api;
             }
-            Constants.DIR.mkdirs();
-            Path tmp = Constants.DIR.toPath().resolve("jvmdg-api.jar");
-            File prop = getJavaApiFromSystemProperty();
-            if (prop != null) {
-                return prop;
+            if (foundApi != null) {
+                api = foundApi;
+                return foundApi;
             }
-            URL url = getJavaApiFromShade();
-            if (url == null && allowMaven) {
-                url = getJavaApiFromMaven();
-            }
-            if (url != null) {
-                try (InputStream in = url.openStream()) {
-                    Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+            synchronized (Flags.class) {
+                Constants.DIR.mkdirs();
+                Path tmp = Constants.DIR.toPath().resolve("jvmdg-api- " + jvmdgVersion + " .jar");
+                Set<File> prop = getJavaApiFromSystemProperty();
+                if (prop != null) {
+                    foundApi = prop;
+                    return prop;
                 }
-                return tmp.toFile();
-            } else {
-                // failed to find java api
-                if (!quiet) {
-                    System.err.println("[JvmDowngrader] Failed to find java api jar!");
+                URL url = getJavaApiFromShade();
+                if (Files.exists(tmp)) {
+                    if (url == null) {
+                        foundApi = Collections.singleton(tmp.toFile());
+                        return foundApi;
+                    } else {
+                        try (InputStream in = url.openStream()) {
+                            try (InputStream in2 = Files.newInputStream(tmp)) {
+                                if (hash(in).equals(hash(in2))) {
+                                    foundApi = Collections.singleton(tmp.toFile());
+                                    return foundApi;
+                                }
+                            }
+                        }
+
+                    }
+                }
+                if (url == null && allowMaven) {
+                    url = getJavaApiFromMaven();
+                }
+                if (url != null) {
+                    try (InputStream in = url.openStream()) {
+                        Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+                        foundApi = Collections.singleton(tmp.toFile());
+                        return foundApi;
+                    }
                 }
                 return null;
             }
@@ -192,6 +214,9 @@ public class Flags {
         }
     }
 
+    /**
+     * internal method to check if a class should be ignored for missing class/member warnings
+     */
     public boolean checkInIgnoreWarnings(String className) {
         // find the entry that is <= the className, because a treeSet is sorted, this is either className,
         // a prefix of classname, a random other string that is less than className, ie. "aaa" < "bbb", or null if there
@@ -226,7 +251,6 @@ public class Flags {
     }
 
     /* initialization methods */
-
     private Set<Integer> getDebugSkip() {
         Set<Integer> skip = new HashSet<>();
         String skipStubs = System.getProperty(Constants.DEBUG_SKIP_STUBS);
@@ -251,12 +275,16 @@ public class Flags {
         return ClassDowngrader.class.getResource("/META-INF/lib/java-api.jar");
     }
 
-    private File getJavaApiFromSystemProperty() throws IOException {
+    private Set<File> getJavaApiFromSystemProperty() throws IOException {
         String api = System.getProperty(Constants.JAVA_API);
         if (api == null) {
             return null;
         }
-        return new File(api);
+        Set<File> files = new HashSet<>();
+        for (String s : api.split(File.pathSeparator)) {
+            files.add(new File(s));
+        }
+        return files;
     }
 
     private URL getJavaApiFromMaven() throws IOException {
@@ -295,4 +323,25 @@ public class Flags {
         SINGLE,
         DOUBLE
     }
+
+    private String hash(InputStream is) {
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA-1");
+            byte[] buffer = new byte[8192];
+            int read = 0;
+            while ((read = is.read(buffer)) > 0) {
+                digest.update(buffer, 0, read);
+            }
+            byte[] hash = digest.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to hash", e);
+        }
+    }
+
 }

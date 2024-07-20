@@ -16,6 +16,7 @@ import xyz.wagyourtail.jvmdg.gradle.task.ShadeJar
 import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeTransform
 import xyz.wagyourtail.jvmdg.gradle.transform.ShadeTransform
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
+import xyz.wagyourtail.jvmdg.util.LazyMutable
 import xyz.wagyourtail.jvmdg.util.defaultedMapOf
 import java.io.File
 import javax.inject.Inject
@@ -41,21 +42,26 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         }
     }
 
-    init {
-        downgradeTo.convention(JavaVersion.VERSION_1_8).finalizeValueOnRead()
-        apiJar.convention(project.provider {
-            val apiJar = project.file(".gradle").resolve("jvmdg/java-api-${version}.jar")
-            if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
-                apiJar.parentFile.mkdirs()
-                JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar").use { stream ->
-                    if (stream == null) throw IllegalStateException("java-api.jar not found in resources")
-                    apiJar.outputStream().use { os ->
-                        stream.copyTo(os)
-                    }
+    /**
+     * the main api jar to use for downgrading
+     */
+    var apiJarDefault by LazyMutable {
+        val apiJar = project.file(".gradle").resolve("jvmdg/java-api-${version}.jar")
+        if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
+            apiJar.parentFile.mkdirs()
+            JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar").use { stream ->
+                if (stream == null) throw IllegalStateException("java-api.jar not found in resources")
+                apiJar.outputStream().use { os ->
+                    stream.copyTo(os)
                 }
             }
-            apiJar
-        }).finalizeValueOnRead()
+        }
+        apiJar
+    }
+
+    init {
+        downgradeTo.convention(JavaVersion.VERSION_1_8).finalizeValueOnRead()
+        apiJar.convention(project.provider { setOf(apiJarDefault) }).finalizeValueOnRead()
         quiet.convention(false).finalizeValueOnRead()
         logAnsiColors.convention(true).finalizeValueOnRead()
         logLevel.convention("INFO").finalizeValueOnRead()
@@ -80,18 +86,20 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
     }
 
     @get:Internal
-    internal val downgradedApis = defaultedMapOf<JavaVersion, File> { version ->
-        val downgradedPath = project.file(".gradle").resolve("jvmdg/java-api-${this.version}-${version}-downgraded.jar")
-
-        if (!downgradedPath.exists() || project.gradle.startParameter.isRefreshDependencies) {
-            ClassDowngrader.downgradeTo(this.toFlags()).use {
-                ZipDowngrader.downgradeZip(it, apiJar.get().toPath(), emptySet(), downgradedPath.toPath())
+    internal val downgradedApis = defaultedMapOf<JavaVersion, Set<File>> { version ->
+        val jars = mutableSetOf<File>()
+        for (path in apiJar.get()) {
+            val downgraded = path.resolveSibling(path.nameWithoutExtension + "-downgraded-${version}.jar")
+            if (!downgraded.exists() || project.gradle.startParameter.isRefreshDependencies) {
+                ClassDowngrader.downgradeTo(this.toFlags()).use {
+                    ZipDowngrader.downgradeZip(it, path.toPath(), emptySet(), downgraded.toPath())
+                }
             }
         }
-        downgradedPath
+        jars
     }
 
-    fun getDowngradedApi(version: JavaVersion): File = downgradedApis[version]
+    fun getDowngradedApi(version: JavaVersion): Set<File> = downgradedApis[version]
 
     @JvmOverloads
     fun dg(dep: Configuration, shade: Boolean = true, config: DowngradeFlags.() -> Unit = {}) {

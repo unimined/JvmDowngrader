@@ -2,10 +2,12 @@ package xyz.wagyourtail.jvmdg.gradle.flags
 
 import org.gradle.api.JavaVersion
 import org.gradle.api.artifacts.transform.TransformParameters
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.logging.Logger
@@ -26,9 +28,9 @@ interface DowngradeFlags : TransformParameters {
      * sets the api jar to use for downgrading
      * default is null
      */
-    @get:Input
+    @get:InputFiles
     @get:Optional
-    val apiJar: Property<File>
+    var apiJar: ListProperty<File>
 
     /**
      * sets the log level to [Logger.Level.FATAL]
@@ -96,7 +98,7 @@ interface DowngradeFlags : TransformParameters {
 
 fun DowngradeFlags.toFlags(): Flags {
     val flags = Flags()
-    flags.api = apiJar.orNull
+    flags.api = apiJar.orNull?.toSet()
     flags.quiet = quiet.getOrElse(false)
     flags.logAnsiColors = logAnsiColors.getOrElse(true)
     flags.logLevel = Logger.Level.valueOf(logLevel.getOrElse("INFO").uppercase())
