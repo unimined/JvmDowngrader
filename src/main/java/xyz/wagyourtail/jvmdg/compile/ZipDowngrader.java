@@ -46,7 +46,10 @@ public class ZipDowngrader {
 
     public static void downgradeZip(final ClassDowngrader downgrader, Path zip, Set<URL> classpath, final Path output) throws IOException {
         try (final FileSystem zipfs = Utils.openZipFileSystem(zip, false)) {
-            Files.createDirectories(output.getParent());
+            Path parent = output.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
             Files.deleteIfExists(output);
             try (final FileSystem outputZipFs = Utils.openZipFileSystem(output, true)) {
                 PathDowngrader.downgradePaths(downgrader, Collections.singletonList(zipfs.getPath("/")), Collections.singletonList(outputZipFs.getPath("/")), classpath);

@@ -114,7 +114,10 @@ public class PathDowngrader {
                                         for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                                             String internal = entry.getKey();
                                             Path p = out.resolve(internal + ".class");
-                                            Files.createDirectories(p.getParent());
+                                            Path parent = p.getParent();
+                                            if (parent != null) {
+                                                Files.createDirectories(parent);
+                                            }
                                             Files.write(p, entry.getValue(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
                                         }
                                     }
