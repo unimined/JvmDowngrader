@@ -162,7 +162,7 @@ public static void shadeApis(final String prefix, final Path inputRoot, final Pa
         if (!prefix.endsWith("/")) throw new IllegalArgumentException("prefix must end with /");
         try {
             // step 3: traverse the input classes for references to the api
-            final ReferenceGraph inputRefs = new ReferenceGraph(false);
+            final ReferenceGraph inputRefs = new ReferenceGraph(true);
             inputRefs.scan(inputRoot, new ReferenceGraph.Filter() {
                 @Override
                 public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
