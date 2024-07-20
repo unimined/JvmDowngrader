@@ -69,7 +69,7 @@ public class ClassRunner {
     private static Stream<FlagsAndRunner> flags() {
         Flags flags = ClassRunner.flags.copy();
         flags.quiet = true;
-        flags.api = javaApi.toFile();
+        flags.api = Set.of(javaApi.toFile());
 
         return Stream.of(
             new FlagsAndRunner(flags.copy(e -> e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode()), JavaRunner.JavaVersion.V1_8)
@@ -176,7 +176,7 @@ public class ClassRunner {
                     "downgradetest",
                     getDowngradedJar(flags).toFile(),
                     target.toFile(),
-                    getApiJar(flags).toFile()
+                    Set.of(getApiJar(flags).toFile())
                 );
                 return target;
             } catch (IOException ex) {
@@ -198,7 +198,7 @@ public class ClassRunner {
                 Path target = getApiPath(flags);
                 ZipDowngrader.downgradeZip(
                     ClassDowngrader.downgradeTo(flags.flags),
-                    flags.flags.api.toPath(),
+                    javaApi,
                     Set.of(),
                     target
                 );
@@ -390,6 +390,7 @@ public class ClassRunner {
     }
 
     public static void compareResults(String mainClass, FlagsAndRunner javaVersion, Map.Entry<Integer, String> originalResult, Map.Entry<Integer, String> downgradedResult) {
+        assertEquals(0, originalResult.getKey());
         assertEquals(originalResult.getValue(), downgradedResult.getValue(), "Output mismatch for " + mainClass + " on " + javaVersion.readableSlug());
         assertEquals(originalResult.getKey(), downgradedResult.getKey(), "Exit code mismatch for " + mainClass + " on " + javaVersion.readableSlug());
     }

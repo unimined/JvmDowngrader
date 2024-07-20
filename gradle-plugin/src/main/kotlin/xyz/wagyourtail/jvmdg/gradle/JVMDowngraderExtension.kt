@@ -45,6 +45,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
     /**
      * the main api jar to use for downgrading
      */
+    @get:Internal
     var apiJarDefault by LazyMutable {
         val apiJar = project.file(".gradle").resolve("jvmdg/java-api-${version}.jar")
         if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
