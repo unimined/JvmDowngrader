@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.jar.JarFile;
 
 public class Bootstrap {
@@ -66,24 +67,32 @@ public class Bootstrap {
     public static void premain(String args, Instrumentation instrumentation) throws IOException, URISyntaxException, UnmodifiableClassException {
         LOGGER.info("Starting JVMDowngrader Bootstrap in agent mode.");
         // downgrade api
-        Path zip = flags.findJavaApi().toPath();
-        String zipSha = sha1(zip);
-        Path tmp = Constants.DIR.toPath().resolve("java-api-downgraded-" + currentVersionDowngrader.target + "-" + zipSha.substring(0, 8) + ".jar");
-        boolean downgrade = false;
-        if (!Files.exists(tmp)) {
-            LOGGER.warn("Downgrading java-api.jar as its hash changed or this is first launch, this may take a minute...");
-            downgrade = true;
-        }
-        if (downgrade) {
-            Files.createDirectories(tmp.getParent());
-            for (File file : tmp.getParent().toFile().listFiles()) {
-                if (file.isDirectory()) continue;
-                file.delete();
+        for (File zip : flags.findJavaApi()) {
+            String zipSha = sha1(zip.toPath());
+            String name = zip.getName();
+            int idx = name.lastIndexOf('.');
+            if (idx != -1) {
+                name = name.substring(0, idx);
             }
-            Files.createDirectories(tmp.getParent());
-            ZipDowngrader.downgradeZip(currentVersionDowngrader, zip, new HashSet<URL>(), tmp);
+            Path tmp = Constants.DIR.toPath().resolve(name + "-downgraded-" + currentVersionDowngrader.target + "-" + zipSha.substring(0, 8) + ".jar");
+            boolean downgrade = false;
+            if (!Files.exists(tmp)) {
+                LOGGER.warn("Downgrading " + zip.getName() + " as its hash changed or this is first launch, this may take a minute...");
+                downgrade = true;
+            }
+            if (downgrade) {
+                Files.createDirectories(tmp.getParent());
+                for (File file : tmp.getParent().toFile().listFiles()) {
+                    if (file.isDirectory()) continue;
+                    if (file.getName().startsWith(name + "-downgraded-" + currentVersionDowngrader.target) && file.getName().endsWith(".jar")) {
+                        file.delete();
+                    }
+                }
+                Files.createDirectories(tmp.getParent());
+                ZipDowngrader.downgradeZip(currentVersionDowngrader, zip.toPath(), new HashSet<URL>(), tmp);
+            }
+            instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(tmp.toFile()));
         }
-        instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(tmp.toFile()));
         // add self
         URL self = ClassDowngrader.class.getProtectionDomain().getCodeSource().getLocation();
         instrumentation.appendToBootstrapClassLoaderSearch(new JarFile(self.toURI().getPath()));
