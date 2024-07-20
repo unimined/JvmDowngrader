@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.gradle.task.files
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
 import org.gradle.api.tasks.*
-import org.jetbrains.annotations.ApiStatus
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
@@ -23,8 +22,20 @@ abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
         project.extensions.getByType(JVMDowngraderExtension::class.java)
     }
 
+    private var _inputCollection: FileCollection by FinalizeOnRead(MustSet())
+
     @get:InputFiles
-    var inputCollection: FileCollection by FinalizeOnRead(MustSet())
+    var inputCollection: FileCollection
+        get() = _inputCollection
+        set(value) {
+            _inputCollection = value
+
+            // use _inputCollection to finalize it immediately
+            val fd = _inputCollection.map { it to temporaryDir.resolve(it.name) }
+            outputs.dirs(*fd.filter { it.first.isDirectory }.map { it.second }.toTypedArray())
+            outputs.files(*fd.filter { it.first.isFile }.map { it.second }.toTypedArray())
+
+        }
 
     @get:InputFiles
     var classpath: FileCollection by FinalizeOnRead(LazyMutable {
@@ -41,20 +52,11 @@ abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
      */
     @get:Internal
     val outputCollection: FileCollection by lazy {
-        val fd = inputCollection.map { it to temporaryDir.resolve(it.name) }
-
-        outputs.dirs(*fd.filter { it.first.isDirectory }.map { it.second }.toTypedArray())
-        outputs.files(*fd.filter { it.first.isFile }.map { it.second }.toTypedArray())
-
         outputs.files
     }
 
     init {
-        downgradeTo.convention(jvmdg.downgradeTo).finalizeValueOnRead()
-        apiJar.convention(jvmdg.apiJar).finalizeValueOnRead()
-        quiet.convention(jvmdg.quiet).finalizeValueOnRead()
-        debug.convention(jvmdg.debug).finalizeValueOnRead()
-        debugSkipStubs.convention(jvmdg.debugSkipStubs).finalizeValueOnRead()
+        jvmdg.convention(this)
     }
 
     @TaskAction

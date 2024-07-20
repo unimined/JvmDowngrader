@@ -11,16 +11,18 @@ import java.util.Iterator;
 public class Logger {
     private final String prefix;
     private final Level level;
+    private final boolean useAnsiColors;
     private final PrintStream out;
 
-    public Logger(String prefix, Level level, PrintStream out) {
+    public Logger(String prefix, Level level, boolean useAnsiColors, PrintStream out) {
         this.prefix = prefix;
         this.level = level;
         this.out = out;
+        this.useAnsiColors = useAnsiColors;
     }
 
-    public Logger(Class<?> clazz, Level level, PrintStream out) {
-        this(clazz.getSimpleName(), level, out);
+    public Logger(Class<?> clazz, Level level, boolean useAnsiColors, PrintStream out) {
+        this(clazz.getSimpleName(), level, useAnsiColors, out);
     }
 
     public boolean is(Level level) {
@@ -29,7 +31,12 @@ public class Logger {
 
     public void log(Level level, String message) {
         if (is(level)) {
-            out.println(level.wrap("[" + prefix + "] " + level + ": " + message));
+            String messageContent = "[" + prefix + "] " + level + ": " + message;
+            if (useAnsiColors) {
+                out.println(level.ansiColor(messageContent));
+            } else {
+                out.println(messageContent);
+            }
         }
     }
 
@@ -88,7 +95,7 @@ public class Logger {
     }
 
     public Logger subLogger(String prefix) {
-        return new Logger(this.prefix + "/" + prefix, level, out);
+        return new Logger(this.prefix + "/" + prefix, level, useAnsiColors, out);
     }
 
     public Logger subLogger(Class<?> clazz) {
@@ -129,7 +136,7 @@ public class Logger {
             return ansiColor;
         }
 
-        public String wrap(String message) {
+        public String ansiColor(String message) {
             return ansiColor.wrap(message);
         }
     }

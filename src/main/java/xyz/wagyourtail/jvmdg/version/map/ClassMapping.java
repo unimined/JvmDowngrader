@@ -187,6 +187,18 @@ public class ClassMapping {
         for (ClassMapping parent : parents.get()) {
             Pair<Method, Stub> node = parent.getStubFor(member, false, runtimeAvailable, special, warnings);
             if (node != null) {
+
+                // check if explicitly excluded from stubbing
+                // ie. method exists on the subtype in question
+                for (String child : node.getSecond().excludeChild()) {
+                    if (child.startsWith("L") && child.endsWith(";")) {
+                        child = child.substring(1, child.length() - 1);
+                    }
+                    if (child.equals(current.getInternalName())) {
+                        return null;
+                    }
+                }
+
                 return node;
             }
         }

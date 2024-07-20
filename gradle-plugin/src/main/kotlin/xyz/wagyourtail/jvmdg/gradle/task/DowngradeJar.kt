@@ -34,12 +34,7 @@ abstract class DowngradeJar : Jar(), DowngradeFlags {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
 
-        downgradeTo.convention(jvmdg.downgradeTo).finalizeValueOnRead()
-        apiJar.convention(jvmdg.apiJar).finalizeValueOnRead()
-        quiet.convention(jvmdg.quiet).finalizeValueOnRead()
-        debug.convention(jvmdg.debug).finalizeValueOnRead()
-        debugSkipStubs.convention(jvmdg.debugSkipStubs).finalizeValueOnRead()
-
+        jvmdg.convention(this)
     }
 
     @TaskAction

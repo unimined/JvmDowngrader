@@ -4,7 +4,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_CharSequence {
 
-    @Stub
+    @Stub(excludeChild = "java/lang/String")
     public static boolean isEmpty(CharSequence cs) {
         return cs.length() == 0;
     }

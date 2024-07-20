@@ -43,12 +43,7 @@ abstract class ShadeFiles : ConventionTask(), ShadeFlags {
     }
 
     init {
-        downgradeTo.convention(jvmdg.downgradeTo).finalizeValueOnRead()
-        apiJar.convention(jvmdg.apiJar).finalizeValueOnRead()
-        quiet.convention(jvmdg.quiet).finalizeValueOnRead()
-        debug.convention(jvmdg.debug).finalizeValueOnRead()
-        debugSkipStubs.convention(jvmdg.debugSkipStubs).finalizeValueOnRead()
-        shadePath.convention(jvmdg.shadePath).finalizeValueOnRead()
+        jvmdg.convention(this)
     }
 
 //    fun setShadePath(path: String) {

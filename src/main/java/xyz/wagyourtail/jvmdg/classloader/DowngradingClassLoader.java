@@ -25,9 +25,11 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
 
     public DowngradingClassLoader(ClassDowngrader downgrader) throws IOException {
         super();
-        File apiJar = downgrader.flags.findJavaApi();
+        Set<File> apiJar = downgrader.flags.findJavaApi();
         if (apiJar != null) {
-            delegates.add(new JarFileResourceProvider(new JarFile(apiJar)));
+            for (File file : apiJar) {
+                delegates.add(new JarFileResourceProvider(new JarFile(file)));
+            }
         }
         this.holder = downgrader;
         if (downgrader.target != Utils.getCurrentClassVersion()) {
@@ -40,9 +42,11 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
 
     public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) throws IOException {
         super(parent);
-        File apiJar = downgrader.flags.findJavaApi();
+        Set<File> apiJar = downgrader.flags.findJavaApi();
         if (apiJar != null) {
-            delegates.add(new JarFileResourceProvider(new JarFile(apiJar)));
+            for (File file : apiJar) {
+                delegates.add(new JarFileResourceProvider(new JarFile(file)));
+            }
         }
         this.holder = downgrader;
         if (downgrader.target != Utils.getCurrentClassVersion()) {

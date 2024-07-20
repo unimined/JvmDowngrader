@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.test;
+package xyz.wagyourtail.jvmdg.test.integration;
 
 import org.apache.commons.io.function.IOStream;
 import org.junit.jupiter.api.BeforeAll;
@@ -14,6 +14,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
+import xyz.wagyourtail.jvmdg.test.JavaRunner;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
@@ -68,7 +69,7 @@ public class ClassRunner {
     private static Stream<FlagsAndRunner> flags() {
         Flags flags = ClassRunner.flags.copy();
         flags.quiet = true;
-        flags.api = javaApi.toFile();
+        flags.api = Set.of(javaApi.toFile());
 
         return Stream.of(
             new FlagsAndRunner(flags.copy(e -> e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode()), JavaRunner.JavaVersion.V1_8)
@@ -175,7 +176,7 @@ public class ClassRunner {
                     "downgradetest",
                     getDowngradedJar(flags).toFile(),
                     target.toFile(),
-                    getApiJar(flags).toFile()
+                    Set.of(getApiJar(flags).toFile())
                 );
                 return target;
             } catch (IOException ex) {
@@ -197,7 +198,7 @@ public class ClassRunner {
                 Path target = getApiPath(flags);
                 ZipDowngrader.downgradeZip(
                     ClassDowngrader.downgradeTo(flags.flags),
-                    flags.flags.api.toPath(),
+                    javaApi,
                     Set.of(),
                     target
                 );
@@ -218,7 +219,7 @@ public class ClassRunner {
     }
 
     @ParameterizedTest
-    @MethodSource({"xyz.wagyourtail.jvmdg.test.ClassRunner#arguments"})
+    @MethodSource({"xyz.wagyourtail.jvmdg.test.integration.ClassRunner#arguments"})
     @Execution(ExecutionMode.CONCURRENT)
     public void testDowngrade(String mainClass, FlagsAndRunner javaVersion) throws IOException, InterruptedException {
         System.out.println("TEST_DOWNGRADE: Running " + mainClass + " on " + javaVersion.readableSlug());
@@ -389,6 +390,7 @@ public class ClassRunner {
     }
 
     public static void compareResults(String mainClass, FlagsAndRunner javaVersion, Map.Entry<Integer, String> originalResult, Map.Entry<Integer, String> downgradedResult) {
+        assertEquals(0, originalResult.getKey());
         assertEquals(originalResult.getValue(), downgradedResult.getValue(), "Output mismatch for " + mainClass + " on " + javaVersion.readableSlug());
         assertEquals(originalResult.getKey(), downgradedResult.getKey(), "Exit code mismatch for " + mainClass + " on " + javaVersion.readableSlug());
     }

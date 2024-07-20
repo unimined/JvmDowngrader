@@ -4,6 +4,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
@@ -25,12 +26,15 @@ public class Main {
         parser.addChildren(
                 new Arguments("--help", "Prints this help", new String[]{"-h"}, null),
                 new Arguments("--version", "Prints the version", new String[]{"-v"}, null),
-                new Arguments("--quiet", "Suppress all warnings", new String[]{"-q"}, null),
-                new Arguments("--api", "Provide a java-api jar", new String[]{"-a"}, new String[]{"jar"}),
+                new Arguments("--logLevel", "Set the log level", new String[]{"-l"}, new String[]{"level"}),
+                new Arguments("--quiet", "[Deprecated] Suppress all warnings", new String[]{"-q"}, null),
+                new Arguments("--ignoreWarningsIn", "Ignore warnings of missing class/member stubs in package/class matching", new String[]{"-i"}, new String[]{"package or class identifier"}),
+                new Arguments("--api", "Provide a java-api jar or jars", new String[]{"-a"}, new String[]{"jar"}),
                 new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
                 new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
-                        new Arguments("--print", "Enable printing debug info", new String[]{"-p"}, null),
+                        new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
                         new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
+                        new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
                         new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
                 ),
                 new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
@@ -73,19 +77,34 @@ public class Main {
                 case "--quiet":
                     flags.quiet = true;
                     break;
+                case "--logLevel":
+                    if (entry.getValue().size() > 1) {
+                        throw new IllegalArgumentException("Multiple log levels specified");
+                    }
+                    flags.logLevel = Logger.Level.valueOf(entry.getValue().get(0)[0].toUpperCase());
+                    break;
                 case "--classVersion":
                     if (entry.getValue().size() > 1) {
                         throw new IllegalArgumentException("Multiple class versions specified");
                     }
                     flags.classVersion = Integer.parseInt(entry.getValue().get(0)[0]);
                     break;
-                case "--api":
-                    if (entry.getValue().size() > 1) {
-                        throw new IllegalArgumentException("Multiple api paths specified");
+                case "--ignoreWarningsIn":
+                    for (String[] s : entry.getValue()) {
+                        for (String string : s) {
+                            flags.addIgnore(string);
+                        }
                     }
-                    File api = new File(entry.getValue().get(0)[0]);
-                    if (!api.exists()) {
-                        throw new IllegalArgumentException("Api jar does not exist");
+                    break;
+                case "--api":
+                    Set<File> api = new HashSet<>();
+                    for (String[] s : entry.getValue()) {
+                        for (String string : s) {
+                            String[] split = string.split(File.pathSeparator);
+                            for (String s1 : split) {
+                                api.add(new File(s1));
+                            }
+                        }
                     }
                     flags.api = api;
                     break;
@@ -123,6 +142,9 @@ public class Main {
                 case "--print":
                     flags.printDebug = true;
                     break;
+                case "--dumpClasses":
+                    flags.debugDumpClasses = true;
+                    break;
                 case "--skipStubs":
                     for (String[] s : entry.getValue()) {
                         for (String string : s) {
@@ -137,8 +159,14 @@ public class Main {
             if (args.get("downgradeApi").size() > 1) {
                 throw new IllegalArgumentException("Multiple output paths specified");
             }
+            if (flags.findJavaApi().isEmpty()){
+                throw new IllegalArgumentException("No api jar found");
+            }
+            if (flags.findJavaApi().size() > 1) {
+                throw new IllegalArgumentException("Multiple api jars found");
+            }
             try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
-                ZipDowngrader.downgradeZip(downgrader, flags.api.toPath(), new HashSet<URL>(), new File(args.get("downgradeApi").get(0)[0]).toPath());
+                ZipDowngrader.downgradeZip(downgrader, flags.findJavaApi().iterator().next().toPath(), new HashSet<URL>(), new File(args.get("downgradeApi").get(0)[0]).toPath());
             }
         }
     }
@@ -222,15 +250,17 @@ public class Main {
         if (args.get("--prefix").size() > 1) {
             throw new IllegalArgumentException("Multiple prefixes specified");
         }
-        File downgradedApi = null;
+        Set<File> downgradedApi = new HashSet<>();
         if (args.containsKey("--downgradedApi")) {
-            if (args.get("--downgradedApi").size() > 1) {
-                throw new IllegalArgumentException("Multiple downgraded api paths specified");
+            for (String[] s : args.get("--downgradedApi")) {
+                String[] split = s[0].split(File.pathSeparator);
+                for (String s1 : split) {
+                    downgradedApi.add(new File(s1));
+                }
             }
-            downgradedApi = new File(args.get("--downgradedApi").get(0)[0]);
-            if (!downgradedApi.exists()) {
-                throw new IllegalArgumentException("Downgraded api jar does not exist");
-            }
+        }
+        if (downgradedApi.isEmpty()) {
+            downgradedApi = null;
         }
 
         Map<Path, Path> targets = new HashMap<>();

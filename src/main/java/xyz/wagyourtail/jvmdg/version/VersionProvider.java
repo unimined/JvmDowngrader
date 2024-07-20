@@ -331,6 +331,7 @@ public abstract class VersionProvider {
             logger.warn("failed to create stub(s) for " + clazz.getName(), e);
         }
         if (!warnings.isEmpty() && logger.is(Logger.Level.WARN)) {
+            if (downgrader.flags.checkInIgnoreWarnings(clazz.getName())) return;
             StringBuilder sb = new StringBuilder();
             for (String warning : warnings) {
                 sb.append("    ").append(warning).append("\n");
@@ -420,11 +421,13 @@ public abstract class VersionProvider {
                 owner.methods.set(owner.methods.indexOf(method), newMethod);
             }
             if (!warnings.isEmpty() && logger.is(Logger.Level.WARN)) {
-                StringBuilder sb = new StringBuilder();
-                for (String warning : warnings) {
-                    sb.append("    ").append(warning).append("\n");
+                if (!downgrader.flags.checkInIgnoreWarnings(owner.name + "." + method.name)) {
+                    StringBuilder sb = new StringBuilder();
+                    for (String warning : warnings) {
+                        sb.append("    ").append(warning).append("\n");
+                    }
+                    logger.warn("Warnings for " + owner.name + "." + method.name + method.desc + " (" + warnings.size() + ") : \n" + sb);
                 }
-                logger.warn("Warnings for " + owner.name + "." + method.name + method.desc + " (" + warnings.size() + ") : \n" + sb);
             }
         }
         return owner;
@@ -836,12 +839,13 @@ public abstract class VersionProvider {
             return null;
         }
         printWarnings(warnings, className);
-        clazz.version = inputVersion - 1;
+        clazz.version = outputVersion;
         return clazz;
     }
 
-    private void printWarnings(Set<String> warnings, String className) {
+    public void printWarnings(Set<String> warnings, String className) {
         if (!warnings.isEmpty() && logger.is(Logger.Level.WARN)) {
+            if (downgrader.flags.checkInIgnoreWarnings(className)) return;
             StringBuilder sb = new StringBuilder();
             for (String warning : warnings) {
                 sb.append("    ").append(warning).append("\n");
