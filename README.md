@@ -6,6 +6,20 @@ This is currently capable of downgrading from Java 22 to Java 8. Java 7 may come
 
 Currently attempting to downgrade to Java 7 will produce valid class files, but some of the API stubs are broken, and many common ones dont exist.
 
+### After downgrading you must  either shade, or add the api jar to the classpath at runtime.
+
+**It is recommended to use the shade task/cli as documented below, as it will only include necessary methods in your jar.**
+
+alternatively, you can add the api jar in its entirety to the classpath when running the jar.
+
+The api jar can be found at `xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.9.0:downgraded-8`
+there is also a `downgraded-11` jar there. 
+
+alternatively, to produce other versions you can generate one yourself using the cli:
+`java -jar JvmDowngrader-all.jar -c 53 debug downgradeApi ./java-api-9.jar`
+
+Api jars for older java versions *can* still be used for newer java, but may not be as efficient.
+
 ## Gradle Plugin
 
 This downgrades the output of a jar task using another task.
@@ -38,12 +52,12 @@ in `build.gradle`:
 ```gradle
 // add the plugin
 plugins {
-    id 'xyz.wagyourtail.jvmdowngrader' version '0.7.0'
+    id 'xyz.wagyourtail.jvmdowngrader' version '0.9.0'
 }
 
 // optionally you can change some globals, here are their default values:
 jvmdg.downgradeTo = JavaVersion.VERSION_1_8
-jvmdg.apiJar = this.getClass().getResourceAsStream("jvmdg/java-api-${version}.jar").writeToFile("build/jvmdg/java-api-${version}.jar")
+jvmdg.apiJar = [this.getClass().getResourceAsStream("jvmdg/java-api-${version}.jar").writeToFile("build/jvmdg/java-api-${version}.jar")]
 jvmdg.quiet = false
 jvmdg.debug = false
 jvmdg.debugSkipStubs = [].toSet()
