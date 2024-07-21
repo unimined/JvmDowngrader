@@ -97,7 +97,7 @@ public class Main {
                     }
                     break;
                 case "--api":
-                    Set<File> api = new HashSet<>();
+                    List<File> api = new ArrayList<>();
                     for (String[] s : entry.getValue()) {
                         for (String string : s) {
                             String[] split = string.split(File.pathSeparator);

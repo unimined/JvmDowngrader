@@ -21,6 +21,7 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -36,7 +37,7 @@ public class Flags {
     /**
      * sets the api jar to use, if null will attempt to automatically find it
      */
-    public Set<File> api = null;
+    public List<File> api = null;
 
     /**
      * sets the log level to {@link Logger.Level#FATAL}

@@ -97,7 +97,7 @@ interface DowngradeFlags : TransformParameters {
 
 fun DowngradeFlags.toFlags(): Flags {
     val flags = Flags()
-    flags.api = apiJar.orNull?.toSet()
+    flags.api = apiJar.orNull
     flags.quiet = quiet.getOrElse(false)
     flags.logAnsiColors = logAnsiColors.getOrElse(true)
     flags.logLevel = Logger.Level.valueOf(logLevel.getOrElse("INFO").uppercase())

@@ -69,7 +69,7 @@ public class ClassRunner {
     private static Stream<FlagsAndRunner> flags() {
         Flags flags = ClassRunner.flags.copy();
         flags.quiet = true;
-        flags.api = Set.of(javaApi.toFile());
+        flags.api = List.of(javaApi.toFile());
 
         return Stream.of(
             new FlagsAndRunner(flags.copy(e -> e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode()), JavaRunner.JavaVersion.V1_8)
