@@ -130,7 +130,7 @@ public class PathDowngrader {
                             try(InputStream is = Files.newInputStream(path)) {
                                 Manifest manifest = new Manifest(is);
                                 Attributes attr = manifest.getMainAttributes();
-                                attr.put("JvmDowngrader-Version", Flags.jvmdgVersion);
+                                attr.putValue("JvmDowngrader-Version", Flags.jvmdgVersion);
 
                                 try (OutputStream os = Files.newOutputStream(outFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
                                     manifest.write(os);
