@@ -81,7 +81,6 @@ public class Bootstrap {
                 downgrade = true;
             }
             if (downgrade) {
-                Files.createDirectories(tmp.getParent());
                 for (File file : tmp.getParent().toFile().listFiles()) {
                     if (file.isDirectory()) continue;
                     if (file.getName().startsWith(name + "-downgraded-" + currentVersionDowngrader.target) && file.getName().endsWith(".jar")) {

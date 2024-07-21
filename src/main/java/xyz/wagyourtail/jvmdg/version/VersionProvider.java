@@ -740,6 +740,8 @@ public abstract class VersionProvider {
         ensureInit(downgrader);
         final Set<String> warnings = new LinkedHashSet<>();
 
+        clazz.version = outputVersion;
+
         final IOFunction<Type, Set<MemberNameAndDesc>> getMembers = new IOFunction<Type, Set<MemberNameAndDesc>>() {
             @Override
             public Set<MemberNameAndDesc> apply(Type o) throws IOException {
@@ -839,7 +841,6 @@ public abstract class VersionProvider {
             return null;
         }
         printWarnings(warnings, className);
-        clazz.version = outputVersion;
         return clazz;
     }
 

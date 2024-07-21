@@ -114,7 +114,10 @@ public class PathDowngrader {
                                         for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                                             String internal = entry.getKey();
                                             Path p = out.resolve(internal + ".class");
-                                            Files.createDirectories(p.getParent());
+                                            Path parent = p.getParent();
+                                            if (parent != null) {
+                                                Files.createDirectories(parent);
+                                            }
                                             Files.write(p, entry.getValue(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
                                         }
                                     }
@@ -122,12 +125,14 @@ public class PathDowngrader {
                                     throw new IOException("Failed to downgrade " + path, e);
                                 }
                             }
-                        } else if (path.toString().equals("META-INF/MANIFEST.MF")) {
+                        } else if (relativized.toString().equals("META-INF/MANIFEST.MF")) {
                             // add version number to manifest
                             try(InputStream is = Files.newInputStream(path)) {
                                 Manifest manifest = new Manifest(is);
                                 Attributes attr = manifest.getMainAttributes();
-                                attr.put("JvmDowngrader-Version", Flags.jvmdgVersion);
+                                if (Flags.jvmdgVersion != null) {
+                                    attr.putValue("JvmDowngrader-Version", Flags.jvmdgVersion);
+                                }
 
                                 try (OutputStream os = Files.newOutputStream(outFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
                                     manifest.write(os);
@@ -135,7 +140,7 @@ public class PathDowngrader {
                             }
                         } else {
                             // strip signatures since downgraded classes will not have the same signatures
-                            if (path.toString().startsWith("META-INF/") && (path.toString().endsWith(".SF") || path.toString().endsWith(".DSA") || path.toString().endsWith(".RSA"))) {
+                            if (relativized.toString().startsWith("META-INF/") && (path.toString().endsWith(".SF") || path.toString().endsWith(".DSA") || path.toString().endsWith(".RSA"))) {
                                 return;
                             }
                             Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
