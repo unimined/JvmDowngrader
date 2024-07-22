@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -162,9 +163,9 @@ public class Flags {
     /**
      * internal method to resolve the java api jar
      */
-    private static Set<File> foundApi = null;
+    private static List<File> foundApi = null;
 
-    public Set<File> findJavaApi() {
+    public List<File> findJavaApi() {
         try {
             if (api != null) {
                 return api;
@@ -176,7 +177,7 @@ public class Flags {
             synchronized (Flags.class) {
                 Constants.DIR.mkdirs();
                 Path tmp = Constants.DIR.toPath().resolve("jvmdg-api- " + jvmdgVersion + " .jar");
-                Set<File> prop = getJavaApiFromSystemProperty();
+                List<File> prop = getJavaApiFromSystemProperty();
                 if (prop != null) {
                     foundApi = prop;
                     return prop;
@@ -184,13 +185,13 @@ public class Flags {
                 URL url = getJavaApiFromShade();
                 if (Files.exists(tmp)) {
                     if (url == null) {
-                        foundApi = Collections.singleton(tmp.toFile());
+                        foundApi = Collections.singletonList(tmp.toFile());
                         return foundApi;
                     } else {
                         try (InputStream in = url.openStream()) {
                             try (InputStream in2 = Files.newInputStream(tmp)) {
                                 if (hash(in).equals(hash(in2))) {
-                                    foundApi = Collections.singleton(tmp.toFile());
+                                    foundApi = Collections.singletonList(tmp.toFile());
                                     return foundApi;
                                 }
                             }
@@ -204,7 +205,7 @@ public class Flags {
                 if (url != null) {
                     try (InputStream in = url.openStream()) {
                         Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
-                        foundApi = Collections.singleton(tmp.toFile());
+                        foundApi = Collections.singletonList(tmp.toFile());
                         return foundApi;
                     }
                 }
@@ -276,12 +277,12 @@ public class Flags {
         return ClassDowngrader.class.getResource("/META-INF/lib/java-api.jar");
     }
 
-    private Set<File> getJavaApiFromSystemProperty() throws IOException {
+    private List<File> getJavaApiFromSystemProperty() throws IOException {
         String api = System.getProperty(Constants.JAVA_API);
         if (api == null) {
             return null;
         }
-        Set<File> files = new HashSet<>();
+        List<File> files = new ArrayList<>();
         for (String s : api.split(File.pathSeparator)) {
             files.add(new File(s));
         }
