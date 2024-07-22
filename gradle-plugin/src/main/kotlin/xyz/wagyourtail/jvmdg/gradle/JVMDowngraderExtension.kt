@@ -96,6 +96,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                     ZipDowngrader.downgradeZip(it, path.toPath(), emptySet(), downgraded.toPath())
                 }
             }
+            jars.add(downgraded)
         }
         jars
     }
