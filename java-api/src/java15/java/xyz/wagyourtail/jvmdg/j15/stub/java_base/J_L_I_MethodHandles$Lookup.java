@@ -57,6 +57,7 @@ public class J_L_I_MethodHandles$Lookup {
         Map<String, byte[]> classBytes = ClassDowngrader.getCurrentVersionDowngrader().downgrade(name, bytes, true, loader);
         Class<?> c = null;
         for (Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
+            if (entry.getKey().startsWith("META-INF/versions")) continue;
             if (Objects.equals(entry.getKey(), name.get())) {
                 c = loader.defineClass0(entry.getValue(), 0, entry.getValue().length);
             } else {

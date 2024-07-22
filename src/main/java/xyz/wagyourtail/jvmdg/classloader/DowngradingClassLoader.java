@@ -120,6 +120,7 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
             }
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 if (entry.getKey().equals(internalName)) continue; // skip the main class (load later and returned)
+                if (entry.getKey().startsWith("META-INF/versions")) continue; // skip the versioned classes
                 String extraName = entry.getKey().replace('/', '.');
                 byte[] extraBytes = entry.getValue();
                 try {

@@ -17,6 +17,9 @@ public class Constants {
     public static final String DEBUG_SKIP_STUBS = "jvmdg.debug.skipStubs";
     public static final String DEBUG_DUMP_CLASSES = "jvmdg.debug.dumpClasses";
 
+    public static final String MULTI_RELEASE_ORIGINAL = "jvmdg.multiReleaseOriginal";
+    public static final String MULTI_RELEASE_VERSIONS = "jvmdg.multiReleaseVersions";
+
 
     public static final File DIR = new File(".jvmdg");
     public static final File DEBUG_DIR = new File(DIR, "debug");

@@ -13,7 +13,7 @@ public class J_U_C_ForkJoinWorkerThread {
         var IMPL_LOOKUP = Utils.getImplLookup();
         var workQueue = Class.forName("java.util.concurrent.ForkJoinPool.WorkQueue");
         var queue = IMPL_LOOKUP.findGetter(ForkJoinWorkerThread.class, "workQueue", workQueue).invoke(self);
-        return (int) IMPL_LOOKUP.findVirtual(workQueue, "queueSize", MethodType.methodType(int.class)).invokeExact(queue);
+        return (int) IMPL_LOOKUP.findVirtual(workQueue, "queueSize", MethodType.methodType(int.class)).invoke(queue);
     }
 
 }

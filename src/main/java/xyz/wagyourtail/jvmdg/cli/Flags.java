@@ -94,6 +94,18 @@ public class Flags {
      */
     public boolean debugDumpClasses = Boolean.getBoolean(Constants.DEBUG_DUMP_CLASSES);
 
+    /**
+     * if should move the original class file to the multi-release directory
+     * @since 1.0.0
+     */
+    public boolean multiReleaseOriginal = Boolean.getBoolean(Constants.MULTI_RELEASE_ORIGINAL);
+
+    /**
+     * if should provide extra multi-release versions. As class versions, not java versions.
+     * @since 1.0.0
+     */
+    public Set<Integer> multiReleaseVersions = new HashSet<>(getMultiReleaseVersions());
+
     public Flags() {
         getIgnoreWarnings();
     }
@@ -261,6 +273,16 @@ public class Flags {
             skip.add(Integer.parseInt(s));
         }
         return skip;
+    }
+
+    private Set<Integer> getMultiReleaseVersions() {
+        Set<Integer> versions = new HashSet<>();
+        String multiReleaseVersions = System.getProperty(Constants.MULTI_RELEASE_VERSIONS);
+        if (multiReleaseVersions == null) return versions;
+        for (String s : multiReleaseVersions.split(",")) {
+            versions.add(Integer.parseInt(s));
+        }
+        return versions;
     }
 
     private TreeMap<String, WildcardType> getIgnoreWarnings() {

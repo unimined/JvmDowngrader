@@ -70,6 +70,7 @@ public class J_L_I_MethodHandles {
             });
             Class<?> c = null;
             for (Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
+                if (entry.getKey().startsWith("META-INF/versions")) continue;
                 if (Objects.equals(entry.getKey(), name.get())) {
                     c = (Class<?>) DefineClass.invokeExact(loader, entry.getValue(), 0, entry.getValue().length);
                 } else {

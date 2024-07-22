@@ -113,6 +113,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                     bytes = entry.getValue();
                     continue;
                 }
+                if (entry.getKey().startsWith("META-INF/versions")) continue; // skip the versioned classes
                 try {
                     defineClass.bindTo(loader).invoke(entry.getKey().replace('/', '.'), entry.getValue(), 0, entry.getValue().length);
                 } catch (Throwable throwable) {

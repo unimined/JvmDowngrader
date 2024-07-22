@@ -234,6 +234,7 @@ public class ClassDowngrader implements Closeable {
 
     protected Set<ClassNode> downgrade(ClassNode clazz, boolean enableRuntime, Function<String, ClassNode> getReadOnly) throws IOException {
         Set<ClassNode> classes = new HashSet<>();
+        Set<ClassNode> multiReleaseHolder = new HashSet<>();
         classes.add(clazz);
         int version = clazz.version;
         while (version > target) {
@@ -250,8 +251,15 @@ public class ClassDowngrader implements Closeable {
             }
             classes = newClasses;
             version = downgrader.outputVersion;
+            if (flags.multiReleaseVersions.contains(version)) {
+                // copy to new class node
+                ClassNode multiRelease = new ClassNode();
+                clazz.accept(multiRelease);
+                multiReleaseHolder.add(multiRelease);
+            }
         }
-        return classes;
+        multiReleaseHolder.addAll(classes);
+        return multiReleaseHolder;
     }
 
     public List<VersionProvider> versionProviders(int inputVersion) {
@@ -289,6 +297,9 @@ public class ClassDowngrader implements Closeable {
             throw new RuntimeException("Class name mismatch: " + name.get() + " != " + node.name);
         }
         Map<String, byte[]> outputs = new HashMap<>();
+        if (flags.multiReleaseOriginal) {
+            outputs.put("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + name.get(), bytes);
+        }
         try {
             logger.trace("Transforming " + name.get());
             Set<ClassNode> extra = downgrade(node, enableRuntime, new Function<String, ClassNode>() {
@@ -317,7 +328,13 @@ public class ClassDowngrader implements Closeable {
 //                    } catch (IOException ignored) {
 //                    }
 //                }
-                outputs.put(c.name, classNodeToBytes(c));
+                byte[] cBytes = classNodeToBytes(c);
+                if (c.version > target) {
+                    // write to multi-release location
+                    outputs.put("META-INF/versions/" + Utils.classVersionToMajorVersion(c.version) + "/" + c.name, cBytes);
+                } else {
+                    outputs.put(c.name, cBytes);
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to downgrade " + name.get(), e);
