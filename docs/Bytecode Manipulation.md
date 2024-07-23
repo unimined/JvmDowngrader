@@ -38,6 +38,7 @@ Stubs have several other fields that change their behavior:
     mostly for things like reflection and runtime class definition.
 * `noSpecial` indicates that the stub should not be used for `INVOKESPECIAL` calls.
 * `downgradeVersion` adds an extra argument to the stub for the original version of the class, this is useful for multi-version stubs, such as reflection.
+* `excludeChild` prevent a stub from being applied to a child-class of the target. for example, `String#isEmpty` is since java 6, but `CharSequence#isEmpty` is since java 15.
 
 ### Modify
 
