@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j20.stub.java_base.*;
+import xyz.wagyourtail.jvmdg.j20.stub.java_net_http.J_N_H_HttpClient;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java20Downgrader extends VersionProvider {
@@ -29,6 +30,9 @@ public class Java20Downgrader extends VersionProvider {
         stub(J_U_R_MatchResult.class);
         stub(J_U_R_Matcher.class);
         // SSLParameters
+
+        // -- java.net.http --
+        stub(J_N_H_HttpClient.class);
 
         // -- java.compiler --
     }

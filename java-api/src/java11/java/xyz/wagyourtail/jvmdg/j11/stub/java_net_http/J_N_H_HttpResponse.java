@@ -1,22 +1,34 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.j11.stub.java_base.J_L_String;
+import xyz.wagyourtail.jvmdg.util.CharReader;
 import xyz.wagyourtail.jvmdg.util.Consumer;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import javax.net.ssl.SSLSession;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentMap;
@@ -68,7 +80,8 @@ public interface J_N_H_HttpResponse<T> {
     @Adapter("Ljava/net/http/HttpResponse$BodyHandlers;")
     class BodyHandlers {
         private static Charset charsetFrom(J_N_H_HttpHeaders headers) {
-            throw MissingStubError.create();
+//            throw MissingStubError.create();
+            return StandardCharsets.UTF_8;
         }
 
         public static BodyHandler<Void> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber) {
@@ -79,7 +92,7 @@ public interface J_N_H_HttpResponse<T> {
         public static <S extends Flow.Subscriber<? super List<ByteBuffer>>, T> BodyHandler<Void> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber, Function<? super S,? extends T> finisher) {
             Objects.requireNonNull(subscriber);
             Objects.requireNonNull(finisher);
-            return (info) -> BodySubscribers.fromSubscriber(subscriber, finisher);
+            return (info) -> (BodySubscriber<Void>) BodySubscribers.fromSubscriber(subscriber, finisher);
         }
 
         public static BodyHandler<Void> fromLineSubscriber(Flow.Subscriber<? super String> subscriber) {
@@ -120,10 +133,60 @@ public interface J_N_H_HttpResponse<T> {
             return ofFile(file, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         }
 
+        private static Map<String, String> headerContents(String input) {
+            CharReader reader = new CharReader(input, 0);
+            Map<String, String> headers = new HashMap<>();
+            while (!reader.exhausted()) {
+                String key;
+
+                if (Character.isWhitespace((char)reader.peek())) {
+                    reader.takeWhitespace();
+                }
+
+                if (reader.peek() == '"') {
+                    key = reader.takeString();
+
+                    if (Character.isWhitespace((char)reader.peek())) {
+                        reader.takeWhitespace();
+                    }
+
+                } else {
+                    key = reader.takeUntil(Set.of((int) ';', (int) '=')).trim();
+                }
+
+                if (reader.peek() == '=') {
+                    reader.take();
+
+                    String value;
+
+                    if (Character.isWhitespace((char)reader.peek())) {
+                        reader.takeWhitespace();
+                    }
+
+                    if (reader.peek() == '"') {
+                        value = reader.takeString();
+
+                        if (Character.isWhitespace((char)reader.peek())) {
+                            reader.takeWhitespace();
+                        }
+                    } else {
+                        value = reader.takeUntil(Set.of((int) ';')).trim();
+                    }
+
+                    headers.put(key, value);
+                } else {
+                    headers.put(key, null);
+                }
+
+            }
+            return headers;
+        }
+
         public static BodyHandler<Path> ofFileDownload(Path dir, OpenOption... options) {
             Objects.requireNonNull(dir);
             return (info) -> {
-                throw MissingStubError.create();
+                Map<String, String> content = headerContents(info.headers().firstValue("Content-Disposition").orElseThrow());
+                return BodySubscribers.ofFile(dir.resolve(content.get("filename")), options);
             };
         }
 
@@ -166,8 +229,36 @@ public interface J_N_H_HttpResponse<T> {
             return fromSubscriber(subscriber, (s) -> null);
         }
 
-        public static <S extends Flow.Subscriber<? super List<ByteBuffer>>, T> BodySubscriber<Void> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber, Function<? super S,? extends T> finisher) {
-            throw MissingStubError.create();
+        public static <S extends Flow.Subscriber<? super List<ByteBuffer>>, T> BodySubscriber<T> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber, Function<? super S,? extends T> finisher) {
+            CompletableFuture<T> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscriber.onSubscribe(subscription);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    subscriber.onNext(item);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    subscriber.onError(throwable);
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    subscriber.onComplete();
+                    result.complete(finisher.apply((S)subscriber));
+                }
+
+                @Override
+                public CompletionStage<T> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static BodySubscriber<Void> fromLineSubscriber(Flow.Subscriber<? super String> subscriber) {
@@ -180,19 +271,143 @@ public interface J_N_H_HttpResponse<T> {
             Charset charset,
             String lineSeparator
         ) {
-            throw MissingStubError.create();
+            CompletableFuture<Void> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscriber.onSubscribe(subscription);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    subscriber.onNext(item.stream().map((b) -> new String(b.array(), charset)).reduce("", String::concat));
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    subscriber.onError(throwable);
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    subscriber.onComplete();
+                    result.complete(finisher.apply(subscriber));
+                }
+
+                @Override
+                public CompletionStage<Void> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static BodySubscriber<String> ofString(Charset charset) {
-            throw MissingStubError.create();
+            CompletableFuture<String> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                final StringBuilder builder = new StringBuilder();
+
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    item.forEach((b) -> builder.append(new String(b.array(), charset)));
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    result.complete(builder.toString());
+                }
+
+                @Override
+                public CompletionStage<String> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static BodySubscriber<byte[]> ofByteArray() {
-            throw MissingStubError.create();
+            CompletableFuture<byte[]> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    item.forEach((b) -> {
+                        try {
+                            out.write(b.array());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    result.complete(out.toByteArray());
+                }
+
+                @Override
+                public CompletionStage<byte[]> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static BodySubscriber<Path> ofFile(Path file, OpenOption... options) {
-            throw MissingStubError.create();
+            CompletableFuture<Path> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    try {
+                        try (var out = Files.newOutputStream(file, options)) {
+                            for (ByteBuffer b : item) {
+                                out.write(b.array());
+                            }
+                        }
+                    } catch (IOException e) {
+                        result.completeExceptionally(e);
+                    }
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    result.complete(file);
+                }
+
+                @Override
+                public CompletionStage<Path> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static BodySubscriber<Path> ofFile(Path file) {
@@ -200,35 +415,280 @@ public interface J_N_H_HttpResponse<T> {
         }
 
         public static BodySubscriber<Void> ofByteArrayConsumer(Consumer<Optional<byte[]>> consumer) {
-            throw MissingStubError.create();
+            CompletableFuture<Void> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    item.forEach((b) -> {
+                        try {
+                            out.write(b.array());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                    consumer.accept(Optional.of(out.toByteArray()));
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    consumer.accept(Optional.empty());
+                    result.complete(null);
+                }
+
+                @Override
+                public CompletionStage<Void> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static BodySubscriber<InputStream> ofInputStream() {
-            throw MissingStubError.create();
+            CompletableFuture<InputStream> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    item.forEach((b) -> {
+                        try {
+                            out.write(b.array());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    result.complete(new ByteArrayInputStream(out.toByteArray()));
+                }
+
+                @Override
+                public CompletionStage<InputStream> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static BodySubscriber<Stream<String>> ofLines(Charset charset) {
-            throw MissingStubError.create();
+            CompletableFuture<Stream<String>> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                final StringBuilder builder = new StringBuilder();
+
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    item.forEach((b) -> builder.append(new String(b.array(), charset)));
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    result.complete(J_L_String.lines(builder.toString()));
+                }
+
+                @Override
+                public CompletionStage<Stream<String>> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static BodySubscriber<Flow.Publisher<List<ByteBuffer>>> ofPublisher() {
-            throw MissingStubError.create();
+            CompletableFuture<Flow.Publisher<List<ByteBuffer>>> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                List<ByteBuffer> buffers = new ArrayList<>();
+
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    buffers.addAll(item);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    result.complete(subscriber -> subscriber.onSubscribe(new Flow.Subscription() {
+                        @Override
+                        public void request(long n) {
+                            subscriber.onNext(buffers);
+                            subscriber.onComplete();
+                        }
+
+                        @Override
+                        public void cancel() {
+                            subscriber.onComplete();
+                        }
+                    }));
+                }
+
+                @Override
+                public CompletionStage<Flow.Publisher<List<ByteBuffer>>> getBody() {
+                    return result;
+                }
+
+            };
         }
 
         public static <U> BodySubscriber<U> replacing(U value) {
-            throw MissingStubError.create();
+            CompletableFuture<U> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    result.complete(value);
+                }
+
+                @Override
+                public CompletionStage<U> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static BodySubscriber<Void> discarding() {
-            throw MissingStubError.create();
+            CompletableFuture<Void> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    subscription.request(Long.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    result.complete(null);
+                }
+
+                @Override
+                public CompletionStage<Void> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static <T> BodySubscriber<T> buffering(BodySubscriber<T> downstream, int bufferSize) {
-            throw MissingStubError.create();
+            CompletableFuture<T> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                List<ByteBuffer> buffers = new ArrayList<>();
+
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    downstream.onSubscribe(subscription);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    buffers.addAll(item);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    downstream.onError(throwable);
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    downstream.onComplete();
+                    result.complete(downstream.getBody().toCompletableFuture().join());
+                }
+
+                @Override
+                public CompletionStage<T> getBody() {
+                    return result;
+                }
+            };
         }
 
         public static <T, U> BodySubscriber<U> mapping(BodySubscriber<T> downstream, Function<? super T,? extends U> mapper) {
-            throw MissingStubError.create();
+            CompletableFuture<U> result = new CompletableFuture<>();
+            return new BodySubscriber<>() {
+                @Override
+                public void onSubscribe(Flow.Subscription subscription) {
+                    downstream.onSubscribe(subscription);
+                }
+
+                @Override
+                public void onNext(List<ByteBuffer> item) {
+                    downstream.onNext(item);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    downstream.onError(throwable);
+                    result.completeExceptionally(throwable);
+                }
+
+                @Override
+                public void onComplete() {
+                    downstream.onComplete();
+                    result.complete(mapper.apply(downstream.getBody().toCompletableFuture().join()));
+                }
+
+                @Override
+                public CompletionStage<U> getBody() {
+                    return result;
+                }
+            };
         }
 
     }

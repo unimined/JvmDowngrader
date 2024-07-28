@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.j11.impl.http.HttpRequestBuilderImpl;
 import xyz.wagyourtail.jvmdg.j11.impl.http.IterablePublisher;
 import xyz.wagyourtail.jvmdg.j11.impl.http.StreamIterator;
 import xyz.wagyourtail.jvmdg.version.Adapter;
@@ -19,12 +20,10 @@ import java.util.function.Supplier;
 
 @Adapter("Ljava/net/http/HttpRequest;")
 public abstract class J_N_H_HttpRequest {
-    public J_N_H_HttpRequest() {
-        throw MissingStubError.create();
-    }
+    protected J_N_H_HttpRequest() {}
 
     public static Builder newBuilder() {
-        throw MissingStubError.create();
+        return new HttpRequestBuilderImpl();
     }
 
     public abstract Optional<BodyPublisher> bodyPublisher();

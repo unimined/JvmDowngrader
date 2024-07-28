@@ -27,10 +27,6 @@ public class StreamIterator implements Iterator<ByteBuffer> {
             this.bufSupplier = bufSupplier;
         }
 
-//        Throwable error() {
-//            return error;
-//        }
-
         private int read() throws IOException {
             if (eof)
                 return -1;
@@ -50,10 +46,6 @@ public class StreamIterator implements Iterator<ByteBuffer> {
             return n;
         }
 
-        /**
-         * Close stream in this instance.
-         * UncheckedIOException may be thrown if IOE happens at InputStream::close.
-         */
         private void closeStream() {
             try {
                 is.close();

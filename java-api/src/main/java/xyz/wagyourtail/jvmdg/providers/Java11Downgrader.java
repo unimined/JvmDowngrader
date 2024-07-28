@@ -5,6 +5,10 @@ import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.j11.NestHost;
 import xyz.wagyourtail.jvmdg.j11.NestMembers;
 import xyz.wagyourtail.jvmdg.j11.stub.java_base.*;
+import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpClient;
+import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpHeaders;
+import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpRequest;
+import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpResponse;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
@@ -83,10 +87,11 @@ public class Java11Downgrader extends VersionProvider {
 
         // -- java.net.http --
         //TODO:
-//             stub(J_N_H_HttpClient.class);
+        stub(J_N_H_HttpClient.class);
         // HttpConnectTimeoutException
-//             stub(J_N_H_HttpRequest.class);
-//             stub(J_N_H_HttpResponse.class);
+        stub(J_N_H_HttpHeaders.class);
+        stub(J_N_H_HttpRequest.class);
+        stub(J_N_H_HttpResponse.class);
         // HttpTimeoutException
         // WebSocket
         // WebSocketHandshakeException
