@@ -79,7 +79,10 @@ public class PathDowngrader {
                         Path outFile = out.resolve(relativized.toString());
                         if (path.getFileName().toString().endsWith(".class")) {
                             if (relativized.startsWith("META-INF/versions")) {
-                                Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
+                                String version = relativized.getName(2).toString();
+                                if (downgrader.flags.multiReleaseOriginal || downgrader.flags.multiReleaseVersions.contains(Utils.majorVersionToClassVersion(Integer.parseInt(version)))) {
+                                    Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
+                                }
                             } else {
                                 try {
                                     String relativizedName = relativized.toString();
@@ -132,6 +135,9 @@ public class PathDowngrader {
                                 Attributes attr = manifest.getMainAttributes();
                                 if (Flags.jvmdgVersion != null) {
                                     attr.putValue("JvmDowngrader-Version", Flags.jvmdgVersion);
+                                }
+                                if (downgrader.flags.multiReleaseOriginal || !downgrader.flags.multiReleaseVersions.isEmpty()) {
+                                    attr.putValue("Multi-Release", "true");
                                 }
 
                                 try (OutputStream os = Files.newOutputStream(outFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {

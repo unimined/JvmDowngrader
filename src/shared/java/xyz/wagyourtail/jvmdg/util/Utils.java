@@ -85,6 +85,11 @@ public class Utils {
         else return version - Opcodes.V1_2 + 2;
     }
 
+    public static int majorVersionToClassVersion(int version) {
+        if (version == 1) return Opcodes.V1_1;
+        else return version + Opcodes.V1_2 - 2;
+    }
+
     public static <T extends Throwable> void sneakyThrow(Throwable t) throws T {
         throw (T) t;
     }
