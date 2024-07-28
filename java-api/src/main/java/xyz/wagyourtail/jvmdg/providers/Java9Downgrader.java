@@ -106,6 +106,7 @@ public class Java9Downgrader extends VersionProvider {
         // URLStreamHandlerProvider
         stub(J_N_Buffer.class);
         stub(J_N_F_Path.class);
+        stub(J_N_URLClassLoader.class);
         // AuthProvider
         // DrbgParameters
         // KeyStore
