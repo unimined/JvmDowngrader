@@ -173,6 +173,17 @@ tasks.jar {
     isReproducibleFileOrder = true
 }
 
+val testJar by tasks.registering(Jar::class) {
+    from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
+    from(rootProject.sourceSets.getByName("shared").output)
+    from(sourceSets.main.get().output)
+
+    destinationDirectory = temporaryDir
+
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+}
+
 tasks.getByName<Jar>("sourcesJar") {
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].allSource }).toTypedArray())
     from(rootProject.sourceSets.getByName("shared").allSource)

@@ -42,7 +42,7 @@ public class ClassRunner {
 
 
     private static final Path original = Path.of("./downgradetest/build/libs/downgradetest-1.0.0.jar");
-    private static final Path javaApi = Path.of("./java-api/build/libs/jvmdowngrader-java-api-" + System.getProperty(JVMDG_VERSION_KEY) + ".jar");
+    private static final Path javaApi = Path.of("./java-api/build/tmp/testJar/jvmdowngrader-java-api-" + System.getProperty(JVMDG_VERSION_KEY) + ".jar");
     private static final Path sharedClasses = Path.of("./build/classes/java/shared");
 
     private static final List<Path> downgradeClasspath = Arrays.stream(System.getProperty(DOWNGRADE_CLASSPATH).split(File.pathSeparator)).map(Path::of).toList();

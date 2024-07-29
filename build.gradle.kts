@@ -193,7 +193,7 @@ tasks.test {
 
     dependsOn(
         project(":downgradetest").tasks.build,
-        project(":java-api").tasks.build
+        project(":java-api").tasks.named("testJar")
     )
     javaLauncher = javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
