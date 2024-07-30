@@ -1,19 +1,15 @@
-package xyz.wagyourtail.jvmdg.util;
+package xyz.wagyourtail.jvmdg.j11.impl;
 
 
 import java.util.Set;
 
 public class CharReader {
     private final String buffer;
-    private int pos = 0;
+    private int pos;
 
     public CharReader(String buf, int pos) {
         this.buffer = buf.replace("\r\n", "\n");
         this.pos = pos;
-    }
-
-    public CharReader copy() {
-        return new CharReader(buffer, pos);
     }
 
     public boolean exhausted() {
@@ -30,27 +26,6 @@ public class CharReader {
         return buffer.charAt(pos++);
     }
 
-    public String takeRemaining() {
-        return takeUntil(-1);
-    }
-
-    public String takeLine() {
-        return takeUntil('\n');
-    }
-
-    public String takeUntil(int c) {
-        StringBuilder sb = new StringBuilder();
-        while (pos < buffer.length()) {
-            char ch = buffer.charAt(pos);
-            if (ch == c) {
-                break;
-            }
-            sb.append(ch);
-            pos++;
-        }
-        return sb.toString();
-    }
-
     public String takeUntil(Set<Integer> c) {
         StringBuilder sb = new StringBuilder();
         while (pos < buffer.length()) {
@@ -64,17 +39,13 @@ public class CharReader {
         return sb.toString();
     }
 
-    public String takeWhitespace() {
-        StringBuilder sb = new StringBuilder();
+    public void takeWhitespace() {
         while (pos < buffer.length()) {
-            char ch = buffer.charAt(pos);
-            if (!Character.isWhitespace(ch)) {
+            if (!Character.isWhitespace(buffer.charAt(pos))) {
                 break;
             }
             pos++;
-            sb.append(ch);
         }
-        return sb.toString();
     }
 
     public String takeString() {

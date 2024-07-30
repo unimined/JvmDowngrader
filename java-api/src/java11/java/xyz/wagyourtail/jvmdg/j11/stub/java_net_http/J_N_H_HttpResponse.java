@@ -2,18 +2,16 @@ package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j11.stub.java_base.J_L_String;
-import xyz.wagyourtail.jvmdg.util.CharReader;
+import xyz.wagyourtail.jvmdg.j11.impl.CharReader;
 import xyz.wagyourtail.jvmdg.util.Consumer;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import javax.net.ssl.SSLSession;
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
