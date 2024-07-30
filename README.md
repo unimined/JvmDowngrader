@@ -166,7 +166,7 @@ ex. `java -jar JvmDowngrader-all.jar -c 52 downgrade -t input.jar output.jar -cp
 Analyze a downgraded zip file for API usages and shade them into the output.
 you can specify multiple targets for bulk operations.
 
-ex. `java -jar JvmDowngrader-all.jar -c 52 shade -p "shade/prefix" -t input.jar output.jar`
+ex. `java -jar JvmDowngrader-all.jar -c 52 shade -p "shade/prefix/" -t input.jar output.jar`
 
 The class version can be replaced with a path to the pre-downgraded api jar to save time, using `-d`.
 
