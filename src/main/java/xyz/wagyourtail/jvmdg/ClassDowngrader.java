@@ -279,7 +279,7 @@ public class ClassDowngrader implements Closeable {
     public Map<String, byte[]> downgrade(/* in out */ AtomicReference<String> name, @NotNull byte[] bytes, boolean enableRuntime, final Function<String, byte[]> getExtraRead) throws IllegalClassFormatException {
         // check magic
         if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
-                bytes[3] != (byte) 0xBE) {
+            bytes[3] != (byte) 0xBE) {
             throw new IllegalClassFormatException(name.get());
         }
         // ignore minor version
@@ -317,6 +317,7 @@ public class ClassDowngrader implements Closeable {
                     }
                 }
             });
+            boolean hasVersions = false;
             for (ClassNode c : extra) {
                 // TODO: uncomment with asm 9.8
 //                if (flags.debugDumpClasses) {
@@ -332,8 +333,56 @@ public class ClassDowngrader implements Closeable {
                 if (c.version > target) {
                     // write to multi-release location
                     outputs.put("META-INF/versions/" + Utils.classVersionToMajorVersion(c.version) + "/" + c.name, cBytes);
+                    hasVersions = true;
                 } else {
                     outputs.put(c.name, cBytes);
+                }
+            }
+            if (hasVersions) {
+                // filter outputs that are effectively the same
+                Map<String, Map<Integer, byte[]>> byVersion = new HashMap<>();
+                for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
+                    String key = entry.getKey();
+                    if (key.startsWith("META-INF/versions/")) {
+                        int major = Integer.parseInt(key.substring(18, key.indexOf('/', 18)));
+                        String cName = key.substring(key.indexOf('/', 18) + 1);
+                        if (!byVersion.containsKey(cName)) {
+                            byVersion.put(cName, new TreeMap<Integer, byte[]>());
+                        }
+                        byVersion.get(cName).put(major, entry.getValue());
+                    } else {
+                        if (!byVersion.containsKey(key)) {
+                            byVersion.put(key, new TreeMap<Integer, byte[]>());
+                        }
+                        byVersion.get(key).put(0, entry.getValue());
+                    }
+                }
+                outputs.clear();
+                Map<String, byte[]> current = new HashMap<>();
+                for (Map.Entry<String, Map<Integer, byte[]>> entry : byVersion.entrySet()) {
+                    String key = entry.getKey();
+                    Map<Integer, byte[]> versions = entry.getValue();
+                    if (!versions.containsKey(0)) {
+                        throw new IllegalStateException("Found multi-release class " + key + " without main version!");
+                    }
+                    if (versions.size() == 1) {
+                        outputs.put(key, versions.get(0));
+                    }
+                    // order will be in numeric increasing order due to how TreeMap works :)
+                    for (Map.Entry<Integer, byte[]> vs : versions.entrySet()) {
+                        if (vs.getKey() == 0) {
+                            current.put(key, vs.getValue());
+                            outputs.put(key, vs.getValue());
+                        } else {
+                            byte[] currentVal = current.get(key);
+                            byte[] vsVal = vs.getValue();
+                            // equal after version info
+                            if (!equals(currentVal, 8, currentVal.length, vsVal, 8, vsVal.length)) {
+                                current.put(key, vsVal);
+                                outputs.put("META-INF/versions/" + vs.getKey() + "/" + key, vsVal);
+                            }
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
@@ -353,6 +402,27 @@ public class ClassDowngrader implements Closeable {
         }
         return outputs;
     }
+
+    public static boolean equals(
+        byte[] a, int aFromIndex, int aToIndex,
+        byte[] b, int bFromIndex, int bToIndex
+    ) {
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength) {
+            return false;
+        }
+        if (aLength == 0) {
+            return true;
+        }
+        for (int i = 0; i < aLength; i++) {
+            if (a[aFromIndex + i] != b[bFromIndex + i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 
     public byte[] classNodeToBytes(@NotNull final ClassNode node) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
