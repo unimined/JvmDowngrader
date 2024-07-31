@@ -9,12 +9,15 @@ import org.gradle.api.tasks.*
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 
+@CacheableTask
 abstract class CoverageRunTask : JavaExec() {
 
     @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
     abstract val apiJar: RegularFileProperty
 
     @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
     abstract val ctSym: RegularFileProperty
 
     @get:Suppress("ACCIDENTAL_OVERRIDE")
