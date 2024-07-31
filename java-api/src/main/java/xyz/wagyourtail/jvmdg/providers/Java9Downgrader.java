@@ -71,7 +71,7 @@ public class Java9Downgrader extends VersionProvider {
         // Configuration
         // FindException
         // InvalidModuleDescriptorException
-        // ModuleDescriptor
+        stub(J_L_M_ModuleDescriptor.class);
         // ModuleFinder
         // ModuleReader
         // ModuleReference

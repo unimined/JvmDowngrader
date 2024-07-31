@@ -13,10 +13,13 @@ public class Java12Downgrader extends VersionProvider {
         // -- java.base --
         stub(J_I_InputStream.class);
         // Character$UnicodeBlock (more unicode spaces);
+        stub(J_L_C_ClassDesc.class);
+        stub(J_L_C_ConstantDesc.class);
         stub(J_L_Class.class);
         // Double
         // Enum
         // Float
+        stub(J_L_I_TypeDescriptor.class);
         // Integer
         // Long
         stub(J_L_String.class);
