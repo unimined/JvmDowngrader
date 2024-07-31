@@ -218,5 +218,15 @@ public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescripto
             if (!(obj instanceof J_L_C_ClassDesc)) return false;
             return descriptor.equals(((J_L_C_ClassDesc) obj).descriptorString());
         }
+
+        @Override
+        public int hashCode() {
+            return descriptor.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "ClassDesc[" + displayName() + "]";
+        }
     }
 }
