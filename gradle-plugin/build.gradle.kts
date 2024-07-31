@@ -105,7 +105,7 @@ tasks.getByName<Jar>("sourcesJar") {
 }
 
 tasks.test {
-    dependsOn(":java-api:assemble")
+    dependsOn(":java-api:testJar")
 }
 
 signing.isRequired = !project.hasProperty("is_local")

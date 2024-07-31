@@ -299,6 +299,7 @@ tasks.assemble {
     dependsOn(downgradeJar8)
 }
 
+
 publishing {
     repositories {
         maven {

@@ -89,7 +89,7 @@ sourceSets {
 val jvmdg = extensions.getByType(JVMDowngraderExtension::class.java)
 
 if (project.hasProperty("runningTest")) {
-    jvmdg.apiJar = listOf(project.file("../../java-api/build/libs/jvmdowngrader-java-api-${props.getProperty("version")}.jar"))
+    jvmdg.apiJar = listOf(project.file("../../java-api/build/tmp/testJar/jvmdowngrader-java-api-${props.getProperty("version")}.jar"))
 }
 
 val downgrade by configurations.creating
