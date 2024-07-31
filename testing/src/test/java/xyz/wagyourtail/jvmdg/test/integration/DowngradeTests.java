@@ -14,10 +14,10 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.test.JavaRunner;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -33,43 +33,13 @@ import java.util.zip.ZipFile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ClassRunner {
-    private static final String JVMDG_VERSION_KEY = "jvmdg.test.version";
-    private static final String ORIGINAL_VERSION_KEY = "jvmdg.test.originalVersion";
-    private static final String JAVA_VERSION_KEY = "jvmdg.test.javaVersion";
-    private static final String LAUNCHER_KEY = "jvmdg.test.launcher";
-    private static final String DOWNGRADE_CLASSPATH = "jvmdg.test.downgradeClasspath";
-
-
-    private static final Path original = Path.of("./downgradetest/build/libs/downgradetest-1.0.0.jar");
-    private static final Path javaApi = Path.of("./java-api/build/tmp/testJar/jvmdowngrader-java-api-" + System.getProperty(JVMDG_VERSION_KEY) + ".jar");
-    private static final Path sharedClasses = Path.of("./build/classes/java/shared");
-
-    private static final List<Path> downgradeClasspath = Arrays.stream(System.getProperty(DOWNGRADE_CLASSPATH).split(File.pathSeparator)).map(Path::of).toList();
-
-    private static final Flags flags = new Flags();
-
-    private static final JavaRunner.JavaVersion originalVersion = JavaRunner.JavaVersion.fromMajor(Integer.parseInt(System.getProperty(ORIGINAL_VERSION_KEY)));
-
-    private static final List<JavaRunner.JavaVersion> javaVersions = Arrays.stream(System.getProperty(JAVA_VERSION_KEY).split(File.pathSeparator)).map(e -> JavaRunner.JavaVersion.fromMajor(Integer.parseInt(e))).toList();
-    private static final List<Path> launchers = Arrays.stream(System.getProperty(LAUNCHER_KEY).split(File.pathSeparator)).map(Path::of).toList();
-
-    private static final Map<JavaRunner.JavaVersion, Path> launchersByVersion = zip(javaVersions.stream(), launchers.stream()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-    private static <T, U> Stream<Map.Entry<T, U>> zip(Stream<T> a, Stream<U> b) {
-        Iterator<T> aIt = a.iterator();
-        Iterator<U> bIt = b.iterator();
-        List<Map.Entry<T, U>> out = new ArrayList<>();
-        while (aIt.hasNext() && bIt.hasNext()) {
-            out.add(Map.entry(aIt.next(), bIt.next()));
-        }
-        return out.stream();
-    }
+public class DowngradeTests extends BaseIntegrationTests {
+    private static final String DOWNGRADE_PATH = "jvmdg.test.downgradePath";
+    private static final Path original = Path.of(System.getProperty(DOWNGRADE_PATH));
 
     private static Stream<FlagsAndRunner> flags() {
-        Flags flags = ClassRunner.flags.copy();
-        flags.quiet = true;
-        flags.api = List.of(javaApi.toFile());
+        Flags flags = BaseIntegrationTests.flags.copy();
+        flags.logLevel = Logger.Level.FATAL;
 
         return Stream.of(
             new FlagsAndRunner(flags.copy(e -> e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode()), JavaRunner.JavaVersion.V1_8)
@@ -78,7 +48,7 @@ public class ClassRunner {
 //                e.debugSkipStubs = Set.of(JavaRunner.JavaVersion.V1_8.toOpcode());
 //            }), JavaRunner.JavaVersion.V1_8),
 //            new FlagsAndRunner(flags.copy(e -> e.classVersion = JavaRunner.JavaVersion.V1_7.toOpcode()), JavaRunner.JavaVersion.V1_7)
-        ).filter(e -> javaVersions.contains(e.targetVersion));
+        ).filter(e -> launchersByVersion.containsKey(e.targetVersion()));
     }
 
     private static List<String> mainClasses() throws IOException {
@@ -139,21 +109,12 @@ public class ClassRunner {
         return original.resolveSibling(withoutExt + "-downgrade-" + flags.readableSlug() + ext);
     }
 
-    private static final Map<FlagsAndRunner, Path> shadedPaths = new ConcurrentHashMap<>();
-
-    private static Path getShadedPath(FlagsAndRunner flags) {
-        String fName = original.getFileName().toString();
-        String withoutExt = fName.substring(0, fName.lastIndexOf('.'));
-        String ext = fName.substring(fName.lastIndexOf('.'));
-        return original.resolveSibling(withoutExt + "-shade-" + flags.readableSlug() + ext);
-    }
-
     private static synchronized Path getDowngradedJar(FlagsAndRunner flags) {
-        return shadedPaths.computeIfAbsent(flags, e -> {
+        return downgradedPaths.computeIfAbsent(flags, e -> {
             try {
                 Path target = getDowngradedPath(flags);
                 ZipDowngrader.downgradeZip(
-                    ClassDowngrader.downgradeTo(flags.flags),
+                    ClassDowngrader.downgradeTo(flags.flags()),
                     original,
                     Set.of(),
                     target
@@ -165,42 +126,25 @@ public class ClassRunner {
         });
     }
 
-    private static final Map<FlagsAndRunner, Path> apiPaths = new ConcurrentHashMap<>();
+    private static final Map<FlagsAndRunner, Path> shadedPaths = new ConcurrentHashMap<>();
+
+    private static Path getShadedPath(FlagsAndRunner flags) {
+        String fName = original.getFileName().toString();
+        String withoutExt = fName.substring(0, fName.lastIndexOf('.'));
+        String ext = fName.substring(fName.lastIndexOf('.'));
+        return original.resolveSibling(withoutExt + "-shade-" + flags.readableSlug() + ext);
+    }
 
     private static synchronized Path getShadedJar(FlagsAndRunner flags) {
-        return apiPaths.computeIfAbsent(flags, e -> {
+        return shadedPaths.computeIfAbsent(flags, e -> {
             try {
                 Path target = getShadedPath(flags);
                 ApiShader.shadeApis(
-                    flags.flags,
+                    flags.flags(),
                     "downgradetest",
                     getDowngradedJar(flags).toFile(),
                     target.toFile(),
                     Set.of(getApiJar(flags).toFile())
-                );
-                return target;
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
-        });
-    }
-
-    private static Path getApiPath(FlagsAndRunner flags) {
-        String fName = javaApi.getFileName().toString();
-        String withoutExt = fName.substring(0, fName.lastIndexOf('.'));
-        String ext = fName.substring(fName.lastIndexOf('.'));
-        return Path.of("./build/tmp/test/" + withoutExt + "-downgrade-" + flags.readableSlug() + ext);
-    }
-
-    private static synchronized Path getApiJar(FlagsAndRunner flags) {
-        return downgradedPaths.computeIfAbsent(flags, e -> {
-            try {
-                Path target = getApiPath(flags);
-                ZipDowngrader.downgradeZip(
-                    ClassDowngrader.downgradeTo(flags.flags),
-                    javaApi,
-                    Set.of(),
-                    target
                 );
                 return target;
             } catch (IOException ex) {
@@ -219,7 +163,7 @@ public class ClassRunner {
     }
 
     @ParameterizedTest
-    @MethodSource({"xyz.wagyourtail.jvmdg.test.integration.ClassRunner#arguments"})
+    @MethodSource({"arguments"})
     @Execution(ExecutionMode.CONCURRENT)
     public void testDowngrade(String mainClass, FlagsAndRunner javaVersion) throws IOException, InterruptedException {
         System.out.println("TEST_DOWNGRADE: Running " + mainClass + " on " + javaVersion.readableSlug());
@@ -228,8 +172,8 @@ public class ClassRunner {
         System.out.println(original.getValue());
         System.out.println("Exit code: " + original.getKey());
 
-        if (javaVersion.flags.classVersion <= 51) {
-            try (ZipFile zf = new ZipFile(ClassRunner.original.toFile())) {
+        if (javaVersion.flags().classVersion <= 51) {
+            try (ZipFile zf = new ZipFile(DowngradeTests.original.toFile())) {
                 ZipEntry entry = zf.getEntry(mainClass.replace(".", "/") + ".class");
                 try (InputStream is = zf.getInputStream(entry)) {
                     ClassReader cr = new ClassReader(is);
@@ -247,12 +191,12 @@ public class ClassRunner {
             getDowngradedJar(javaVersion),
             new String[]{},
             mainClass,
-            Stream.concat(Stream.of(getApiJar(javaVersion), sharedClasses), downgradeClasspath.stream()).collect(Collectors.toSet()),
+            Stream.concat(Stream.of(getApiJar(javaVersion)), downgradeClasspath.stream()).collect(Collectors.toSet()),
             Path.of("."),
             Map.of(),
             true,
             List.of(),
-            launchersByVersion.get(javaVersion.targetVersion),
+            launchersByVersion.get(javaVersion.targetVersion()),
             (String it) -> {
                 downgradedLog.append(it).append("\n");
                 System.out.println(it);
@@ -284,8 +228,8 @@ public class ClassRunner {
         System.out.println(original.getValue());
         System.out.println("Exit code: " + original.getKey());
 
-        if (javaVersion.flags.classVersion <= 51) {
-            try (ZipFile zf = new ZipFile(ClassRunner.original.toFile())) {
+        if (javaVersion.flags().classVersion <= 51) {
+            try (ZipFile zf = new ZipFile(DowngradeTests.original.toFile())) {
                 ZipEntry entry = zf.getEntry(mainClass.replace(".", "/") + ".class");
                 try (InputStream is = zf.getInputStream(entry)) {
                     ClassReader cr = new ClassReader(is);
@@ -308,7 +252,7 @@ public class ClassRunner {
             Map.of(),
             true,
             List.of(),
-            launchersByVersion.get(javaVersion.targetVersion),
+            launchersByVersion.get(javaVersion.targetVersion()),
             (String it) -> {
                 shadedLog.append(it).append("\n");
                 System.out.println(it);
@@ -356,7 +300,7 @@ public class ClassRunner {
                 "--quiet",
                 "bootstrap",
                 "--classpath",
-                ClassRunner.original.toAbsolutePath().toString(),
+                DowngradeTests.original.toAbsolutePath().toString(),
                 "-m",
                 mainClass
             },
@@ -366,7 +310,7 @@ public class ClassRunner {
             Map.of(),
             true,
             List.of(),
-            launchersByVersion.get(javaVersion.targetVersion),
+            launchersByVersion.get(javaVersion.targetVersion()),
             (String it) -> {
                 runtimeLog.append(it).append("\n");
                 System.out.println(it);
@@ -393,18 +337,6 @@ public class ClassRunner {
         assertEquals(0, originalResult.getKey());
         assertEquals(originalResult.getValue(), downgradedResult.getValue(), "Output mismatch for " + mainClass + " on " + javaVersion.readableSlug());
         assertEquals(originalResult.getKey(), downgradedResult.getKey(), "Exit code mismatch for " + mainClass + " on " + javaVersion.readableSlug());
-    }
-
-    public record FlagsAndRunner(Flags flags, JavaRunner.JavaVersion targetVersion) {
-
-        public String readableSlug() {
-            if (flags.debugSkipStubs.isEmpty()) {
-                return Integer.toString(targetVersion.getMajorVersion());
-            } else {
-                return targetVersion.getMajorVersion() + "-fake-" + flags.debugSkipStubs.stream().map(e -> Integer.toString(JavaRunner.JavaVersion.fromOpcode(e).getMajorVersion())).collect(Collectors.joining("-"));
-            }
-        }
-
     }
 
 }

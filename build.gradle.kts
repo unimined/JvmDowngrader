@@ -1,4 +1,3 @@
-import org.gradle.api.tasks.testing.logging.TestLogEvent
 import xyz.wagyourtail.gradle.shadow.ShadowJar
 
 plugins {
@@ -10,6 +9,8 @@ plugins {
     application
     id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
     id("com.gradleup.nmcp") version "0.0.7"
+
+    id ("com.dorongold.task-tree") version "4.0.0"
 }
 
 allprojects {
@@ -44,14 +45,17 @@ allprojects {
     }
 
     java {
-        if (project.name != "downgradetest") {
+        if (!project.path.startsWith(":testing")) {
             withSourcesJar()
             withJavadocJar()
         }
     }
 
-    version =
-        if (project.hasProperty("version_snapshot")) "${project.properties["version"]}-SNAPSHOT" else project.properties["version"] as String
+    version = if (project.hasProperty("version_snapshot")) {
+        "${project.properties["version"]}-SNAPSHOT"
+    } else {
+        project.properties["version"] as String
+    }
     group = project.properties["maven_group"] as String
 
     base {
@@ -119,13 +123,6 @@ sourceSets {
 }
 
 dependencies {
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-
-    testImplementation("com.google.code.gson:gson:2.10")
-    testImplementation("org.apache.commons:commons-compress:1.26.1")
-    testImplementation("io.github.java-diff-utils:java-diff-utils:4.12")
-
     val api by configurations.getting
 
     api("org.ow2.asm:asm:${project.properties["asm_version"]}")
@@ -175,49 +172,6 @@ tasks.getByName<Jar>("sourcesJar") {
 
 tasks.javadoc {
     source = sourceSets.main.get().allJava + sourceSets["shared"].allJava
-}
-
-val testVersion = project.properties["testVersion"] as String
-val testTargetVersion = project.properties["testTargetVersion"] as String
-
-tasks.compileTestJava {
-    options.encoding = "UTF-8"
-
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
-    }
-}
-
-tasks.test {
-    useJUnitPlatform()
-
-    dependsOn(
-        project(":downgradetest").tasks.build,
-        project(":java-api").tasks.named("testJar")
-    )
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(testVersion.toInt()))
-    }
-
-    val versions = listOf(testVersion, testTargetVersion, "7").associateWith {
-        javaToolchains.launcherFor {
-            languageVersion.set(JavaLanguageVersion.of(it.toInt()))
-        }.get().executablePath.toString()
-    }
-
-    jvmArgs(
-        "-Djvmdg.test.version=$version",
-        "-Djvmdg.test.originalVersion=$testVersion",
-        "-Djvmdg.test.javaVersion=${versions.keys.joinToString(File.pathSeparator)}",
-        "-Djvmdg.test.launcher=${versions.values.joinToString(File.pathSeparator)}",
-        "-Djvmdg.test.downgradeClasspath=${shared.compileClasspath.joinToString(File.pathSeparator) { it.absolutePath }}",
-    )
-
-    testLogging {
-        events.add(TestLogEvent.PASSED)
-        events.add(TestLogEvent.SKIPPED)
-        events.add(TestLogEvent.FAILED)
-    }
 }
 
 project.evaluationDependsOnChildren()

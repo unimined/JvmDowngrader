@@ -122,6 +122,8 @@ public class Flags {
         flags.printDebug = printDebug;
         flags.debugSkipStubs = new HashSet<>(debugSkipStubs);
         flags.debugDumpClasses = debugDumpClasses;
+        flags.multiReleaseOriginal = multiReleaseOriginal;
+        flags.multiReleaseVersions = new HashSet<>(multiReleaseVersions);
         return flags;
     }
 
