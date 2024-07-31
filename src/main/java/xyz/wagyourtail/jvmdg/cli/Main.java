@@ -278,6 +278,9 @@ public class Main {
             List<String> prefixes = new ArrayList<>();
             List<String[]> prefix = args.get("--prefix");
             for (String[] strings : prefix) {
+                if (!strings[0].endsWith("/")) {
+                    strings[0] += "/";
+                }
                 prefixes.add(strings[0]);
             }
 
