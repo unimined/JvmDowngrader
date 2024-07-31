@@ -86,6 +86,9 @@ shadeDowngradedApi {
 The tasks have all the same flags as the extension, so you can change them separately, 
 their default value is to use the global one from the extension.
 
+If you are merging multiple downgraded jars, please merge from the downgradeJar tasks, and then shade on the resulting mono-jar.
+otherwise some API stubs may be missing, due to how shade only includes what is used.
+
 Optionally, you can also depend on the shadeDowngradedApi task when running build.
 
 ```gradle
