@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j21.stub.java_base.*;
+import xyz.wagyourtail.jvmdg.j21.stub.java_net_http.J_N_H_HttpClient;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java21Downgrader extends VersionProvider {
@@ -53,6 +54,9 @@ public class Java21Downgrader extends VersionProvider {
         // -- java.desktop --
         // SwingUtilities3
         // AccessibleHTML$HTMLAccessibleContext
+
+        // -- java.net.http --
+        stub(J_N_H_HttpClient.class);
 
     }
 }
