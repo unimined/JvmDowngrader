@@ -9,47 +9,45 @@ import org.gradle.api.tasks.*
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 
-abstract class CoverageRunTask : ConventionTask() {
+abstract class CoverageRunTask : JavaExec() {
 
     @get:InputFile
     abstract val apiJar: RegularFileProperty
 
-    @get:Internal
-    abstract var classpath: FileCollection
-
     @get:InputFile
     abstract val ctSym: RegularFileProperty
 
-    @get:Input
-    abstract val javaVersion: Property<JavaVersion>
+    @get:Suppress("ACCIDENTAL_OVERRIDE")
+    var javaVersion: JavaVersion?
+        get() = super.getJavaVersion()
+        set(value) {
+            val toolchains = project.extensions.getByType(JavaToolchainService::class.java)
+            if (value == null) {
+                javaLauncher.set(toolchains.launcherFor { })
+            } else {
+                javaLauncher.set(toolchains.launcherFor {
+                    it.languageVersion.set(JavaLanguageVersion.of(value.majorVersion))
+                })
+            }
+        }
 
     @get:OutputDirectory
     @get:Optional
     abstract var coverageReports: FileCollection
 
-
     init {
         group = "jvmdg"
         coverageReports = project.files(project.layout.buildDirectory.asFile.get().resolve("coverage"))
+        mainClass.set("xyz.wagyourtail.jvmdg.coverage.ApiCoverageChecker")
     }
 
     @TaskAction
-    fun run() {
-        val toolchains = project.extensions.getByType(JavaToolchainService::class.java)
+    override fun exec() {
+        workingDir = project.layout.buildDirectory.asFile.get()
+        jvmArgs("-Djvmdg.java-api=${apiJar.get().asFile.absolutePath}", "-Djvmdg.quiet=true")
+        args(ctSym.get().asFile.absolutePath)
 
-        project.javaexec { spec ->
-            spec.executable = toolchains.launcherFor {
-                it.languageVersion.set(JavaLanguageVersion.of(javaVersion.get().majorVersion))
-            }.get().executablePath.asFile.absolutePath
-
-            spec.workingDir = project.layout.buildDirectory.asFile.get()
-            spec.mainClass.set("xyz.wagyourtail.jvmdg.coverage.ApiCoverageChecker")
-            spec.classpath = classpath
-            spec.jvmArgs("-Djvmdg.java-api=${apiJar.get().asFile.absolutePath}", "-Djvmdg.quiet=true")
-            spec.args(ctSym.get().asFile.absolutePath)
-
-        }.assertNormalExitValue().rethrowFailure()
-
+        super.exec()
     }
 
 

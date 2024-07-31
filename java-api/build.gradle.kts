@@ -132,15 +132,6 @@ tasks.getByName<JavaCompile>("compileCoverageJava") {
     configCompile(testVersion)
 }
 
-val coverageApiJar by tasks.registering(Jar::class) {
-    from(sourceSets.main.get().output)
-    from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
-    from(rootProject.sourceSets.getByName("shared").output)
-
-    destinationDirectory = temporaryDir
-}
-
-
 val genCtSym by tasks.registering(GenerateCtSymTask::class) {
     group = "jvmdg"
     upperVersion = toVersion - 1
@@ -148,11 +139,11 @@ val genCtSym by tasks.registering(GenerateCtSymTask::class) {
 
 val coverageReport by tasks.registering(CoverageRunTask::class) {
     group = "jvmdg"
-    dependsOn(coverageApiJar, genCtSym, tasks.getByName("compileCoverageJava"))
-    apiJar.set(coverageApiJar.get().archiveFile.get().asFile)
+    dependsOn(testJar, genCtSym, tasks.getByName("compileCoverageJava"))
+    apiJar.set(testJar.get().archiveFile.get().asFile)
     classpath = coverage.runtimeClasspath
     ctSym.set(genCtSym.get().ctSym)
-    javaVersion.set(testVersion)
+    javaVersion = testVersion
 }
 
 tasks.jar {

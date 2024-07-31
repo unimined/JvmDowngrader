@@ -156,10 +156,23 @@ public class ApiCoverageChecker {
                                 try {
                                     Class<?> cls = Class.forName(clsStub.getFirst().getInternalName().replace('/', '.'), true, ClassDowngrader.getCurrentVersionDowngrader().getClassLoader());
                                     // check if has matching method
-                                    for (var m : cls.getMethods()) {
-                                        if (m.getName().equals(member.getName()) && Type.getType(m).equals(member.getDesc())) {
-                                            availableStubCount++;
-                                            continue outer;
+                                    if (member.getName().equals("<init>")) {
+                                        for (var m : cls.getConstructors()) {
+                                            if ((m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (m.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0)
+                                                continue;
+                                            if (Type.getType(m).equals(member.getDesc())) {
+                                                availableStubCount++;
+                                                continue outer;
+                                            }
+                                        }
+                                    } else {
+                                        for (var m : cls.getDeclaredMethods()) {
+                                            if ((m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (m.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0)
+                                                continue;
+                                            if (m.getName().equals(member.getName()) && Type.getType(m).equals(member.getDesc())) {
+                                                availableStubCount++;
+                                                continue outer;
+                                            }
                                         }
                                     }
                                 } catch (ClassNotFoundException e) {
