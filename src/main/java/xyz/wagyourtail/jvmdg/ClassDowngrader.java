@@ -10,8 +10,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.util.Textifier;
-import org.objectweb.asm.util.TraceClassVisitor;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
@@ -25,12 +23,10 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import java.io.*;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 public class ClassDowngrader implements Closeable {
     /**
@@ -377,7 +373,7 @@ public class ClassDowngrader implements Closeable {
                             byte[] currentVal = current.get(key);
                             byte[] vsVal = vs.getValue();
                             // equal after version info
-                            if (!equals(currentVal, 8, currentVal.length, vsVal, 8, vsVal.length)) {
+                            if (!Utils.equals(currentVal, 8, currentVal.length, vsVal, 8, vsVal.length)) {
                                 current.put(key, vsVal);
                                 outputs.put("META-INF/versions/" + vs.getKey() + "/" + key, vsVal);
                             }
@@ -402,27 +398,6 @@ public class ClassDowngrader implements Closeable {
         }
         return outputs;
     }
-
-    public static boolean equals(
-        byte[] a, int aFromIndex, int aToIndex,
-        byte[] b, int bFromIndex, int bToIndex
-    ) {
-        int aLength = aToIndex - aFromIndex;
-        int bLength = bToIndex - bFromIndex;
-        if (aLength != bLength) {
-            return false;
-        }
-        if (aLength == 0) {
-            return true;
-        }
-        for (int i = 0; i < aLength; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
 
     public byte[] classNodeToBytes(@NotNull final ClassNode node) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
