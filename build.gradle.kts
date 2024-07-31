@@ -9,8 +9,6 @@ plugins {
     application
     id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
     id("com.gradleup.nmcp") version "0.0.7"
-
-    id ("com.dorongold.task-tree") version "4.0.0"
 }
 
 allprojects {
