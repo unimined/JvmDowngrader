@@ -89,8 +89,8 @@ public class ApiShader {
         Set<Path> downgradedApiPath = resolveDowngradedApi(flags, downgradedApi);
         List<FileSystem> apiFs = new ArrayList<>();
         try {
-            for (File file : downgradedApi) {
-                apiFs.add(Utils.openZipFileSystem(file.toPath(), false));
+            for (Path file : downgradedApiPath) {
+                apiFs.add(Utils.openZipFileSystem(file, false));
             }
             List<Path> apiRoots = new ArrayList<>();
             for (FileSystem fs : apiFs) {
