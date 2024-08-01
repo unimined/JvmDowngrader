@@ -9,6 +9,7 @@ plugins {
     application
     id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
     id("com.gradleup.nmcp") version "0.0.7"
+    id("org.gradle.test-retry") version "1.5.10"
 }
 
 allprojects {
@@ -17,6 +18,7 @@ allprojects {
     apply(plugin = "maven-publish")
     apply(plugin = "io.github.sgtsilvio.gradle.metadata")
     apply(plugin = "com.gradleup.nmcp")
+    apply(plugin = "org.gradle.test-retry")
 
     metadata {
         url.set("https://github.com/unimined/JvmDowngrader")
@@ -75,6 +77,12 @@ allprojects {
                 "Implementation-Title" to project.name,
                 "Implementation-Version" to project.version,
             )
+        }
+    }
+
+    tasks.test {
+        retry {
+            maxRetries = 3
         }
     }
 

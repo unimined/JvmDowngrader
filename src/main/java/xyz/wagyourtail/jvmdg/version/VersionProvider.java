@@ -372,8 +372,8 @@ public abstract class VersionProvider {
                             }
                             break;
                         default:
-                            insn.desc = stub.getFirst().getInternalName();
                     }
+                    insn.desc = stub.getFirst().getInternalName();
                     return null;
                 }
                 coverage.warnClass(t, warnings);
@@ -946,6 +946,24 @@ public abstract class VersionProvider {
                     } else {
                         removedInterfaces.add(clazz.interfaces.remove(i));
                         i--;
+                    }
+                }
+            }
+        }
+
+        // innerclass
+        if (clazz.innerClasses != null) {
+            for (InnerClassNode inner : clazz.innerClasses) {
+                type = Type.getObjectType(inner.name);
+                if (classStubs.containsKey(type)) {
+                    Pair<Type, Pair<Class<?>, Adapter>> stub = classStubs.get(type);
+                    inner.name = stub.getFirst().getInternalName();
+                }
+                if (inner.outerName != null) {
+                    type = Type.getObjectType(inner.outerName);
+                    if (classStubs.containsKey(type)) {
+                        Pair<Type, Pair<Class<?>, Adapter>> stub = classStubs.get(type);
+                        inner.outerName = stub.getFirst().getInternalName();
                     }
                 }
             }

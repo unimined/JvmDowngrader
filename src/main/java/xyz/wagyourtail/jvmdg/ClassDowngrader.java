@@ -180,9 +180,10 @@ public class ClassDowngrader implements Closeable {
             if (stream == null) return null;
             ClassReader reader = new ClassReader(stream);
             List<Pair<Type, Boolean>> types = new ArrayList<>();
-            types.add(new Pair<>(Type.getObjectType(reader.getSuperName()), Boolean.FALSE));
+            int vers = reader.readShort(6);
+            types.add(new Pair<>(stubClass(vers, Type.getObjectType(reader.getSuperName()), warnings), Boolean.FALSE));
             for (String anInterface : reader.getInterfaces()) {
-                types.add(new Pair<>(Type.getObjectType(anInterface), Boolean.TRUE));
+                types.add(new Pair<>(stubClass(vers, Type.getObjectType(anInterface), warnings), Boolean.TRUE));
             }
             return types;
         }
