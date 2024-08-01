@@ -93,6 +93,21 @@ interface DowngradeFlags : TransformParameters {
     @get:Optional
     val debugDumpClasses: Property<Boolean>
 
+    /**
+     * sets if the original versions of classes should be retained in the output jar as a Multi-Release
+     * @since 1.0.0
+     */
+    @get:Input
+    @get:Optional
+    val multiReleaseOriginal: Property<Boolean>
+
+    /**
+     * sets if semi-downgraded versions of classes should be retained in the output jar as a Multi-Release
+     * @since 1.0.0
+     */
+    @get:Input
+    @get:Optional
+    val multiReleaseVersions: SetProperty<JavaVersion>
 }
 
 fun DowngradeFlags.toFlags(): Flags {
@@ -106,5 +121,7 @@ fun DowngradeFlags.toFlags(): Flags {
     flags.debugSkipStubs = debugSkipStubs.getOrElse(emptySet()).map { it.toOpcode() }.toSet()
     ignoreWarningsIn.getOrElse(emptyList()).forEach { flags.addIgnore(it) }
     flags.debugDumpClasses = debugDumpClasses.getOrElse(false)
+    flags.multiReleaseOriginal = multiReleaseOriginal.getOrElse(false)
+    flags.multiReleaseVersions = multiReleaseVersions.getOrElse(emptySet()).map { it.toOpcode() }.toSet()
     return flags
 }

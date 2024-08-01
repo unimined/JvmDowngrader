@@ -71,6 +71,8 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         debugSkipStubs.convention(emptySet()).finalizeValueOnRead()
         debugDumpClasses.convention(false).finalizeValueOnRead()
         shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/" }
+        multiReleaseOriginal.convention(false).finalizeValueOnRead()
+        multiReleaseVersions.convention(emptySet()).finalizeValueOnRead()
     }
 
     fun convention(flags: ShadeFlags) {
