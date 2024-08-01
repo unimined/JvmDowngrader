@@ -52,7 +52,7 @@ in `build.gradle`:
 ```gradle
 // add the plugin
 plugins {
-    id 'xyz.wagyourtail.jvmdowngrader' version '0.9.0'
+    id 'xyz.wagyourtail.jvmdowngrader' version '1.0.0'
 }
 
 // optionally you can change some globals, here are their default values:
