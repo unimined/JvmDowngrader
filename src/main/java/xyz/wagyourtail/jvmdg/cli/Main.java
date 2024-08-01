@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.cli;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
@@ -19,9 +20,11 @@ import java.util.*;
 public class Main {
     private static final Flags flags = new Flags();
 
+    private static Deque<File> tempFiles = new ArrayDeque<>();
+
     public static void main(String[] args) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         Arguments parser = new Arguments("JvmDowngrader", null, null, null);
-        Arguments input = new Arguments("--target", "input to output\n  (required)", new String[]{"-t"}, new String[]{"input jar|path", "output jar|path"});
+        Arguments input = new Arguments("--target", "input to output\n  (required)\n  you can use - for a temp-file if you want to chain operations", new String[]{"-t"}, new String[]{"input jar|path", "output jar|path"});
         Arguments classpath = new Arguments("--classpath", "Classpath to use\n  (highly recommended)", new String[]{"-cp"}, new String[]{"classpath"});
         parser.addChildren(
                 new Arguments("--help", "Prints this help", new String[]{"-h"}, null),
@@ -31,6 +34,8 @@ public class Main {
                 new Arguments("--ignoreWarningsIn", "Ignore warnings of missing class/member stubs in package/class matching", new String[]{"-i"}, new String[]{"package or class identifier"}),
                 new Arguments("--api", "Provide a java-api jar or jars", new String[]{"-a"}, new String[]{"jar"}),
                 new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
+                new Arguments("--multiReleaseOriginal", "Use the original class file for a Multi-Release jar", new String[]{"-mro"}, null),
+                new Arguments("--multiRelease", "Use semi-downgraded files for a Multi-Release jar, versions as class version (ex. \"55\" for java 11)", new String[]{"-mr"}, new String[]{"version"}),
                 new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
                         new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
                         new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
@@ -63,6 +68,29 @@ public class Main {
 
         if (parsed.containsKey("--help") || parsed.isEmpty()) {
             System.out.println("JvmDowngrader " + version);
+            System.out.println("Examples:");
+            System.out.println();
+            System.out.println("Chain downgrade/shade operations");
+            System.out.println(">  jvmdg downgrade --target input.jar - shade --prefix uniqueName --target - output.jar");
+            System.out.println();
+            System.out.println("Downgrade a jar:");
+            System.out.println(">  jvmdg downgrade --target input.jar output.jar");
+            System.out.println();
+            System.out.println("Shade jvmdg api into a downgraded jar");
+            System.out.println(">  jvmdg shade --prefix uniqueName --target input.jar output.jar");
+            System.out.println();
+            System.out.println("Bootstrap run a jar");
+            System.out.println(">  jvmdg bootstrap -cp input.jar --main com.example.Main");
+            System.out.println();
+            System.out.println();
+            System.out.println("For more information see the help below, or the documentation at https://github.com/unimined/JvmDowngrader");
+            System.out.println();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 40; i++) {
+                sb.append("-");
+            }
+            System.out.println(sb);
+            System.out.println();
             System.out.println(parser.help());
             return;
         }
@@ -108,6 +136,17 @@ public class Main {
                     }
                     flags.api = api;
                     break;
+                case "--multiReleaseOriginal":
+                    flags.multiReleaseOriginal = true;
+                    break;
+                case "--multiRelease":
+                    Set<Integer> versions = new HashSet<>();
+                    for (String[] s : entry.getValue()) {
+                        for (String string : s) {
+                            versions.add(Integer.parseInt(string));
+                        }
+                    }
+                    flags.multiReleaseVersions = versions;
                 default:
             }
         }
@@ -180,7 +219,15 @@ public class Main {
                         throw new IllegalArgumentException("Multiple target paths specified");
                     }
                     String[] target = args.get("--target").get(0);
-                    File input = new File(target[0]);
+                    File input;
+                    if (target[0].equals("-")) {
+                        input = tempFiles.pollFirst();
+                        if (input == null) {
+                            throw new IllegalArgumentException("No input file found for " + Arrays.toString(target));
+                        }
+                    } else {
+                        input = new File(target[0]);
+                    }
                     if (!input.exists()) {
                         throw new IllegalArgumentException("input \"" + input + "\" does not exist");
                     }
@@ -192,7 +239,25 @@ public class Main {
                         fileSystems.add(fs);
                         inputPath = fs.getPath("/");
                     }
-                    File output = new File(target[1]);
+                    File output;
+                    if (target[1].equals("-")) {
+                        if (!Constants.DIR.exists() && !Constants.DIR.mkdirs()) {
+                            throw new IOException("Failed to create directory: " + Constants.DIR);
+                        }
+                        output = File.createTempFile(input.getName(), ".jar", Constants.DIR);
+                        tempFiles.add(output);
+                    } else {
+                        output = new File(target[1]);
+                        File parent = output.getParentFile();
+                        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                            throw new IOException("Failed to create directory: " + parent);
+                        }
+                    }
+                    if (output.exists()) {
+                        if (!output.delete()) {
+                            throw new IOException("Failed to delete output file: " + output);
+                        }
+                    }
                     if (output.toString().endsWith(".jar") || output.toString().endsWith(".zip")) {
                         FileSystem fs = Utils.openZipFileSystem(output.toPath(), true);
                         fileSystems.add(fs);

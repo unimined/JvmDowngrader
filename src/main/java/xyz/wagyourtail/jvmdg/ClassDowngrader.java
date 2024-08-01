@@ -293,7 +293,7 @@ public class ClassDowngrader implements Closeable {
             throw new RuntimeException("Class name mismatch: " + name.get() + " != " + node.name);
         }
         Map<String, byte[]> outputs = new HashMap<>();
-        if (flags.multiReleaseOriginal) {
+        if (flags.multiReleaseOriginal || flags.multiReleaseVersions.contains(version)) {
             outputs.put("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + name.get(), bytes);
         }
         try {

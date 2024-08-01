@@ -190,7 +190,7 @@ public class Flags {
             }
             synchronized (Flags.class) {
                 Constants.DIR.mkdirs();
-                Path tmp = Constants.DIR.toPath().resolve("jvmdg-api- " + jvmdgVersion + " .jar");
+                Path tmp = Constants.DIR.toPath().resolve("jvmdg-api-" + jvmdgVersion + ".jar");
                 List<File> prop = getJavaApiFromSystemProperty();
                 if (prop != null) {
                     foundApi = prop;
