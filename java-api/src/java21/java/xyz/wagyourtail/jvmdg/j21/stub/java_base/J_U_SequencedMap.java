@@ -9,6 +9,9 @@ import java.util.*;
 @Adapter(value = "java/util/SequencedMap", target = "java/util/Map")
 public class J_U_SequencedMap {
 
+    private J_U_SequencedMap() {
+    }
+
     public static boolean jvmdg$instanceof(Object obj) {
         return obj instanceof LinkedHashMap<?, ?> ||
                 obj instanceof SortedMap<?, ?> ||

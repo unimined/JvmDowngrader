@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Objects;
@@ -20,6 +21,7 @@ public class J_U_S_DoubleStream {
     @Adapter("Ljava/util/stream/DoubleStream$DoubleMapMultiConsumer;")
     public interface DoubleMapMultiConsumer {
 
+        @CoverageIgnore
         default DoubleStream of(double d) {
             DoubleStream.Builder doubles = DoubleStream.builder();
             accept(d, doubles);

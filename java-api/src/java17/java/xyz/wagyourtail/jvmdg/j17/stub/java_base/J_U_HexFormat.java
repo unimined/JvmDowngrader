@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j17.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -8,7 +9,10 @@ import java.nio.CharBuffer;
 import java.util.Objects;
 
 @Adapter("java/util/HexFormat")
-public record J_U_HexFormat(String delimiter, String prefix, String suffix, char[] digits) {
+public record J_U_HexFormat(String delimiter, String prefix, String suffix, @CoverageIgnore char[] digits) {
+    @CoverageIgnore
+    public J_U_HexFormat {}
+
     private static final char[] lowercase = "0123456789abcdef".toCharArray();
     private static final char[] uppercase = "0123456789ABCDEF".toCharArray();
 

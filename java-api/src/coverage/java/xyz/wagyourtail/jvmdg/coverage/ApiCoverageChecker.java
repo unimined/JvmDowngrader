@@ -9,6 +9,9 @@ import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
+import xyz.wagyourtail.jvmdg.version.Modify;
+import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
@@ -16,6 +19,8 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -94,11 +99,17 @@ public class ApiCoverageChecker {
 
                 Map<Type, Type> stubClassTypes = versionProvider.classStubs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFirst()));
                 Set<FullyQualifiedMemberNameAndDesc> stubClassMethods = versionProvider.classStubs.entrySet().stream().flatMap (e ->
-                    Stream.<Member>concat(
+                    Stream.concat(
                             Arrays.stream(e.getValue().getSecond().getFirst().getDeclaredMethods()),
                             Arrays.stream(e.getValue().getSecond().getFirst().getConstructors())
-                    ).filter(m -> (m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0 && (m.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0)
-                    .map(MemberNameAndDesc::fromMember)
+                    ).filter(m ->
+                            (m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0 &&
+                            (m.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0 &&
+                            !m.isAnnotationPresent(CoverageIgnore.class) &&
+                            !m.isAnnotationPresent(Stub.class) &&
+                            !m.isAnnotationPresent(Modify.class) &&
+                            !m.getName().startsWith("jvmdg$")
+                    ).map(MemberNameAndDesc::fromMember)
                     .map(m -> m.toFullyQualified(e.getValue().getFirst()))
                 ).collect(Collectors.toSet());
                 var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(value -> Stream.of(value.getMethodStubMap().values().stream(), value.getMethodModifyMap().values().stream()).flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
@@ -226,7 +237,9 @@ public class ApiCoverageChecker {
                         var unmatched = Path.of("./coverage/" + stubVersion + "/unmatched.txt");
                         writeList(
                             Stream.concat(
-                                unmatchedStubs.stream().map(FullyQualifiedMemberNameAndDesc::of),
+                                unmatchedStubs.stream()
+                                    .filter(e -> !e.isAnnotationPresent(CoverageIgnore.class))
+                                    .map(FullyQualifiedMemberNameAndDesc::of),
                                 stubClassMethods.stream()
                             ).map(e -> new MemberInfo("unknown", e, false, false))
                             .collect(Collectors.toList()),

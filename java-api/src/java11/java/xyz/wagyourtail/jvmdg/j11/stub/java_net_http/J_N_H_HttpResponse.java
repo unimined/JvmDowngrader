@@ -77,6 +77,9 @@ public interface J_N_H_HttpResponse<T> {
 
     @Adapter("Ljava/net/http/HttpResponse$BodyHandlers;")
     class BodyHandlers {
+
+        private BodyHandlers() {}
+
         private static Charset charsetFrom(J_N_H_HttpHeaders headers) {
 //            throw MissingStubError.create();
             return StandardCharsets.UTF_8;
@@ -222,6 +225,8 @@ public interface J_N_H_HttpResponse<T> {
 
     @Adapter("Ljava/net/http/HttpResponse$BodySubscribers;")
     class BodySubscribers {
+
+        private BodySubscribers() {}
 
         public static BodySubscriber<Void> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber) {
             return fromSubscriber(subscriber, (s) -> null);

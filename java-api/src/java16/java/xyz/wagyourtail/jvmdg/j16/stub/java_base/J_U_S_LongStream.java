@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.function.LongConsumer;
@@ -21,6 +22,7 @@ public class J_U_S_LongStream {
     @Adapter("Ljava/util/stream/LongStream$LongMapMultiConsumer;")
     public interface LongMapMultiConsumer {
 
+        @CoverageIgnore
         default LongStream of(long d) {
             LongStream.Builder longs = LongStream.builder();
             accept(d, longs);
