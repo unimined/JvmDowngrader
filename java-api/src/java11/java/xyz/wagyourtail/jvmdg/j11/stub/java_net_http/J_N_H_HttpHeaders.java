@@ -2,10 +2,16 @@ package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.function.BiPredicate;
 
 @Adapter("Ljava/net/http/HttpHeaders;")
 public class J_N_H_HttpHeaders {
@@ -15,8 +21,37 @@ public class J_N_H_HttpHeaders {
         this.headers = headers;
     }
 
+    public static J_N_H_HttpHeaders of(Map<String, List<String>> map, BiPredicate<String, String> filter) {
+        Map<String, List<String>> filtered = new TreeMap<>();
+        for (Map.Entry<String, List<String>> e : map.entrySet()) {
+            String key = e.getKey().trim();
+            if (key.isEmpty()) {
+                throw new IllegalArgumentException("empty key");
+            }
+            List<String> adding = new ArrayList<>();
+            for (String value : e.getValue()) {
+                if (value == null) {
+                    throw new IllegalArgumentException("null value for key " + key);
+                }
+                if (filter.test(key, value)) {
+                    adding.add(value);
+                }
+            }
+            if (!adding.isEmpty()) {
+                if (filtered.put(key.toLowerCase(Locale.ROOT), adding) != null) {
+                    throw new IllegalArgumentException("duplicate key: " + key);
+                }
+            }
+        }
+        return new J_N_H_HttpHeaders(Map.copyOf(filtered));
+    }
+
     public Optional<String> firstValue(String name) {
         return headers.containsKey(name) ? Optional.of(headers.get(name).get(0)) : Optional.empty();
+    }
+
+    public OptionalLong firstValueAsLong(String name) {
+        return headers.containsKey(name) ? OptionalLong.of(Long.parseLong(headers.get(name).get(0))) : OptionalLong.empty();
     }
 
     public List<String> allValues(String name) {

@@ -4,6 +4,10 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.MethodNode;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -14,6 +18,18 @@ public class MemberNameAndDesc {
     public MemberNameAndDesc(String name, Type desc) {
         this.name = name;
         this.desc = desc;
+    }
+
+    public static MemberNameAndDesc fromMember(Member member) {
+        if (member instanceof Method) {
+            return new MemberNameAndDesc(member.getName(), Type.getType((Method) member));
+        } else if (member instanceof Field) {
+            return new MemberNameAndDesc(member.getName(), Type.getType(((Field) member).getType()));
+        } else if (member instanceof Constructor) {
+            return new MemberNameAndDesc("<init>", Type.getType((Constructor<?>) member));
+        } else {
+            throw new IllegalArgumentException("Unknown member type: " + member.getClass());
+        }
     }
 
     public static MemberNameAndDesc fromNode(MethodNode mNode) {

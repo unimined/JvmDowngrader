@@ -16,6 +16,7 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Member;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -91,11 +92,20 @@ public class ApiCoverageChecker {
                 }
                 System.out.println("Checking version " + stubVersion);
 
+                Map<Type, Type> stubClassTypes = versionProvider.classStubs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFirst()));
+                Set<FullyQualifiedMemberNameAndDesc> stubClassMethods = versionProvider.classStubs.entrySet().stream().flatMap (e ->
+                    Stream.<Member>concat(
+                            Arrays.stream(e.getValue().getSecond().getFirst().getDeclaredMethods()),
+                            Arrays.stream(e.getValue().getSecond().getFirst().getConstructors())
+                    ).filter(m -> (m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0 && (m.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0)
+                    .map(MemberNameAndDesc::fromMember)
+                    .map(m -> m.toFullyQualified(e.getValue().getFirst()))
+                ).collect(Collectors.toSet());
                 var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(value -> Stream.of(value.getMethodStubMap().values().stream(), value.getMethodModifyMap().values().stream()).flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
+
                 try {
                     var requiredStubs = new ArrayList<MemberInfo>();
                     compare(versions.get(v), classes, requiredStubs);
-                    Map<Type, Pair<Type, Pair<Class<?>, Adapter>>> stubClasses = versionProvider.classStubs;
 
                     outer:
                     for (var staticAndStub : requiredStubs) {
@@ -118,65 +128,43 @@ public class ApiCoverageChecker {
                             for (int i = 0; i < descArgs.length; i++) {
                                 var arg = descArgs[i];
                                 if (arg.getSort() == Type.OBJECT) {
-                                    var stubCls = stubClasses.get(arg);
+                                    var stubCls = stubClassTypes.get(arg);
                                     if (stubCls != null) {
-                                        descArgs[i] = stubCls.getFirst();
+                                        descArgs[i] = stubCls;
                                     }
                                 } else if (arg.getSort() == Type.ARRAY) {
                                     var dims = arg.getDimensions();
                                     var elem = arg.getElementType();
                                     if (elem.getSort() == Type.OBJECT) {
-                                        var stubCls = stubClasses.get(elem);
+                                        var stubCls = stubClassTypes.get(elem);
                                         if (stubCls != null) {
-                                            descArgs[i] = Type.getType("[".repeat(dims) + stubCls.getFirst().getDescriptor());
+                                            descArgs[i] = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
                                         }
                                     }
                                 }
                             }
                             var ret = desc.getReturnType();
                             if (ret.getSort() == Type.OBJECT) {
-                                var stubCls = stubClasses.get(ret);
+                                var stubCls = stubClassTypes.get(ret);
                                 if (stubCls != null) {
-                                    ret = stubCls.getFirst();
+                                    ret = stubCls;
                                 }
                             } else if (ret.getSort() == Type.ARRAY) {
                                 var dims = ret.getDimensions();
                                 var elem = ret.getElementType();
                                 if (elem.getSort() == Type.OBJECT) {
-                                    var stubCls = stubClasses.get(elem);
+                                    var stubCls = stubClassTypes.get(elem);
                                     if (stubCls != null) {
-                                        ret = Type.getType("[".repeat(dims) + stubCls.getFirst().getDescriptor());
+                                        ret = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
                                     }
                                 }
                             }
                             var member = new MemberNameAndDesc(stub.getName(), Type.getMethodType(ret, descArgs));
 
-                            if (versionProvider.classStubs.containsKey(stub.getOwner())) {
-                                var clsStub = versionProvider.classStubs.get(stub.getOwner());
-                                try {
-                                    Class<?> cls = Class.forName(clsStub.getFirst().getInternalName().replace('/', '.'), true, ClassDowngrader.getCurrentVersionDowngrader().getClassLoader());
-                                    // check if has matching method
-                                    if (member.getName().equals("<init>")) {
-                                        for (var m : cls.getConstructors()) {
-                                            if ((m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (m.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0)
-                                                continue;
-                                            if (Type.getType(m).equals(member.getDesc())) {
-                                                availableStubCount++;
-                                                continue outer;
-                                            }
-                                        }
-                                    } else {
-                                        for (var m : cls.getDeclaredMethods()) {
-                                            if ((m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (m.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0)
-                                                continue;
-                                            if (m.getName().equals(member.getName()) && Type.getType(m).equals(member.getDesc())) {
-                                                availableStubCount++;
-                                                continue outer;
-                                            }
-                                        }
-                                    }
-                                } catch (ClassNotFoundException e) {
-                                    System.err.println("Failed to load class " + clsStub.getFirst().getInternalName());
+                            if (stubClassTypes.containsKey(stub.getOwner())) {
+                                if (stubClassMethods.remove(member.toFullyQualified(stubClassTypes.get(stub.getOwner())))) {
+                                    availableStubCount++;
+                                    continue;
                                 }
                             }
 
@@ -234,9 +222,16 @@ public class ApiCoverageChecker {
                         var parentOnly = Path.of("./coverage/" + stubVersion + "/parentOnly.txt");
                         writeList(parentOnlyStubs, parentOnly);
                     }
-                    if (!unmatchedStubs.isEmpty()) {
+                    if (!unmatchedStubs.isEmpty() || !stubClassMethods.isEmpty()) {
                         var unmatched = Path.of("./coverage/" + stubVersion + "/unmatched.txt");
-                        writeList(unmatchedStubs.stream().map(methodStubPair -> new MemberInfo("unknown", FullyQualifiedMemberNameAndDesc.of(methodStubPair), false, false)).collect(Collectors.toList()), unmatched);
+                        writeList(
+                            Stream.concat(
+                                unmatchedStubs.stream().map(FullyQualifiedMemberNameAndDesc::of),
+                                stubClassMethods.stream()
+                            ).map(e -> new MemberInfo("unknown", e, false, false))
+                            .collect(Collectors.toList()),
+                            unmatched
+                        );
                     }
 
                 } catch (IOException e) {
