@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j11.impl.http;
 
 import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpClient;
+import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpHeaders;
 import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpRequest;
 
 import java.net.URI;
@@ -58,5 +59,10 @@ public class HttpRequestImpl extends J_N_H_HttpRequest {
     @Override
     public Optional<J_N_H_HttpClient.Version> version() {
         return Optional.ofNullable(version);
+    }
+
+    @Override
+    public J_N_H_HttpHeaders headers() {
+        return new J_N_H_HttpHeaders(headers);
     }
 }

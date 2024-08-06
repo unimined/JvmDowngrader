@@ -26,6 +26,10 @@ public abstract class J_N_H_HttpRequest {
         return new HttpRequestBuilderImpl();
     }
 
+    public static Builder newBuilder(URI uri) {
+        return new HttpRequestBuilderImpl().uri(uri);
+    }
+
     public abstract Optional<BodyPublisher> bodyPublisher();
 
     public abstract String method();
@@ -37,7 +41,8 @@ public abstract class J_N_H_HttpRequest {
     public abstract URI uri();
 
     public abstract Optional<J_N_H_HttpClient.Version> version();
-//    public abstract HttpHeaders headers();
+
+    public abstract J_N_H_HttpHeaders headers();
 
     public final boolean equals(Object obj) {
         if (!(obj instanceof J_N_H_HttpRequest)) {
@@ -47,14 +52,14 @@ public abstract class J_N_H_HttpRequest {
         if (!that.method().equals(this.method())) {
             return false;
         }
+        if (!that.headers().equals(this.headers())) {
+            return false;
+        }
         return that.uri().equals(this.uri());
-//        if (!that.headers().equals(this.headers())) {
-//            return false;
-//        }
     }
 
     public final int hashCode() {
-        return method().hashCode() + uri().hashCode(); // + headers().hashCode();
+        return Objects.hash(method().hashCode(), uri().hashCode(), headers().hashCode());
     }
 
     @Adapter("Ljava/net/http/HttpRequest$BodyPublisher;")
