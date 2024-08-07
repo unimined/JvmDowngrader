@@ -42,7 +42,18 @@ public class DowngradeTests extends BaseIntegrationTests {
         flags.logLevel = Logger.Level.FATAL;
 
         return Stream.of(
-            new FlagsAndRunner(flags.copy(e -> e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode()), JavaRunner.JavaVersion.V1_8)
+            new FlagsAndRunner(JavaRunner.JavaVersion.V1_8, flags.copy(e -> {
+                e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode();
+                e.multiReleaseVersions = Set.of(JavaRunner.JavaVersion.V11.toOpcode(), JavaRunner.JavaVersion.V17.toOpcode());
+            })),
+            new FlagsAndRunner(JavaRunner.JavaVersion.V11, flags.copy(e -> {
+                e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode();
+                e.multiReleaseVersions = Set.of(JavaRunner.JavaVersion.V11.toOpcode(), JavaRunner.JavaVersion.V17.toOpcode());
+            })),
+            new FlagsAndRunner(JavaRunner.JavaVersion.V17, flags.copy(e -> {
+                e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode();
+                e.multiReleaseVersions = Set.of(JavaRunner.JavaVersion.V11.toOpcode(), JavaRunner.JavaVersion.V17.toOpcode());
+            }))
 //            new FlagsAndRunner(flags.copy(e -> {
 //                e.classVersion = JavaRunner.JavaVersion.V1_7.toOpcode();
 //                e.debugSkipStubs = Set.of(JavaRunner.JavaVersion.V1_8.toOpcode());
@@ -100,7 +111,7 @@ public class DowngradeTests extends BaseIntegrationTests {
         }
     }
 
-    private static final Map<FlagsAndRunner, Path> downgradedPaths = new ConcurrentHashMap<>();
+    private static final Map<Flags, Path> downgradedPaths = new ConcurrentHashMap<>();
 
     private static Path getDowngradedPath(FlagsAndRunner flags) {
         String fName = original.getFileName().toString();
@@ -110,7 +121,7 @@ public class DowngradeTests extends BaseIntegrationTests {
     }
 
     private static synchronized Path getDowngradedJar(FlagsAndRunner flags) {
-        return downgradedPaths.computeIfAbsent(flags, e -> {
+        return downgradedPaths.computeIfAbsent(flags.flags(), e -> {
             try {
                 Path target = getDowngradedPath(flags);
                 ZipDowngrader.downgradeZip(
@@ -126,7 +137,7 @@ public class DowngradeTests extends BaseIntegrationTests {
         });
     }
 
-    private static final Map<FlagsAndRunner, Path> shadedPaths = new ConcurrentHashMap<>();
+    private static final Map<Flags, Path> shadedPaths = new ConcurrentHashMap<>();
 
     private static Path getShadedPath(FlagsAndRunner flags) {
         String fName = original.getFileName().toString();
@@ -136,7 +147,7 @@ public class DowngradeTests extends BaseIntegrationTests {
     }
 
     private static synchronized Path getShadedJar(FlagsAndRunner flags) {
-        return shadedPaths.computeIfAbsent(flags, e -> {
+        return shadedPaths.computeIfAbsent(flags.flags(), e -> {
             try {
                 Path target = getShadedPath(flags);
                 ApiShader.shadeApis(
@@ -159,6 +170,11 @@ public class DowngradeTests extends BaseIntegrationTests {
             Files.deleteIfExists(getDowngradedPath(flag));
             Files.deleteIfExists(getApiPath(flag));
             Files.deleteIfExists(getShadedPath(flag));
+        }
+        for (FlagsAndRunner flag : flags().toList()) {
+            getApiJar(flag);
+            getDowngradedJar(flag);
+            getShadedJar(flag);
         }
     }
 

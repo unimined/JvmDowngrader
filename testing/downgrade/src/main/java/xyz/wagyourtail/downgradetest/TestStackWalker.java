@@ -9,17 +9,22 @@ public class TestStackWalker {
         TestInner.test();
     }
 
+    public static void walkAccept(StackWalker.StackFrame frame) {
+        if (!frame.getClassName().startsWith("xyz.wagyourtail.jvmdg")) {
+            System.out.println(frame);
+        }
+    }
 
     public static void test() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         StackWalker walker = StackWalker.getInstance();
-        walker.forEach(System.out::println);
+        walker.forEach(TestStackWalker::walkAccept);
         TestStackWalker.class.getDeclaredMethod("test2").invoke(null);
     }
 
     public static void test2() {
         StackWalker walker = StackWalker.getInstance();
         walker.walk(e -> {
-            e.forEach(System.out::println);
+            e.forEach(TestStackWalker::walkAccept);
             return null;
         });
     }

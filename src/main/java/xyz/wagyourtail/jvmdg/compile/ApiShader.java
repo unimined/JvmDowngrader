@@ -144,15 +144,15 @@ public class ApiShader {
         // step 2: collect classes in the api and their references
         try {
             ReferenceGraph apiRefs = new ReferenceGraph(new Logger(ApiShader.class, flags.getLogLevel(), flags.logAnsiColors, System.out), true);
-            List<Map<Path, Type>> preScans = new ArrayList<>();
+            List<Pair<Path, Map<Path, Type>>> preScans = new ArrayList<>();
             final Set<Type> apiClasses = new HashSet<>();
             for (Path apiRoot : apiRoots) {
                 Map<Path, Type> preScan = apiRefs.preScan(apiRoot);
-                preScans.add(preScan);
+                preScans.add(new Pair<>(apiRoot, preScan));
                 apiClasses.addAll(preScan.values());
             }
-            for (Map<Path, Type> preScan : preScans) {
-                apiRefs.scan(preScan, new ReferenceGraph.Filter() {
+            for (Pair<Path, Map<Path, Type>> preScan : preScans) {
+                apiRefs.scan(preScan.getFirst(), preScan.getSecond(), new ReferenceGraph.Filter() {
                     @Override
                     public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
                         return apiClasses.contains(member.getOwner());
@@ -185,6 +185,7 @@ public class ApiShader {
                 candidates.remove(ref);
             }
         }
+
         // remove if the class is not fully inlined
         Set<FullyQualifiedMemberNameAndDesc> unInlined = new HashSet<>(refs.keySet());
         unInlined.removeAll(candidates.keySet());
@@ -253,7 +254,7 @@ public class ApiShader {
         throw new UnsupportedOperationException("Not implemented");
     }
 
-    public static void shadeApis(Flags flags, final String prefix, final Path inputRoot, final Path outputRoot, final List<Path> apiRoots, final ReferenceGraph apiRefs, final Set<Type> apiClasses) throws IOException {
+    public static void shadeApis(final Flags flags, final String prefix, final Path inputRoot, final Path outputRoot, final List<Path> apiRoots, final ReferenceGraph apiRefs, final Set<Type> apiClasses) throws IOException {
         if (!prefix.endsWith("/")) throw new IllegalArgumentException("prefix must end with /");
         Logger logger = new Logger(ApiShader.class, flags.getLogLevel(), flags.logAnsiColors, System.out);
         try {
@@ -266,132 +267,172 @@ public class ApiShader {
                 }
             });
 
-            // step 4: inline candidates
-            Pair<Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>>, Set<String>> required = apiRefs.recursivelyResolveUsagesFrom(inputRefs.getAllUsagesForRefs());
+            Set<Integer> inputVersions = inputRefs.getVersions();
+            Map<Type, Set<Integer>> inputKeys = inputRefs.getKeys();
 
-            Map<FullyQualifiedMemberNameAndDesc, Type> inlineCandidates = inlineCandidates(logger, required.getFirst(), inputRefs.getKeys());
-            for (Map.Entry<FullyQualifiedMemberNameAndDesc, Type> entry : inlineCandidates.entrySet()) {
-                required.getFirst().remove(entry.getKey());
-                required.getFirst().remove(new FullyQualifiedMemberNameAndDesc(entry.getKey().getOwner(), null, null));
+            final Map<Type, byte[]> currentOutputData = new HashMap<>();
+            for (final int version : inputVersions) {
+                // step 4: inline candidates
+                Pair<Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>>, Set<String>> required = apiRefs.recursivelyResolveUsagesFrom(inputRefs.getAllUsagesForRefs(version), version);
 
-                // change insn's owner to the inlined class
-                for (AbstractInsnNode insn : inputRefs.getAllInsnsFor(entry.getKey())) {
-                    inlineRef(entry.getKey(), insn, entry.getValue());
-                }
-
-                // actually inline it
-                ClassNode node = inputRefs.getClassFor(entry.getValue());
-                ClassNode apiNode = apiRefs.getClassFor(entry.getKey().getOwner());
-                // find api method
-                MethodNode method = null;
-                for (MethodNode m : apiNode.methods) {
-                    if (m.name.equals(entry.getKey().getName()) && m.desc.equals(entry.getKey().getDesc().getDescriptor())) {
-                        method = m;
-                        break;
+                Set<Type> keys = new HashSet<>();
+                for (Type key : inputKeys.keySet()) {
+                    if (inputKeys.get(key).contains(version)) {
+                        keys.add(key);
                     }
                 }
-                if (method == null) {
-                    throw new IllegalStateException("Method not found in class: " + entry.getKey());
+                Map<FullyQualifiedMemberNameAndDesc, Type> inlineCandidates = inlineCandidates(logger, required.getFirst(), keys);
+                for (Map.Entry<FullyQualifiedMemberNameAndDesc, Type> entry : inlineCandidates.entrySet()) {
+                    required.getFirst().remove(entry.getKey());
+                    required.getFirst().remove(new FullyQualifiedMemberNameAndDesc(entry.getKey().getOwner(), null, null));
+
+                    // change insn's owner to the inlined class
+                    for (AbstractInsnNode insn : inputRefs.getAllInsnsFor(entry.getKey(), version)) {
+                        inlineRef(entry.getKey(), insn, entry.getValue());
+                    }
+
+                    // actually inline it
+                    ClassNode node = inputRefs.getClassFor(entry.getValue(), version);
+                    ClassNode apiNode = apiRefs.getClassFor(entry.getKey().getOwner(), version);
+                    // find api method
+                    MethodNode method = null;
+                    for (MethodNode m : apiNode.methods) {
+                        if (m.name.equals(entry.getKey().getName()) && m.desc.equals(entry.getKey().getDesc().getDescriptor())) {
+                            method = m;
+                            break;
+                        }
+                    }
+                    if (method == null) {
+                        throw new IllegalStateException("Method not found in class: " + entry.getKey());
+                    }
+                    MethodNode copy = new MethodNode(method.access, "jvmdg$inlined$" + method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
+                    method.accept(copy);
+                    node.methods.add(copy);
                 }
-                // rename and insert api method into the class
-                method.name = "jvmdg$inlined$" + method.name;
-                node.methods.add(method);
+
+                // step 4.5: create remapper for api classes to prefixed api classes
+                final Map<Type, Set<MemberNameAndDesc>> byType = byType(required.getFirst().keySet());
+                final Map<String, String> remap = new HashMap<>();
+                for (Type type : byType.keySet()) {
+                    remap.put(type.getInternalName(), prefix + type.getInternalName());
+                }
+                final SimpleRemapper remapper = new SimpleRemapper(remap);
+
+                // step 5: actually write the referenced api classes to the output, removing unused parts from them.
+                Future<Void> apiWrite = AsyncUtils.forEachAsync(byType.entrySet(), new IOConsumer<Map.Entry<Type, Set<MemberNameAndDesc>>>() {
+                    @Override
+                    public void accept(Map.Entry<Type, Set<MemberNameAndDesc>> type) throws IOException {
+                        // load api class as a ClassNode
+                        ClassNode node = apiRefs.getClassFor(type.getKey(), version);
+                        // get actual version of node
+                        Path outPath;
+                        if (node.version > flags.classVersion) {
+                            outPath = outputRoot.resolve("META-INF/versions/" + Utils.classVersionToMajorVersion(node.version) + "/");
+                        } else {
+                            outPath = outputRoot;
+                        }
+                        outPath = outPath.resolve(prefix + type.getKey().getInternalName() + ".class");
+                        if (Files.exists(outPath)) {
+                            // Already written by lower version, defer to lower version
+                            return;
+                        }
+                        Path parent = outPath.getParent();
+                        if (parent != null) {
+                            Files.createDirectories(parent);
+                        }
+                        if ((node.access & Opcodes.ACC_ENUM) == 0) {
+                            // remove unused members
+                            Set<MemberNameAndDesc> members = type.getValue();
+                            Iterator<MethodNode> iter = node.methods.iterator();
+                            while (iter.hasNext()) {
+                                MethodNode method = iter.next();
+                                if (!members.contains(new MemberNameAndDesc(method.name, Type.getMethodType(method.desc)))) {
+                                    iter.remove();
+                                }
+                            }
+                            Iterator<FieldNode> fiter = node.fields.iterator();
+                            while (fiter.hasNext()) {
+                                FieldNode field = fiter.next();
+                                if (!members.contains(new MemberNameAndDesc(field.name, Type.getType(field.desc)))) {
+                                    fiter.remove();
+                                }
+                            }
+                        }
+                        // write the class to the output
+                        ClassWriter writer = new ClassWriter(0);
+                        node.accept(new ClassRemapper(writer, remapper));
+                        byte[] data = writer.toByteArray();
+                        byte[] prevData = currentOutputData.get(type.getKey());
+                        if (prevData == null || !Utils.equals(prevData, 8, prevData.length, data, 8, data.length)) {
+                            currentOutputData.put(type.getKey(), data);
+                            Files.write(outPath, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                        }
+                    }
+
+                });
+
+                Future<Void> resourceWrite = AsyncUtils.forEachAsync(required.getSecond(), new IOConsumer<String>() {
+                    @Override
+                    public void accept(String resource) throws IOException {
+                        for (Path apiRoot : apiRoots) {
+                            Path inPath = apiRoot.resolve(resource);
+                            if (Files.exists(inPath)) {
+                                Path outPath = outputRoot.resolve(resource);
+                                Path parent = outPath.getParent();
+                                if (parent != null) {
+                                    Files.createDirectories(parent);
+                                }
+                                Files.copy(inPath, outPath, StandardCopyOption.REPLACE_EXISTING);
+                                return;
+                            }
+                        }
+                    }
+                });
+
+                // step 6: remap references to the api to start with prefix
+                Set<Type> inputsOnVersion = new HashSet<Type>();
+                for (Type key : inputKeys.keySet()) {
+                    if (inputKeys.get(key).contains(version)) {
+                        inputsOnVersion.add(key);
+                    }
+                }
+                Future<Void> shadeWrite = AsyncUtils.forEachAsync(inputsOnVersion, new IOConsumer<Type>() {
+                    @Override
+                    public void accept(Type type) throws IOException {
+                        ClassNode node = inputRefs.getClassFor(type, version);
+                        Path outPath;
+                        if (version != 0) {
+                            outPath = outputRoot.resolve("META-INF/versions/" + version + "/");
+                        } else {
+                            outPath = outputRoot;
+                        }
+                        outPath = outPath.resolve(type.getInternalName() + ".class");
+                        Path parent = outPath.getParent();
+                        if (parent != null) {
+                            Files.createDirectories(parent);
+                        }
+                        ClassWriter writer = new ClassWriter(0);
+                        node.accept(new ClassRemapper(writer, remapper));
+                        Files.write(outPath, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                    }
+                });
+
+                AsyncUtils.waitForFutures(apiWrite, resourceWrite, shadeWrite).get();
             }
 
-            // step 4.5: create remapper for api classes to prefixed api classes
-            final Map<Type, Set<MemberNameAndDesc>> byType = byType(required.getFirst().keySet());
-            final Map<String, String> remap = new HashMap<>();
-            for (Type type : byType.keySet()) {
-                remap.put(type.getInternalName(), prefix + type.getInternalName());
-            }
-            final SimpleRemapper remapper = new SimpleRemapper(remap);
-
-            // step 5: actually write the referenced api classes to the output, removing unused parts from them.
-            Future<Void> apiWrite = AsyncUtils.forEachAsync(byType.entrySet(), new IOConsumer<Map.Entry<Type, Set<MemberNameAndDesc>>>() {
+            // write the resources in the class file
+            AsyncUtils.visitPathsAsync(inputRoot, null, new IOConsumer<Path>() {
                 @Override
-                public void accept(Map.Entry<Type, Set<MemberNameAndDesc>> type) throws IOException {
-                    Path outPath = outputRoot.resolve(prefix + type.getKey().getInternalName() + ".class");
+                public void accept(Path path) throws IOException {
+                    if (path.toString().endsWith(".class")) return;
+                    Path outPath = outputRoot.resolve(inputRoot.relativize(path).toString());
                     Path parent = outPath.getParent();
                     if (parent != null) {
                         Files.createDirectories(parent);
                     }
-                    // load api class as a ClassNode
-                    ClassNode node = apiRefs.getClassFor(type.getKey());
-                    if ((node.access & Opcodes.ACC_ENUM) == 0) {
-                        // remove unused members
-                        Set<MemberNameAndDesc> members = type.getValue();
-                        Iterator<MethodNode> iter = node.methods.iterator();
-                        while (iter.hasNext()) {
-                            MethodNode method = iter.next();
-                            if (!members.contains(new MemberNameAndDesc(method.name, Type.getMethodType(method.desc)))) {
-                                iter.remove();
-                            }
-                        }
-                        Iterator<FieldNode> fiter = node.fields.iterator();
-                        while (fiter.hasNext()) {
-                            FieldNode field = fiter.next();
-                            if (!members.contains(new MemberNameAndDesc(field.name, Type.getType(field.desc)))) {
-                                fiter.remove();
-                            }
-                        }
-                    }
-                    // write the class to the output
-                    ClassWriter writer = new ClassWriter(0);
-                    node.accept(new ClassRemapper(writer, remapper));
-                    Files.write(outPath, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                    Files.copy(path, outPath, StandardCopyOption.REPLACE_EXISTING);
                 }
-
-            });
-
-            Future<Void> resourceWrite = AsyncUtils.forEachAsync(required.getSecond(), new IOConsumer<String>() {
-                @Override
-                public void accept(String resource) throws IOException {
-                    for (Path apiRoot : apiRoots) {
-                        Path inPath = apiRoot.resolve(resource);
-                        if (Files.exists(inPath)) {
-                            Path outPath = outputRoot.resolve(resource);
-                            Path parent = outPath.getParent();
-                            if (parent != null) {
-                                Files.createDirectories(parent);
-                            }
-                            Files.copy(inPath, outPath, StandardCopyOption.REPLACE_EXISTING);
-                            return;
-                        }
-                    }
-                }
-            });
-
-            // step 6: remap references to the api to start with prefix
-            Future<Void> shadeWrite = AsyncUtils.visitPathsAsync(inputRoot, new IOFunction<Path, Boolean>() {
-                @Override
-                public Boolean apply(Path path) throws IOException {
-                    Path output = outputRoot.resolve(inputRoot.relativize(path).toString());
-                    Files.createDirectories(output);
-                    return true;
-                }
-            }, new IOConsumer<Path>() {
-                @Override
-                public void accept(Path path) throws IOException {
-                    Path relPath = inputRoot.relativize(path);
-                    Path output = outputRoot.resolve(relPath.toString());
-                    String pathStr = relPath.toString();
-                    if (!pathStr.startsWith("META-INF/versions") && pathStr.endsWith(".class") && !pathStr.equals("module-info.class")) {
-//                                byte[] data = Files.readAllBytes(path);
-                        ClassWriter writer = new ClassWriter(0);
-                        pathStr = pathStr.substring(0, pathStr.length() - 6);
-                        ClassNode cn = inputRefs.getClassFor(Type.getObjectType(pathStr));
-                        if (cn == null) {
-                            throw new IllegalStateException("Class not found from ref cache? " + pathStr);
-                        }
-                        cn.accept(new ClassRemapper(writer, remapper));
-                        Files.write(output, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-                    } else {
-                        Files.copy(path, output, StandardCopyOption.REPLACE_EXISTING);
-                    }
-                }
-            });
-
-            AsyncUtils.waitForFutures(apiWrite, resourceWrite, shadeWrite).get();
+            }).get();
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }

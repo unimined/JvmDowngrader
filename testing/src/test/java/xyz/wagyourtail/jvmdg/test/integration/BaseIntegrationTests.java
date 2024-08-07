@@ -55,7 +55,7 @@ public abstract class BaseIntegrationTests {
         return out.stream();
     }
 
-    private static final Map<FlagsAndRunner, Path> apiPaths = new ConcurrentHashMap<>();
+    private static final Map<Flags, Path> apiPaths = new ConcurrentHashMap<>();
 
     public static Path getApiPath(FlagsAndRunner flags) {
         String fName = javaApi.getFileName().toString();
@@ -65,7 +65,7 @@ public abstract class BaseIntegrationTests {
     }
 
     public static synchronized Path getApiJar(FlagsAndRunner flags) {
-        return apiPaths.computeIfAbsent(flags, e -> {
+        return apiPaths.computeIfAbsent(flags.flags(), e -> {
             try {
                 Path target = getApiPath(flags);
                 ZipDowngrader.downgradeZip(

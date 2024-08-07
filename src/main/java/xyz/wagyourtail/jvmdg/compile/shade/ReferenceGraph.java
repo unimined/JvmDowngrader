@@ -19,25 +19,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
 
 public class ReferenceGraph {
     private final Logger logger;
-    private final Map<Type, References> references = new ConcurrentHashMap<>();
-    private final Map<Type, ClassNode> classNodes = new ConcurrentHashMap<>();
+    private final Set<Integer> versions = new ConcurrentSkipListSet<>();
+    private final Map<Type, Map<Integer, References>> references = new ConcurrentHashMap<>();
+    private final Map<Type, Map<Integer, ClassNode>> classNodes = new ConcurrentHashMap<>();
     private final boolean retainClassNodes;
     private final boolean retainInsns;
 
     public ReferenceGraph(Logger logger) {
-        this.logger = logger.subLogger(ReferenceGraph.class);
-        retainClassNodes = false;
-        retainInsns = false;
+        this(logger, false);
     }
 
     public ReferenceGraph(Logger logger, boolean retainClassNodes) {
-        this.logger = logger.subLogger(ReferenceGraph.class);
-        this.retainClassNodes = retainClassNodes;
-        this.retainInsns = false;
+        this(logger, retainClassNodes, false);
     }
 
     public ReferenceGraph(Logger logger, boolean retainClassNodes, boolean retainInsns) {
@@ -47,6 +45,7 @@ public class ReferenceGraph {
         if (retainInsns && !retainClassNodes) {
             throw new IllegalArgumentException("Cannot retain instructions without retaining class nodes.");
         }
+        versions.add(0);
     }
 
 
@@ -54,15 +53,15 @@ public class ReferenceGraph {
      * if the {@link ClassNode} is retained, this will return the {@link ClassNode} for the given type.
      * @return the {@link ClassNode} for the given type.
      */
-    public ClassNode getClassFor(Type type) {
+    public ClassNode getClassFor(Type type, int version) {
         if (!retainClassNodes) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("Class nodes are not retained.");
         }
-        return classNodes.get(type);
+        return resolveVersioned(classNodes.get(type), version);
     }
 
     public void scan(Path root, Filter filter) throws IOException, ExecutionException, InterruptedException {
-        scan(preScan(root), filter);
+        scan(root, preScan(root), filter);
     }
 
     /**
@@ -71,26 +70,37 @@ public class ReferenceGraph {
      */
     public Map<Path, Type> preScan(final Path root) throws IOException, ExecutionException, InterruptedException {
         final Map<Path, Type> newScanTargets = new ConcurrentHashMap<>();
-        AsyncUtils.visitPathsAsync(root, new IOFunction<Path, Boolean>() {
-            @Override
-            public Boolean apply(Path path) throws IOException {
-                // exclude META-INF/versions from scanning
-                // TODO: reconsider
-                return !root.relativize(path).toString().startsWith("META-INF/versions");
-            }
-        }, new IOConsumer<Path>() {
+        AsyncUtils.visitPathsAsync(root, null, new IOConsumer<Path>() {
             @Override
             public void accept(Path path) throws IOException {
                 // skip module info, it doesn't have references we care about
                 if (path.getFileName().toString().equals("module-info.class")) {
                     return;
                 }
-                String pathStr = root.relativize(path).toString();
+                int version;
+                Path rel = root.relativize(path);
+                String pathStr;
+                if (rel.toString().startsWith("META-INF/versions")) {
+                    version = Integer.parseInt(path.getName(2).toString());
+                    pathStr = path.subpath(3, path.getNameCount()).toString();
+                } else {
+                    version = 0;
+                    pathStr = root.relativize(path).toString();
+                }
+                versions.add(version);
                 if (pathStr.endsWith(".class")) {
                     pathStr = pathStr.substring(0, pathStr.length() - 6);
                     Type type = Type.getObjectType(pathStr);
                     if (!references.containsKey(type)) {
-                        references.put(type, new References());
+                        synchronized (references) {
+                            if (!references.containsKey(type)) {
+                                references.put(type, new ConcurrentHashMap<Integer, References>());
+                                classNodes.put(type, new ConcurrentHashMap<Integer, ClassNode>());
+                            }
+                        }
+                    }
+                    if (!references.get(type).containsKey(version)) {
+                        references.get(type).put(version, new References(version));
                         newScanTargets.put(path, type);
                     }
 
@@ -106,10 +116,16 @@ public class ReferenceGraph {
      * @param newScanTargets the paths to scan.
      * @param filter the filter to determine if a reference should be retained.
      */
-    public void scan(final Map<Path, Type> newScanTargets, final Filter filter) throws IOException, ExecutionException, InterruptedException {
+    public void scan(final Path rootPath, final Map<Path, Type> newScanTargets, final Filter filter) throws IOException, ExecutionException, InterruptedException {
         AsyncUtils.forEachAsync(newScanTargets.keySet(), new IOConsumer<Path>() {
             @Override
             public void accept(Path path) throws IOException {
+                int version;
+                if (rootPath.relativize(path).toString().startsWith("META-INF/versions")) {
+                    version = Integer.parseInt(path.getName(2).toString());
+                } else {
+                    version = 0;
+                }
                 try (InputStream stream = Files.newInputStream(path)) {
                     ClassNode node = ASMUtils.bytesToClassNode(Utils.readAllBytes(stream));
                     Type type = Type.getObjectType(node.name);
@@ -117,9 +133,9 @@ public class ReferenceGraph {
                         throw new IllegalStateException("Expected path to match class name: " + path + " != " + type.getInternalName());
                     }
                     if (retainClassNodes) {
-                        classNodes.put(type, node);
+                        classNodes.get(type).put(version, node);
                     }
-                    references.get(type).scan(node, filter);
+                    references.get(type).get(version).scan(node, filter);
                 }
             }
         }).get();
@@ -128,31 +144,41 @@ public class ReferenceGraph {
     public void debugPrint() {
         if (!logger.is(Logger.Level.DEBUG)) return;
         logger.debug("Reference Graph:");
-        for (Map.Entry<Type, References> entry : references.entrySet()) {
-            logger.debug("* " + entry.getKey().getInternalName());
-            References refs = entry.getValue();
-            for (Type t : refs.requiredInstances) {
-                System.out.println("  - " + t.getInternalName());
-            }
-            for (Map.Entry<MemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> e : refs.requiredForMembers.entrySet()) {
-                System.out.println("  - " + e.getKey());
-                for (FullyQualifiedMemberNameAndDesc f : e.getValue()) {
-                    System.out.println("      " + f);
+        for (Map.Entry<Type, Map<Integer, References>> entry : references.entrySet()) {
+            for (Map.Entry<Integer, References> e : entry.getValue().entrySet()) {
+                logger.debug("* " + e.getKey() + "/" + entry.getKey().getInternalName());
+                References refs = e.getValue();
+                for (Type t : refs.requiredInstances) {
+                    logger.debug("  - " + t.getInternalName());
+                }
+                for (Map.Entry<MemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> e2 : refs.requiredForMembers.entrySet()) {
+                    logger.debug("  - " + e2.getKey());
+                    for (FullyQualifiedMemberNameAndDesc f : e2.getValue()) {
+                        logger.debug("      " + f);
+                    }
                 }
             }
         }
     }
 
-    public Set<Type> getKeys() {
-        return references.keySet();
+    public Set<Integer> getVersions() {
+        return new TreeSet<>(versions);
+    }
+
+    public Map<Type, Set<Integer>> getKeys() {
+        Map<Type, Set<Integer>> keys = new HashMap<>();
+        for (Map.Entry<Type, Map<Integer, References>> entry : references.entrySet()) {
+            keys.put(entry.getKey(), new HashSet<>(entry.getValue().keySet()));
+        }
+        return keys;
     }
 
     /**
      * @return all retained references from the graph.
      */
-    public Set<FullyQualifiedMemberNameAndDesc> getAllRefs() {
+    public Set<FullyQualifiedMemberNameAndDesc> getAllRefs(int version) {
         Set<FullyQualifiedMemberNameAndDesc> refs = new HashSet<>();
-        for (References value : references.values()) {
+        for (References value : references.get(version).values()) {
             for (Type requiredInstance : value.requiredInstances) {
                 refs.add(FullyQualifiedMemberNameAndDesc.of(requiredInstance));
             }
@@ -163,14 +189,25 @@ public class ReferenceGraph {
         return refs;
     }
 
+    public <T> T resolveVersioned(Map<Integer, T> map, int version) {
+        if (map == null) return null;
+        for (int i = version; i >= 0; i--) {
+            T t = map.get(i);
+            if (t != null) {
+                return t;
+            }
+        }
+        return null;
+    }
+
     /**
      * @return all retained references from the graph, and where they came from.
      */
-    public Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> getAllUsagesForRefs() {
+    public Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> getAllUsagesForRefs(int version) {
         Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> refs = new HashMap<>();
-        for (Map.Entry<Type, References> entry : references.entrySet()) {
+        for (Map.Entry<Type, Map<Integer, References>> entry : references.entrySet()) {
             Type owner = entry.getKey();
-            References value = entry.getValue();
+            References value = resolveVersioned(entry.getValue(), version);
             for (Type requiredInstance : value.requiredInstances) {
                 FullyQualifiedMemberNameAndDesc ref = FullyQualifiedMemberNameAndDesc.of(requiredInstance);
                 if (!refs.containsKey(ref)) {
@@ -209,13 +246,13 @@ public class ReferenceGraph {
      * @param starts the references to start from.
      * @return a pair of the references required by the given references, and the resources required by the given references.
      */
-    public Pair<Set<FullyQualifiedMemberNameAndDesc>, Set<String>> recursiveResolveFrom(Set<FullyQualifiedMemberNameAndDesc> starts) {
+    public Pair<Set<FullyQualifiedMemberNameAndDesc>, Set<String>> recursiveResolveFrom(Set<FullyQualifiedMemberNameAndDesc> starts, int version) {
         Set<FullyQualifiedMemberNameAndDesc> refs = new HashSet<>(starts);
         Set<String> resources = new HashSet<>();
         Queue<FullyQualifiedMemberNameAndDesc> toAdd = new ArrayDeque<>(starts);
         while (!toAdd.isEmpty()) {
             FullyQualifiedMemberNameAndDesc next = toAdd.poll();
-            References refer = references.get(next.getOwner());
+            References refer = resolveVersioned(references.get(next.getOwner()), version);
             if (refer == null) continue;
             if (next.isClassRef()) {
                 for (MemberNameAndDesc instanceMember : refer.instanceMembers) {
@@ -243,7 +280,7 @@ public class ReferenceGraph {
         }
         // aggregate resources required
         for (FullyQualifiedMemberNameAndDesc ref : refs) {
-            References refer = references.get(ref.getOwner());
+            References refer = resolveVersioned(references.get(ref.getOwner()), version);
             if (refer == null) continue;
             MemberNameAndDesc member = ref.toMemberNameAndDesc();
             if (refer.resourceList.containsKey(member)) {
@@ -259,13 +296,13 @@ public class ReferenceGraph {
      * @param starts the references to start from.
      * @return a pair of the references required by the given references, and the resources required by the given references.
      */
-    public Pair<Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>>, Set<String>> recursivelyResolveUsagesFrom(Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> starts) {
+    public Pair<Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>>, Set<String>> recursivelyResolveUsagesFrom(Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> starts, int version) {
         Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> usages = new HashMap<>(starts);
         Set<String> resources = new HashSet<>();
         Queue<FullyQualifiedMemberNameAndDesc> toScan = new ArrayDeque<>(starts.keySet());
         while (!toScan.isEmpty()) {
             FullyQualifiedMemberNameAndDesc next = toScan.poll();
-            References refer = references.get(next.getOwner());
+            References refer = resolveVersioned(references.get(next.getOwner()), version);
             if (refer == null) continue;
             if (next.isClassRef()) {
                 for (MemberNameAndDesc instanceMember : refer.instanceMembers) {
@@ -300,7 +337,7 @@ public class ReferenceGraph {
         // aggregate resources required
         for (Map.Entry<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> entry : usages.entrySet()) {
             FullyQualifiedMemberNameAndDesc ref = entry.getKey();
-            References refer = references.get(ref.getOwner());
+            References refer = resolveVersioned(references.get(ref.getOwner()), version);
             if (refer == null) continue;
             MemberNameAndDesc member = ref.toMemberNameAndDesc();
             if (refer.resourceList.containsKey(member)) {
@@ -313,13 +350,16 @@ public class ReferenceGraph {
     /**
      * Given a reference, this will scan the current reference graph for all instructions that reference the given reference.
      */
-    public Set<AbstractInsnNode> getAllInsnsFor(FullyQualifiedMemberNameAndDesc ref) {
+    public Set<AbstractInsnNode> getAllInsnsFor(FullyQualifiedMemberNameAndDesc ref, int version) {
         if (!retainInsns) {
             throw new IllegalStateException("Insns are not retained.");
         }
         Set<AbstractInsnNode> insns = new HashSet<>();
-        for (References value : references.values()) {
-            Set<AbstractInsnNode> ins = value.memberInsns.get(ref);
+        for (Map<Integer, References> value : references.values()) {
+            References v = value.get(version);
+            // unlike all the other methods, we only want the insns for the given version.
+            if (v == null) continue;
+            Set<AbstractInsnNode> ins = v.memberInsns.get(ref);
             if (ins != null) {
                 insns.addAll(ins);
             }
@@ -337,6 +377,11 @@ public class ReferenceGraph {
     }
 
     private class References {
+        /**
+         * The multi-release version of the class.
+         */
+        private final int version;
+
         /**
          * The required classes to construct the class.
          */
@@ -360,6 +405,10 @@ public class ReferenceGraph {
          * this is determined by the {@link RequiresResource} annotation.
          */
         private final Map<MemberNameAndDesc, String[]> resourceList = new HashMap<>();
+
+        public References(int version) {
+            this.version = version;
+        }
 
         public void scan(ClassNode classNode, Filter filter) {
             Type currentType = Type.getObjectType(classNode.name);
