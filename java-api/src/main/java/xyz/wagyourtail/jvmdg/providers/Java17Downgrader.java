@@ -22,7 +22,7 @@ public class Java17Downgrader extends VersionProvider {
         stub(J_L_Process.class);
         // SwitchBootstraps
         // InstantSource
-        // HexFormat
+        stub(J_U_HexFormat.class);
         stub(J_U_Map$Entry.class);
         // SplittableRandom
         // ForkJoinPool

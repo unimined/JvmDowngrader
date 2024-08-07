@@ -5,6 +5,7 @@ import sun.misc.Unsafe;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.instrument.IllegalClassFormatException;
@@ -43,7 +44,7 @@ public class J_L_I_MethodHandles$Lookup {
     }
 
     @Stub(requiresRuntime = true)
-    public static Class<?> defineHiddenClass(MethodHandles.Lookup lookup, byte[] bytes, boolean initialize, J_L_I_MethodHandles$Lookup$ClassOption... options) throws IllegalClassFormatException {
+    public static Class<?> defineHiddenClass(MethodHandles.Lookup lookup, byte[] bytes, boolean initialize, ClassOption... options) throws IllegalClassFormatException {
         Objects.requireNonNull(bytes);
         Objects.requireNonNull(options);
         HiddenClassLoader loader = new HiddenClassLoader(lookup.lookupClass().getClassLoader());
@@ -90,4 +91,15 @@ public class J_L_I_MethodHandles$Lookup {
         }
     }
 
+    @Adapter("Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;")
+    public enum ClassOption {
+        NESTMATE(0x00000001),
+        STRONG(0x00000004);
+
+        private final int flag;
+
+        ClassOption(int flag) {
+            this.flag = flag;
+        }
+    }
 }

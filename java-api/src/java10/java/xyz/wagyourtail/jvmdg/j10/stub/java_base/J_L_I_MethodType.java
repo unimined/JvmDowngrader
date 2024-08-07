@@ -8,6 +8,8 @@ import java.lang.invoke.MethodType;
 public class J_L_I_MethodType {
 
 
+    // pkg-private -> public
+
     @Stub
     public static Class<?> lastParameterType(MethodType mt) {
         if (mt.parameterCount() == 0) {

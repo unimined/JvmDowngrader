@@ -5,6 +5,9 @@ import xyz.wagyourtail.jvmdg.version.Adapter;
 @Adapter("java/util/concurrent/Flow")
 public class J_U_C_Flow {
 
+    private J_U_C_Flow() {
+    }
+
     public static int defaultBufferSize() {
         return 256;
     }

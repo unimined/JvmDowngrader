@@ -26,6 +26,10 @@ public abstract class J_N_H_HttpRequest {
         return new HttpRequestBuilderImpl();
     }
 
+    public static Builder newBuilder(URI uri) {
+        return new HttpRequestBuilderImpl().uri(uri);
+    }
+
     public abstract Optional<BodyPublisher> bodyPublisher();
 
     public abstract String method();
@@ -37,7 +41,8 @@ public abstract class J_N_H_HttpRequest {
     public abstract URI uri();
 
     public abstract Optional<J_N_H_HttpClient.Version> version();
-//    public abstract HttpHeaders headers();
+
+    public abstract J_N_H_HttpHeaders headers();
 
     public final boolean equals(Object obj) {
         if (!(obj instanceof J_N_H_HttpRequest)) {
@@ -47,14 +52,14 @@ public abstract class J_N_H_HttpRequest {
         if (!that.method().equals(this.method())) {
             return false;
         }
+        if (!that.headers().equals(this.headers())) {
+            return false;
+        }
         return that.uri().equals(this.uri());
-//        if (!that.headers().equals(this.headers())) {
-//            return false;
-//        }
     }
 
     public final int hashCode() {
-        return method().hashCode() + uri().hashCode(); // + headers().hashCode();
+        return Objects.hash(method().hashCode(), uri().hashCode(), headers().hashCode());
     }
 
     @Adapter("Ljava/net/http/HttpRequest$BodyPublisher;")
@@ -275,107 +280,6 @@ public abstract class J_N_H_HttpRequest {
 
                         @Override
                         public void cancel() {
-                        }
-                    });
-                }
-            };
-        }
-
-        public static BodyPublisher concat(BodyPublisher... publishers) {
-            return new BodyPublisher() {
-                @Override
-                public long contentLength() {
-                    long sum = 0;
-                    for (BodyPublisher publisher : publishers) {
-                        sum += publisher.contentLength();
-                    }
-                    return sum;
-                }
-
-                @Override
-                public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
-                    subscriber.onSubscribe(new Flow.Subscription() {
-                        private final Iterator<BodyPublisher> iterator = List.of(publishers).iterator();
-                        private boolean completed;
-
-                        @Override
-                        public void request(long n) {
-                            if (n <= 0) {
-                                subscriber.onError(new IllegalArgumentException("n <= 0"));
-                                return;
-                            }
-                            if (completed) {
-                                return;
-                            }
-                            try {
-                                while (n > 0) {
-                                    if (!iterator.hasNext()) {
-                                        completed = true;
-                                        subscriber.onComplete();
-                                        return;
-                                    }
-                                    BodyPublisher publisher = iterator.next();
-                                    long contentLength = publisher.contentLength();
-                                    if (contentLength > 0) {
-                                        publisher.subscribe(new Flow.Subscriber<>() {
-                                            private long remaining = contentLength;
-
-                                            @Override
-                                            public void onSubscribe(Flow.Subscription subscription) {
-                                                subscription.request(Long.MAX_VALUE);
-                                            }
-
-                                            @Override
-                                            public void onNext(ByteBuffer item) {
-                                                subscriber.onNext(item);
-                                                remaining -= item.remaining();
-                                                if (remaining == 0) {
-                                                    subscriber.onComplete();
-                                                }
-                                            }
-
-                                            @Override
-                                            public void onError(Throwable throwable) {
-                                                subscriber.onError(throwable);
-                                            }
-
-                                            @Override
-                                            public void onComplete() {
-                                            }
-                                        });
-                                    } else {
-                                        publisher.subscribe(new Flow.Subscriber<>() {
-                                            @Override
-                                            public void onSubscribe(Flow.Subscription subscription) {
-                                                subscription.request(Long.MAX_VALUE);
-                                            }
-
-                                            @Override
-                                            public void onNext(ByteBuffer item) {
-                                                subscriber.onNext(item);
-                                            }
-
-                                            @Override
-                                            public void onError(Throwable throwable) {
-                                                subscriber.onError(throwable);
-                                            }
-
-                                            @Override
-                                            public void onComplete() {
-                                                subscriber.onComplete();
-                                            }
-                                        });
-                                    }
-                                    n--;
-                                }
-                            } catch (Throwable t) {
-                                subscriber.onError(t);
-                            }
-                        }
-
-                        @Override
-                        public void cancel() {
-                            completed = true;
                         }
                     });
                 }

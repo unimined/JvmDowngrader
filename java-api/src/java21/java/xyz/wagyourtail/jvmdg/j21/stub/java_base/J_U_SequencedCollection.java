@@ -12,6 +12,9 @@ import java.util.*;
 @Adapter(value = "java/util/SequencedCollection", target = "java/util/Collection")
 public class J_U_SequencedCollection {
 
+    private J_U_SequencedCollection() {
+    }
+
     public static boolean jvmdg$instanceof(Object obj) {
         return obj instanceof List<?> ||
                 obj instanceof LinkedHashSet<?> ||

@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.function.IntConsumer;
@@ -20,6 +21,7 @@ public class J_U_S_IntStream {
     @Adapter("Ljava/util/stream/IntStream$IntMapMultiConsumer;")
     public interface IntMapMultiConsumer {
 
+        @CoverageIgnore
         default IntStream of(int d) {
             IntStream.Builder integers = IntStream.builder();
             accept(d, integers);

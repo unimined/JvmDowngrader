@@ -13,7 +13,7 @@ public class J_L_R_RecordComponent {
     private final Field field;
     private final Method accessor;
 
-    public J_L_R_RecordComponent(Class<?> declaring, String field, Class<?> type) {
+    J_L_R_RecordComponent(Class<?> declaring, String field, Class<?> type) {
         this.declaring = declaring;
 
         Field fd = null;

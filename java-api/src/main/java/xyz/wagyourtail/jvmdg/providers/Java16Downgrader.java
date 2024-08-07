@@ -8,7 +8,7 @@ import org.objectweb.asm.tree.RecordComponentNode;
 import xyz.wagyourtail.jvmdg.j16.RecordComponents;
 import xyz.wagyourtail.jvmdg.j16.stub.J_U_L_LogRecord;
 import xyz.wagyourtail.jvmdg.j16.stub.java_base.*;
-import xyz.wagyourtail.jvmdg.j17.PermittedSubClasses;
+import xyz.wagyourtail.jvmdg.j16.stub.java_net_http.J_N_H_HttpRequest;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java16Downgrader extends VersionProvider {
@@ -65,8 +65,7 @@ public class Java16Downgrader extends VersionProvider {
         stub(J_U_L_LogRecord.class);
 
         // -- java.net.http --
-        // TODO:
-//            stub(J_N_H_HttpRequest.class);
+        stub(J_N_H_HttpRequest.class);
 
         // -- jdk.compiler --
         // ReturnTree

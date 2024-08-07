@@ -3,8 +3,6 @@ package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j11.stub.java_base.J_L_String;
 import xyz.wagyourtail.jvmdg.j11.impl.CharReader;
-import xyz.wagyourtail.jvmdg.util.Consumer;
-import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import javax.net.ssl.SSLSession;
@@ -31,6 +29,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Flow;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 @Adapter("Ljava/net/http/HttpResponse;")
@@ -77,6 +77,9 @@ public interface J_N_H_HttpResponse<T> {
 
     @Adapter("Ljava/net/http/HttpResponse$BodyHandlers;")
     class BodyHandlers {
+
+        private BodyHandlers() {}
+
         private static Charset charsetFrom(J_N_H_HttpHeaders headers) {
 //            throw MissingStubError.create();
             return StandardCharsets.UTF_8;
@@ -222,6 +225,8 @@ public interface J_N_H_HttpResponse<T> {
 
     @Adapter("Ljava/net/http/HttpResponse$BodySubscribers;")
     class BodySubscribers {
+
+        private BodySubscribers() {}
 
         public static BodySubscriber<Void> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber) {
             return fromSubscriber(subscriber, (s) -> null);
