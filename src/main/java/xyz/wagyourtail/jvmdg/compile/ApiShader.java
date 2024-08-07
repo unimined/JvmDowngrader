@@ -265,22 +265,14 @@ public class ApiShader {
                     return apiClasses.contains(member.getOwner());
                 }
             });
-            // step 4: create remapper for api classes to prefixed api classes
+
+            // step 4: inline candidates
             Pair<Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>>, Set<String>> required = apiRefs.recursivelyResolveUsagesFrom(inputRefs.getAllUsagesForRefs());
 
-//            apiRefs.debugPrintUsageRefs(required.getFirst());
-
-            final Map<Type, Set<MemberNameAndDesc>> byType = byType(required.getFirst().keySet());
-            final Map<String, String> remap = new HashMap<>();
-            for (Type type : byType.keySet()) {
-                remap.put(type.getInternalName(), prefix + type.getInternalName());
-            }
-            final SimpleRemapper remapper = new SimpleRemapper(remap);
-
-            // step 4.5: inline candidates
             Map<FullyQualifiedMemberNameAndDesc, Type> inlineCandidates = inlineCandidates(logger, required.getFirst(), inputRefs.getKeys());
             for (Map.Entry<FullyQualifiedMemberNameAndDesc, Type> entry : inlineCandidates.entrySet()) {
                 required.getFirst().remove(entry.getKey());
+                required.getFirst().remove(new FullyQualifiedMemberNameAndDesc(entry.getKey().getOwner(), null, null));
 
                 // change insn's owner to the inlined class
                 for (AbstractInsnNode insn : inputRefs.getAllInsnsFor(entry.getKey())) {
@@ -306,6 +298,13 @@ public class ApiShader {
                 node.methods.add(method);
             }
 
+            // step 4.5: create remapper for api classes to prefixed api classes
+            final Map<Type, Set<MemberNameAndDesc>> byType = byType(required.getFirst().keySet());
+            final Map<String, String> remap = new HashMap<>();
+            for (Type type : byType.keySet()) {
+                remap.put(type.getInternalName(), prefix + type.getInternalName());
+            }
+            final SimpleRemapper remapper = new SimpleRemapper(remap);
 
             // step 5: actually write the referenced api classes to the output, removing unused parts from them.
             Future<Void> apiWrite = AsyncUtils.forEachAsync(byType.entrySet(), new IOConsumer<Map.Entry<Type, Set<MemberNameAndDesc>>>() {
