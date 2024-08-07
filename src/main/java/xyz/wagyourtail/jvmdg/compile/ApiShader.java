@@ -206,11 +206,12 @@ public class ApiShader {
         return candidates;
     }
 
-    private static void inlineRef(FullyQualifiedMemberNameAndDesc ref, AbstractInsnNode insn, Type target) {
+    private static void inlineRef(FullyQualifiedMemberNameAndDesc ref, AbstractInsnNode insn, Type target, boolean isInterface) {
         if (insn instanceof MethodInsnNode) {
             MethodInsnNode min = (MethodInsnNode) insn;
             min.owner = target.getInternalName();
             min.name = "jvmdg$inlined$" + min.name;
+            min.itf = isInterface;
         } else if (insn instanceof FieldInsnNode) {
             FieldInsnNode fin = (FieldInsnNode) insn;
             fin.owner = target.getInternalName();
@@ -220,7 +221,7 @@ public class ApiShader {
             // check bsm matches
             Handle handle = indy.bsm;
             if (FullyQualifiedMemberNameAndDesc.of(handle).equals(ref)) {
-                handle = new Handle(handle.getTag(), target.getInternalName(), "jvmdg$inlined$" + handle.getName(), handle.getDesc(), handle.isInterface());
+                handle = new Handle(handle.getTag(), target.getInternalName(), "jvmdg$inlined$" + handle.getName(), handle.getDesc(), isInterface);
                 indy.bsm = handle;
             }
             for (int i = 0; i < indy.bsmArgs.length; i++) {
@@ -228,29 +229,29 @@ public class ApiShader {
                 if (arg instanceof Handle) {
                     Handle handleArg = (Handle) arg;
                     if (FullyQualifiedMemberNameAndDesc.of(handleArg).equals(ref)) {
-                        handleArg = new Handle(handleArg.getTag(), target.getInternalName(), "jvmdg$inlined$" + handleArg.getName(), handleArg.getDesc(), handleArg.isInterface());
+                        handleArg = new Handle(handleArg.getTag(), target.getInternalName(), "jvmdg$inlined$" + handleArg.getName(), handleArg.getDesc(), isInterface);
                         indy.bsmArgs[i] = handleArg;
                     }
                 } else if (arg instanceof ConstantDynamic) {
                     ConstantDynamic cd = (ConstantDynamic) arg;
-                    inlineRef(ref, cd, target);
+                    inlineRef(ref, cd, target, isInterface);
                 }
             }
         } else if (insn instanceof LdcInsnNode) {
             LdcInsnNode ldc = (LdcInsnNode) insn;
             if (ldc.cst instanceof Handle) {
                 Handle handle = (Handle) ldc.cst;
-                ldc.cst = new Handle(handle.getTag(), target.getInternalName(), handle.getName(), handle.getDesc(), handle.isInterface());
+                ldc.cst = new Handle(handle.getTag(), target.getInternalName(), handle.getName(), handle.getDesc(), isInterface);
             } else if (ldc.cst instanceof ConstantDynamic) {
                 ConstantDynamic cd = (ConstantDynamic) ldc.cst;
-                inlineRef(ref, cd, target);
+                inlineRef(ref, cd, target, isInterface);
             }
         } else {
             throw new IllegalStateException("Unknown insn type: " + insn.getClass().getName());
         }
     }
 
-    private static void inlineRef(FullyQualifiedMemberNameAndDesc ref, ConstantDynamic cd, Type target) {
+    private static void inlineRef(FullyQualifiedMemberNameAndDesc ref, ConstantDynamic cd, Type target, boolean isInterface) {
         throw new UnsupportedOperationException("Not implemented");
     }
 
@@ -283,16 +284,16 @@ public class ApiShader {
                 }
                 Map<FullyQualifiedMemberNameAndDesc, Type> inlineCandidates = inlineCandidates(logger, required.getFirst(), keys);
                 for (Map.Entry<FullyQualifiedMemberNameAndDesc, Type> entry : inlineCandidates.entrySet()) {
+                    ClassNode node = inputRefs.getClassFor(entry.getValue(), version);
                     required.getFirst().remove(entry.getKey());
                     required.getFirst().remove(new FullyQualifiedMemberNameAndDesc(entry.getKey().getOwner(), null, null));
 
                     // change insn's owner to the inlined class
                     for (AbstractInsnNode insn : inputRefs.getAllInsnsFor(entry.getKey(), version)) {
-                        inlineRef(entry.getKey(), insn, entry.getValue());
+                        inlineRef(entry.getKey(), insn, entry.getValue(), (node.access & Opcodes.ACC_INTERFACE) != 0);
                     }
 
                     // actually inline it
-                    ClassNode node = inputRefs.getClassFor(entry.getValue(), version);
                     ClassNode apiNode = apiRefs.getClassFor(entry.getKey().getOwner(), version);
                     // find api method
                     MethodNode method = null;
@@ -305,7 +306,7 @@ public class ApiShader {
                     if (method == null) {
                         throw new IllegalStateException("Method not found in class: " + entry.getKey());
                     }
-                    MethodNode copy = new MethodNode(method.access, "jvmdg$inlined$" + method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
+                    MethodNode copy = new MethodNode(method.access & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE, "jvmdg$inlined$" + method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
                     method.accept(copy);
                     node.methods.add(copy);
                 }
