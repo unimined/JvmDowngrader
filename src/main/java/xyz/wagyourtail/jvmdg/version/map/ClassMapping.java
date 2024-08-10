@@ -146,7 +146,7 @@ public class ClassMapping {
                         Type.getType(m.getDeclaringClass()).getInternalName(),
                         m.getName(),
                         Type.getMethodDescriptor(m),
-                        false
+                        newMin.getFirst().getDeclaringClass().isInterface()
                 ));
                 method.instructions.insertBefore(min, insnList);
                 if (!returnType.equals(Type.getReturnType(m))) {

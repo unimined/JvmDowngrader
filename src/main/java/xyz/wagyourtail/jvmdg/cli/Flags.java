@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -145,7 +146,23 @@ public class Flags {
                 ", printDebug=" + printDebug +
                 ", debugSkipStubs=" + debugSkipStubs +
                 ", ignoreWarningsIn=" + ignoreWarningsIn +
+                ", debugDumpClasses=" + debugDumpClasses +
+                ", multiReleaseOriginal=" + multiReleaseOriginal +
+                ", multiReleaseVersions=" + multiReleaseVersions +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Flags)) return false;
+        Flags flags = (Flags) o;
+        return classVersion == flags.classVersion && quiet == flags.quiet && logAnsiColors == flags.logAnsiColors && allowMaven == flags.allowMaven && printDebug == flags.printDebug && debugDumpClasses == flags.debugDumpClasses && multiReleaseOriginal == flags.multiReleaseOriginal && Objects.equals(api, flags.api) && logLevel == flags.logLevel && Objects.equals(ignoreWarningsIn, flags.ignoreWarningsIn) && Objects.equals(debugSkipStubs, flags.debugSkipStubs) && Objects.equals(multiReleaseVersions, flags.multiReleaseVersions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(classVersion, api, quiet, logAnsiColors, logLevel, ignoreWarningsIn, allowMaven, printDebug, debugSkipStubs, debugDumpClasses, multiReleaseOriginal, multiReleaseVersions);
     }
 
     public void addIgnore(String s) {

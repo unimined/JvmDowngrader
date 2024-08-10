@@ -18,6 +18,11 @@ public class AsyncUtils {
 
     @SafeVarargs
     public static <T> Future<List<T>> waitForFutures(Future<T>... futures) {
+        for (Future<T> future : futures) {
+            if (future == null) {
+                throw new NullPointerException();
+            }
+        }
         return waitForFutures(new ArrayDeque<>(Arrays.asList(futures)));
     }
 

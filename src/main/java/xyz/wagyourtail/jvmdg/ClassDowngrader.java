@@ -5,7 +5,10 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
@@ -250,9 +253,25 @@ public class ClassDowngrader implements Closeable {
             version = downgrader.outputVersion;
             if (flags.multiReleaseVersions.contains(version)) {
                 // copy to new class node
-                ClassNode multiRelease = new ClassNode();
-                clazz.accept(multiRelease);
-                multiReleaseHolder.add(multiRelease);
+                for (ClassNode c : classes) {
+                    ClassNode copy = new ClassNode();
+                    c.accept(new ClassVisitor(Opcodes.ASM9, copy) {
+                        @Override
+                        public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                            return new MethodVisitor(api, super.visitMethod(access, name, descriptor, signature, exceptions)) {
+
+                                @Override
+                                public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
+                                    // copy bsm args
+                                    Object[] copy = new Object[bootstrapMethodArguments.length];
+                                    System.arraycopy(bootstrapMethodArguments, 0, copy, 0, bootstrapMethodArguments.length);
+                                    super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, copy);
+                                }
+                            };
+                        }
+                    });
+                    multiReleaseHolder.add(copy);
+                }
             }
         }
         multiReleaseHolder.addAll(classes);

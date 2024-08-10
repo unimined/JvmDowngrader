@@ -34,10 +34,10 @@ public class MultiVersionTests extends BaseIntegrationTests {
     private static final String MULTIVERSION_PATH = "jvmdg.test.multiVersionPath";
     private static final Path original = Path.of(System.getProperty(MULTIVERSION_PATH));
 
-    private static final FlagsAndRunner flagsAndRunner = new FlagsAndRunner(flags.copy(f -> {
+    private static final FlagsAndRunner flagsAndRunner = new FlagsAndRunner(JavaRunner.JavaVersion.V1_8, flags.copy(f -> {
         f.multiReleaseOriginal = true;
         f.multiReleaseVersions = Set.of(JavaRunner.JavaVersion.V11.toOpcode(), JavaRunner.JavaVersion.V17.toOpcode());
-    }), JavaRunner.JavaVersion.V1_8);
+    }));
 
     private static List<String> mainClasses() throws IOException {
         try (FileSystem fs = Utils.openZipFileSystem(original, false)) {
@@ -103,7 +103,7 @@ public class MultiVersionTests extends BaseIntegrationTests {
     @BeforeAll
     public static void runOnTestTarget() throws IOException, InterruptedException {
 
-        FlagsAndRunner downgraded = new FlagsAndRunner(flags.copy(f -> f.quiet = true), JavaRunner.JavaVersion.V1_8);
+        FlagsAndRunner downgraded = new FlagsAndRunner(JavaRunner.JavaVersion.V1_8, flags.copy(f -> f.quiet = true));
 
         for (String main : mainClasses()) {
             StringBuilder fullDowngradeLog = new StringBuilder();
@@ -147,7 +147,7 @@ public class MultiVersionTests extends BaseIntegrationTests {
         Map.Entry<Integer, String> originalResult = originalResults.get(main);
         Map.Entry<Integer, String> fullDowngradeResult = fullDowngradeResults.get(main);
 
-        FlagsAndRunner downgraded = new FlagsAndRunner(flags.copy(f -> f.quiet = true), JavaRunner.JavaVersion.V1_8);
+        FlagsAndRunner downgraded = new FlagsAndRunner(JavaRunner.JavaVersion.V1_8, flags.copy(f -> f.quiet = true));
 
         assertNotEquals(originalResult, fullDowngradeResult);
 

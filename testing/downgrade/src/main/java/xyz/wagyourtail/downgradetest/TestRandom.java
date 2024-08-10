@@ -18,6 +18,7 @@ public class TestRandom {
 
         Random r = new Random(0x12345678);
         System.out.println(r.nextLong(0, 100));
+        System.out.println(r.nextInt(5));
 
         sr.splits();
 
