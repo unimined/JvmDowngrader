@@ -46,77 +46,77 @@ public interface J_U_R_RandomGenerator {
         return jvmdg$checkcast(obj).isDeprecated();
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).doubles();
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, double lower, double upper) {
         return jvmdg$checkcast(obj).doubles(lower, upper);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
         return jvmdg$checkcast(obj).doubles(limit);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, double origin, double bound) {
         return jvmdg$checkcast(obj).doubles(limit, origin, bound);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).ints();
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, int origin, int bound) {
         return jvmdg$checkcast(obj).ints(origin, bound);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
         return jvmdg$checkcast(obj).ints(limit);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, int origin, int bound) {
         return jvmdg$checkcast(obj).ints(limit, origin, bound);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).longs();
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long origin, long bound) {
         return jvmdg$checkcast(obj).longs(origin, bound);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
         return jvmdg$checkcast(obj).longs(limit);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, long origin, long bound) {
         return jvmdg$checkcast(obj).longs(limit, origin, bound);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static boolean nextBoolean(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextBoolean();
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static void nextBytes(@Coerce(J_U_R_RandomGenerator.class) Object obj, byte[] bytes) {
         jvmdg$checkcast(obj).nextBytes(bytes);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static float nextFloat(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextFloat();
     }
@@ -131,7 +131,7 @@ public interface J_U_R_RandomGenerator {
         return jvmdg$checkcast(obj).nextFloat(origin, bound);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static double nextDouble(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextDouble();
     }
@@ -146,12 +146,12 @@ public interface J_U_R_RandomGenerator {
         return jvmdg$checkcast(obj).nextDouble(origin, bound);
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextInt();
     }
 
-    @Stub(noSpecial = true)
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
     static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj, int bound) {
         return jvmdg$checkcast(obj).nextInt(bound);
     }
@@ -161,33 +161,33 @@ public interface J_U_R_RandomGenerator {
         return jvmdg$checkcast(obj).nextInt(origin, bound);
     }
 
-    @Stub(noSpecial = true)
-    static long nextLong(@Coerce(J_U_Random.class) Object obj) {
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
+    static long nextLong(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextLong();
     }
 
     @Stub(noSpecial = true)
-    static long nextLong(@Coerce(J_U_Random.class) Object obj, long bound) {
+    static long nextLong(@Coerce(J_U_R_RandomGenerator.class) Object obj, long bound) {
         return jvmdg$checkcast(obj).nextLong(bound);
     }
 
     @Stub(noSpecial = true)
-    static long nextLong(@Coerce(J_U_Random.class) Object obj, long origin, long bound) {
+    static long nextLong(@Coerce(J_U_R_RandomGenerator.class) Object obj, long origin, long bound) {
         return jvmdg$checkcast(obj).nextLong(origin, bound);
     }
 
-    @Stub(noSpecial = true)
-    static double nextGaussian(@Coerce(J_U_Random.class) Object obj) {
+    @Stub(noSpecial = true, excludeChild = "java/util/Random")
+    static double nextGaussian(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextGaussian();
     }
 
     @Stub(noSpecial = true)
-    static double nextGaussian(@Coerce(J_U_Random.class) Object obj, double mean, double stdDev) {
+    static double nextGaussian(@Coerce(J_U_R_RandomGenerator.class) Object obj, double mean, double stdDev) {
         return jvmdg$checkcast(obj).nextGaussian(mean, stdDev);
     }
 
     @Stub(noSpecial = true)
-    static double nextExponential(@Coerce(J_U_Random.class) Object obj) {
+    static double nextExponential(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
         return jvmdg$checkcast(obj).nextExponential();
     }
 
