@@ -15,6 +15,27 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+/**
+ * HttpClient is a bit incomplete.
+ * the current implementation uses {@link java.net.URL#openConnection()}
+ *
+ * <p>
+ * the following attributes are <i>currently</i> a no-op
+ * {@link #version()},
+ * {@link J_N_H_HttpRequest#expectContinue()},
+ * {@link #cookieHandler()},
+ * {@link #authenticator()}
+ * <p>
+ * the following attributes haven't been tested for correctness
+ * {@link #proxy()},
+ * {@link #followRedirects()},
+ * {@link #sslParameters()}
+ * <p>
+ * Body publishers and all the {@link java.util.concurrent.Flow} implementations also haven't been tested completely.
+ * If you encounter any issues, please open a bug report.
+ *
+ * @see xyz.wagyourtail.jvmdg.j11.impl.http.HttpClientImpl
+ */
 @Adapter("Ljava/net/http/HttpClient;")
 public abstract class J_N_H_HttpClient {
 

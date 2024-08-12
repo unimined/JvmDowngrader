@@ -10,13 +10,18 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.List;
@@ -139,9 +144,14 @@ public class HttpClientImpl extends J_N_H_HttpClient {
 
         if (connection instanceof HttpsURLConnection) {
             HttpsURLConnection httpsConnection = (HttpsURLConnection) connection;
+            SSLSocketFactory sslSocketFactory = httpsConnection.getSSLSocketFactory();
             if (sslContext != null) {
-                httpsConnection.setSSLSocketFactory(sslContext.getSocketFactory());
+                sslSocketFactory = sslContext.getSocketFactory();
             }
+            if (sslParams != null) {
+                sslSocketFactory = new SSLParamSocketFactory(sslSocketFactory, sslParams);
+            }
+            httpsConnection.setSSLSocketFactory(sslSocketFactory);
         }
 
         connection.connect();
@@ -149,7 +159,6 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         if (publisher != null) {
             OutputStream out = connection.getOutputStream();
             publisher.subscribe(new Flow.Subscriber<>() {
-
 
                 @Override
                 public void onSubscribe(Flow.Subscription subscription) {
@@ -215,6 +224,62 @@ public class HttpClientImpl extends J_N_H_HttpClient {
             }
             return null;
         }, executor == null ? ForkJoinPool.commonPool() : executor);
+    }
+
+    private static class SSLParamSocketFactory extends SSLSocketFactory {
+        private final SSLSocketFactory delegate;
+        private final SSLParameters sslParams;
+
+
+        private SSLParamSocketFactory(SSLSocketFactory delegate, SSLParameters sslParams) {
+            this.delegate = delegate;
+            this.sslParams = sslParams;
+        }
+
+        @Override
+        public String[] getDefaultCipherSuites() {
+            return delegate.getDefaultCipherSuites();
+        }
+
+        @Override
+        public String[] getSupportedCipherSuites() {
+            return delegate.getSupportedCipherSuites();
+        }
+
+        @Override
+        public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
+            SSLSocket socket = (SSLSocket) delegate.createSocket(s, host, port, autoClose);
+            socket.setSSLParameters(sslParams);
+            return socket;
+        }
+
+        @Override
+        public Socket createSocket(String host, int port) throws IOException {
+            SSLSocket socket = (SSLSocket) delegate.createSocket(host, port);
+            socket.setSSLParameters(sslParams);
+            return socket;
+        }
+
+        @Override
+        public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException {
+            SSLSocket socket = (SSLSocket) delegate.createSocket(host, port, localHost, localPort);
+            socket.setSSLParameters(sslParams);
+            return socket;
+        }
+
+        @Override
+        public Socket createSocket(InetAddress host, int port) throws IOException {
+            SSLSocket socket = (SSLSocket) delegate.createSocket(host, port);
+            socket.setSSLParameters(sslParams);
+            return socket;
+        }
+
+        @Override
+        public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
+            SSLSocket socket = (SSLSocket) delegate.createSocket(address, port, localAddress, localPort);
+            socket.setSSLParameters(sslParams);
+            return socket;
+        }
     }
 
 }
