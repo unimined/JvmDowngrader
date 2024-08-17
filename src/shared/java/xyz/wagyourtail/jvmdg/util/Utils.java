@@ -10,6 +10,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -160,6 +161,25 @@ public class Utils {
             default:
                 throw new IllegalArgumentException("type " + prim + " not found");
         }
+    }
+
+    public static boolean isReflectionFrame(String className) {
+        return className.equals(Method.class.getName()) ||
+            className.equals(Constructor.class.getName()) ||
+            className.startsWith("sun.reflect.") ||
+            className.startsWith("jdk.internal.reflect.") ||
+            className.startsWith("java.lang.invoke.LambdaForm");
+    }
+
+    public static Class<?> getCaller(MethodHandles.Lookup lookup) throws ClassNotFoundException {
+        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+        for (int i = 2; i < stack.length; i++) {
+            String className = stack[i].getClassName();
+            if (!isReflectionFrame(className)) {
+                return Class.forName(className, false, lookup.lookupClass().getClassLoader());
+            }
+        }
+        throw new ClassNotFoundException("Could not find caller class???");
     }
 
     public static boolean equals(
