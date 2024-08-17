@@ -12,8 +12,10 @@ import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpResponse;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,7 +41,7 @@ public class Java11Downgrader extends VersionProvider {
         stub(J_L_String.class);
         stub(J_L_StringBuffer.class);
         stub(J_L_StringBuilder.class);
-        // ConstantBootstraps
+        stub(J_L_I_ConstantBootstraps.class);
         // Reference
         stub(J_N_C_SelectionKey.class);
         stub(J_N_C_Selector.class);
@@ -121,6 +123,7 @@ public class Java11Downgrader extends VersionProvider {
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
         super.otherTransforms(clazz);
         fixNests(clazz, getReadOnly);
+        replaceCondy(clazz);
         return clazz;
     }
 
@@ -511,4 +514,101 @@ public class Java11Downgrader extends VersionProvider {
 
         clazz.nestHostClass = null;
     }
+
+    public void replaceCondy(ClassNode clazz) {
+        for (MethodNode method : clazz.methods) {
+            replaceCondy(method);
+        }
+    }
+
+    public void replaceCondy(MethodNode method) {
+        for (int i = 0; i < method.instructions.size(); i++) {
+            AbstractInsnNode insn = method.instructions.get(i);
+            if (insn instanceof LdcInsnNode) {
+                LdcInsnNode ldc = (LdcInsnNode) insn;
+                if (ldc.cst instanceof ConstantDynamic) {
+                    // "upgrade" to indy
+                    ConstantDynamic condy = (ConstantDynamic) ldc.cst;
+                    Object[] bsmArgs = new Object[condy.getBootstrapMethodArgumentCount() + 1];
+                    bsmArgs[0] = condy.getBootstrapMethod();
+                    for (int j = 0; j < condy.getBootstrapMethodArgumentCount(); j++) {
+                        bsmArgs[j + 1] = condy.getBootstrapMethodArgument(j);
+                    }
+                    InvokeDynamicInsnNode indy = new InvokeDynamicInsnNode(
+                        condy.getName(),
+                        "()" + condy.getDescriptor(),
+                        new Handle(
+                            Opcodes.H_INVOKESTATIC,
+                            Type.getInternalName(J_L_I_ConstantBootstraps.class),
+                            "ldcCondyToIndy",
+                            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;",
+                            false
+                        ),
+                        bsmArgs
+                    );
+                    method.instructions.set(insn, indy);
+                    insn = indy;
+                }
+            }
+            if (insn instanceof InvokeDynamicInsnNode) {
+                InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
+                StringBuilder condyArgs = new StringBuilder();
+                for (int j = 0; j < indy.bsmArgs.length; j++) {
+                    if (indy.bsmArgs[j] instanceof ConstantDynamic) {
+                        condyArgs.append((char) j);
+                    }
+                }
+                if (condyArgs.length() > 0) {
+                    // replace with nest indy
+                    List<Object> bsmArgs = new ArrayList<>();
+                    bsmArgs.add(indy.bsm);
+                    bsmArgs.add(condyArgs.toString());
+                    for (Object bsmArg : indy.bsmArgs) {
+                        if (bsmArg instanceof ConstantDynamic) {
+                            ConstantDynamic condy = (ConstantDynamic) bsmArg;
+                            insertCondyArgs(condy, bsmArgs);
+                        } else {
+                            bsmArgs.add(bsmArg);
+                        }
+                    }
+                    indy = new InvokeDynamicInsnNode(
+                        indy.name,
+                        indy.desc,
+                        new Handle(
+                            Opcodes.H_INVOKESTATIC,
+                            Type.getInternalName(J_L_I_ConstantBootstraps.class),
+                            "nestedCondyInIndy",
+                            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;",
+                            false
+                        ),
+                        bsmArgs.toArray()
+                    );
+                    method.instructions.set(insn, indy);
+                }
+            }
+        }
+    }
+
+    public void insertCondyArgs(ConstantDynamic condy, List<Object> bsmArgs) {
+        bsmArgs.add(condy.getBootstrapMethod());
+        bsmArgs.add(condy.getName());
+        bsmArgs.add(Type.getType(condy.getDescriptor()));
+        bsmArgs.add(condy.getBootstrapMethodArgumentCount());
+        StringBuilder condyArgs = new StringBuilder();
+        for (int j = 0; j < condy.getBootstrapMethodArgumentCount(); j++) {
+            if (condy.getBootstrapMethodArgument(j) instanceof ConstantDynamic) {
+                condyArgs.append((char) j);
+            }
+        }
+        bsmArgs.add(condyArgs.toString());
+        for (int j = 0; j < condy.getBootstrapMethodArgumentCount(); j++) {
+            Object o = condy.getBootstrapMethodArgument(j);
+            if (o instanceof ConstantDynamic) {
+                insertCondyArgs((ConstantDynamic) o, bsmArgs);
+            } else {
+                bsmArgs.add(o);
+            }
+        }
+    }
+
 }

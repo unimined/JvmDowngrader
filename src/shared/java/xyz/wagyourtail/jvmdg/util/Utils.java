@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.nio.file.FileSystem;
@@ -92,6 +93,73 @@ public class Utils {
 
     public static <T extends Throwable> void sneakyThrow(Throwable t) throws T {
         throw (T) t;
+    }
+
+    public static Class<?> getClassForDesc(String desc) throws ClassNotFoundException {
+        if (desc.length() == 1) {
+            switch (desc) {
+                case "Z":
+                    return boolean.class;
+                case "B":
+                    return byte.class;
+                case "C":
+                    return char.class;
+                case "S":
+                    return short.class;
+                case "I":
+                    return int.class;
+                case "J":
+                    return long.class;
+                case "F":
+                    return float.class;
+                case "D":
+                    return double.class;
+                case "V":
+                    return void.class;
+                default:
+                    throw new ClassNotFoundException("Unable to determine class for " + desc);
+            }
+        }
+        if (desc.startsWith("[")) {
+            int dims = 0;
+            for (int i = 0; i < desc.length(); i++) {
+                if (desc.charAt(i) != '[') {
+                    break;
+                }
+                dims++;
+            }
+            Class<?> type = getClassForDesc(desc.substring(dims));
+            return Array.newInstance(type, new int[dims]).getClass();
+        }
+        return Class.forName(desc.substring(1, desc.length() - 1).replace('/', '.'));
+    }
+
+    public static Class<?> getBoxFor(Class<?> prim) {
+        if (!prim.isPrimitive()) {
+            throw new IllegalArgumentException("type " + prim + " is not a primitive");
+        }
+        switch (prim.getName()) {
+            case "boolean":
+                return Boolean.class;
+            case "byte":
+                return Byte.class;
+            case "char":
+                return Character.class;
+            case "short":
+                return Short.class;
+            case "int":
+                return Integer.class;
+            case "long":
+                return Long.class;
+            case "float":
+                return Float.class;
+            case "double":
+                return Double.class;
+            case "void":
+                return Void.class;
+            default:
+                throw new IllegalArgumentException("type " + prim + " not found");
+        }
     }
 
     public static boolean equals(

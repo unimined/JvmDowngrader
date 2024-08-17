@@ -603,11 +603,12 @@ public abstract class VersionProvider {
         for (int i = 0; i < condy.getBootstrapMethodArgumentCount(); i++) {
             bsmArgs[i] = condy.getBootstrapMethodArgument(i);
         }
-        stubBSMArgs(owner, method, extra, bsm, condy.getDescriptor(), bsmArgs, enableRuntime, memberResolver, superTypeResolver, warnings);
-        bsm = stubHandle(owner, method, extra, bsm, condy.getDescriptor(), enableRuntime, memberResolver, superTypeResolver, warnings, bsm);
+        Type desc = stubClass(Type.getType(condy.getDescriptor()), warnings);
+        stubBSMArgs(owner, method, extra, bsm, desc.getDescriptor(), bsmArgs, enableRuntime, memberResolver, superTypeResolver, warnings);
+        bsm = stubHandle(owner, method, extra, bsm, desc.getDescriptor(), enableRuntime, memberResolver, superTypeResolver, warnings, bsm);
         return new ConstantDynamic(
             condy.getName(),
-            condy.getDescriptor(),
+            desc.getDescriptor(),
             bsm,
             bsmArgs
         );

@@ -34,7 +34,7 @@ public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescripto
 
     static J_L_C_ClassDesc of(String name) {
         validateBinaryClassName(name);
-        return J_L_C_ClassDesc.ofDescriptor("L" + name + ";");
+        return J_L_C_ClassDesc.ofDescriptor("L" + name.replace('.', '/') + ";");
     }
 
     static J_L_C_ClassDesc of(String packageName, String className) {

@@ -224,19 +224,7 @@ public class ApiShader {
                 handle = new Handle(handle.getTag(), target.getInternalName(), "jvmdg$inlined$" + handle.getName(), handle.getDesc(), isInterface);
                 indy.bsm = handle;
             }
-            for (int i = 0; i < indy.bsmArgs.length; i++) {
-                Object arg = indy.bsmArgs[i];
-                if (arg instanceof Handle) {
-                    Handle handleArg = (Handle) arg;
-                    if (FullyQualifiedMemberNameAndDesc.of(handleArg).equals(ref)) {
-                        handleArg = new Handle(handleArg.getTag(), target.getInternalName(), "jvmdg$inlined$" + handleArg.getName(), handleArg.getDesc(), isInterface);
-                        indy.bsmArgs[i] = handleArg;
-                    }
-                } else if (arg instanceof ConstantDynamic) {
-                    ConstantDynamic cd = (ConstantDynamic) arg;
-                    inlineRef(ref, cd, target, isInterface);
-                }
-            }
+            inlineRef(ref, indy.bsmArgs, target, isInterface);
         } else if (insn instanceof LdcInsnNode) {
             LdcInsnNode ldc = (LdcInsnNode) insn;
             if (ldc.cst instanceof Handle) {
@@ -244,15 +232,45 @@ public class ApiShader {
                 ldc.cst = new Handle(handle.getTag(), target.getInternalName(), handle.getName(), handle.getDesc(), isInterface);
             } else if (ldc.cst instanceof ConstantDynamic) {
                 ConstantDynamic cd = (ConstantDynamic) ldc.cst;
-                inlineRef(ref, cd, target, isInterface);
+                ldc.cst = inlineRef(ref, cd, target, isInterface);
             }
         } else {
             throw new IllegalStateException("Unknown insn type: " + insn.getClass().getName());
         }
     }
 
-    private static void inlineRef(FullyQualifiedMemberNameAndDesc ref, ConstantDynamic cd, Type target, boolean isInterface) {
-        throw new UnsupportedOperationException("Not implemented");
+    private static ConstantDynamic inlineRef(FullyQualifiedMemberNameAndDesc ref, ConstantDynamic cd, Type target, boolean isInterface) {
+        Handle handle = cd.getBootstrapMethod();
+        if (FullyQualifiedMemberNameAndDesc.of(handle).equals(ref)) {
+            handle = new Handle(handle.getTag(), target.getInternalName(), "jvmdg$inlined$" + handle.getName(), handle.getDesc(), isInterface);
+        }
+        Object[] bsmArgs = new Object[cd.getBootstrapMethodArgumentCount()];
+        for (int i = 0; i < cd.getBootstrapMethodArgumentCount(); i++) {
+            bsmArgs[i] = cd.getBootstrapMethodArgument(i);
+        }
+        inlineRef(ref, bsmArgs, target, isInterface);
+        return new ConstantDynamic(
+            cd.getName(),
+            cd.getDescriptor(),
+            handle,
+            bsmArgs
+        );
+    }
+
+    private static void inlineRef(FullyQualifiedMemberNameAndDesc ref, Object[] bsmArgs, Type target, boolean isInterface) {
+        for (int i = 0; i < bsmArgs.length; i++) {
+            Object arg = bsmArgs[i];
+            if (arg instanceof Handle) {
+                Handle handleArg = (Handle) arg;
+                if (FullyQualifiedMemberNameAndDesc.of(handleArg).equals(ref)) {
+                    handleArg = new Handle(handleArg.getTag(), target.getInternalName(), "jvmdg$inlined$" + handleArg.getName(), handleArg.getDesc(), isInterface);
+                    bsmArgs[i] = handleArg;
+                }
+            } else if (arg instanceof ConstantDynamic) {
+                ConstantDynamic cd = (ConstantDynamic) arg;
+                bsmArgs[i] = inlineRef(ref, cd, target, isInterface);
+            }
+        }
     }
 
     public static void shadeApis(final Flags flags, final String prefix, final Path inputRoot, final Path outputRoot, final List<Path> apiRoots, final ReferenceGraph apiRefs, final Set<Type> apiClasses) throws IOException {

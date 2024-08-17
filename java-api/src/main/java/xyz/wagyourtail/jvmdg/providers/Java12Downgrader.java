@@ -17,20 +17,18 @@ public class Java12Downgrader extends VersionProvider {
         stub(J_L_C_ConstantDesc.class);
         stub(J_L_Class.class);
         // Double
-        // Enum
+        stub(J_L_Enum$EnumDesc.class);
         // Float
         stub(J_L_I_TypeDescriptor.class);
         // Integer
         // Long
         stub(J_L_String.class);
-        // ClassDesc
-        // ConstantDesc
-        // ConstantDescs
-        // DirectMethodHandleDesc
+        stub(J_L_C_ConstantDescs.class);
+        stub(J_L_C_DirectMethodHandleDesc.class);
         // DynamicCallSiteDesc
-        // DynamicConstantDesc
-        // MethodHandleDesc
-        // MethodTypeDesc
+        stub(J_L_C_DynamicConstantDesc.class);
+        stub(J_L_C_MethodHandleDesc.class);
+        stub(J_L_C_MethodTypeDesc.class);
         // MethodHandle
         // MethodType
         // TypeDescriptor
