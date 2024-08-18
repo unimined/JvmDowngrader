@@ -97,7 +97,19 @@ public class ClassDowngrader implements Closeable {
         Map<Integer, VersionProvider> downgraders = new HashMap<>();
         try {
             for (VersionProvider provider : ServiceLoader.load(VersionProvider.class, classLoader)) {
-                downgraders.put(provider.inputVersion, provider);
+                if (downgraders.containsKey(provider.inputVersion)) {
+                    VersionProvider prev = downgraders.get(provider.inputVersion);
+                    if (prev.priotity < provider.priotity) {
+                        downgraders.put(provider.inputVersion, provider);
+                    } else if (prev.priotity == provider.priotity) {
+                        logger.warn(
+                            "Duplicate version providers with same priority for " + provider.inputVersion
+                            + " \"" + provider.getClass().getName() + "\" and \"" + prev.getClass().getName() + "\""
+                        );
+                    }
+                } else {
+                    downgraders.put(provider.inputVersion, provider);
+                }
             }
         } catch (Throwable t) {
             try {

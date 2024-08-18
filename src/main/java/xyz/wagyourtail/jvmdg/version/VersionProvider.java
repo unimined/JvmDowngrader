@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.version;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.objectweb.asm.*;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureWriter;
@@ -32,6 +33,8 @@ public abstract class VersionProvider {
 
     public final Coverage coverage;
 
+    public final int priotity;
+
     /**
      * lateinit
      * bound during ensureInit
@@ -41,10 +44,23 @@ public abstract class VersionProvider {
 
     private volatile boolean initialized = false;
 
+    /**
+     * will be made package-private in a future release
+     */
+    @Deprecated
+    @ApiStatus.ScheduledForRemoval(inVersion = "1.2.0")
     protected VersionProvider(int inputVersion, int outputVersion) {
         this.inputVersion = inputVersion;
         this.outputVersion = outputVersion;
         this.coverage = new Coverage(inputVersion, this);
+        this.priotity = 0;
+    }
+
+    protected VersionProvider(int inputVersion, int outputVersion, int priotity) {
+        this.inputVersion = inputVersion;
+        this.outputVersion = outputVersion;
+        this.coverage = new Coverage(inputVersion, this);
+        this.priotity = priotity;
     }
 
     public FullyQualifiedMemberNameAndDesc resolveStubTarget(Member member, Ref ref) {
