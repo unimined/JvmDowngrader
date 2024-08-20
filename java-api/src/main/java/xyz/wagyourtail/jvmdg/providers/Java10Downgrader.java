@@ -56,7 +56,7 @@ public class Java10Downgrader extends VersionProvider {
         // ButtonModel
 
         // -- java.management --
-        // RuntimeMXBean
+        stub(J_L_M_RuntimeMXBean.class);
         // ThreadMXBean
 
         // -- jdk.compiler --

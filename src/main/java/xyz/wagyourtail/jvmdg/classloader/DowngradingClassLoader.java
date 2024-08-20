@@ -10,25 +10,25 @@ import xyz.wagyourtail.jvmdg.util.Utils;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.lang.instrument.IllegalClassFormatException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarFile;
 
-public class DowngradingClassLoader extends ClassLoader implements Closeable {
+public class DowngradingClassLoader extends ResourceClassLoader implements Closeable {
     private final ClassDowngrader holder;
     private final ClassDowngrader currentVersionDowngrader;
-    private final List<ResourceProvider> delegates = new ArrayList<>();
 
     private final Logger logger;
 
     public DowngradingClassLoader(ClassDowngrader downgrader) throws IOException {
-        super();
+        super(null);
         List<File> apiJar = downgrader.flags.findJavaApi();
         if (apiJar != null) {
             for (File file : apiJar) {
-                delegates.add(new JarFileResourceProvider(new JarFile(file)));
+                addDelegate(new JarFile(file));
             }
         }
         this.holder = downgrader;
@@ -41,11 +41,15 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
     }
 
     public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) throws IOException {
-        super(parent);
+        this(downgrader, Collections.<ResourceProvider>emptyList(), parent);
+    }
+
+    public DowngradingClassLoader(ClassDowngrader downgrader, List<ResourceProvider> provider, ClassLoader parent) throws IOException {
+        super(provider, parent);
         List<File> apiJar = downgrader.flags.findJavaApi();
         if (apiJar != null) {
             for (File file : apiJar) {
-                delegates.add(new JarFileResourceProvider(new JarFile(file)));
+                addDelegate(new JarFile(file));
             }
         }
         this.holder = downgrader;
@@ -57,40 +61,15 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
         logger = holder.logger.subLogger(DowngradingClassLoader.class);
     }
 
-    public DowngradingClassLoader(ClassDowngrader downgrader, List<ResourceProvider> providers, ClassLoader parent) throws IOException {
-        this(downgrader, parent);
-        delegates.addAll(providers);
-    }
-
     public DowngradingClassLoader(ClassDowngrader downgrader, List<ResourceProvider> providers) throws IOException {
-        this(downgrader);
-        delegates.addAll(providers);
-    }
-
-    public void addDelegate(ClassLoader loader) {
-        delegates.add(new ClassLoaderResourceProvider(loader));
-    }
-
-    public void addDelegate(JarFile jarFile) {
-        delegates.add(new JarFileResourceProvider(jarFile));
-    }
-
-    public void addDelegate(URL[] urls) {
-        delegates.add(new ClassLoaderResourceProvider(new URLClassLoader(urls)));
+        this(downgrader, providers, null);
     }
 
     @Override
-    protected Class<?> findClass(String name) throws ClassNotFoundException {
+    protected Class<?> transformClass(String name, byte[] classBytes) throws ClassNotFoundException {
         String internalName = name.replace('.', '/');
-        String path = internalName + ".class";
-        URL url = findResource(path);
-        if (url == null) {
-            return super.findClass(name);
-        }
-        byte[] bytes = null;
         try {
-            bytes = Utils.readAllBytes(url.openStream());
-            Map<String, byte[]> outputs = currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), bytes, true, new Function<String, byte[]>() {
+            Map<String, byte[]> outputs = currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), classBytes, true, new Function<String, byte[]>() {
                 @Override
                 public byte[] apply(String s) {
                     try {
@@ -104,17 +83,17 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
             });
             if (outputs == null) {
                 // doesn't need downgrading
-                return defineClass(name, bytes, 0, bytes.length);
+                return defineClass(name, classBytes, 0, classBytes.length);
             }
             Class<?> returnValue;
             try {
-                bytes = outputs.get(internalName);
-                if (bytes == null) {
-                    throw new ClassNotFoundException("removed by downgrader: " + name);
+                classBytes = outputs.get(internalName);
+                if (classBytes == null) {
+                    throw new ClassNotFoundException("removed by downgrader: " + internalName);
                 }
-                returnValue = defineClass(name, bytes, 0, bytes.length);
+                returnValue = defineClass(name, classBytes, 0, classBytes.length);
             } catch (ClassFormatError e) {
-                currentVersionDowngrader.writeBytesToDebug(name, bytes);
+                currentVersionDowngrader.writeBytesToDebug(name, classBytes);
                 logger.fatal("Failed to load class " + name + " with downgraded bytes, writing to debug folder.", e);
                 throw new ClassNotFoundException(name, e);
             }
@@ -127,37 +106,14 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
                     defineClass(extraName, extraBytes, 0, extraBytes.length);
                 } catch (ClassFormatError | ClassCircularityError e) {
                     logger.fatal("Failed to load class " + extraName + " with downgraded bytes, writing to debug folder.", e);
-                    currentVersionDowngrader.writeBytesToDebug(extraName, bytes);
+                    currentVersionDowngrader.writeBytesToDebug(extraName, extraBytes);
                     throw e;
                 }
             }
             return returnValue;
-        } catch (ClassFormatError e) {
-            currentVersionDowngrader.writeBytesToDebug(name, bytes);
-            logger.fatal("Failed to load class " + name + " with original bytes, writing to debug folder.", e);
-            throw new ClassNotFoundException(name, e);
-        } catch (Throwable e) {
+        } catch (IllegalClassFormatException e) {
             throw new ClassNotFoundException(name, e);
         }
-    }
-
-    @Override
-    protected URL findResource(String name) {
-        return findResources(name).nextElement();
-    }
-
-    @Override
-    protected Enumeration<URL> findResources(final String name) {
-        return new FlatEnumeration<>(Collections.enumeration(delegates), new Function<ResourceProvider, Enumeration<URL>>() {
-            @Override
-            public Enumeration<URL> apply(ResourceProvider resourceProvider) {
-                try {
-                    return resourceProvider.getResources(name);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        });
     }
 
     @Override
@@ -165,8 +121,6 @@ public class DowngradingClassLoader extends ClassLoader implements Closeable {
         if (holder != currentVersionDowngrader) {
             currentVersionDowngrader.close();
         }
-        for (ResourceProvider delegate : delegates) {
-            delegate.close();
-        }
+        super.close();
     }
 }

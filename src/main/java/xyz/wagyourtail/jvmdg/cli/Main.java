@@ -53,12 +53,13 @@ public class Main {
                 ),
                 new Arguments("bootstrap", "Bootstraps a downgrading environment, unparsed args will get passed", null, null).addChildren(
                         new Arguments("--main", "Main class to run\n  (required)", new String[]{"-m"}, new String[]{"class"}),
-                        classpath
+                        classpath,
+                        new Arguments("", "Arguments for main run", new String[]{}, new String[]{"args..."})
                 )
         );
 
         List<String> argList = new ArrayList<>(Arrays.asList(args));
-        Map<String, List<String[]>> parsed = parser.read(argList, true);
+        Map<String, List<String[]>> parsed = parser.read(argList, false);
 
         if (!parsed.containsKey("bootstrap") && !argList.isEmpty()) {
             throw new IllegalArgumentException("Unknown command: " + argList.get(0));
@@ -166,7 +167,7 @@ public class Main {
                         shade(subArgs);
                         break;
                     case "bootstrap":
-                        bootstrap(subArgs, argList);
+                        bootstrap(subArgs);
                         break;
                     default:
                 }
@@ -357,7 +358,7 @@ public class Main {
         }
     }
 
-    public static void bootstrap(Map<String, List<String[]>> args, List<String> unparsed) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public static void bootstrap(Map<String, List<String[]>> args) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         if (!args.containsKey("--main")) {
             throw new IllegalArgumentException("No main class specified");
         }
@@ -365,6 +366,12 @@ public class Main {
             throw new IllegalArgumentException("Multiple main classes specified");
         }
         String main = args.get("--main").get(0)[0];
+        String[] bootstrapArgs;
+        if (args.containsKey("")) {
+            bootstrapArgs = args.get("").get(0);
+        } else {
+            bootstrapArgs = new String[0];
+        }
 
         Set<URL> classpath = getClasspath(args);
 
@@ -372,7 +379,7 @@ public class Main {
             currentVersionDowngrader.getClassLoader().addDelegate(classpath.toArray(new URL[0]));
             Class.forName(main, false, currentVersionDowngrader.getClassLoader()).getMethod("main", String[].class).invoke(
                     null,
-                    (Object) unparsed.toArray(new String[0])
+                    (Object) bootstrapArgs
             );
         }
     }

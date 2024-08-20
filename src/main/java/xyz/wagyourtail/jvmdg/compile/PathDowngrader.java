@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.compile;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.classloader.ResourceClassLoader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.util.*;
 
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.instrument.IllegalClassFormatException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -58,7 +60,7 @@ public class PathDowngrader {
     }
 
     public static void downgradePaths(final ClassDowngrader downgrader, final List<Path> inputRoots, List<Path> outputRoots, Set<URL> classpath) throws IOException {
-        try (final URLClassLoader extraClasspath = new URLClassLoader(classpath.toArray(new URL[0]), PathDowngrader.class.getClassLoader())) {
+        try (final ResourceClassLoader extraClasspath = new ResourceClassLoader(classpath, PathDowngrader.class.getClassLoader())) {
             // zip input and output
             for (int i = 0; i < inputRoots.size(); i++) {
                 final Path in = inputRoots.get(i);
@@ -155,7 +157,7 @@ public class PathDowngrader {
 
                 }).get();
             }
-        } catch (ExecutionException | InterruptedException e) {
+        } catch (ExecutionException | InterruptedException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }

@@ -97,7 +97,19 @@ public class ClassDowngrader implements Closeable {
         Map<Integer, VersionProvider> downgraders = new HashMap<>();
         try {
             for (VersionProvider provider : ServiceLoader.load(VersionProvider.class, classLoader)) {
-                downgraders.put(provider.inputVersion, provider);
+                if (downgraders.containsKey(provider.inputVersion)) {
+                    VersionProvider prev = downgraders.get(provider.inputVersion);
+                    if (prev.priotity < provider.priotity) {
+                        downgraders.put(provider.inputVersion, provider);
+                    } else if (prev.priotity == provider.priotity) {
+                        logger.warn(
+                            "Duplicate version providers with same priority for " + provider.inputVersion
+                            + " \"" + provider.getClass().getName() + "\" and \"" + prev.getClass().getName() + "\""
+                        );
+                    }
+                } else {
+                    downgraders.put(provider.inputVersion, provider);
+                }
             }
         } catch (Throwable t) {
             try {
@@ -237,21 +249,9 @@ public class ClassDowngrader implements Closeable {
         Set<ClassNode> multiReleaseHolder = new HashSet<>();
         classes.add(clazz);
         int version = clazz.version;
+        int originalVersion = clazz.version;
         while (version > target) {
-            VersionProvider downgrader = downgraders.get(version);
-            if (downgrader == null) {
-                throw new RuntimeException("Unsupported class version: " + version + " supported: " + downgraders.keySet());
-            }
-            Set<ClassNode> newClasses = new HashSet<>();
-            for (ClassNode c : classes) {
-                ClassNode downgraded = downgrader.downgrade(this, c, newClasses, enableRuntime, getReadOnly);
-                if (downgraded != null) {
-                    newClasses.add(downgraded);
-                }
-            }
-            classes = newClasses;
-            version = downgrader.outputVersion;
-            if (flags.multiReleaseVersions.contains(version)) {
+            if (flags.multiReleaseVersions.contains(version) || (version == originalVersion && flags.multiReleaseOriginal)) {
                 // copy to new class node
                 for (ClassNode c : classes) {
                     ClassNode copy = new ClassNode();
@@ -270,6 +270,19 @@ public class ClassDowngrader implements Closeable {
                     multiReleaseHolder.add(copy);
                 }
             }
+            VersionProvider downgrader = downgraders.get(version);
+            if (downgrader == null) {
+                throw new RuntimeException("Unsupported class version: " + version + " supported: " + downgraders.keySet());
+            }
+            Set<ClassNode> newClasses = new HashSet<>();
+            for (ClassNode c : classes) {
+                ClassNode downgraded = downgrader.downgrade(this, c, newClasses, enableRuntime, getReadOnly);
+                if (downgraded != null) {
+                    newClasses.add(downgraded);
+                }
+            }
+            classes = newClasses;
+            version = downgrader.outputVersion;
         }
         multiReleaseHolder.addAll(classes);
         return multiReleaseHolder;
@@ -310,9 +323,6 @@ public class ClassDowngrader implements Closeable {
             throw new RuntimeException("Class name mismatch: " + name.get() + " != " + node.name);
         }
         Map<String, byte[]> outputs = new HashMap<>();
-        if (flags.multiReleaseOriginal || flags.multiReleaseVersions.contains(version)) {
-            outputs.put("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + name.get(), bytes);
-        }
         try {
             logger.trace("Transforming " + name.get());
             Set<ClassNode> extra = downgrade(node, enableRuntime, new Function<String, ClassNode>() {
