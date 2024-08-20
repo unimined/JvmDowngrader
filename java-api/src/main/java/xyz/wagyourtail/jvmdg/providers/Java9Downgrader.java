@@ -38,7 +38,7 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_L_ModuleLayer.class);
         // Process
         // ProcessBuilder
-        // ProcessHandle
+        stub(J_L_ProcessHandle.class);
         // ProcessHandleImpl
         stub(J_L_Runtime.class);
         stub(J_L_Runtime.Version.class);
@@ -48,18 +48,6 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_L_StrictMath.class);
         // String -- handled by CharSequence
         stub(J_L_System.class);
-        // TODO: this properly
-//        ClassReplacer.registerReplace(
-//            JavaVersion.VERSION_1_9,
-//            "Ljava/lang/System\$Logger;",
-//            "Ljava/util/logging/Logger;"
-//        )
-//        ClassReplacer.registerReplace(
-//            JavaVersion.VERSION_1_9,
-//            "Ljava/lang/System\$Logger\$Level;",
-//            "Ljava/util/logging/Level;"
-//        )
-        // System$LoggerFinder
         stub(J_L_Thread.class);
         // ElementType
         // MethodHandle

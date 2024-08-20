@@ -89,13 +89,19 @@ public class DowngradeTests extends BaseIntegrationTests {
 
     private static final Map<String, Map.Entry<Integer, String>> originalResults = new ConcurrentHashMap<>();
 
+    private static final String[] args = new String[] {
+        "arg1",
+        "testArg2",
+        "arg3"
+    };
+
     @BeforeAll
     public static void runOriginal() throws IOException, InterruptedException {
         for (String main : mainClasses()) {
             StringBuilder originalLog = new StringBuilder();
             Integer exitCode = JavaRunner.runJarInSubprocess(
                 original,
-                new String[0],
+                args,
                 main,
                 Set.of(),
                 Path.of("."),
@@ -205,7 +211,7 @@ public class DowngradeTests extends BaseIntegrationTests {
         StringBuilder downgradedLog = new StringBuilder();
         Integer ret = JavaRunner.runJarInSubprocess(
             getDowngradedJar(javaVersion),
-            new String[]{},
+            args,
             mainClass,
             Stream.concat(Stream.of(getApiJar(javaVersion)), downgradeClasspath.stream()).collect(Collectors.toSet()),
             Path.of("."),
@@ -261,7 +267,7 @@ public class DowngradeTests extends BaseIntegrationTests {
         StringBuilder shadedLog = new StringBuilder();
         Integer ret = JavaRunner.runJarInSubprocess(
             getShadedJar(javaVersion),
-            new String[]{},
+            args,
             mainClass,
             Set.of(),
             Path.of("."),
@@ -308,18 +314,21 @@ public class DowngradeTests extends BaseIntegrationTests {
         System.out.println("\n\n");
         System.out.println("Runtime: ");
         StringBuilder runtimeLog = new StringBuilder();
+        List<String> args = new ArrayList<>();
+        args.addAll(List.of(
+            "-a",
+            javaApi.toString(),
+            "--quiet",
+            "bootstrap",
+            "--classpath",
+            DowngradeTests.original.toAbsolutePath().toString(),
+            "-m",
+            mainClass
+        ));
+        args.addAll(Arrays.asList(DowngradeTests.args));
         Integer ret = JavaRunner.runJarInSubprocess(
             null,
-            new String[]{
-                "-a",
-                javaApi.toString(),
-                "--quiet",
-                "bootstrap",
-                "--classpath",
-                DowngradeTests.original.toAbsolutePath().toString(),
-                "-m",
-                mainClass
-            },
+            args.toArray(new String[0]),
             "xyz.wagyourtail.jvmdg.cli.Main",
             classpathJars,
             Path.of("."),

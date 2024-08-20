@@ -115,6 +115,14 @@ public class Arguments {
                     continue outer;
                 }
             }
+            for (Set<String> strings : children.keySet()) {
+                if (strings.contains("")) {
+                    args.add(0, arg);
+                    ret.put("", Collections.singletonList(args.toArray(new String[0])));
+                    args.clear();
+                    continue outer;
+                }
+            }
             if (allowExtra) {
                 args.add(0, arg);
                 break;
