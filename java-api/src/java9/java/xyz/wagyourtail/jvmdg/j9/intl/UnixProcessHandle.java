@@ -1,11 +1,17 @@
 package xyz.wagyourtail.jvmdg.j9.intl;
 
 import org.jetbrains.annotations.NotNull;
+import sun.misc.Unsafe;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j9.stub.java_base.J_L_ProcessHandle;
+import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,6 +26,29 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public class UnixProcessHandle implements J_L_ProcessHandle {
+    private static final Unsafe unsafe = Utils.getUnsafe();
+    private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
+    private static final MethodHandle waitForProcessExit;
+
+    static {
+        MethodHandle waitForProcessExit1;
+        try {
+            Class<?> unixProcess = Class.forName("java.lang.UNIXProcess");
+            waitForProcessExit1 = IMPL_LOOKUP.findVirtual(unixProcess, "waitForProcessExit", MethodType.methodType(int.class, int.class)).bindTo(unsafe.allocateInstance(unixProcess));
+        } catch (NoSuchMethodException | IllegalAccessException | ClassNotFoundException e) {
+            // we are probably on j9+, fallback on actual processHandle impl stuff
+            try {
+                waitForProcessExit1 = MethodHandles.insertArguments(IMPL_LOOKUP.findStatic(Class.forName("java.lang.ProcessHandleImpl"), "waitForProcessExit0", MethodType.methodType(int.class, long.class, boolean.class)), 1, false).asType(MethodType.methodType(int.class, int.class));
+            } catch (NoSuchMethodException | IllegalAccessException | ClassNotFoundException ex) {
+                throw new RuntimeException(ex);
+            }
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        }
+
+        waitForProcessExit = waitForProcessExit1;
+    }
+
     private final long pid;
     private String[] pidInfo;
     private final String[] cmdline;
@@ -56,7 +85,11 @@ public class UnixProcessHandle implements J_L_ProcessHandle {
         Path pth = Paths.get("/proc/" + pid + "/cmdline");
         if (Files.isReadable(pth)) {
             try {
-                return new String(Files.readAllBytes(pth)).split("\0");
+                String args = new String(Files.readAllBytes(pth));
+                if (args.isEmpty()) {
+                    return null;
+                }
+                return args.split("\0");
             } catch (IOException e) {
                 return null;
             }
@@ -164,14 +197,15 @@ public class UnixProcessHandle implements J_L_ProcessHandle {
     @Override
     public CompletableFuture<J_L_ProcessHandle> onExit() {
         return CompletableFuture.supplyAsync(() -> {
-            try (WatchService ws = FileSystems.getDefault().newWatchService()) {
-                Path pth = Paths.get("/proc/" + pid + "/status");
-                pth.register(ws, StandardWatchEventKinds.ENTRY_DELETE);
-                ws.take();
-                return this;
-            } catch (IOException | InterruptedException e) {
+            if (pid > Integer.MAX_VALUE) {
+                throw MissingStubError.create();
+            }
+            try {
+                int exitCode = (int) waitForProcessExit.invokeExact((int) pid);
+            } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
+            return new UnixProcessHandle(pid);
         });
     }
 

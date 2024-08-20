@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
 
 public class TestProcessHandle {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
         ProcessHandle currentProcessHandle = ProcessHandle.current();
         System.out.println(currentProcessHandle.pid() == ManagementFactory.getRuntimeMXBean().getPid());
         List<String> lst = Arrays.asList(currentProcessHandle.info().arguments().get());
@@ -22,7 +24,6 @@ public class TestProcessHandle {
         }
         Process p = pb.start();
         currentProcessHandle.children().map(e -> String.join(" ", e.info().arguments().get())).forEach(System.out::println);
-        p.toHandle().onExit().thenAccept(e -> System.out.println(e.info().commandLine()));
-//        Thread.sleep(1);
+        System.out.println(p.toHandle().onExit().get().info().commandLine().orElse("missing"));
     }
 }
