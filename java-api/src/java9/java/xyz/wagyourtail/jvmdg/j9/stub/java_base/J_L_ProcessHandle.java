@@ -28,10 +28,10 @@ public interface J_L_ProcessHandle extends Comparable<J_L_ProcessHandle> {
     RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
 
     static Optional<J_L_ProcessHandle> of(long pid) {
-        if (pid == current().pid()) {
-            return Optional.of(current());
+        if (UnixProcessHandle.isUnix()) {
+            return Optional.of(new UnixProcessHandle(pid));
         }
-        throw new UnsupportedOperationException("Getting arbitrary PID process handles is not supported");
+        throw MissingStubError.create();
     }
 
     static J_L_ProcessHandle current() {
@@ -49,7 +49,10 @@ public interface J_L_ProcessHandle extends Comparable<J_L_ProcessHandle> {
     }
 
     static Stream<J_L_ProcessHandle> allProcesses() {
-        return Stream.of(current());
+        if (UnixProcessHandle.isUnix()) {
+            return of(0).get().descendants();
+        }
+        throw MissingStubError.create();
     }
 
     long pid();
