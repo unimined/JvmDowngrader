@@ -19,12 +19,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * Implementation of ProcessHandle is very incomplete, as can only get this kind of info on the
- * current process without access to natives.
- * <p>
- * If you know some funny sun classes or something to get other processes, lmk
- */
 @Adapter("java/lang/ProcessHandle")
 public interface J_L_ProcessHandle extends Comparable<J_L_ProcessHandle> {
     RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();
