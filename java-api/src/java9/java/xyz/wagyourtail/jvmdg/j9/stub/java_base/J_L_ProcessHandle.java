@@ -1,15 +1,11 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import org.jetbrains.annotations.NotNull;
-import sun.management.ManagementFactoryHelper;
-import sun.management.VMManagement;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j9.intl.UnixProcessHandle;
-import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.nio.file.Files;
