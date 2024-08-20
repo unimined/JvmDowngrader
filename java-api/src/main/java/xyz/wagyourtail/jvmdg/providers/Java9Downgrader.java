@@ -37,9 +37,8 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_L_Module.class);
         stub(J_L_ModuleLayer.class);
         stub(J_L_Process.class);
-        // ProcessBuilder
+        stub(J_L_ProcessBuilder.class);
         stub(J_L_ProcessHandle.class);
-        // ProcessHandleImpl
         stub(J_L_Runtime.class);
         stub(J_L_Runtime.Version.class);
         stub(J_L_Short.class);
