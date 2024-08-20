@@ -8,13 +8,19 @@ import xyz.wagyourtail.jvmdg.j9.intl.UnixProcessHandle;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
+import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -50,7 +56,13 @@ public interface J_L_ProcessHandle extends Comparable<J_L_ProcessHandle> {
 
     static Stream<J_L_ProcessHandle> allProcesses() {
         if (UnixProcessHandle.isUnix()) {
-            return of(0).get().descendants();
+            Path pth = Paths.get("/proc");
+            try (Stream<Path> stream = Files.list(pth)) {
+                List<J_L_ProcessHandle> ph = stream.map(Path::getFileName).map(Path::toString).mapToLong(Long::parseLong).mapToObj(J_L_ProcessHandle::of).filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList());
+                return ph.stream();
+            } catch (IOException e) {
+                return Stream.empty();
+            }
         }
         throw MissingStubError.create();
     }
