@@ -6,6 +6,7 @@ import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.CharBuffer;
+import java.util.Arrays;
 import java.util.Objects;
 
 @Adapter("java/util/HexFormat")
@@ -42,6 +43,10 @@ public record J_U_HexFormat(String delimiter, String prefix, String suffix, @Cov
 
     public J_U_HexFormat withLowerCase() {
         return new J_U_HexFormat(delimiter, prefix, suffix, lowercase);
+    }
+
+    public boolean isUpperCase() {
+        return Arrays.equals(digits, uppercase);
     }
 
     public String formatHex(byte[] bytes) {
