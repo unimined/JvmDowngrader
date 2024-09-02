@@ -2,9 +2,11 @@ package xyz.wagyourtail.jvmdg.site.maven.html
 
 import io.ktor.server.html.*
 import kotlinx.html.*
+import xyz.wagyourtail.jvmdg.site.html.About
 import xyz.wagyourtail.jvmdg.site.maven.Settings
 
 class Maven : Template<HTML> {
+    val version = Maven::class.java.`package`.specificationVersion ?: "1.1.0"
 
     override fun HTML.apply() {
         head {
@@ -34,6 +36,7 @@ class Maven : Template<HTML> {
                     +"JvmDowngrader"
                 }
                 +" library to modify the bytecode of the jars before they are sent to the client."
+                +" This is an alternative to using the plugin in gradle."
             }
             p {
                 +"To use this mirror, simply add the maven to your project's repositories: "
@@ -49,7 +52,7 @@ class Maven : Template<HTML> {
                 +" so for example, to get a java 9 version of jvmdowngrader-java-api, you would use "
                 br {}
                 code {
-                    +"jvmdg-9.xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.1"
+                    +"jvmdg-9.xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${version}"
                 }
                 br {}
                 +"If the artifact's artifactId starts with its groupId, the artifactId is also transformed in this way."
@@ -61,24 +64,13 @@ class Maven : Template<HTML> {
                 +"You do also need to depend on jvmdowngrader's api. this can actually be done through the mirror as well."
                 br {}
                 +"Or you can depend on one of the "
-                a(href = "https://repo1.maven.org/maven2/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/0.7.1/") {
+                a(href = "https://repo1.maven.org/maven2/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/${version}/") {
                     +"pre-downgraded artifacts on central"
                 }
                 +"."
             }
             code {
-                +"xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.1:downgraded-8"
-            }
-            p {
-                +"It is "
-                b {
-                    +"strongly"
-                }
-                +". such as: "
-                br {}
-                code {
-                    +"xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.7.1:downgraded-8"
-                }
+                +"xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:${version}:downgraded-8"
             }
             p {
                 +"The following mavens are curently mirrored: "
