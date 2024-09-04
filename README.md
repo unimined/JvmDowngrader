@@ -95,7 +95,7 @@ Optionally, you can also depend on the shadeDowngradedApi task when running buil
 assemble.dependsOn shadeDowngradedApi
 ```
 
-you can create a custom task by doing:
+### Custom Tasks
 
 ```gradle
 task customDowngrade(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar) {
@@ -111,7 +111,7 @@ task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeJar) 
 }
 ```
 
-you can also downgrade/shade a `FileCollection`:
+### Downgrade FileCollection
 
 ```gradle
 task downgradeFileCollection(type: xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles) {
@@ -135,7 +135,10 @@ shadeFileCollection.outputCollection
 Make sure the task is configured before trying to use the outputCollection,
 it's computed from the `toDowngrade` files.
 
-you can downgrade a configuration:
+### Downgrade Configuration
+
+To depend on more modern jars on a lower java version you can downgrade the configuration.
+
 
 ```gradle
 configurations {
@@ -143,12 +146,47 @@ configurations {
     implementation.extendsFrom downgrade
 }
 
-jvmdg.dg(configurations.downgrade)
+jvmdg.dg(configurations.downgrade) {
+    downgradeTo = JavaVersion.VERSION_1_8 // default
+}
 
 dependencies {
     downgrade "newer.java:version:1.0"
 }
 
+```
+
+#### Downgrading for shading/jij'ing dependencies
+
+This is the expected usage of these functions.
+
+`jvmdg.dg` has optional parameter, `shade: Boolean`, turn this to false if you plan on shadow'ing this configuration and
+running `shadeDowngradedApi`, as otherwise there may be duplicate jvmdg-api classes.
+ie. `jvmdg.dg(configurations.downgrade, false)`
+
+you may have to include whatever configuration you're downgrading in ShadowJar yourself. 
+I do not automatically make the configuration shadowed into your output.
+
+#### Including newer dependencies on lower java version building
+
+This is not recommended due to the following but is still possible.
+It is recommended to just shade dependencies into your project and downgrade the combined output.
+The dependencies may not be correctly represented in the pom with this method.
+
+There may be issues with gradle metadata breaking because of how early gradle checks the java version,
+you can disable this by setting `mavenPom` and `artifact` in the `metadataSources` function on repositories
+to explicitly disable gradle metadata.
+
+for example:
+```gradle
+repositories {
+    mavenCentral {
+        metadataSources {
+            mavenPom()
+            artifact()
+        }
+    }
+}
 ```
 
 ## "Compile" Time Downgrading
