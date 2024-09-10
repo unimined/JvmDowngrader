@@ -5,7 +5,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
+import java.util.Map;
+
+import static java.nio.file.FileSystems.newFileSystem;
 
 public class TestFile {
 
@@ -28,7 +34,15 @@ public class TestFile {
         }
         reader.close();
         System.out.println(sb.toString());
+
+        var temp2 = Files.createTempFile("temp", ".zip");
+        Files.deleteIfExists(temp2);
+        try (FileSystem fs = FileSystems.newFileSystem(temp2, Map.of("create", "true"))) {
+            Files.writeString(fs.getPath("/test.txt"), "Hello World!", StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        }
+
         Files.deleteIfExists(temp);
+        Files.deleteIfExists(temp2);
     }
 
 }
