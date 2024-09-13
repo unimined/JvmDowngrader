@@ -47,7 +47,7 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         this.name = name;
         this.version = version;
         this.rawVersion = rawVersion;
-        this.modifiers = EnumSet.copyOf(modifiers);
+        this.modifiers = modifiers.isEmpty() ? EnumSet.noneOf(Modifier.class) : EnumSet.copyOf(modifiers);
         this.requiresSet = Collections.unmodifiableSet(requiresSet);
         this.exportsSet = Collections.unmodifiableSet(exportsSet);
         this.opensSet = Collections.unmodifiableSet(opensSet);
@@ -511,7 +511,7 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         private final String rawVersion;
 
         private Requires(Set<Modifier> modifiers, String name, Version version, String rawVersion) {
-            this.modifiers = EnumSet.copyOf(modifiers);
+            this.modifiers = modifiers.isEmpty() ? EnumSet.noneOf(Modifier.class) : EnumSet.copyOf(modifiers);
             this.name = name;
             this.version = version;
             this.rawVersion = rawVersion;
@@ -599,7 +599,7 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         private final Set<String> targets;
 
         private Exports(Set<Modifier> modifiers, String source, Set<String> targets) {
-            this.modifiers = EnumSet.copyOf(modifiers);
+            this.modifiers = modifiers.isEmpty() ? EnumSet.noneOf(Modifier.class) : EnumSet.copyOf(modifiers);
             this.source = source;
             this.targets = Collections.unmodifiableSet(targets);
         }
@@ -673,7 +673,7 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         private final Set<String> targets;
 
         private Opens(Set<Modifier> modifiers, String source, Set<String> targets) {
-            this.modifiers = EnumSet.copyOf(modifiers);
+            this.modifiers = modifiers.isEmpty() ? EnumSet.noneOf(Modifier.class) : EnumSet.copyOf(modifiers);
             this.source = source;
             this.targets = Collections.unmodifiableSet(targets);
         }

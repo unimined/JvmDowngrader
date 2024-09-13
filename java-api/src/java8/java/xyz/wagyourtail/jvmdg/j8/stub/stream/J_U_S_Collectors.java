@@ -187,7 +187,7 @@ public final class J_U_S_Collectors {
 
     @Stub(ref = @Ref("java/util/stream/Collectors"))
     public static <T, A, R, RR> J_U_S_Collector<T, A, RR> collectingAndThen(J_U_S_Collector<T, A, R> downstream, J_U_F_Function<R, RR> andThen) {
-        EnumSet<J_U_S_Collector.Characteristics> characteristics = EnumSet.copyOf(downstream.characteristics());
+        EnumSet<J_U_S_Collector.Characteristics> characteristics = downstream.characteristics().isEmpty() ? EnumSet.noneOf(J_U_S_Collector.Characteristics.class) : EnumSet.copyOf(downstream.characteristics());
         characteristics.remove(J_U_S_Collector.Characteristics.IDENTITY_FINISH);
         return new CollectorImpl<>(
                 downstream.supplier(),
