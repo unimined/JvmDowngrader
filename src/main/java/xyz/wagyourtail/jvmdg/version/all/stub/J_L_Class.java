@@ -4,6 +4,7 @@ import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -73,6 +74,7 @@ public class J_L_Class {
 
     //TODO: FIELD STUBS
 
+    @CoverageIgnore
     @Stub(ref = @Ref("java/lang/Class"), downgradeVersion = true, requiresRuntime = true)
     public static Class<?> forName(String className, int origVersion) throws ClassNotFoundException {
         List<VersionProvider> versionProviders = ClassDowngrader.getCurrentVersionDowngrader().versionProviders(origVersion);
@@ -86,6 +88,7 @@ public class J_L_Class {
         return Class.forName(className);
     }
 
+    @CoverageIgnore
     @Stub(ref = @Ref("java/lang/Class"), downgradeVersion = true, requiresRuntime = true)
     public static Class<?> forName(String className, boolean initialize, ClassLoader loader, int origVersion) throws ClassNotFoundException {
         List<VersionProvider> versionProviders = ClassDowngrader.getCurrentVersionDowngrader().versionProviders(origVersion);
@@ -98,6 +101,7 @@ public class J_L_Class {
         return Class.forName(className, initialize, loader);
     }
 
+    @CoverageIgnore
     @Stub(requiresRuntime = true, downgradeVersion = true)
     public static Method[] getMethods(Class<?> clazz, int origVersion) {
         Type target;

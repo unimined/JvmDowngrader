@@ -105,7 +105,8 @@ public class J_L_StackWalker {
     }
 
     public Class<?> getCallerClass() {
-        return walk(stream -> stream.skip(2).findFirst().get().getDeclaringClass());
+        return walk(stream -> stream.skip(2).findFirst()
+                .orElseThrow(J_L_IllegalCallerException::new).getDeclaringClass());
     }
 
     @Adapter("java/lang/StackWalker$Option")
