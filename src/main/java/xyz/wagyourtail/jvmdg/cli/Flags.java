@@ -5,6 +5,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Consumer;
 import xyz.wagyourtail.jvmdg.util.Function;
@@ -83,6 +84,12 @@ public class Flags {
     public boolean printDebug = Boolean.getBoolean(Constants.DEBUG);
 
     /**
+     * sets whether to enable "inlining" of methods during {@link ApiShader} tasks.
+     * @since 1.2.0
+     */
+    public boolean shadeInlining = Boolean.getBoolean(Constants.SHADE_INLINING);
+
+    /**
      * this skips applying stubs for the specified input class version, this will still apply the
      * {@link xyz.wagyourtail.jvmdg.version.VersionProvider#otherTransforms(ClassNode, Set, Function, Set)}
      * such as {@code INVOKE_INTERFACE} -> {@code INVOKE_SPECIAL} for private interface methods in java 9 -> 8
@@ -137,19 +144,20 @@ public class Flags {
     @Override
     public String toString() {
         return "Flags{" +
-                "classVersion=" + classVersion +
-                ", api=" + api +
-                ", quiet=" + quiet +
-                ", logAnsiColors=" + logAnsiColors +
-                ", logLevel=" + logLevel +
-                ", allowMaven=" + allowMaven +
-                ", printDebug=" + printDebug +
-                ", debugSkipStubs=" + debugSkipStubs +
-                ", ignoreWarningsIn=" + ignoreWarningsIn +
-                ", debugDumpClasses=" + debugDumpClasses +
-                ", multiReleaseOriginal=" + multiReleaseOriginal +
-                ", multiReleaseVersions=" + multiReleaseVersions +
-                '}';
+            "classVersion=" + classVersion +
+            ", api=" + api +
+            ", quiet=" + quiet +
+            ", logAnsiColors=" + logAnsiColors +
+            ", logLevel=" + logLevel +
+            ", ignoreWarningsIn=" + ignoreWarningsIn +
+            ", allowMaven=" + allowMaven +
+            ", printDebug=" + printDebug +
+            ", shadeInlining=" + shadeInlining +
+            ", debugSkipStubs=" + debugSkipStubs +
+            ", debugDumpClasses=" + debugDumpClasses +
+            ", multiReleaseOriginal=" + multiReleaseOriginal +
+            ", multiReleaseVersions=" + multiReleaseVersions +
+            '}';
     }
 
     @Override
@@ -157,12 +165,12 @@ public class Flags {
         if (this == o) return true;
         if (!(o instanceof Flags)) return false;
         Flags flags = (Flags) o;
-        return classVersion == flags.classVersion && quiet == flags.quiet && logAnsiColors == flags.logAnsiColors && allowMaven == flags.allowMaven && printDebug == flags.printDebug && debugDumpClasses == flags.debugDumpClasses && multiReleaseOriginal == flags.multiReleaseOriginal && Objects.equals(api, flags.api) && logLevel == flags.logLevel && Objects.equals(ignoreWarningsIn, flags.ignoreWarningsIn) && Objects.equals(debugSkipStubs, flags.debugSkipStubs) && Objects.equals(multiReleaseVersions, flags.multiReleaseVersions);
+        return classVersion == flags.classVersion && quiet == flags.quiet && logAnsiColors == flags.logAnsiColors && allowMaven == flags.allowMaven && printDebug == flags.printDebug && shadeInlining == flags.shadeInlining && debugDumpClasses == flags.debugDumpClasses && multiReleaseOriginal == flags.multiReleaseOriginal && Objects.equals(api, flags.api) && logLevel == flags.logLevel && Objects.equals(ignoreWarningsIn, flags.ignoreWarningsIn) && Objects.equals(debugSkipStubs, flags.debugSkipStubs) && Objects.equals(multiReleaseVersions, flags.multiReleaseVersions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(classVersion, api, quiet, logAnsiColors, logLevel, ignoreWarningsIn, allowMaven, printDebug, debugSkipStubs, debugDumpClasses, multiReleaseOriginal, multiReleaseVersions);
+        return Objects.hash(classVersion, api, quiet, logAnsiColors, logLevel, ignoreWarningsIn, allowMaven, printDebug, shadeInlining, debugSkipStubs, debugDumpClasses, multiReleaseOriginal, multiReleaseVersions);
     }
 
     public void addIgnore(String s) {

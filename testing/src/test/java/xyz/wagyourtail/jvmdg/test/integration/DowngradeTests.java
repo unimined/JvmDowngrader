@@ -44,15 +44,15 @@ public class DowngradeTests extends BaseIntegrationTests {
         return Stream.of(
             new FlagsAndRunner(JavaRunner.JavaVersion.V1_8, flags.copy(e -> {
                 e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode();
-//                e.multiReleaseVersions = Set.of(JavaRunner.JavaVersion.V11.toOpcode(), JavaRunner.JavaVersion.V17.toOpcode());
+                e.shadeInlining = true;
             })),
             new FlagsAndRunner(JavaRunner.JavaVersion.V11, flags.copy(e -> {
                 e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode();
-//                e.multiReleaseVersions = Set.of(JavaRunner.JavaVersion.V11.toOpcode(), JavaRunner.JavaVersion.V17.toOpcode());
+                e.shadeInlining = true;
             })),
             new FlagsAndRunner(JavaRunner.JavaVersion.V17, flags.copy(e -> {
                 e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode();
-//                e.multiReleaseVersions = Set.of(JavaRunner.JavaVersion.V11.toOpcode(), JavaRunner.JavaVersion.V17.toOpcode());
+                e.shadeInlining = true;
             }))
 //            new FlagsAndRunner(flags.copy(e -> {
 //                e.classVersion = JavaRunner.JavaVersion.V1_7.toOpcode();

@@ -85,7 +85,7 @@ public class J_L_ClassLoader {
     }
 
     @Stub
-    public final boolean isRegisteredAsParallelCapable(ClassLoader loader) throws Throwable {
+    public static boolean isRegisteredAsParallelCapable(ClassLoader loader) throws Throwable {
         return (boolean) IS_REGISTERED.invokeExact(loader.getClass());
     }
 

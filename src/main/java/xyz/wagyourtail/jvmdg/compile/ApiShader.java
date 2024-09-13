@@ -278,7 +278,7 @@ public class ApiShader {
         Logger logger = new Logger(ApiShader.class, flags.getLogLevel(), flags.logAnsiColors, System.out);
         try {
             // step 3: traverse the input classes for references to the api
-            final ReferenceGraph inputRefs = new ReferenceGraph(logger, true, true);
+            final ReferenceGraph inputRefs = new ReferenceGraph(logger, true, flags.shadeInlining);
             inputRefs.scan(inputRoot, new ReferenceGraph.Filter() {
                 @Override
                 public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
@@ -300,33 +300,36 @@ public class ApiShader {
                         keys.add(key);
                     }
                 }
-                Map<FullyQualifiedMemberNameAndDesc, Type> inlineCandidates = inlineCandidates(logger, required.getFirst(), keys);
-                for (Map.Entry<FullyQualifiedMemberNameAndDesc, Type> entry : inlineCandidates.entrySet()) {
-                    ClassNode node = inputRefs.getClassFor(entry.getValue(), version);
-                    required.getFirst().remove(entry.getKey());
-                    required.getFirst().remove(new FullyQualifiedMemberNameAndDesc(entry.getKey().getOwner(), null, null));
 
-                    // change insn's owner to the inlined class
-                    for (AbstractInsnNode insn : inputRefs.getAllInsnsFor(entry.getKey(), version)) {
-                        inlineRef(entry.getKey(), insn, entry.getValue(), (node.access & Opcodes.ACC_INTERFACE) != 0);
-                    }
+                if (flags.shadeInlining) {
+                    Map<FullyQualifiedMemberNameAndDesc, Type> inlineCandidates = inlineCandidates(logger, required.getFirst(), keys);
+                    for (Map.Entry<FullyQualifiedMemberNameAndDesc, Type> entry : inlineCandidates.entrySet()) {
+                        ClassNode node = inputRefs.getClassFor(entry.getValue(), version);
+                        required.getFirst().remove(entry.getKey());
+                        required.getFirst().remove(new FullyQualifiedMemberNameAndDesc(entry.getKey().getOwner(), null, null));
 
-                    // actually inline it
-                    ClassNode apiNode = apiRefs.getClassFor(entry.getKey().getOwner(), version);
-                    // find api method
-                    MethodNode method = null;
-                    for (MethodNode m : apiNode.methods) {
-                        if (m.name.equals(entry.getKey().getName()) && m.desc.equals(entry.getKey().getDesc().getDescriptor())) {
-                            method = m;
-                            break;
+                        // change insn's owner to the inlined class
+                        for (AbstractInsnNode insn : inputRefs.getAllInsnsFor(entry.getKey(), version)) {
+                            inlineRef(entry.getKey(), insn, entry.getValue(), (node.access & Opcodes.ACC_INTERFACE) != 0);
                         }
+
+                        // actually inline it
+                        ClassNode apiNode = apiRefs.getClassFor(entry.getKey().getOwner(), version);
+                        // find api method
+                        MethodNode method = null;
+                        for (MethodNode m : apiNode.methods) {
+                            if (m.name.equals(entry.getKey().getName()) && m.desc.equals(entry.getKey().getDesc().getDescriptor())) {
+                                method = m;
+                                break;
+                            }
+                        }
+                        if (method == null) {
+                            throw new IllegalStateException("Method not found in class: " + entry.getKey());
+                        }
+                        MethodNode copy = new MethodNode(method.access & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE, "jvmdg$inlined$" + method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
+                        method.accept(copy);
+                        node.methods.add(copy);
                     }
-                    if (method == null) {
-                        throw new IllegalStateException("Method not found in class: " + entry.getKey());
-                    }
-                    MethodNode copy = new MethodNode(method.access & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE, "jvmdg$inlined$" + method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
-                    method.accept(copy);
-                    node.methods.add(copy);
                 }
 
                 // step 4.5: create remapper for api classes to prefixed api classes

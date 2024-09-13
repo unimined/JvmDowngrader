@@ -20,6 +20,8 @@ public class Constants {
     public static final String MULTI_RELEASE_ORIGINAL = "jvmdg.multiReleaseOriginal";
     public static final String MULTI_RELEASE_VERSIONS = "jvmdg.multiReleaseVersions";
 
+    public static final String SHADE_INLINING = "jvmdg.shadeInlining";
+
 
     public static final File DIR = new File(".jvmdg");
     public static final File DEBUG_DIR = new File(DIR, "debug");
