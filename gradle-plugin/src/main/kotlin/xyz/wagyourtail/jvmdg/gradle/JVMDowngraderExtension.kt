@@ -70,7 +70,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         debug.convention(false).finalizeValueOnRead()
         debugSkipStubs.convention(emptySet()).finalizeValueOnRead()
         debugDumpClasses.convention(false).finalizeValueOnRead()
-        shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/" }
+        shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/" }.finalizeValueOnRead()
         shadeInlining.convention(true).finalizeValueOnRead()
         multiReleaseOriginal.convention(false).finalizeValueOnRead()
         multiReleaseVersions.convention(emptySet()).finalizeValueOnRead()
@@ -79,6 +79,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
     fun convention(flags: ShadeFlags) {
         convention(flags as DowngradeFlags)
         flags.shadePath.convention(shadePath).finalizeValueOnRead()
+        flags.shadeInlining.convention(shadeInlining).finalizeValueOnRead()
     }
 
     fun convention(flags: DowngradeFlags) {
