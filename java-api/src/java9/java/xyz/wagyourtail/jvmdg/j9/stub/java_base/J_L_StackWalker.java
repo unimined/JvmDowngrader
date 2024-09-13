@@ -34,7 +34,7 @@ public class J_L_StackWalker {
     }
 
     public static J_L_StackWalker getInstance(Set<Option> options) {
-        return new J_L_StackWalker(EnumSet.copyOf(options));
+        return new J_L_StackWalker(options.isEmpty() ? EnumSet.noneOf(Option.class) : EnumSet.copyOf(options));
     }
 
     public static J_L_StackWalker getInstance(Set<Option> options, int i) {
