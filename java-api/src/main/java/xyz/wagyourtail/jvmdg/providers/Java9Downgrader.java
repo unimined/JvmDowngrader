@@ -29,7 +29,7 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_L_Class.class);
         stub(J_L_ClassLoader.class);
         // Deprecated
-        // IllegalCallerException
+        stub(J_L_IllegalCallerException.class);
         stub(J_L_IndexOutOfBoundsException.class);
         stub(J_L_Integer.class);
         // LayeredInstantiationException
@@ -59,9 +59,9 @@ public class Java9Downgrader extends VersionProvider {
         // FindException
         // InvalidModuleDescriptorException
         stub(J_L_M_ModuleDescriptor.class);
-        // ModuleFinder
-        // ModuleReader
-        // ModuleReference
+        stub(J_L_M_ModuleFinder.class);
+        stub(J_L_M_ModuleReader.class);
+        stub(J_L_M_ModuleReference.class);
         // ResolutionException
         // ResolvedModule
         stub(J_L_R_Cleaner.class);

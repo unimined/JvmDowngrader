@@ -15,6 +15,7 @@ public class Java22Downgrader extends VersionProvider {
         // -- java.base --
         stub(J_I_Console.class);
         stub(J_L_Class.class);
+        stub(J_L_Module.class);
         stub(J_N_F_Path.class);
 
     }

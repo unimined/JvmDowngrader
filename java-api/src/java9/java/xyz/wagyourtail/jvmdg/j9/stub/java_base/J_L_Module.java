@@ -4,11 +4,17 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 
+import java.lang.ref.WeakReference;
+import java.util.Objects;
+import java.util.Set;
+
 @Adapter("Ljava/lang/Module;")
 public class J_L_Module {
 
-    private final ClassLoader classLoader;
-    private final J_L_ModuleLayer layer = new J_L_ModuleLayer();
+    private final WeakReference<ClassLoader> classLoader;
+    private final J_L_ModuleLayer layer;
+    private final J_L_M_ModuleDescriptor descriptor;
+    private final String name;
 
     @CoverageIgnore
     public J_L_Module() {
@@ -18,32 +24,47 @@ public class J_L_Module {
         if (!sf.getMethodName().equals("<clinit>")) {
             throw new IllegalStateException("Module must be created from a class <clinit>");
         }
-        this.classLoader = sf.getDeclaringClass().getClassLoader();
+        this.classLoader = new WeakReference<>(sf.getDeclaringClass().getClassLoader());
+        this.layer = null;
+        this.descriptor = null;
+        this.name = null;
     }
 
     @CoverageIgnore
     public J_L_Module(ClassLoader classLoader) {
-        this.classLoader = classLoader;
+        this.classLoader = new WeakReference<>(classLoader);
+        this.layer = null;
+        this.descriptor = null;
+        this.name = null;
     }
 
-//    public boolean isNamed() {
-//        // TODO
-//    }
-//
-//    public String getName() {
-//        // TODO
-//    }
+    @CoverageIgnore
+    public J_L_Module(ClassLoader classLoader, J_L_ModuleLayer layer, J_L_M_ModuleDescriptor descriptor) {
+        this.classLoader = classLoader == null ? null : new WeakReference<>(classLoader);
+        this.layer = layer;
+        this.descriptor = descriptor;
+        this.name = descriptor.name();
+    }
+
+    public boolean isNamed() {
+        return this.name != null;
+    }
+
+    public String getName() {
+        return this.name;
+    }
 
     public ClassLoader getClassLoader() {
-        return classLoader;
+        return this.classLoader == null ? null : // If ClassLoader has been freed, it's not a valid state
+                Objects.requireNonNull(this.classLoader.get(), "ClassLoader has been freed");
     }
 
-    //    public ModuleDescriptor getDescriptor() {
-//        // TODO
-//    }
-//
+    public J_L_M_ModuleDescriptor getDescriptor() {
+        return this.descriptor;
+    }
+
     public J_L_ModuleLayer getLayer() {
-        return layer;
+        return this.layer;
     }
 //
 //    public boolean canRead(J_L_Module other) {
@@ -85,10 +106,10 @@ public class J_L_Module {
 //    public boolean canUse(Class<?> service) {
 //        // TODO
 //    }
-//
-//    public Set<String> getPackages() {
-//        // TODO
-//    }
+
+    public Set<String> getPackages() {
+        return this.descriptor.packages();
+    }
 //
 //    public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
 //        // TODO

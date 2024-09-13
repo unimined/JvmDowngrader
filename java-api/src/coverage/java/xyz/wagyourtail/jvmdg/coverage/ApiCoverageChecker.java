@@ -62,7 +62,8 @@ public class ApiCoverageChecker {
             var versions = new HashMap<Integer, List<Path>>();
             try (var folders = Files.newDirectoryStream(fs.getPath("/"))) {
                 for (var folder : folders) {
-                    folder.getFileName().toString().chars().map(c -> Character.digit(c, 36)).forEach(javaVersion -> versions.computeIfAbsent(javaVersion, k -> new ArrayList<>()).add(folder));
+                    folder.getFileName().toString().chars().map(c -> Character.digit(c, 36))
+                            .forEach(javaVersion -> versions.computeIfAbsent(javaVersion, k -> new ArrayList<>()).add(folder));
                 }
             }
 
@@ -97,11 +98,12 @@ public class ApiCoverageChecker {
                 }
                 System.out.println("Checking version " + stubVersion);
 
-                Map<Type, Type> stubClassTypes = versionProvider.classStubs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFirst()));
-                Set<FullyQualifiedMemberNameAndDesc> stubClassMethods = versionProvider.classStubs.entrySet().stream().flatMap (e ->
-                    Stream.concat(
-                            Arrays.stream(e.getValue().getSecond().getFirst().getDeclaredMethods()),
-                            Arrays.stream(e.getValue().getSecond().getFirst().getConstructors())
+                Map<Type, Type> stubClassTypes = versionProvider.classStubs.entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFirst()));
+                Set<FullyQualifiedMemberNameAndDesc> stubClassMethods = versionProvider.classStubs.entrySet().stream()
+                        .flatMap (e -> Stream.concat(
+                                Arrays.stream(e.getValue().getSecond().getFirst().getDeclaredMethods()),
+                                Arrays.stream(e.getValue().getSecond().getFirst().getConstructors())
                     ).filter(m ->
                             (m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0 &&
                             (m.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0 &&
@@ -112,7 +114,9 @@ public class ApiCoverageChecker {
                     ).map(MemberNameAndDesc::fromMember)
                     .map(m -> m.toFullyQualified(e.getValue().getFirst()))
                 ).collect(Collectors.toSet());
-                var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(value -> Stream.of(value.getMethodStubMap().values().stream(), value.getMethodModifyMap().values().stream()).flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
+                var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(value ->
+                        Stream.of(value.getMethodStubMap().values().stream(), value.getMethodModifyMap().values().stream())
+                                .flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
 
                 try {
                     var requiredStubs = new ArrayList<MemberInfo>();
@@ -222,31 +226,26 @@ public class ApiCoverageChecker {
                     }
 
                     var total = availableStubCount + onlyOnParentStubCount + missingStubCount;
-                    System.out.println("Version " + stubVersion + " has " + availableStubCount + " available stubs, " + onlyOnParentStubCount + " only on parent stubs, and " + missingStubCount + " missing stubs. Total: " + total);
+                    System.out.println("Version " + stubVersion + " has " + availableStubCount + " available stubs, " +
+                            onlyOnParentStubCount + " only on parent stubs, and " + missingStubCount + " missing stubs. Total: " + total);
 
-                    if (!missingStubs.isEmpty()) {
-                        var missing = Path.of("./coverage/" + stubVersion + "/missing.txt");
-                        writeList(missingStubs, missing);
-                    }
+                    var missing = Path.of("./coverage/" + stubVersion + "/missing.txt");
+                    writeList(missingStubs, missing);
 
-                    if (!parentOnlyStubs.isEmpty()) {
-                        var parentOnly = Path.of("./coverage/" + stubVersion + "/parentOnly.txt");
-                        writeList(parentOnlyStubs, parentOnly);
-                    }
-                    if (!unmatchedStubs.isEmpty() || !stubClassMethods.isEmpty()) {
-                        var unmatched = Path.of("./coverage/" + stubVersion + "/unmatched.txt");
-                        writeList(
-                            Stream.concat(
-                                unmatchedStubs.stream()
-                                    .filter(e -> !e.isAnnotationPresent(CoverageIgnore.class))
-                                    .map(FullyQualifiedMemberNameAndDesc::of),
-                                stubClassMethods.stream()
-                            ).map(e -> new MemberInfo("unknown", e, false, false))
-                            .collect(Collectors.toList()),
-                            unmatched
-                        );
-                    }
+                    var parentOnly = Path.of("./coverage/" + stubVersion + "/parentOnly.txt");
+                    writeList(parentOnlyStubs, parentOnly);
 
+                    var unmatched = Path.of("./coverage/" + stubVersion + "/unmatched.txt");
+                    writeList(
+                        Stream.concat(
+                            unmatchedStubs.stream()
+                                .filter(e -> !e.isAnnotationPresent(CoverageIgnore.class))
+                                .map(FullyQualifiedMemberNameAndDesc::of),
+                            stubClassMethods.stream()
+                        ).map(e -> new MemberInfo("unknown", e, false, false))
+                        .collect(Collectors.toList()),
+                        unmatched
+                    );
                 } catch (IOException e) {
                     throw new UncheckedIOException("Failed to compare version " + v, e);
                 }
@@ -258,6 +257,7 @@ public class ApiCoverageChecker {
     private static void writeList(List<MemberInfo> missing, Path outputFile) throws IOException {
         Files.createDirectories(outputFile.getParent());
         Files.deleteIfExists(outputFile);
+        if (missing.isEmpty()) return;
         var byModule = new HashMap<String, List<String>>();
         for (var stub : missing) {
             String sta = stub.isStatic() ? "; static" : ";";
@@ -365,7 +365,8 @@ public class ApiCoverageChecker {
                                 }
                                 var isStatic = (m.access & Opcodes.ACC_STATIC) != 0;
                                 var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
-                                methods.remove(new MemberInfo(modName, new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc)), isAbstract, isStatic));
+                                methods.remove(new MemberInfo(modName, new FullyQualifiedMemberNameAndDesc(
+                                        ct, m.name, Type.getMethodType(m.desc)), isAbstract, isStatic));
                             }
 
                             // check if method(s) still exist on parent (include interfaces in traversal)
@@ -410,6 +411,11 @@ public class ApiCoverageChecker {
                         }
                     } catch (IOException e) {
                         throw new UncheckedIOException("Failed to read " + p.toAbsolutePath(), e);
+                    } catch (RuntimeException e) {
+                        if (p.toString().endsWith("/module-info.sig")) {
+                            // ASM library may fail to read some module-info.sig
+                            System.err.println("Failed to read " + p.toAbsolutePath());
+                        } else throw new RuntimeException("Failed to read " + p.toAbsolutePath(), e);
                     }
                 });
             } catch (IOException e) {
