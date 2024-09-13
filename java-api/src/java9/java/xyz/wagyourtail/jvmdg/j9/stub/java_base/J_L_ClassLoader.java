@@ -21,6 +21,7 @@ import java.util.WeakHashMap;
 
 public class J_L_ClassLoader {
     private static final Map<ClassLoader, String> nameMap = Collections.synchronizedMap(new WeakHashMap<>());
+    private static final Map<ClassLoader, J_L_Module> unnamedModuleMap = Collections.synchronizedMap(new WeakHashMap<>());
 
     @Modify(ref = @Ref(value = "Ljava/lang/ClassLoader;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/ClassLoader;)V"))
     public static void init(MethodNode mnode, int i) {
@@ -63,7 +64,7 @@ public class J_L_ClassLoader {
 
     @Stub
     public static J_L_Module getUnnamedModule(ClassLoader classLoader) {
-        return new J_L_Module(classLoader);
+        return unnamedModuleMap.computeIfAbsent(classLoader, J_L_Module::new);
     }
 
     @Stub(ref = @Ref("Ljava/lang/ClassLoader;"))

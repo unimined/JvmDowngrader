@@ -1,13 +1,26 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.j9.intl.module.ModuleConstantHelper;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 
-import java.util.Optional;
+import java.util.*;
 
 @Adapter("Ljava/lang/ModuleLayer;")
 public class J_L_ModuleLayer {
+    static final J_L_ModuleLayer EMPTY_MODULE_LAYER =
+            new J_L_ModuleLayer(Collections.emptyList(), Collections.emptyMap());
 
-    // TODO: Controller
+    private final List<J_L_ModuleLayer> parents;
+    private final Map<String, J_L_Module> modules;
+    private volatile Set<J_L_Module> moduleSet;
+    private volatile String strValue;
+
+    @CoverageIgnore
+    public J_L_ModuleLayer(List<J_L_ModuleLayer> parents, Map<String, J_L_Module> modules) {
+        this.parents = parents;
+        this.modules = modules;
+    }
 
 //    public J_L_ModuleLayer defineModulesWithOneLoader(Configuration cf, ClassLoader parentLoader) {
 //        // TODO
@@ -36,35 +49,49 @@ public class J_L_ModuleLayer {
 //    public Configuration configuration() {
 //        // TODO
 //    }
-//
-//    public List<J_L_ModuleLayer> parents() {
-//        // TODO
-//    }
-//
-//    public Set<J_L_Module> modules() {
-//        // TODO
-//    }
 
-    public Optional<J_L_Module> findModule(String name) {
-        // TODO: actually implement
-        return Optional.empty();
+    public List<J_L_ModuleLayer> parents() {
+        return this.parents;
     }
 
-//    public ClassLoader findLoader(String name) {
-//        // TODO
-//    }
-//
-//    @Override
-//    public String toString() {
-//        // TODO
-//    }
-//
-//    public static J_L_ModuleLayer empty() {
-//        // TODO
-//    }
-//
-//    public static J_L_ModuleLayer boot() {
-//        // TODO
-//    }
+    public Set<J_L_Module> modules() {
+        if (this.moduleSet == null) {
+            this.moduleSet = Collections.unmodifiableSet(new HashSet<>(this.modules.values()));
+        }
+        return this.moduleSet;
+    }
 
+    public Optional<J_L_Module> findModule(String name) {
+        Objects.requireNonNull(name);
+        return Optional.ofNullable(this.modules.get(name));
+    }
+
+    public ClassLoader findLoader(String name) {
+        Optional<J_L_Module> optionalModule = this.findModule(name);
+        if (optionalModule.isPresent()) {
+            return optionalModule.get().getClassLoader();
+        }
+        throw new IllegalArgumentException();
+    }
+
+    @Override
+    public String toString() {
+        if (this.strValue == null) {
+            StringJoiner stringJoiner = new StringJoiner(", ");
+            // Note: Java9+ prepopulate modules when toString is called.
+            for (J_L_Module module : this.modules()) {
+                stringJoiner.add(module.getName());
+            }
+            this.strValue = stringJoiner.toString();
+        }
+        return this.strValue;
+    }
+
+    public static J_L_ModuleLayer empty() {
+        return EMPTY_MODULE_LAYER;
+    }
+
+    public static J_L_ModuleLayer boot() {
+        return ModuleConstantHelper.BOOT_LAYER;
+    }
 }
