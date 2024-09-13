@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Set up JDK 7 (fails from toolchain)
         uses: actions/setup-java@v4
@@ -31,17 +31,17 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
         run: ./gradlew publish -Pmvn.user=${{ secrets.MAVEN_USER }} -Pmvn.key=${{ secrets.MAVEN_TOKEN }} -PossrhUsername=${{ secrets.OSSRH_USERNAME }} -PossrhPassword=${{ secrets.OSSRH_PASSWORD }} -Pgradle.publish.key=${{ secrets.GRADLE_PUBLISH_KEY }} -Pgradle.publish.secret=${{ secrets.GRADLE_PUBLISH_SECRET }}
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: base
           path: build/libs
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: api
           path: java-api/build/libs
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: gradle
           path: gradle-plugin/build/libs
@@ -49,7 +49,7 @@ jobs:
       - name: Build Site
         run: ./gradlew :site:build
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: site
           path: site/build/libs
@@ -62,7 +62,7 @@ jobs:
           properties: 'version'
 
       - name: Upload to Release
-        uses: JasonEtco/upload-to-release@v0.1.1
+        uses: JasonEtco/upload-to-release@master
         with:
           args: ./build/libs/jvmdowngrader-${{ steps.gradle_properties.outputs.version }}-all.jar application/jar
         env:
