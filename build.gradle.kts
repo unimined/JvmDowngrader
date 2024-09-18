@@ -142,6 +142,7 @@ val mainVersion = project.properties["mainVersion"] as String
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(mainVersion.toInt()))
+        vendor.set(JvmVendorSpec.AZUL)
     }
 }
 

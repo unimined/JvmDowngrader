@@ -36,7 +36,7 @@ interface DowngradeFlags : TransformParameters {
      */
     @get:Input
     @get:Optional
-    @get:Deprecated(message = "use logLevel", replaceWith = ReplaceWith("logLevel = LogLevel.DEBUG"))
+    @get:Deprecated(message = "use logLevel", replaceWith = ReplaceWith("logLevel = LogLevel.FATAL"))
     val quiet: Property<Boolean>
 
     /**

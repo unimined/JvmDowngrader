@@ -52,7 +52,7 @@ in `build.gradle`:
 ```gradle
 // add the plugin
 plugins {
-    id 'xyz.wagyourtail.jvmdowngrader' version '1.0.0'
+    id 'xyz.wagyourtail.jvmdowngrader' version '$jvmdgVersion'
 }
 
 // optionally you can change some globals, here are their default values:
@@ -60,11 +60,19 @@ jvmdg.downgradeTo = JavaVersion.VERSION_1_8
 jvmdg.apiJar = [this.getClass().getResourceAsStream("jvmdg/java-api-${version}.jar").writeToFile("build/jvmdg/java-api-${version}.jar")]
 jvmdg.quiet = false
 jvmdg.debug = false
+jvmdg.logLevel = "INFO"
+jvmdg.ignoreWarningsIn = [].toSet()
 jvmdg.debugSkipStubs = [].toSet()
+jvmdg.debugDumpClasses = false
 jvmdg.shadePath = {
     it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-")
 }
+jvmdg.shadeInlining = true
+jvmdg.multiReleaseOriginal = false
+jvmdg.multiReleaseVersions = [].toSet()
 ```
+
+You can see more of what these values mean by [checking the docs on the flags classes](gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/flags)
 
 This will create a default downgrade task for `jar` (or `shadowJar` if present) called `downgradeJar` that will
 downgrade the output to java 8 by default.
