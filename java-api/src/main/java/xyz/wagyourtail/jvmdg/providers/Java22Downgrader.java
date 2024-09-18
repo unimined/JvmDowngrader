@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 public class Java22Downgrader extends VersionProvider {
 
     public Java22Downgrader() {
-        super(Opcodes.V22, Opcodes.V21);
+        super(Opcodes.V22, Opcodes.V21, 0);
     }
 
     @Override

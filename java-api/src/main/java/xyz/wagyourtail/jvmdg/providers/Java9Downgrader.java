@@ -13,7 +13,7 @@ public class Java9Downgrader extends VersionProvider {
 
 
     public Java9Downgrader() {
-        super(Opcodes.V9, Opcodes.V1_8);
+        super(Opcodes.V9, Opcodes.V1_8, 0);
     }
 
     @Override

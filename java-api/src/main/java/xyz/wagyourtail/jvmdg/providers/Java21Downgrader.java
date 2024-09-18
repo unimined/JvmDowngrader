@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java21Downgrader extends VersionProvider {
     public Java21Downgrader() {
-        super(Opcodes.V21, Opcodes.V20);
+        super(Opcodes.V21, Opcodes.V20, 0);
     }
 
     public void init() {

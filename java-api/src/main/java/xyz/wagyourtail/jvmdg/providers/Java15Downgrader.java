@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java15Downgrader extends VersionProvider {
     public Java15Downgrader() {
-        super(Opcodes.V15, Opcodes.V14);
+        super(Opcodes.V15, Opcodes.V14, 0);
     }
 
     public void init() {

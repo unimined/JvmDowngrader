@@ -9,7 +9,6 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.j8.stub.*;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
 import xyz.wagyourtail.jvmdg.j8.stub.stream.*;
-import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -24,13 +23,13 @@ public class Java8Downgrader extends VersionProvider {
 
 
     public Java8Downgrader() {
-        super(Opcodes.V1_8, Opcodes.V1_7);
+        super(Opcodes.V1_8, Opcodes.V1_7, 0);
     }
 
     @Override
     public void ensureInit(ClassDowngrader downgrader) {
         if (!isInitialized()) {
-            if (!downgrader.flags.quiet) downgrader.logger.warn("Java 8 -> 7 Stubs are VERY incomplete!");
+            downgrader.logger.warn("Java 8 -> 7 Stubs are VERY incomplete!");
         }
         super.ensureInit(downgrader);
     }
@@ -223,10 +222,6 @@ public class Java8Downgrader extends VersionProvider {
         // SortedSet
         stub(J_U_Spliterator.class);
         stub(J_U_Spliterators.class);
-        stub(J_U_Spliterators$AbstractDoubleSpliterator.class);
-        stub(J_U_Spliterators$AbstractIntSpliterator.class);
-        stub(J_U_Spliterators$AbstractLongSpliterator.class);
-        stub(J_U_Spliterators$AbstractSpliterator.class);
         // SplittableRandom
         stub(J_U_StringJoiner.class);
         // TimeZone

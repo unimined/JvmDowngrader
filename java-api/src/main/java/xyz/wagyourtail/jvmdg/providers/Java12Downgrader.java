@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java12Downgrader extends VersionProvider {
     public Java12Downgrader() {
-        super(Opcodes.V12, Opcodes.V11);
+        super(Opcodes.V12, Opcodes.V11, 0);
     }
 
     public void init() {

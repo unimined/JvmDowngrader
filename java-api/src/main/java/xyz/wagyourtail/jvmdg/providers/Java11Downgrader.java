@@ -21,7 +21,7 @@ import java.util.Set;
 
 public class Java11Downgrader extends VersionProvider {
     public Java11Downgrader() {
-        super(Opcodes.V11, Opcodes.V10);
+        super(Opcodes.V11, Opcodes.V10, 0);
     }
 
     public void init() {

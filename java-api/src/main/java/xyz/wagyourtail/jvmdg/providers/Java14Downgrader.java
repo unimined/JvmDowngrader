@@ -8,7 +8,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java14Downgrader extends VersionProvider {
     public Java14Downgrader() {
-        super(Opcodes.V14, Opcodes.V13);
+        super(Opcodes.V14, Opcodes.V13, 0);
     }
 
     public void init() {

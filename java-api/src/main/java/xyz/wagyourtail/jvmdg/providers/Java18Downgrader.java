@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java18Downgrader extends VersionProvider {
     public Java18Downgrader() {
-        super(Opcodes.V18, Opcodes.V17);
+        super(Opcodes.V18, Opcodes.V17, 0);
     }
 
     public void init() {

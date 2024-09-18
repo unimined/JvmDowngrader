@@ -9,7 +9,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 public class Java23Downgrader extends VersionProvider {
 
     public Java23Downgrader() {
-        super(Opcodes.V23, Opcodes.V22);
+        super(Opcodes.V23, Opcodes.V22, 0);
     }
 
     @Override
