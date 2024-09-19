@@ -13,7 +13,9 @@ public @interface RecordComponents {
 
     @interface Value {
         String name();
+
         Class<?> type();
+
     }
 
 }

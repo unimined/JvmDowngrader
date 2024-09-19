@@ -1,13 +1,11 @@
 package xyz.wagyourtail.jvmdg.version;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.objectweb.asm.*;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.all.RemovedInterfaces;
-import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
@@ -49,6 +47,36 @@ public abstract class VersionProvider {
         this.outputVersion = outputVersion;
         this.coverage = new Coverage(inputVersion, this);
         this.priotity = priotity;
+    }
+
+    public static FullyQualifiedMemberNameAndDesc resolveModifyTarget(Member member, Ref ref) {
+        if (member instanceof Method) {
+            Type owner;
+            String name;
+            Type desc;
+            if (ref.value().isEmpty()) {
+                throw new IllegalArgumentException("ref must have a value");
+            } else {
+                if (ref.value().startsWith("L") && ref.value().endsWith(";")) {
+                    owner = Type.getType(ref.value());
+                } else {
+                    owner = Type.getObjectType(ref.value());
+                }
+            }
+            if (ref.member().isEmpty()) {
+                throw new IllegalArgumentException("ref must have a member");
+            } else {
+                name = ref.member();
+            }
+            if (ref.desc().isEmpty()) {
+                throw new IllegalArgumentException("ref must have a desc");
+            } else {
+                desc = Type.getMethodType(ref.desc());
+            }
+            return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
+        } else {
+            throw new IllegalArgumentException("member must be a method");
+        }
     }
 
     public FullyQualifiedMemberNameAndDesc resolveStubTarget(Member member, Ref ref) {
@@ -122,36 +150,6 @@ public abstract class VersionProvider {
             throw new UnsupportedOperationException("Not implemented yet");
         } else {
             throw new IllegalArgumentException("member must be a method or field");
-        }
-    }
-
-    public static FullyQualifiedMemberNameAndDesc resolveModifyTarget(Member member, Ref ref) {
-        if (member instanceof Method) {
-            Type owner;
-            String name;
-            Type desc;
-            if (ref.value().isEmpty()) {
-                throw new IllegalArgumentException("ref must have a value");
-            } else {
-                if (ref.value().startsWith("L") && ref.value().endsWith(";")) {
-                    owner = Type.getType(ref.value());
-                } else {
-                    owner = Type.getObjectType(ref.value());
-                }
-            }
-            if (ref.member().isEmpty()) {
-                throw new IllegalArgumentException("ref must have a member");
-            } else {
-                name = ref.member();
-            }
-            if (ref.desc().isEmpty()) {
-                throw new IllegalArgumentException("ref must have a desc");
-            } else {
-                desc = Type.getMethodType(ref.desc());
-            }
-            return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
-        } else {
-            throw new IllegalArgumentException("member must be a method");
         }
     }
 
@@ -1097,6 +1095,7 @@ public abstract class VersionProvider {
             }
             name += caller + "$" + num;
         }
+
     }
 
 }

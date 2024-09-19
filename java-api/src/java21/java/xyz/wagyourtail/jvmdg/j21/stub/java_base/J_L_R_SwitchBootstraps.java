@@ -112,16 +112,16 @@ public class J_L_R_SwitchBootstraps {
         smnode.visitLdcInsn(types.size());
         // stack: IOOBE, IOOBE, start, types.size()
         smnode.visitInvokeDynamicInsn(
+            "makeConcatWithConstants",
+            "(II)Ljava/lang/String;",
+            new Handle(
+                Opcodes.H_INVOKESTATIC,
+                "java/lang/invoke/StringConcatFactory",
                 "makeConcatWithConstants",
-                "(II)Ljava/lang/String;",
-                new Handle(
-                        Opcodes.H_INVOKESTATIC,
-                        "java/lang/invoke/StringConcatFactory",
-                        "makeConcatWithConstants",
-                        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;",
-                        false
-                ),
-                "Index " + "\u0001" + " out of bounds for length " + "\u0001"
+                "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;",
+                false
+            ),
+            "Index " + "\u0001" + " out of bounds for length " + "\u0001"
         );
         // stack: IOOBE, IOOBE, message
         smnode.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/IndexOutOfBoundsException", "<init>", "(Ljava/lang/String;)V", false);
@@ -366,6 +366,7 @@ public class J_L_R_SwitchBootstraps {
             super(Opcodes.ASM9, access, name, descriptor, null, null);
             this.types = types;
         }
+
     }
 
     private record HashWithLabel(int hash, Label label) implements Comparable<HashWithLabel> {
@@ -385,6 +386,7 @@ public class J_L_R_SwitchBootstraps {
         public int compareTo(@NotNull HashWithLabel o) {
             return Integer.compare(hash, o.hash);
         }
+
     }
 
     private record CaseLabels(Label start, Label afterTypeCheck, Label end) {

@@ -25,4 +25,5 @@ public class J_L_Enum$EnumDesc<E extends Enum<E>> extends J_L_C_DynamicConstantD
     public String toString() {
         return "EnumDesc[" + constantType().displayName() + "." + constantName() + "]";
     }
+
 }

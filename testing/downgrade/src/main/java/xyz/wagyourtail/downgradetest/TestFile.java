@@ -1,6 +1,5 @@
 package xyz.wagyourtail.downgradetest;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,8 +9,6 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
-
-import static java.nio.file.FileSystems.newFileSystem;
 
 public class TestFile {
 

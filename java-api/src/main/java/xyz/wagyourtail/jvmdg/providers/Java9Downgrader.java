@@ -539,8 +539,8 @@ public class Java9Downgrader extends VersionProvider {
                     if (indy.bsmArgs[1] instanceof Handle) {
                         Handle lambda = (Handle) indy.bsmArgs[1];
                         if (lambda.getOwner().equals(node.name) &&
-                                lambda.getTag() == Opcodes.H_INVOKEINTERFACE &&
-                                privateMethods.contains(lambda.getName() + lambda.getDesc())
+                            lambda.getTag() == Opcodes.H_INVOKEINTERFACE &&
+                            privateMethods.contains(lambda.getName() + lambda.getDesc())
                         ) {
                             indy.bsmArgs[1] = new Handle(Opcodes.H_INVOKESPECIAL, lambda.getOwner(), lambda.getName(), lambda.getDesc(), lambda.isInterface());
                         }
@@ -549,4 +549,5 @@ public class Java9Downgrader extends VersionProvider {
             }
         }
     }
+
 }

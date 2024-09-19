@@ -43,8 +43,8 @@ public interface J_U_S_Collector<T, A, R> {
             Objects.requireNonNull(combiner);
             Objects.requireNonNull(characteristics);
             Set<Characteristics> cs = characteristics.length > 0 ?
-                    Collections.unmodifiableSet(EnumSet.of(Characteristics.IDENTITY_FINISH, characteristics)) :
-                    Collections.unmodifiableSet(EnumSet.of(Characteristics.IDENTITY_FINISH));
+                Collections.unmodifiableSet(EnumSet.of(Characteristics.IDENTITY_FINISH, characteristics)) :
+                Collections.unmodifiableSet(EnumSet.of(Characteristics.IDENTITY_FINISH));
             return new J_U_S_Collectors.CollectorImpl<>(supplier, accumulator, combiner, cs);
         }
 
@@ -63,6 +63,7 @@ public interface J_U_S_Collector<T, A, R> {
             }
             return new J_U_S_Collectors.CollectorImpl<>(supplier, accumulator, combiner, finisher, cs);
         }
+
     }
 
 }

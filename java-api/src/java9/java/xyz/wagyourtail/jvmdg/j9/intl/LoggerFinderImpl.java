@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.j9.intl;
 
 
-import xyz.wagyourtail.jvmdg.j9.stub.java_base.J_L_I_MethodHandles;
 import xyz.wagyourtail.jvmdg.j9.stub.java_base.J_L_Module;
 import xyz.wagyourtail.jvmdg.j9.stub.java_base.J_L_System;
 import xyz.wagyourtail.jvmdg.util.Pair;
@@ -16,12 +15,6 @@ import java.util.logging.Logger;
 
 public class LoggerFinderImpl extends J_L_System.LoggerFinder {
     public static final J_L_System.LoggerFinder INSTANCE = new LoggerFinderImpl();
-
-
-    @Override
-    public J_L_System.Logger getLogger(String name, J_L_Module module) {
-        return new LoggerImpl(name, module);
-    }
 
     private static Level getLevel(J_L_System.Logger.Level level) {
         switch (level) {
@@ -43,6 +36,11 @@ public class LoggerFinderImpl extends J_L_System.LoggerFinder {
         throw new IllegalArgumentException("Unknown level: " + level);
     }
 
+    @Override
+    public J_L_System.Logger getLogger(String name, J_L_Module module) {
+        return new LoggerImpl(name, module);
+    }
+
     public static class LoggerImpl implements J_L_System.Logger {
         public final Logger logger;
         public final J_L_Module module;
@@ -50,6 +48,20 @@ public class LoggerFinderImpl extends J_L_System.LoggerFinder {
         public LoggerImpl(String name, J_L_Module module) {
             logger = Logger.getLogger(name);
             this.module = module;
+        }
+
+        private static Pair<Class<?>, String> getCallerWithMethodName(MethodHandles.Lookup lookup) throws ClassNotFoundException {
+            StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+            for (int i = 2; i < stack.length; i++) {
+                String className = stack[i].getClassName();
+                if (!Utils.isReflectionFrame(className)) {
+                    Class<?> cls = Class.forName(className);
+                    if (!J_L_System.Logger.class.isAssignableFrom(cls)) {
+                        return new Pair<>(cls, stack[i].getMethodName());
+                    }
+                }
+            }
+            throw new ClassNotFoundException("Could not find caller class???");
         }
 
         @Override
@@ -91,18 +103,6 @@ public class LoggerFinderImpl extends J_L_System.LoggerFinder {
             logger.log(record);
         }
 
-        private static Pair<Class<?>, String> getCallerWithMethodName(MethodHandles.Lookup lookup) throws ClassNotFoundException {
-            StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-            for (int i = 2; i < stack.length; i++) {
-                String className = stack[i].getClassName();
-                if (!Utils.isReflectionFrame(className)) {
-                    Class<?> cls = Class.forName(className);
-                    if (!J_L_System.Logger.class.isAssignableFrom(cls)) {
-                        return new Pair<>(cls, stack[i].getMethodName());
-                    }
-                }
-            }
-            throw new ClassNotFoundException("Could not find caller class???");
-        }
     }
+
 }

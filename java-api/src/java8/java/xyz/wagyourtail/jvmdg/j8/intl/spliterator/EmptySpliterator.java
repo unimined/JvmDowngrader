@@ -58,6 +58,7 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
                 // do nothing
             }
         }
+
     }
 
     public static final class OfInt extends EmptySpliterator<Integer, J_U_Spliterator.OfInt, J_U_F_IntConsumer> implements J_U_Spliterator.OfInt {
@@ -93,6 +94,7 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
                 });
             }
         }
+
     }
 
     public static final class OfLong extends EmptySpliterator<Long, J_U_Spliterator.OfLong, J_U_F_LongConsumer> implements J_U_Spliterator.OfLong {
@@ -127,6 +129,7 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
                 });
             }
         }
+
     }
 
     public static final class OfDouble extends EmptySpliterator<Double, J_U_Spliterator.OfDouble, J_U_F_DoubleConsumer> implements J_U_Spliterator.OfDouble {
@@ -161,5 +164,7 @@ public abstract class EmptySpliterator<T, S extends J_U_Spliterator<T>, C> {
                 });
             }
         }
+
     }
+
 }

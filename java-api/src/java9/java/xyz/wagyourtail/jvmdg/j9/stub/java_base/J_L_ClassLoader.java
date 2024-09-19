@@ -22,6 +22,17 @@ import java.util.WeakHashMap;
 public class J_L_ClassLoader {
     private static final Map<ClassLoader, String> nameMap = Collections.synchronizedMap(new WeakHashMap<>());
     private static final Map<ClassLoader, J_L_Module> unnamedModuleMap = Collections.synchronizedMap(new WeakHashMap<>());
+    private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
+    private static final MethodHandle IS_REGISTERED;
+
+    static {
+        try {
+            Class<?> parallelLoaders = Class.forName("java.lang.ClassLoader$ParallelLoaders");
+            IS_REGISTERED = IMPL_LOOKUP.findStatic(parallelLoaders, "isRegistered", MethodType.methodType(boolean.class, Class.class));
+        } catch (NoSuchMethodException | IllegalAccessException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Modify(ref = @Ref(value = "Ljava/lang/ClassLoader;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/ClassLoader;)V"))
     public static void init(MethodNode mnode, int i) {
@@ -70,18 +81,6 @@ public class J_L_ClassLoader {
     @Stub(ref = @Ref("Ljava/lang/ClassLoader;"))
     public static ClassLoader getPlatformClassLoader() {
         return ClassLoader.getSystemClassLoader();
-    }
-
-    private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
-    private static final MethodHandle IS_REGISTERED;
-
-    static {
-        try {
-            Class<?> parallelLoaders = Class.forName("java.lang.ClassLoader$ParallelLoaders");
-            IS_REGISTERED = IMPL_LOOKUP.findStatic(parallelLoaders, "isRegistered", MethodType.methodType(boolean.class, Class.class));
-        } catch (NoSuchMethodException | IllegalAccessException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Stub

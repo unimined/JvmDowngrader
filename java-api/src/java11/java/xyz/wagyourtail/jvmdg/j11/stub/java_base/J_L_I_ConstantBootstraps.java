@@ -2,21 +2,13 @@ package xyz.wagyourtail.jvmdg.j11.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.lang.invoke.CallSite;
-import java.lang.invoke.ConstantCallSite;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.invoke.VarHandle;
+import java.lang.invoke.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Adapter("java/lang/invoke/ConstantBootstraps")
 public class J_L_I_ConstantBootstraps {
@@ -111,7 +103,7 @@ public class J_L_I_ConstantBootstraps {
 
     /**
      * callsite for condy's within invokeDynamics
-     *
+     * <p>
      * flattened args, inner condy args:
      * MethodHandle condyBSM, String name, Class desc, Int argCount, String condyArgs, // use condy bsm to determine arg count to eat
      *
@@ -130,7 +122,7 @@ public class J_L_I_ConstantBootstraps {
         for (int i = 0, j = 0; i < args.length; i++) {
             if (j < condyArgLst.length && i == condyArgLst[j]) {
                 j++;
-                int[] iValue = new int[] {i};
+                int[] iValue = new int[]{i};
                 indyArgs.add(getCondyValue(lookup, args, iValue));
                 i = iValue[0];
             } else {
@@ -174,4 +166,5 @@ public class J_L_I_ConstantBootstraps {
             throw new IllegalAccessError(e.getMessage());
         }
     }
+
 }

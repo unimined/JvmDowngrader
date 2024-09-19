@@ -8,7 +8,10 @@ import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.asm.AnnotationUtils;
 import xyz.wagyourtail.jvmdg.logging.Logger;
-import xyz.wagyourtail.jvmdg.util.*;
+import xyz.wagyourtail.jvmdg.util.AsyncUtils;
+import xyz.wagyourtail.jvmdg.util.IOConsumer;
+import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.RequiresResource;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
@@ -51,6 +54,7 @@ public class ReferenceGraph {
 
     /**
      * if the {@link ClassNode} is retained, this will return the {@link ClassNode} for the given type.
+     *
      * @return the {@link ClassNode} for the given type.
      */
     public ClassNode getClassFor(Type type, int version) {
@@ -66,6 +70,7 @@ public class ReferenceGraph {
 
     /**
      * Pre scan the root directory to find all the classes that need to be scanned.
+     *
      * @return a map of paths to types that need to be scanned.
      */
     public Map<Path, Type> preScan(final Path root) throws IOException, ExecutionException, InterruptedException {
@@ -114,7 +119,7 @@ public class ReferenceGraph {
      * Scans the path references in order to determine the reference graphs for the classes.
      *
      * @param newScanTargets the paths to scan.
-     * @param filter the filter to determine if a reference should be retained.
+     * @param filter         the filter to determine if a reference should be retained.
      */
     public void scan(final Path rootPath, final Map<Path, Type> newScanTargets, final Filter filter) throws IOException, ExecutionException, InterruptedException {
         AsyncUtils.forEachAsync(newScanTargets.keySet(), new IOConsumer<Path>() {
@@ -293,6 +298,7 @@ public class ReferenceGraph {
     /**
      * Given a set of references, this will scan the current reference graph to determine which references are required
      * by the given references, and where they came from.
+     *
      * @param starts the references to start from.
      * @return a pair of the references required by the given references, and the resources required by the given references.
      */

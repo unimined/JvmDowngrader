@@ -103,7 +103,12 @@ public class J_L_System {
     @Adapter("java/lang/System$LoggerFinder")
     public static abstract class LoggerFinder {
 
-        protected LoggerFinder() {}
+        protected LoggerFinder() {
+        }
+
+        public static LoggerFinder getLoggerFinder() {
+            return LoggerFinderImpl.INSTANCE;
+        }
 
         public abstract Logger getLogger(String name, J_L_Module module);
 
@@ -133,11 +138,6 @@ public class J_L_System {
                 }
             };
         }
-
-        public static LoggerFinder getLoggerFinder() {
-            return LoggerFinderImpl.INSTANCE;
-        }
-
 
 
     }

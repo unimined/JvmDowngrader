@@ -4,16 +4,18 @@ Downgrades modern java bytecode to older versions. at either compile or runtime.
 
 This is currently capable of downgrading from Java 22 to Java 8. Java 7 may come in the future.
 
-Currently attempting to downgrade to Java 7 will produce valid class files, but some of the API stubs are broken, and many common ones dont exist.
+Currently attempting to downgrade to Java 7 will produce valid class files, but some of the API stubs are broken, and
+many common ones dont exist.
 
 ### After downgrading you must  either shade, or add the api jar to the classpath at runtime.
 
-**It is recommended to use the shade task/cli as documented below, as it will only include necessary methods in your jar.**
+**It is recommended to use the shade task/cli as documented below, as it will only include necessary methods in your
+jar.**
 
 alternatively, you can add the api jar in its entirety to the classpath when running the jar.
 
 The api jar can be found at `xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:0.9.0:downgraded-8`
-there is also a `downgraded-11` jar there. 
+there is also a `downgraded-11` jar there.
 
 alternatively, to produce other versions you can generate one yourself using the cli:
 `java -jar JvmDowngrader-all.jar -c 53 debug downgradeApi ./java-api-9.jar`
@@ -72,7 +74,8 @@ jvmdg.multiReleaseOriginal = false
 jvmdg.multiReleaseVersions = [].toSet()
 ```
 
-You can see more of what these values mean by [checking the docs on the flags classes](gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/flags)
+You can see more of what these values mean
+by [checking the docs on the flags classes](gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/flags)
 
 This will create a default downgrade task for `jar` (or `shadowJar` if present) called `downgradeJar` that will
 downgrade the output to java 8 by default.
@@ -91,10 +94,11 @@ shadeDowngradedApi {
 }
 ```
 
-The tasks have all the same flags as the extension, so you can change them separately, 
+The tasks have all the same flags as the extension, so you can change them separately,
 their default value is to use the global one from the extension.
 
-If you are merging multiple downgraded jars, please merge from the downgradeJar tasks, and then shade on the resulting mono-jar.
+If you are merging multiple downgraded jars, please merge from the downgradeJar tasks, and then shade on the resulting
+mono-jar.
 otherwise some API stubs may be missing, due to how shade only includes what is used.
 
 Optionally, you can also depend on the shadeDowngradedApi task when running build.
@@ -147,7 +151,6 @@ it's computed from the `toDowngrade` files.
 
 To depend on more modern jars on a lower java version you can downgrade the configuration.
 
-
 ```gradle
 configurations {
     downgrade
@@ -172,7 +175,7 @@ This is the expected usage of these functions.
 running `shadeDowngradedApi`, as otherwise there may be duplicate jvmdg-api classes.
 ie. `jvmdg.dg(configurations.downgrade, false)`
 
-you may have to include whatever configuration you're downgrading in ShadowJar yourself. 
+you may have to include whatever configuration you're downgrading in ShadowJar yourself.
 I do not automatically make the configuration shadowed into your output.
 
 #### Including newer dependencies on lower java version building
@@ -186,6 +189,7 @@ you can disable this by setting `mavenPom` and `artifact` in the `metadataSource
 to explicitly disable gradle metadata.
 
 for example:
+
 ```gradle
 repositories {
     mavenCentral {
@@ -253,7 +257,7 @@ You can also create your own downgrading classloader, for more complicated envir
 DowngradingClassLoader loader = new DowngradingClassLoader(ClassDowngrader.getCurrentVersionDowngrader(), parent);
 
 // adding jars
-loader.addDelegate(new URL[] { new File("jarname.jar").toURI().toURL() });
+loader.addDelegate(new URL[]{new File("jarname.jar").toURI().toURL()});
 ```
 
 ### inspired by

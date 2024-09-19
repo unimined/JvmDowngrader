@@ -4,13 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
@@ -39,11 +33,10 @@ public class ClassDowngrader implements Closeable {
     private static ClassDowngrader currentVersionDowngrader = null;
     public final Flags flags;
     public final int target;
-    private final Map<Integer, VersionProvider> downgraders;
-    private final DowngradingClassLoader classLoader;
-
     @ApiStatus.Internal
     public final Logger logger;
+    private final Map<Integer, VersionProvider> downgraders;
+    private final DowngradingClassLoader classLoader;
 
     protected ClassDowngrader(@NotNull Flags flags) {
         this.flags = flags;
@@ -104,7 +97,7 @@ public class ClassDowngrader implements Closeable {
                     } else if (prev.priotity == provider.priotity) {
                         logger.warn(
                             "Duplicate version providers with same priority for " + provider.inputVersion
-                            + " \"" + provider.getClass().getName() + "\" and \"" + prev.getClass().getName() + "\""
+                                + " \"" + provider.getClass().getName() + "\" and \"" + prev.getClass().getName() + "\""
                         );
                     }
                 } else {
@@ -170,7 +163,7 @@ public class ClassDowngrader implements Closeable {
     }
 
     public List<Pair<Type, Boolean>> getSupertypes(int version, Type type, Set<String> warnings) throws IOException {
-        for (int vers = version; vers > target;) {
+        for (int vers = version; vers > target; ) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
@@ -229,7 +222,7 @@ public class ClassDowngrader implements Closeable {
     }
 
     public Type stubClass(int version, Type type, Set<String> warnings) {
-        for (int vers = version; vers > target;) {
+        for (int vers = version; vers > target; ) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());

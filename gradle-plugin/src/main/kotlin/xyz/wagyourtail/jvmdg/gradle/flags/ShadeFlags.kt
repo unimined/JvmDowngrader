@@ -4,12 +4,11 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
-import xyz.wagyourtail.jvmdg.cli.Flags
 
-interface ShadeFlags : DowngradeFlags {
+interface ShadeFlags: DowngradeFlags {
 
     @get:Internal
-    val shadePath : Property<(fileName: String) -> String>
+    val shadePath: Property<(fileName: String) -> String>
 
     /**
      *

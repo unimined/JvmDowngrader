@@ -51,6 +51,7 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
             }
 
         }
+
     }
 
     @Adapter("Ljava/util/PrimitiveIterator$OfLong;")
@@ -88,6 +89,7 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
             }
 
         }
+
     }
 
     @Adapter("Ljava/util/PrimitiveIterator$OfDouble;")
@@ -125,6 +127,7 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
             }
 
         }
+
     }
 
 }

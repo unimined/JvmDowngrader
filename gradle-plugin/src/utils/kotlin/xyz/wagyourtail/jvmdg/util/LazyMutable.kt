@@ -4,7 +4,7 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 // https://stackoverflow.com/questions/47947841/kotlin-var-lazy-init :)
-class LazyMutable<T>(val initializer: () -> T) : ReadWriteProperty<Any?, T> {
+class LazyMutable<T>(val initializer: () -> T): ReadWriteProperty<Any?, T> {
 
     @Suppress("ClassName")
     private object UNINITIALIZED_VALUE

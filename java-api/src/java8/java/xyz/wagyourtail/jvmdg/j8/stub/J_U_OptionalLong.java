@@ -87,8 +87,8 @@ public class J_U_OptionalLong {
         }
         J_U_OptionalLong other = (J_U_OptionalLong) obj;
         return (isPresent && other.isPresent
-                ? value == other.value
-                : isPresent == other.isPresent);
+            ? value == other.value
+            : isPresent == other.isPresent);
     }
 
     @Override
@@ -100,4 +100,5 @@ public class J_U_OptionalLong {
     public String toString() {
         return isPresent ? String.format("OptionalLong[%s]", value) : "OptionalLong.empty";
     }
+
 }

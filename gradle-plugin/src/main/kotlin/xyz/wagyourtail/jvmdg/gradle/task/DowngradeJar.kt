@@ -8,14 +8,17 @@ import org.gradle.api.tasks.*
 import org.gradle.api.tasks.bundling.Jar
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
-import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
+import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
-import xyz.wagyourtail.jvmdg.util.*
+import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
+import xyz.wagyourtail.jvmdg.util.LazyMutable
+import xyz.wagyourtail.jvmdg.util.deleteIfExists
+import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
 import java.nio.file.StandardOpenOption
 import kotlin.io.path.outputStream
 
-abstract class DowngradeJar : Jar(), DowngradeFlags {
+abstract class DowngradeJar: Jar(), DowngradeFlags {
 
     private val jvmdg by lazy {
         project.extensions.getByType(JVMDowngraderExtension::class.java)

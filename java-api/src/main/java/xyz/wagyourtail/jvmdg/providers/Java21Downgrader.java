@@ -59,4 +59,5 @@ public class Java21Downgrader extends VersionProvider {
         stub(J_N_H_HttpClient.class);
 
     }
+
 }

@@ -76,7 +76,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             }
             // check magic
             if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
-                    bytes[3] != (byte) 0xBE) {
+                bytes[3] != (byte) 0xBE) {
                 throw new IllegalClassFormatException(className);
             }
             // ignore minor version

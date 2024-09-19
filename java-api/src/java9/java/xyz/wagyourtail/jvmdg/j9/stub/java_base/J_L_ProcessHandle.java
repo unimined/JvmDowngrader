@@ -97,5 +97,7 @@ public interface J_L_ProcessHandle extends Comparable<J_L_ProcessHandle> {
         Optional<Duration> totalCpuDuration();
 
         Optional<String> user();
+
     }
+
 }

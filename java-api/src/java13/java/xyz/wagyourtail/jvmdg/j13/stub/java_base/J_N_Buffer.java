@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.j13.stub.java_base;
 
 
-import xyz.wagyourtail.jvmdg.version.Coerce;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.nio.Buffer;

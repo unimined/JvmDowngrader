@@ -38,6 +38,8 @@ public class MultiVersionTests extends BaseIntegrationTests {
         f.multiReleaseOriginal = true;
         f.multiReleaseVersions = Set.of(JavaRunner.JavaVersion.V11.toOpcode(), JavaRunner.JavaVersion.V17.toOpcode());
     }));
+    private static final Map<String, Map.Entry<Integer, String>> originalResults = new ConcurrentHashMap<>();
+    private static final Map<String, Map.Entry<Integer, String>> fullDowngradeResults = new ConcurrentHashMap<>();
 
     private static List<String> mainClasses() throws IOException {
         try (FileSystem fs = Utils.openZipFileSystem(original, false)) {
@@ -73,9 +75,6 @@ public class MultiVersionTests extends BaseIntegrationTests {
         Files.deleteIfExists(original.resolveSibling("downgraded-" + flagsAndRunner.readableSlug()));
     }
 
-
-    private static final Map<String, Map.Entry<Integer, String>> originalResults = new ConcurrentHashMap<>();
-
     @BeforeAll
     public static void runOriginal() throws IOException, InterruptedException {
         for (String main : mainClasses()) {
@@ -97,8 +96,6 @@ public class MultiVersionTests extends BaseIntegrationTests {
             originalResults.put(main, Map.entry(exitCode, originalLog.toString()));
         }
     }
-
-    private static final Map<String, Map.Entry<Integer, String>> fullDowngradeResults = new ConcurrentHashMap<>();
 
     @BeforeAll
     public static void runOnTestTarget() throws IOException, InterruptedException {

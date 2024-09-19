@@ -75,7 +75,7 @@ public class J_I_InputStream {
 
         @Override
         public int readNBytes(byte[] b, int off, int len)
-                throws IOException {
+            throws IOException {
             Objects.checkFromIndexSize(off, len, b.length);
             ensureOpen();
             return 0;

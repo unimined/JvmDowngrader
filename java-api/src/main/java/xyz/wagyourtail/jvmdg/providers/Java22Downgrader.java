@@ -1,7 +1,10 @@
 package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.j22.stub.java_base.*;
+import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_I_Console;
+import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_L_Class;
+import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_L_Module;
+import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_N_F_Path;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java22Downgrader extends VersionProvider {

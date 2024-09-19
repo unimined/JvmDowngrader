@@ -97,4 +97,5 @@ public class Java17Downgrader extends VersionProvider {
             node.permittedSubclasses = null;
         }
     }
+
 }

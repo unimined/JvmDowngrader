@@ -87,8 +87,8 @@ public class J_U_OptionalInt {
         }
         J_U_OptionalInt other = (J_U_OptionalInt) obj;
         return (isPresent && other.isPresent
-                ? value == other.value
-                : isPresent == other.isPresent);
+            ? value == other.value
+            : isPresent == other.isPresent);
     }
 
     @Override
@@ -100,4 +100,5 @@ public class J_U_OptionalInt {
     public String toString() {
         return isPresent ? String.format("OptionalInt[%s]", value) : "OptionalInt.empty";
     }
+
 }

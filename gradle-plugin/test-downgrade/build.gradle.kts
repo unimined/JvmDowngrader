@@ -1,4 +1,5 @@
 @file:Suppress("DSL_SCOPE_VIOLATION")
+
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeJar
@@ -89,7 +90,8 @@ sourceSets {
 val jvmdg = extensions.getByType(JVMDowngraderExtension::class.java)
 
 if (project.hasProperty("runningTest")) {
-    jvmdg.apiJar = listOf(project.file("../../java-api/build/tmp/testJar/jvmdowngrader-java-api-${props.getProperty("version")}.jar"))
+    jvmdg.apiJar =
+        listOf(project.file("../../java-api/build/tmp/testJar/jvmdowngrader-java-api-${props.getProperty("version")}.jar"))
 }
 
 val downgrade by configurations.creating

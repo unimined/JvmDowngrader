@@ -11,6 +11,18 @@ import java.util.Objects;
 @Adapter("java/lang/constant/DirectMethodHandleDesc")
 public interface J_L_C_DirectMethodHandleDesc extends J_L_C_MethodHandleDesc {
 
+    Kind kind();
+
+    int refKind();
+
+    boolean isOwnerInterface();
+
+    J_L_C_ClassDesc owner();
+
+    String methodName();
+
+    String lookupDescriptor();
+
     @Adapter("java/lang/constant/DirectMethodHandleDesc$Kind")
     enum Kind {
         STATIC(Opcodes.H_INVOKESTATIC),
@@ -25,6 +37,18 @@ public interface J_L_C_DirectMethodHandleDesc extends J_L_C_MethodHandleDesc {
         STATIC_GETTER(Opcodes.H_GETSTATIC),
         STATIC_SETTER(Opcodes.H_PUTSTATIC),
         ;
+
+        private static final Kind[] entries = new Kind[9 * 2 + 1];
+
+        static {
+            for (Kind kind : values()) {
+                int index = ((kind.refKind - 1) << 1) | (kind.isInterface ? 1 : 0);
+                if (entries[index] != null) {
+                    throw new IllegalStateException();
+                }
+                entries[index] = kind;
+            }
+        }
 
         public final int refKind;
         public final boolean isInterface;
@@ -48,17 +72,6 @@ public interface J_L_C_DirectMethodHandleDesc extends J_L_C_MethodHandleDesc {
             return entries[((refKind - 1) << 1) | (isInterface ? 1 : 0)];
         }
 
-        private static final Kind[] entries = new Kind[9 * 2 + 1];
-        static {
-            for (Kind kind : values()) {
-                int index = ((kind.refKind - 1) << 1) | (kind.isInterface ? 1 : 0);
-                if (entries[index] != null) {
-                    throw new IllegalStateException();
-                }
-                entries[index] = kind;
-            }
-        }
-
         boolean isVirtual() {
             switch (this) {
                 case VIRTUAL:
@@ -70,18 +83,6 @@ public interface J_L_C_DirectMethodHandleDesc extends J_L_C_MethodHandleDesc {
             return false;
         }
     }
-
-    Kind kind();
-
-    int refKind();
-
-    boolean isOwnerInterface();
-
-    J_L_C_ClassDesc owner();
-
-    String methodName();
-
-    String lookupDescriptor();
 
     class DirectMethodHandleDescImpl implements J_L_C_DirectMethodHandleDesc {
         private final Kind kind;

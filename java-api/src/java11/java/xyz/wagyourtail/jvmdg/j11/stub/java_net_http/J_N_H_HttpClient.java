@@ -68,7 +68,7 @@ public abstract class J_N_H_HttpClient {
 
     public abstract <T> J_N_H_HttpResponse<T> send(J_N_H_HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler) throws IOException, InterruptedException;
 
-    public abstract <T>CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(J_N_H_HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler);
+    public abstract <T> CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(J_N_H_HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler);
 
     public abstract <T> CompletableFuture<J_N_H_HttpResponse<T>> sendAsync(J_N_H_HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler, J_N_H_HttpResponse.PushPromiseHandler<T> pushPromiseHandler);
 

@@ -67,4 +67,5 @@ public class Java12Downgrader extends VersionProvider {
         // DocTreeScanner
         // SimpleDocTreeVisitor
     }
+
 }

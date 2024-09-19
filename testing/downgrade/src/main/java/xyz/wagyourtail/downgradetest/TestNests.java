@@ -62,6 +62,7 @@ public class TestNests {
         private String test10() {
             return test5;
         }
+
     }
 
     public static class NestSuper1 {
@@ -80,6 +81,7 @@ public class TestNests {
                 test();
                 System.out.println(test);
             }
+
         }
 
     }
@@ -105,6 +107,7 @@ public class TestNests {
                 test();
                 System.out.println(test);
             }
+
         }
 
     }
@@ -127,7 +130,9 @@ public class TestNests {
                 System.out.println(Nest1.test11());
                 System.out.println(TestNests.this.test2);
             }
+
         }
+
     }
 
 }

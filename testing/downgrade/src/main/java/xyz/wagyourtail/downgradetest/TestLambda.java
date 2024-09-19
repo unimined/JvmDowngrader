@@ -66,18 +66,19 @@ public class TestLambda {
         return "test3";
     }
 
-    public static class TestLambda2 implements Supplier<String> {
-        public String get() {
-            return "test4";
-        }
-    }
-
     public interface TestInterface<A, B> {
 
         B get(A a);
 
         default <C> TestInterface<A, C> andThen(TestInterface<B, C> after) {
             return (a) -> after.get(get(a));
+        }
+
+    }
+
+    public static class TestLambda2 implements Supplier<String> {
+        public String get() {
+            return "test4";
         }
 
     }

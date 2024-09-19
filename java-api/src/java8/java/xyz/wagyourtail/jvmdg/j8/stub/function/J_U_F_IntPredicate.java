@@ -69,4 +69,5 @@ public interface J_U_F_IntPredicate {
         }
 
     }
+
 }

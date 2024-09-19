@@ -92,6 +92,7 @@ public class J_L_Thread {
             OfVirtual uncaughtExceptionHandler(Thread.UncaughtExceptionHandler handler);
 
         }
+
     }
 
     private static abstract class BuilderImpl<T extends BuilderImpl<T>> implements Builder {
@@ -142,6 +143,7 @@ public class J_L_Thread {
             this.uncaughtExceptionHandler = handler;
             return (T) this;
         }
+
     }
 
     private static class PlatformClassBuilder extends BuilderImpl<PlatformClassBuilder> implements Builder.OfPlatform {
@@ -213,6 +215,7 @@ public class J_L_Thread {
             this.stackSize = stackSize;
             return this;
         }
+
     }
 
     private static class VirtualThreadBuilder extends BuilderImpl<VirtualThreadBuilder> implements Builder.OfVirtual {

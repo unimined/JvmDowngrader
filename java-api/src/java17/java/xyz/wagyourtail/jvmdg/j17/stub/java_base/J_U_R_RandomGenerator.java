@@ -19,8 +19,8 @@ public interface J_U_R_RandomGenerator {
 
     static boolean jvmdg$instanceof(Object obj) {
         return obj instanceof J_U_R_RandomGenerator ||
-                obj instanceof Random ||
-                obj instanceof SplittableRandom;
+            obj instanceof Random ||
+            obj instanceof SplittableRandom;
     }
 
     static J_U_R_RandomGenerator jvmdg$checkcast(Object obj) {
@@ -469,7 +469,7 @@ public interface J_U_R_RandomGenerator {
 
         static boolean jvmdg$instanceof(Object obj) {
             return obj instanceof StreamableGenerator ||
-                    obj instanceof SplittableRandom;
+                obj instanceof SplittableRandom;
         }
 
         static StreamableGenerator jvmdg$checkcast(Object obj) {
@@ -509,7 +509,7 @@ public interface J_U_R_RandomGenerator {
 
         static boolean jvmdg$instanceof(Object obj) {
             return obj instanceof SplittableGenerator ||
-                    obj instanceof SplittableRandom;
+                obj instanceof SplittableRandom;
         }
 
         static SplittableGenerator jvmdg$checkcast(Object obj) {
@@ -698,4 +698,5 @@ public interface J_U_R_RandomGenerator {
         }
 
     }
+
 }

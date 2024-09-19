@@ -9,7 +9,7 @@ import java.util.*;
 @Adapter("Ljava/lang/ModuleLayer;")
 public class J_L_ModuleLayer {
     static final J_L_ModuleLayer EMPTY_MODULE_LAYER =
-            new J_L_ModuleLayer(Collections.emptyList(), Collections.emptyMap());
+        new J_L_ModuleLayer(Collections.emptyList(), Collections.emptyMap());
 
     private final List<J_L_ModuleLayer> parents;
     private final Map<String, J_L_Module> modules;
@@ -50,6 +50,14 @@ public class J_L_ModuleLayer {
 //        // TODO
 //    }
 
+    public static J_L_ModuleLayer empty() {
+        return EMPTY_MODULE_LAYER;
+    }
+
+    public static J_L_ModuleLayer boot() {
+        return ModuleConstantHelper.BOOT_LAYER;
+    }
+
     public List<J_L_ModuleLayer> parents() {
         return this.parents;
     }
@@ -87,11 +95,4 @@ public class J_L_ModuleLayer {
         return this.strValue;
     }
 
-    public static J_L_ModuleLayer empty() {
-        return EMPTY_MODULE_LAYER;
-    }
-
-    public static J_L_ModuleLayer boot() {
-        return ModuleConstantHelper.BOOT_LAYER;
-    }
 }

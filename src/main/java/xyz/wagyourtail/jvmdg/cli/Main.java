@@ -27,35 +27,35 @@ public class Main {
         Arguments input = new Arguments("--target", "input to output\n  (required)\n  you can use - for a temp-file if you want to chain operations", new String[]{"-t"}, new String[]{"input jar|path", "output jar|path"});
         Arguments classpath = new Arguments("--classpath", "Classpath to use\n  (highly recommended)", new String[]{"-cp"}, new String[]{"classpath"});
         parser.addChildren(
-                new Arguments("--help", "Prints this help", new String[]{"-h"}, null),
-                new Arguments("--version", "Prints the version", new String[]{"-v"}, null),
-                new Arguments("--logLevel", "Set the log level", new String[]{"-l"}, new String[]{"level"}),
-                new Arguments("--quiet", "[Deprecated] Suppress all warnings", new String[]{"-q"}, null),
-                new Arguments("--ignoreWarningsIn", "Ignore warnings of missing class/member stubs in package/class matching", new String[]{"-i"}, new String[]{"package or class identifier"}),
-                new Arguments("--api", "Provide a java-api jar or jars", new String[]{"-a"}, new String[]{"jar"}),
-                new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
-                new Arguments("--multiReleaseOriginal", "Use the original class file for a Multi-Release jar", new String[]{"-mro"}, null),
-                new Arguments("--multiRelease", "Use semi-downgraded files for a Multi-Release jar, versions as class version (ex. \"55\" for java 11)", new String[]{"-mr"}, new String[]{"version"}),
-                new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
-                        new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
-                        new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
-                        new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
-                        new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
-                ),
-                new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
-                        input,
-                        classpath
-                ),
-                new Arguments("shade", "Shades necessary api's into targets", null, null).addChildren(
-                        new Arguments("--prefix", "Prefix to use for shaded classes\n  (required)", new String[]{"-p"}, new String[]{"prefix"}),
-                        new Arguments("--downgradedApi", "Pre-downgraded api jar", new String[]{"-d"}, new String[]{"jar"}),
-                        input
-                ),
-                new Arguments("bootstrap", "Bootstraps a downgrading environment, unparsed args will get passed", null, null).addChildren(
-                        new Arguments("--main", "Main class to run\n  (required)", new String[]{"-m"}, new String[]{"class"}),
-                        classpath,
-                        new Arguments("", "Arguments for main run", new String[]{}, new String[]{"args..."})
-                )
+            new Arguments("--help", "Prints this help", new String[]{"-h"}, null),
+            new Arguments("--version", "Prints the version", new String[]{"-v"}, null),
+            new Arguments("--logLevel", "Set the log level", new String[]{"-l"}, new String[]{"level"}),
+            new Arguments("--quiet", "[Deprecated] Suppress all warnings", new String[]{"-q"}, null),
+            new Arguments("--ignoreWarningsIn", "Ignore warnings of missing class/member stubs in package/class matching", new String[]{"-i"}, new String[]{"package or class identifier"}),
+            new Arguments("--api", "Provide a java-api jar or jars", new String[]{"-a"}, new String[]{"jar"}),
+            new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
+            new Arguments("--multiReleaseOriginal", "Use the original class file for a Multi-Release jar", new String[]{"-mro"}, null),
+            new Arguments("--multiRelease", "Use semi-downgraded files for a Multi-Release jar, versions as class version (ex. \"55\" for java 11)", new String[]{"-mr"}, new String[]{"version"}),
+            new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
+                new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
+                new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
+                new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
+                new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
+            ),
+            new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
+                input,
+                classpath
+            ),
+            new Arguments("shade", "Shades necessary api's into targets", null, null).addChildren(
+                new Arguments("--prefix", "Prefix to use for shaded classes\n  (required)", new String[]{"-p"}, new String[]{"prefix"}),
+                new Arguments("--downgradedApi", "Pre-downgraded api jar", new String[]{"-d"}, new String[]{"jar"}),
+                input
+            ),
+            new Arguments("bootstrap", "Bootstraps a downgrading environment, unparsed args will get passed", null, null).addChildren(
+                new Arguments("--main", "Main class to run\n  (required)", new String[]{"-m"}, new String[]{"class"}),
+                classpath,
+                new Arguments("", "Arguments for main run", new String[]{}, new String[]{"args..."})
+            )
         );
 
         List<String> argList = new ArrayList<>(Arrays.asList(args));
@@ -199,7 +199,7 @@ public class Main {
             if (args.get("downgradeApi").size() > 1) {
                 throw new IllegalArgumentException("Multiple output paths specified");
             }
-            if (flags.findJavaApi().isEmpty()){
+            if (flags.findJavaApi().isEmpty()) {
                 throw new IllegalArgumentException("No api jar found");
             }
             if (flags.findJavaApi().size() > 1) {
@@ -378,8 +378,8 @@ public class Main {
         try (ClassDowngrader currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(flags)) {
             currentVersionDowngrader.getClassLoader().addDelegate(classpath.toArray(new URL[0]));
             Class.forName(main, false, currentVersionDowngrader.getClassLoader()).getMethod("main", String[].class).invoke(
-                    null,
-                    (Object) bootstrapArgs
+                null,
+                (Object) bootstrapArgs
             );
         }
     }

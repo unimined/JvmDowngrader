@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 
-import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import java.lang.invoke.MethodHandle;
@@ -116,5 +115,7 @@ public interface J_L_C_MethodHandleDesc extends J_L_C_ConstantDesc {
         public String toString() {
             return underlying + ".asType" + type.toString();
         }
+
     }
+
 }

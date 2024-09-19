@@ -5,7 +5,6 @@ import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Semaphore;
 
 public class TestProcessHandle {
 
@@ -26,4 +25,5 @@ public class TestProcessHandle {
         currentProcessHandle.children().map(e -> String.join(" ", e.info().arguments().get())).forEach(System.out::println);
         System.out.println(p.toHandle().onExit().get().info().commandLine().orElse("missing"));
     }
+
 }

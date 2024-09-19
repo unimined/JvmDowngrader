@@ -704,6 +704,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
                 return false;
             }
         }
+
     }
 
     private static class AsyncRunnableFuture<T> extends CompletableFutureTask<T> implements AsynchronousCompletionTask {
@@ -719,6 +720,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
         public void run() {
             super.run();
         }
+
     }
 
     private static class ThreadPerTaskExecutor implements Executor {
@@ -727,6 +729,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
         public void execute(Runnable command) {
             new Thread(command).start();
         }
+
     }
 
     private static class RunOnCurrentThreadExecutor implements Executor {
@@ -735,6 +738,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
         public void execute(Runnable command) {
             command.run();
         }
+
     }
 
     private static class AfterAllDelegatingExecutor implements Executor {
@@ -776,6 +780,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
                 executor.execute(command);
             }
         }
+
     }
 
     private static class AfterFirstExecutor implements Executor {
@@ -821,6 +826,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
                 executor.execute(command);
             }
         }
+
     }
 
     private class AfterCompleteDelegatingExecutor implements Executor {
@@ -839,5 +845,7 @@ public class J_U_C_CompletableFuture<T> implements Future<T>, J_U_C_CompletionSt
                 }
             });
         }
+
     }
+
 }

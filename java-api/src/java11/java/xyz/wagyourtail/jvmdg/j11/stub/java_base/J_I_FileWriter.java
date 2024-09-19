@@ -22,6 +22,7 @@ public class J_I_FileWriter {
     private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
     private static final MethodHandle seGetter;
     private static final MethodHandle encSetter;
+
     static {
         MethodHandle seGet = null;
         MethodHandle encSet = null;

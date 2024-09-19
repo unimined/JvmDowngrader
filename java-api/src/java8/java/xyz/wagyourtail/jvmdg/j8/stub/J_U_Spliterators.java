@@ -235,6 +235,7 @@ public class J_U_Spliterators {
             }
 
         }
+
     }
 
     @Adapter(value = "java/util/Spliterators$AbstractIntSpliterator")
@@ -337,6 +338,7 @@ public class J_U_Spliterators {
             }
 
         }
+
     }
 
     @Adapter(value = "java/util/Spliterators$AbstractLongSpliterator")
@@ -437,7 +439,9 @@ public class J_U_Spliterators {
             public void accept(long t) {
                 value = t;
             }
+
         }
+
     }
 
     @Adapter(value = "java/util/Spliterators$AbstractSpliterator")
@@ -525,5 +529,7 @@ public class J_U_Spliterators {
             }
 
         }
+
     }
+
 }

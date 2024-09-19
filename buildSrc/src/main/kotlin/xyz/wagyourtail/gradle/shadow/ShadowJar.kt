@@ -10,7 +10,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.tasks.Jar
 import java.nio.charset.StandardCharsets
 
-abstract class ShadowJar : Jar() {
+abstract class ShadowJar: Jar() {
 
     @get:Internal
     abstract val shadowContents: ListProperty<FileCollection>

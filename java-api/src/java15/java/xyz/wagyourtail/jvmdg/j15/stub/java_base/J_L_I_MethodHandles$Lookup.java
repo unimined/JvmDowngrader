@@ -69,6 +69,18 @@ public class J_L_I_MethodHandles$Lookup {
         return c;
     }
 
+    @Adapter("Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;")
+    public enum ClassOption {
+        NESTMATE(0x00000001),
+        STRONG(0x00000004);
+
+        private final int flag;
+
+        ClassOption(int flag) {
+            this.flag = flag;
+        }
+    }
+
     public static class HiddenClassLoader extends ClassLoader implements Function<String, byte[]> {
 
         public HiddenClassLoader(ClassLoader parent) {
@@ -89,17 +101,7 @@ public class J_L_I_MethodHandles$Lookup {
                 throw new RuntimeException(e);
             }
         }
+
     }
 
-    @Adapter("Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;")
-    public enum ClassOption {
-        NESTMATE(0x00000001),
-        STRONG(0x00000004);
-
-        private final int flag;
-
-        ClassOption(int flag) {
-            this.flag = flag;
-        }
-    }
 }

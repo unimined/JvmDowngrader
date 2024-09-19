@@ -21,7 +21,7 @@ public class J_M_BigDecimal {
             BigDecimal stripped = x.stripTrailingZeros();
             int strippedScale = stripped.scale();
             if (BigInteger.ONE.equals(x.unscaledValue()) &&
-                    strippedScale % 2 == 0) {
+                strippedScale % 2 == 0) {
                 BigDecimal result = BigDecimal.valueOf(1L, strippedScale / 2);
                 if (result.scale() != preferredScale) {
                     result = result.add(zeroWithFinalPreferredScale, mc);
@@ -62,7 +62,7 @@ public class J_M_BigDecimal {
             int workingPrecision = working.precision();
             do {
                 int tmpPrecision = Math.max(Math.max(guessPrecision, targetPrecision + 2),
-                        workingPrecision);
+                    workingPrecision);
                 MathContext mcTmp = new MathContext(tmpPrecision, RoundingMode.HALF_EVEN);
                 // approx = 0.5 * (approx + fraction / approx)
                 approx = BigDecimal.valueOf(5L, 1).multiply(approx.add(working.divide(approx, mcTmp), mcTmp));
@@ -73,7 +73,7 @@ public class J_M_BigDecimal {
             RoundingMode targetRm = mc.getRoundingMode();
             if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
                 RoundingMode tmpRm =
-                        (targetRm == RoundingMode.UNNECESSARY) ? RoundingMode.DOWN : targetRm;
+                    (targetRm == RoundingMode.UNNECESSARY) ? RoundingMode.DOWN : targetRm;
                 MathContext mcTmp = new MathContext(targetPrecision, tmpRm);
                 result = approx.scaleByPowerOfTen(-scaleAdjust / 2).round(mcTmp);
                 if (x.subtract(result.multiply(result)).compareTo(ZERO) != 0) {
@@ -106,8 +106,8 @@ public class J_M_BigDecimal {
             }
             if (result.scale() != preferredScale) {
                 result = result.stripTrailingZeros().
-                        add(zeroWithFinalPreferredScale,
-                                new MathContext(originalPrecision, RoundingMode.UNNECESSARY));
+                    add(zeroWithFinalPreferredScale,
+                        new MathContext(originalPrecision, RoundingMode.UNNECESSARY));
             }
             return result;
         } else {
@@ -115,7 +115,7 @@ public class J_M_BigDecimal {
             switch (signum) {
                 case -1:
                     throw new ArithmeticException("Attempted square root " +
-                            "of negative BigDecimal");
+                        "of negative BigDecimal");
                 case 0:
                     result = BigDecimal.valueOf(0L, x.scale() / 2);
                     return result;
@@ -124,4 +124,5 @@ public class J_M_BigDecimal {
             }
         }
     }
+
 }

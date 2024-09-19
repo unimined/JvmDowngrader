@@ -62,11 +62,11 @@ public class TestCondy {
                             )
                         )
                     ),
-                     bsmArgs = {
-                         @InvokeDynamicInsn.BSMArg(
-                             stringValue = "test"
+                    bsmArgs = {
+                        @InvokeDynamicInsn.BSMArg(
+                            stringValue = "test"
                         )
-                     }
+                    }
                 )
             )),
             @InsnNode(type = @TypeInsn(
@@ -235,4 +235,5 @@ public class TestCondy {
         VALUE_A,
         VALUE_B
     }
+
 }

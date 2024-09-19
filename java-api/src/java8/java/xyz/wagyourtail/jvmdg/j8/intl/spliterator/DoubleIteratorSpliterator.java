@@ -134,4 +134,5 @@ public class DoubleIteratorSpliterator implements J_U_Spliterator.OfDouble {
         }
         throw new IllegalStateException();
     }
+
 }

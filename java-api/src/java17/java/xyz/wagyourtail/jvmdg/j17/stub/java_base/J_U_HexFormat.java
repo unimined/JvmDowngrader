@@ -11,11 +11,11 @@ import java.util.Objects;
 
 @Adapter("java/util/HexFormat")
 public record J_U_HexFormat(String delimiter, String prefix, String suffix, @CoverageIgnore char[] digits) {
-    @CoverageIgnore
-    public J_U_HexFormat {}
-
     private static final char[] lowercase = "0123456789abcdef".toCharArray();
     private static final char[] uppercase = "0123456789ABCDEF".toCharArray();
+    @CoverageIgnore
+    public J_U_HexFormat {
+    }
 
     public static J_U_HexFormat of() {
         return new J_U_HexFormat("", "", "", lowercase);
@@ -23,6 +23,59 @@ public record J_U_HexFormat(String delimiter, String prefix, String suffix, @Cov
 
     public static J_U_HexFormat ofDelimiter(String delimiter) {
         return new J_U_HexFormat(delimiter, "", "", lowercase);
+    }
+
+    public static boolean isHexDigit(int ch) {
+        return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+    }
+
+    public static int fromHexDigit(int ch) {
+        if (ch >= '0' && ch <= '9') {
+            return ch - '0';
+        }
+        if (ch >= 'a' && ch <= 'f') {
+            return ch - 'a' + 10;
+        }
+        if (ch >= 'A' && ch <= 'F') {
+            return ch - 'A' + 10;
+        }
+        throw new IllegalArgumentException("not a hexadecimal digit: " + ch);
+    }
+
+    public static int fromHexDigits(CharSequence string) {
+        return fromHexDigits(string, 0, string.length());
+    }
+
+    public static int fromHexDigits(CharSequence string, int offset, int toIndex) {
+        Objects.requireNonNull(string, "string");
+        Objects.checkFromToIndex(offset, toIndex, string.length());
+        if (offset == toIndex) {
+            throw new IllegalArgumentException("empty string");
+        }
+        int value = 0;
+        for (int i = offset; i < toIndex; i++) {
+            value <<= 4;
+            value |= fromHexDigit(string.charAt(i));
+        }
+        return value;
+    }
+
+    public static long fromHexDigitsToLong(CharSequence string) {
+        return fromHexDigitsToLong(string, 0, string.length());
+    }
+
+    public static long fromHexDigitsToLong(CharSequence string, int offset, int toIndex) {
+        Objects.requireNonNull(string, "string");
+        Objects.checkFromToIndex(offset, toIndex, string.length());
+        if (offset == toIndex) {
+            throw new IllegalArgumentException("empty string");
+        }
+        long value = 0;
+        for (int i = offset; i < toIndex; i++) {
+            value <<= 4;
+            value |= fromHexDigit(string.charAt(i));
+        }
+        return value;
     }
 
     public J_U_HexFormat withDelimiter(String delimiter) {
@@ -183,44 +236,44 @@ public record J_U_HexFormat(String delimiter, String prefix, String suffix, @Cov
 
     public String toHexDigits(short value) {
         return new String(new char[]{
-                digits[(value >> 12) & 0xF],
-                digits[(value >> 8) & 0xF],
-                digits[(value >> 4) & 0xF],
-                digits[value & 0xF]
+            digits[(value >> 12) & 0xF],
+            digits[(value >> 8) & 0xF],
+            digits[(value >> 4) & 0xF],
+            digits[value & 0xF]
         });
     }
 
     public String toHexDigits(int value) {
         return new String(new char[]{
-                digits[(value >> 28) & 0xF],
-                digits[(value >> 24) & 0xF],
-                digits[(value >> 20) & 0xF],
-                digits[(value >> 16) & 0xF],
-                digits[(value >> 12) & 0xF],
-                digits[(value >> 8) & 0xF],
-                digits[(value >> 4) & 0xF],
-                digits[value & 0xF]
+            digits[(value >> 28) & 0xF],
+            digits[(value >> 24) & 0xF],
+            digits[(value >> 20) & 0xF],
+            digits[(value >> 16) & 0xF],
+            digits[(value >> 12) & 0xF],
+            digits[(value >> 8) & 0xF],
+            digits[(value >> 4) & 0xF],
+            digits[value & 0xF]
         });
     }
 
     public String toHexDigits(long value) {
         return new String(new char[]{
-                digits[(int) ((value >> 60) & 0xF)],
-                digits[(int) ((value >> 56) & 0xF)],
-                digits[(int) ((value >> 52) & 0xF)],
-                digits[(int) ((value >> 48) & 0xF)],
-                digits[(int) ((value >> 44) & 0xF)],
-                digits[(int) ((value >> 40) & 0xF)],
-                digits[(int) ((value >> 36) & 0xF)],
-                digits[(int) ((value >> 32) & 0xF)],
-                digits[(int) ((value >> 28) & 0xF)],
-                digits[(int) ((value >> 24) & 0xF)],
-                digits[(int) ((value >> 20) & 0xF)],
-                digits[(int) ((value >> 16) & 0xF)],
-                digits[(int) ((value >> 12) & 0xF)],
-                digits[(int) ((value >> 8) & 0xF)],
-                digits[(int) ((value >> 4) & 0xF)],
-                digits[(int) (value & 0xF)]
+            digits[(int) ((value >> 60) & 0xF)],
+            digits[(int) ((value >> 56) & 0xF)],
+            digits[(int) ((value >> 52) & 0xF)],
+            digits[(int) ((value >> 48) & 0xF)],
+            digits[(int) ((value >> 44) & 0xF)],
+            digits[(int) ((value >> 40) & 0xF)],
+            digits[(int) ((value >> 36) & 0xF)],
+            digits[(int) ((value >> 32) & 0xF)],
+            digits[(int) ((value >> 28) & 0xF)],
+            digits[(int) ((value >> 24) & 0xF)],
+            digits[(int) ((value >> 20) & 0xF)],
+            digits[(int) ((value >> 16) & 0xF)],
+            digits[(int) ((value >> 12) & 0xF)],
+            digits[(int) ((value >> 8) & 0xF)],
+            digits[(int) ((value >> 4) & 0xF)],
+            digits[(int) (value & 0xF)]
         });
     }
 
@@ -237,59 +290,6 @@ public record J_U_HexFormat(String delimiter, String prefix, String suffix, @Cov
             value >>= 4;
         }
         return new String(chars);
-    }
-
-    public static boolean isHexDigit(int ch) {
-        return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
-    }
-
-    public static int fromHexDigit(int ch) {
-        if (ch >= '0' && ch <= '9') {
-            return ch - '0';
-        }
-        if (ch >= 'a' && ch <= 'f') {
-            return ch - 'a' + 10;
-        }
-        if (ch >= 'A' && ch <= 'F') {
-            return ch - 'A' + 10;
-        }
-        throw new IllegalArgumentException("not a hexadecimal digit: " + ch);
-    }
-
-    public static int fromHexDigits(CharSequence string) {
-        return fromHexDigits(string, 0, string.length());
-    }
-
-    public static int fromHexDigits(CharSequence string, int offset, int toIndex) {
-        Objects.requireNonNull(string, "string");
-        Objects.checkFromToIndex(offset, toIndex, string.length());
-        if (offset == toIndex) {
-            throw new IllegalArgumentException("empty string");
-        }
-        int value = 0;
-        for (int i = offset; i < toIndex; i++) {
-            value <<= 4;
-            value |= fromHexDigit(string.charAt(i));
-        }
-        return value;
-    }
-
-    public static long fromHexDigitsToLong(CharSequence string) {
-        return fromHexDigitsToLong(string, 0, string.length());
-    }
-
-    public static long fromHexDigitsToLong(CharSequence string, int offset, int toIndex) {
-        Objects.requireNonNull(string, "string");
-        Objects.checkFromToIndex(offset, toIndex, string.length());
-        if (offset == toIndex) {
-            throw new IllegalArgumentException("empty string");
-        }
-        long value = 0;
-        for (int i = offset; i < toIndex; i++) {
-            value <<= 4;
-            value |= fromHexDigit(string.charAt(i));
-        }
-        return value;
     }
 
 }

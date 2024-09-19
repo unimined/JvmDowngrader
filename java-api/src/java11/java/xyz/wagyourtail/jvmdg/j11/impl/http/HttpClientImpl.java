@@ -6,22 +6,10 @@ import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpRequest;
 import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpResponse;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.Authenticator;
-import java.net.CookieHandler;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.List;
@@ -280,6 +268,7 @@ public class HttpClientImpl extends J_N_H_HttpClient {
             socket.setSSLParameters(sslParams);
             return socket;
         }
+
     }
 
 }

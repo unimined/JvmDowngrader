@@ -34,13 +34,13 @@ public class J_L_R_ObjectMethods {
             case "toString" -> makeToString(cnode, mname, indy.desc, recordClass, fieldNames, getters);
         }
         mnode.instructions.insert(indy,
-                new MethodInsnNode(
-                        Opcodes.INVOKESTATIC,
-                        cnode.name,
-                        mname,
-                        indy.desc,
-                        false
-                )
+            new MethodInsnNode(
+                Opcodes.INVOKESTATIC,
+                cnode.name,
+                mname,
+                indy.desc,
+                false
+            )
         );
         mnode.instructions.remove(indy);
     }
@@ -95,11 +95,11 @@ public class J_L_R_ObjectMethods {
                 }
                 case Type.ARRAY, Type.OBJECT -> {
                     visitor.visitMethodInsn(
-                            Opcodes.INVOKESTATIC,
-                            "java/util/Objects",
-                            "equals",
-                            "(Ljava/lang/Object;Ljava/lang/Object;)Z",
-                            false
+                        Opcodes.INVOKESTATIC,
+                        "java/util/Objects",
+                        "equals",
+                        "(Ljava/lang/Object;Ljava/lang/Object;)Z",
+                        false
                     );
                     visitor.visitJumpInsn(Opcodes.IFEQ, notEqual);
                 }
@@ -134,74 +134,74 @@ public class J_L_R_ObjectMethods {
             switch (type.getSort()) {
                 case Type.BOOLEAN -> {
                     visitor.visitMethodInsn(
-                            Opcodes.INVOKESTATIC,
-                            "java/lang/Boolean",
-                            "valueOf",
-                            "(Z)Ljava/lang/Boolean;",
-                            false
+                        Opcodes.INVOKESTATIC,
+                        "java/lang/Boolean",
+                        "valueOf",
+                        "(Z)Ljava/lang/Boolean;",
+                        false
                     );
                 }
                 case Type.BYTE -> {
                     visitor.visitMethodInsn(
-                            Opcodes.INVOKESTATIC,
-                            "java/lang/Byte",
-                            "valueOf",
-                            "(B)Ljava/lang/Byte;",
-                            false
+                        Opcodes.INVOKESTATIC,
+                        "java/lang/Byte",
+                        "valueOf",
+                        "(B)Ljava/lang/Byte;",
+                        false
                     );
                 }
                 case Type.CHAR -> {
                     visitor.visitMethodInsn(
-                            Opcodes.INVOKESTATIC,
-                            "java/lang/Character",
-                            "valueOf",
-                            "(C)Ljava/lang/Character;",
-                            false
+                        Opcodes.INVOKESTATIC,
+                        "java/lang/Character",
+                        "valueOf",
+                        "(C)Ljava/lang/Character;",
+                        false
                     );
                 }
                 case Type.SHORT -> {
                     visitor.visitMethodInsn(
-                            Opcodes.INVOKESTATIC,
-                            "java/lang/Short",
-                            "valueOf",
-                            "(S)Ljava/lang/Short;",
-                            false
+                        Opcodes.INVOKESTATIC,
+                        "java/lang/Short",
+                        "valueOf",
+                        "(S)Ljava/lang/Short;",
+                        false
                     );
                 }
                 case Type.INT -> {
                     visitor.visitMethodInsn(
-                            Opcodes.INVOKESTATIC,
-                            "java/lang/Integer",
-                            "valueOf",
-                            "(I)Ljava/lang/Integer;",
-                            false
+                        Opcodes.INVOKESTATIC,
+                        "java/lang/Integer",
+                        "valueOf",
+                        "(I)Ljava/lang/Integer;",
+                        false
                     );
                 }
                 case Type.LONG -> {
                     visitor.visitMethodInsn(
-                            Opcodes.INVOKESTATIC,
-                            "java/lang/Long",
-                            "valueOf",
-                            "(J)Ljava/lang/Long;",
-                            false
+                        Opcodes.INVOKESTATIC,
+                        "java/lang/Long",
+                        "valueOf",
+                        "(J)Ljava/lang/Long;",
+                        false
                     );
                 }
                 case Type.FLOAT -> {
                     visitor.visitMethodInsn(
-                            Opcodes.INVOKESTATIC,
-                            "java/lang/Float",
-                            "valueOf",
-                            "(F)Ljava/lang/Float;",
-                            false
+                        Opcodes.INVOKESTATIC,
+                        "java/lang/Float",
+                        "valueOf",
+                        "(F)Ljava/lang/Float;",
+                        false
                     );
                 }
                 case Type.DOUBLE -> {
                     visitor.visitMethodInsn(
-                            Opcodes.INVOKESTATIC,
-                            "java/lang/Double",
-                            "valueOf",
-                            "(D)Ljava/lang/Double;",
-                            false
+                        Opcodes.INVOKESTATIC,
+                        "java/lang/Double",
+                        "valueOf",
+                        "(D)Ljava/lang/Double;",
+                        false
                     );
                 }
                 case Type.ARRAY, Type.OBJECT -> {
@@ -214,11 +214,11 @@ public class J_L_R_ObjectMethods {
         // return Objects.hashCode(fields);
         visitor.visitVarInsn(Opcodes.ALOAD, 1);
         visitor.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                "java/util/Arrays",
-                "hashCode",
-                "([Ljava/lang/Object;)I",
-                false
+            Opcodes.INVOKESTATIC,
+            "java/util/Arrays",
+            "hashCode",
+            "([Ljava/lang/Object;)I",
+            false
         );
         visitor.visitInsn(Opcodes.IRETURN);
         visitor.visitMaxs(0, 0);
@@ -235,11 +235,11 @@ public class J_L_R_ObjectMethods {
         visitor.visitInsn(Opcodes.DUP);
         visitor.visitLdcInsn(last + "[");
         visitor.visitMethodInsn(
-                Opcodes.INVOKESPECIAL,
-                "java/lang/StringBuilder",
-                "<init>",
-                "(Ljava/lang/String;)V",
-                false
+            Opcodes.INVOKESPECIAL,
+            "java/lang/StringBuilder",
+            "<init>",
+            "(Ljava/lang/String;)V",
+            false
         );
         String[] fns;
         if (fieldNames.isEmpty()) {
@@ -253,11 +253,11 @@ public class J_L_R_ObjectMethods {
         for (int i = 0; i < fns.length; i++) {
             visitor.visitLdcInsn(fns[i] + "=");
             visitor.visitMethodInsn(
-                    Opcodes.INVOKEVIRTUAL,
-                    "java/lang/StringBuilder",
-                    "append",
-                    "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
-                    false
+                Opcodes.INVOKEVIRTUAL,
+                "java/lang/StringBuilder",
+                "append",
+                "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+                false
             );
             visitor.visitVarInsn(Opcodes.ALOAD, 0);
             visitor.visitFieldInsn(Opcodes.GETFIELD, recordClass.getInternalName(), getters.get(i).getName(), getters.get(i).getDesc());
@@ -268,60 +268,61 @@ public class J_L_R_ObjectMethods {
                 case Type.ARRAY:
                     if (tdesc.equals("Ljava/lang/String;")) {
                         visitor.visitMethodInsn(
-                                Opcodes.INVOKEVIRTUAL,
-                                "java/lang/StringBuilder",
-                                "append",
-                                "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
-                                false
+                            Opcodes.INVOKEVIRTUAL,
+                            "java/lang/StringBuilder",
+                            "append",
+                            "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+                            false
                         );
                     } else {
                         visitor.visitMethodInsn(
-                                Opcodes.INVOKEVIRTUAL,
-                                "java/lang/StringBuilder",
-                                "append",
-                                "(Ljava/lang/Object;)Ljava/lang/StringBuilder;",
-                                false
+                            Opcodes.INVOKEVIRTUAL,
+                            "java/lang/StringBuilder",
+                            "append",
+                            "(Ljava/lang/Object;)Ljava/lang/StringBuilder;",
+                            false
                         );
                     }
                     break;
                 default:
                     visitor.visitMethodInsn(
-                            Opcodes.INVOKEVIRTUAL,
-                            "java/lang/StringBuilder",
-                            "append",
-                            "(" + tdesc + ")Ljava/lang/StringBuilder;",
-                            false
+                        Opcodes.INVOKEVIRTUAL,
+                        "java/lang/StringBuilder",
+                        "append",
+                        "(" + tdesc + ")Ljava/lang/StringBuilder;",
+                        false
                     );
                     break;
             }
             if (i < fns.length - 1) {
                 visitor.visitLdcInsn(", ");
                 visitor.visitMethodInsn(
-                        Opcodes.INVOKEVIRTUAL,
-                        "java/lang/StringBuilder",
-                        "append",
-                        "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
-                        false
+                    Opcodes.INVOKEVIRTUAL,
+                    "java/lang/StringBuilder",
+                    "append",
+                    "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+                    false
                 );
             }
         }
         visitor.visitLdcInsn("]");
         visitor.visitMethodInsn(
-                Opcodes.INVOKEVIRTUAL,
-                "java/lang/StringBuilder",
-                "append",
-                "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
-                false
+            Opcodes.INVOKEVIRTUAL,
+            "java/lang/StringBuilder",
+            "append",
+            "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
+            false
         );
         visitor.visitMethodInsn(
-                Opcodes.INVOKEVIRTUAL,
-                "java/lang/StringBuilder",
-                "toString",
-                "()Ljava/lang/String;",
-                false
+            Opcodes.INVOKEVIRTUAL,
+            "java/lang/StringBuilder",
+            "toString",
+            "()Ljava/lang/String;",
+            false
         );
         visitor.visitInsn(Opcodes.ARETURN);
         visitor.visitMaxs(0, 0);
         visitor.visitEnd();
     }
+
 }

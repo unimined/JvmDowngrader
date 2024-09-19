@@ -8,7 +8,6 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
-import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -19,9 +18,6 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Member;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -35,6 +31,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ApiCoverageChecker {
+
+    private static final Set<String> excludedMods = Set.of(
+        "jdk.internal.vm.compiler",
+        "jdk.internal.vm.compiler.management"
+    );
 
     public static void main(String[] args) throws IOException, URISyntaxException {
 //        var home = Path.of(System.getProperty("java.home")).resolve("lib/ct.sym");
@@ -63,7 +64,7 @@ public class ApiCoverageChecker {
             try (var folders = Files.newDirectoryStream(fs.getPath("/"))) {
                 for (var folder : folders) {
                     folder.getFileName().toString().chars().map(c -> Character.digit(c, 36))
-                            .forEach(javaVersion -> versions.computeIfAbsent(javaVersion, k -> new ArrayList<>()).add(folder));
+                        .forEach(javaVersion -> versions.computeIfAbsent(javaVersion, k -> new ArrayList<>()).add(folder));
                 }
             }
 
@@ -99,24 +100,24 @@ public class ApiCoverageChecker {
                 System.out.println("Checking version " + stubVersion);
 
                 Map<Type, Type> stubClassTypes = versionProvider.classStubs.entrySet().stream()
-                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFirst()));
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFirst()));
                 Set<FullyQualifiedMemberNameAndDesc> stubClassMethods = versionProvider.classStubs.entrySet().stream()
-                        .flatMap (e -> Stream.concat(
+                    .flatMap(e -> Stream.concat(
                                 Arrays.stream(e.getValue().getSecond().getFirst().getDeclaredMethods()),
                                 Arrays.stream(e.getValue().getSecond().getFirst().getConstructors())
-                    ).filter(m ->
-                            (m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0 &&
-                            (m.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0 &&
-                            !m.isAnnotationPresent(CoverageIgnore.class) &&
-                            !m.isAnnotationPresent(Stub.class) &&
-                            !m.isAnnotationPresent(Modify.class) &&
-                            !m.getName().startsWith("jvmdg$")
-                    ).map(MemberNameAndDesc::fromMember)
-                    .map(m -> m.toFullyQualified(e.getValue().getFirst()))
-                ).collect(Collectors.toSet());
+                            ).filter(m ->
+                                (m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0 &&
+                                    (m.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0 &&
+                                    !m.isAnnotationPresent(CoverageIgnore.class) &&
+                                    !m.isAnnotationPresent(Stub.class) &&
+                                    !m.isAnnotationPresent(Modify.class) &&
+                                    !m.getName().startsWith("jvmdg$")
+                            ).map(MemberNameAndDesc::fromMember)
+                            .map(m -> m.toFullyQualified(e.getValue().getFirst()))
+                    ).collect(Collectors.toSet());
                 var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(value ->
-                        Stream.of(value.getMethodStubMap().values().stream(), value.getMethodModifyMap().values().stream())
-                                .flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
+                    Stream.of(value.getMethodStubMap().values().stream(), value.getMethodModifyMap().values().stream())
+                        .flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
 
                 try {
                     var requiredStubs = new ArrayList<MemberInfo>();
@@ -227,7 +228,7 @@ public class ApiCoverageChecker {
 
                     var total = availableStubCount + onlyOnParentStubCount + missingStubCount;
                     System.out.println("Version " + stubVersion + " has " + availableStubCount + " available stubs, " +
-                            onlyOnParentStubCount + " only on parent stubs, and " + missingStubCount + " missing stubs. Total: " + total);
+                        onlyOnParentStubCount + " only on parent stubs, and " + missingStubCount + " missing stubs. Total: " + total);
 
                     var missing = Path.of("./coverage/" + stubVersion + "/missing.txt");
                     writeList(missingStubs, missing);
@@ -238,12 +239,12 @@ public class ApiCoverageChecker {
                     var unmatched = Path.of("./coverage/" + stubVersion + "/unmatched.txt");
                     writeList(
                         Stream.concat(
-                            unmatchedStubs.stream()
-                                .filter(e -> !e.isAnnotationPresent(CoverageIgnore.class))
-                                .map(FullyQualifiedMemberNameAndDesc::of),
-                            stubClassMethods.stream()
-                        ).map(e -> new MemberInfo("unknown", e, false, false))
-                        .collect(Collectors.toList()),
+                                unmatchedStubs.stream()
+                                    .filter(e -> !e.isAnnotationPresent(CoverageIgnore.class))
+                                    .map(FullyQualifiedMemberNameAndDesc::of),
+                                stubClassMethods.stream()
+                            ).map(e -> new MemberInfo("unknown", e, false, false))
+                            .collect(Collectors.toList()),
                         unmatched
                     );
                 } catch (IOException e) {
@@ -286,11 +287,6 @@ public class ApiCoverageChecker {
         }
         return null;
     }
-
-    private static final Set<String> excludedMods = Set.of(
-        "jdk.internal.vm.compiler",
-        "jdk.internal.vm.compiler.management"
-    );
 
     public static void compare(List<Path> moduleHolders, Map<String, Pair<String, ClassNode>> currentVersion, List<MemberInfo> removed) throws IOException {
         var mods = new ArrayList<Path>();
@@ -339,7 +335,8 @@ public class ApiCoverageChecker {
                             var ct = Type.getObjectType(cn.name);
                             outerA:
                             for (var m : oldCls.methods) {
-                                if ((m.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (m.access & Opcodes.ACC_SYNTHETIC) != 0) continue;
+                                if ((m.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (m.access & Opcodes.ACC_SYNTHETIC) != 0)
+                                    continue;
                                 if (m.name.equals("<clinit>")) continue;
                                 if (m.invisibleAnnotations != null) {
                                     for (var a : m.invisibleAnnotations) {
@@ -366,7 +363,7 @@ public class ApiCoverageChecker {
                                 var isStatic = (m.access & Opcodes.ACC_STATIC) != 0;
                                 var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
                                 methods.remove(new MemberInfo(modName, new FullyQualifiedMemberNameAndDesc(
-                                        ct, m.name, Type.getMethodType(m.desc)), isAbstract, isStatic));
+                                    ct, m.name, Type.getMethodType(m.desc)), isAbstract, isStatic));
                             }
 
                             // check if method(s) still exist on parent (include interfaces in traversal)
@@ -432,7 +429,8 @@ public class ApiCoverageChecker {
                     var oldCls = cls.getValue().getSecond();
                     outer:
                     for (var method : oldCls.methods) {
-                        if ((method.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (method.access & Opcodes.ACC_SYNTHETIC) != 0) continue;
+                        if ((method.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (method.access & Opcodes.ACC_SYNTHETIC) != 0)
+                            continue;
                         if (method.name.equals("<clinit>")) continue;
                         if (method.invisibleAnnotations != null) {
                             for (var a : method.invisibleAnnotations) {

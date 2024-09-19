@@ -2,7 +2,6 @@ package xyz.wagyourtail.jvmdg.j13.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.util.Objects;

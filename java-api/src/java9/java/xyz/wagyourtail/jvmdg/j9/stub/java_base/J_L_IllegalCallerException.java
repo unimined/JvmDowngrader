@@ -19,4 +19,5 @@ public class J_L_IllegalCallerException extends RuntimeException {
     public J_L_IllegalCallerException(String message, Throwable cause) {
         super(message, cause);
     }
+
 }

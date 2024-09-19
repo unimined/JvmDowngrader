@@ -50,4 +50,5 @@ public class IteratorFromSpliterator<T> implements Iterator<T>, J_U_F_Consumer<T
     public J_U_F_Consumer<T> andThen(J_U_F_Consumer<? super T> after) {
         return J_U_F_Consumer.ConsumerDefaults.andThen(this, after);
     }
+
 }

@@ -22,7 +22,7 @@ public class CheckedQueue<E> extends BackingCollection<E> implements Queue<E> {
 
     private String badElementMsg(Object o) {
         return "Attempt to insert " + o.getClass() +
-                " element into collection with element type " + type;
+            " element into collection with element type " + type;
     }
 
 
@@ -50,4 +50,5 @@ public class CheckedQueue<E> extends BackingCollection<E> implements Queue<E> {
     public E peek() {
         return backing.peek();
     }
+
 }

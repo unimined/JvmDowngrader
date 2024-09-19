@@ -2,10 +2,9 @@ package xyz.wagyourtail.jvmdg.site.maven.html
 
 import io.ktor.server.html.*
 import kotlinx.html.*
-import xyz.wagyourtail.jvmdg.site.html.About
 import xyz.wagyourtail.jvmdg.site.maven.Settings
 
-class Maven : Template<HTML> {
+class Maven: Template<HTML> {
     val version = Maven::class.java.`package`.specificationVersion ?: "1.1.0"
 
     override fun HTML.apply() {

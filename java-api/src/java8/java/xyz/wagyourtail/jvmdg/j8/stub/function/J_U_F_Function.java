@@ -49,6 +49,7 @@ public interface J_U_F_Function<T, R> {
                 }
             };
         }
+
     }
 
     abstract class FunctionAdapter<T, R> implements J_U_F_Function<T, R> {

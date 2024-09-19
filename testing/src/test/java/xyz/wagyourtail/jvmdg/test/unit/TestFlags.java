@@ -3,7 +3,8 @@ package xyz.wagyourtail.jvmdg.test.unit;
 import org.junit.jupiter.api.Test;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestFlags {
 

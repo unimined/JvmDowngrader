@@ -19,7 +19,6 @@ import java.nio.file.Path;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.jar.JarFile;
 
 public class Bootstrap {
@@ -40,8 +39,8 @@ public class Bootstrap {
             }
             currentVersionDowngrader.getClassLoader().addDelegate(cp);
             Class.forName(mainClass, false, currentVersionDowngrader.getClassLoader()).getMethod("main", String[].class).invoke(
-                    null,
-                    (Object) newArgs
+                null,
+                (Object) newArgs
             );
         } catch (Throwable t) {
             t.printStackTrace(System.err);
@@ -108,4 +107,5 @@ public class Bootstrap {
     public static void agentmain(String args, Instrumentation instrumentation) throws URISyntaxException, IOException, UnmodifiableClassException {
         premain(args, instrumentation);
     }
+
 }

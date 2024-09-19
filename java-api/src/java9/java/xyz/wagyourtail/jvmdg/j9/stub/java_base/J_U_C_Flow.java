@@ -16,6 +16,7 @@ public class J_U_C_Flow {
     @FunctionalInterface
     public interface Publisher<T> {
         void subscribe(Subscriber<? super T> subscriber);
+
     }
 
     @Adapter("java/util/concurrent/Flow$Subscriber")
@@ -27,6 +28,7 @@ public class J_U_C_Flow {
         void onError(Throwable throwable);
 
         void onComplete();
+
     }
 
     @Adapter("java/util/concurrent/Flow$Subscription")
@@ -34,6 +36,7 @@ public class J_U_C_Flow {
         void request(long n);
 
         void cancel();
+
     }
 
     @Adapter("java/util/concurrent/Flow$Processor")

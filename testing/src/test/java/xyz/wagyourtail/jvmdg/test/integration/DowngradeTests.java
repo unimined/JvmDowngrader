@@ -36,6 +36,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class DowngradeTests extends BaseIntegrationTests {
     private static final String DOWNGRADE_PATH = "jvmdg.test.downgradePath";
     private static final Path original = Path.of(System.getProperty(DOWNGRADE_PATH));
+    private static final Map<String, Map.Entry<Integer, String>> originalResults = new ConcurrentHashMap<>();
+    private static final String[] args = new String[]{
+        "arg1",
+        "testArg2",
+        "arg3"
+    };
+    private static final Map<Flags, Path> downgradedPaths = new ConcurrentHashMap<>();
+    private static final Map<Flags, Path> shadedPaths = new ConcurrentHashMap<>();
 
     private static Stream<FlagsAndRunner> flags() {
         Flags flags = BaseIntegrationTests.flags.copy();
@@ -78,7 +86,6 @@ public class DowngradeTests extends BaseIntegrationTests {
         }
     }
 
-
     public static Stream<Arguments> arguments() throws IOException {
         return IOStream.adapt(flags())
             .flatMap(e ->
@@ -86,14 +93,6 @@ public class DowngradeTests extends BaseIntegrationTests {
             )
             .unwrap();
     }
-
-    private static final Map<String, Map.Entry<Integer, String>> originalResults = new ConcurrentHashMap<>();
-
-    private static final String[] args = new String[] {
-        "arg1",
-        "testArg2",
-        "arg3"
-    };
 
     @BeforeAll
     public static void runOriginal() throws IOException, InterruptedException {
@@ -116,8 +115,6 @@ public class DowngradeTests extends BaseIntegrationTests {
             originalResults.put(main, Map.entry(exitCode, originalLog.toString()));
         }
     }
-
-    private static final Map<Flags, Path> downgradedPaths = new ConcurrentHashMap<>();
 
     private static Path getDowngradedPath(FlagsAndRunner flags) {
         String fName = original.getFileName().toString();
@@ -142,8 +139,6 @@ public class DowngradeTests extends BaseIntegrationTests {
             }
         });
     }
-
-    private static final Map<Flags, Path> shadedPaths = new ConcurrentHashMap<>();
 
     private static Path getShadedPath(FlagsAndRunner flags) {
         String fName = original.getFileName().toString();
@@ -182,6 +177,12 @@ public class DowngradeTests extends BaseIntegrationTests {
             getDowngradedJar(flag);
             getShadedJar(flag);
         }
+    }
+
+    public static void compareResults(String mainClass, FlagsAndRunner javaVersion, Map.Entry<Integer, String> originalResult, Map.Entry<Integer, String> downgradedResult) {
+        assertEquals(0, originalResult.getKey());
+        assertEquals(originalResult.getValue(), downgradedResult.getValue(), "Output mismatch for " + mainClass + " on " + javaVersion.readableSlug());
+        assertEquals(originalResult.getKey(), downgradedResult.getKey(), "Exit code mismatch for " + mainClass + " on " + javaVersion.readableSlug());
     }
 
     @ParameterizedTest
@@ -356,12 +357,6 @@ public class DowngradeTests extends BaseIntegrationTests {
             original,
             Map.entry(ret, runtimeLog.toString())
         );
-    }
-
-    public static void compareResults(String mainClass, FlagsAndRunner javaVersion, Map.Entry<Integer, String> originalResult, Map.Entry<Integer, String> downgradedResult) {
-        assertEquals(0, originalResult.getKey());
-        assertEquals(originalResult.getValue(), downgradedResult.getValue(), "Output mismatch for " + mainClass + " on " + javaVersion.readableSlug());
-        assertEquals(originalResult.getKey(), downgradedResult.getKey(), "Exit code mismatch for " + mainClass + " on " + javaVersion.readableSlug());
     }
 
 }

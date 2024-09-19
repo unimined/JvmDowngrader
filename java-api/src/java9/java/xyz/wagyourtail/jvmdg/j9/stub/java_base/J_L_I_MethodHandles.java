@@ -5,7 +5,9 @@ import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.lang.invoke.*;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 import java.net.URL;
 import java.util.Map;
@@ -82,4 +84,5 @@ public class J_L_I_MethodHandles {
         }
 
     }
+
 }

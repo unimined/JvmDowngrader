@@ -1,8 +1,6 @@
 package xyz.wagyourtail.jvmdg.classloader;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
-import xyz.wagyourtail.jvmdg.classloader.providers.ClassLoaderResourceProvider;
-import xyz.wagyourtail.jvmdg.classloader.providers.JarFileResourceProvider;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
@@ -12,8 +10,9 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.instrument.IllegalClassFormatException;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarFile;
 
@@ -123,4 +122,5 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
         }
         super.close();
     }
+
 }

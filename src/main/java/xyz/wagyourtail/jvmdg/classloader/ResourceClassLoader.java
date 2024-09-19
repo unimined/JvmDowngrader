@@ -11,14 +11,8 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarFile;
 
 public class ResourceClassLoader extends ClassLoader implements Closeable {
@@ -102,4 +96,5 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
             delegate.close();
         }
     }
+
 }

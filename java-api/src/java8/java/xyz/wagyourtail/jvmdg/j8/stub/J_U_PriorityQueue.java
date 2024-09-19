@@ -30,4 +30,5 @@ public class J_U_PriorityQueue {
     public static <E> J_U_Spliterator<E> spliterator(PriorityQueue<E> queue) {
         return J_U_Spliterators.spliterator(queue, 0);
     }
+
 }

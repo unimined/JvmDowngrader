@@ -12,7 +12,6 @@ import java.io.OutputStream;
 import java.lang.instrument.IllegalClassFormatException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -132,7 +131,7 @@ public class PathDowngrader {
                             }
                         } else if (relativized.toString().equals("META-INF/MANIFEST.MF")) {
                             // add version number to manifest
-                            try(InputStream is = Files.newInputStream(path)) {
+                            try (InputStream is = Files.newInputStream(path)) {
                                 Manifest manifest = new Manifest(is);
                                 Attributes attr = manifest.getMainAttributes();
                                 if (Flags.jvmdgVersion != null) {

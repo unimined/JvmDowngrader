@@ -21,7 +21,7 @@ import java.nio.file.StandardOpenOption
 import java.util.zip.ZipFile
 import kotlin.io.path.*
 
-abstract class GenerateCtSymTask : ConventionTask() {
+abstract class GenerateCtSymTask: ConventionTask() {
 
     @get:Optional
     @get:OutputFile

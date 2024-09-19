@@ -4,7 +4,6 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.nio.IntBuffer;
 import java.nio.ReadOnlyBufferException;
-import java.nio.ShortBuffer;
 import java.util.Objects;
 
 public class J_N_IntBuffer {

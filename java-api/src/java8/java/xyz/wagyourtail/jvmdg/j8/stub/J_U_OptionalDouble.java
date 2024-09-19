@@ -87,8 +87,8 @@ public class J_U_OptionalDouble {
         }
         J_U_OptionalDouble other = (J_U_OptionalDouble) obj;
         return (isPresent && other.isPresent
-                ? Double.compare(value, other.value) == 0
-                : isPresent == other.isPresent);
+            ? Double.compare(value, other.value) == 0
+            : isPresent == other.isPresent);
     }
 
     @Override
@@ -105,4 +105,5 @@ public class J_U_OptionalDouble {
     public String toString() {
         return isPresent ? String.format("OptionalDouble[%s]", value) : "OptionalDouble.empty";
     }
+
 }

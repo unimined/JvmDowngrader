@@ -58,4 +58,5 @@ public class IntIteratorFromSpliterator implements J_U_F_IntConsumer, J_U_Primit
     public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
         return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
     }
+
 }

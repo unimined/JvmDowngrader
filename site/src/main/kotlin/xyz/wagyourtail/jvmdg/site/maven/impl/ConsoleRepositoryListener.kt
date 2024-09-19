@@ -1,13 +1,11 @@
 package xyz.wagyourtail.jvmdg.site.maven.impl
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.eclipse.aether.AbstractRepositoryListener
 import org.eclipse.aether.RepositoryEvent
 import org.eclipse.aether.RepositoryListener
-import java.io.PrintStream
 
-class ConsoleRepositoryListener : RepositoryListener {
-    val LOGGER = KotlinLogging.logger {  }
+class ConsoleRepositoryListener: RepositoryListener {
+    val LOGGER = KotlinLogging.logger { }
 
     override fun artifactDescriptorInvalid(p0: RepositoryEvent) {
         LOGGER.error { "Invalid artifact descriptor for: ${p0.artifact}: ${p0.exception.message}" }

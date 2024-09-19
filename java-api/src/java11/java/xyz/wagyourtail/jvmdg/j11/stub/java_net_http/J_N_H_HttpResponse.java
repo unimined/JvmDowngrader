@@ -66,6 +66,7 @@ public interface J_N_H_HttpResponse<T> {
         J_N_H_HttpHeaders headers();
 
         J_N_H_HttpClient.Version version();
+
     }
 
     @Adapter("Ljava/net/http/HttpResponse$BodyHandler;")
@@ -75,10 +76,29 @@ public interface J_N_H_HttpResponse<T> {
 
     }
 
+    @Adapter("Ljava/net/http/HttpResponse$PushPromiseHandler;")
+    interface PushPromiseHandler<T> {
+
+        static <T> PushPromiseHandler<T> of(
+            Function<J_N_H_HttpRequest, BodyHandler<T>> pushPromiseHandler,
+            ConcurrentMap<J_N_H_HttpRequest, CompletableFuture<J_N_H_HttpResponse<T>>> pushPromisesMap
+        ) {
+            throw MissingStubError.create();
+        }
+
+        void applyPushPromise(
+            J_N_H_HttpRequest initiatingRequest,
+            J_N_H_HttpRequest pushPromiseRequest,
+            Function<BodyHandler<T>, CompletableFuture<J_N_H_HttpResponse<T>>> acceptor
+        );
+
+    }
+
     @Adapter("Ljava/net/http/HttpResponse$BodyHandlers;")
     class BodyHandlers {
 
-        private BodyHandlers() {}
+        private BodyHandlers() {
+        }
 
         private static Charset charsetFrom(J_N_H_HttpHeaders headers) {
 //            throw MissingStubError.create();
@@ -90,7 +110,7 @@ public interface J_N_H_HttpResponse<T> {
             return (info) -> BodySubscribers.fromSubscriber(subscriber);
         }
 
-        public static <S extends Flow.Subscriber<? super List<ByteBuffer>>, T> BodyHandler<Void> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber, Function<? super S,? extends T> finisher) {
+        public static <S extends Flow.Subscriber<? super List<ByteBuffer>>, T> BodyHandler<Void> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber, Function<? super S, ? extends T> finisher) {
             Objects.requireNonNull(subscriber);
             Objects.requireNonNull(finisher);
             return (info) -> (BodySubscriber<Void>) BodySubscribers.fromSubscriber(subscriber, finisher);
@@ -103,7 +123,7 @@ public interface J_N_H_HttpResponse<T> {
 
         public static BodyHandler<Void> fromLineSubscriber(
             Flow.Subscriber<? super String> subscriber,
-            Function<? super Flow.Subscriber<? super String>,? extends Void> finisher,
+            Function<? super Flow.Subscriber<? super String>, ? extends Void> finisher,
             String lineSeparator
         ) {
             Objects.requireNonNull(subscriber);
@@ -140,14 +160,14 @@ public interface J_N_H_HttpResponse<T> {
             while (!reader.exhausted()) {
                 String key;
 
-                if (Character.isWhitespace((char)reader.peek())) {
+                if (Character.isWhitespace((char) reader.peek())) {
                     reader.takeWhitespace();
                 }
 
                 if (reader.peek() == '"') {
                     key = reader.takeString();
 
-                    if (Character.isWhitespace((char)reader.peek())) {
+                    if (Character.isWhitespace((char) reader.peek())) {
                         reader.takeWhitespace();
                     }
 
@@ -160,14 +180,14 @@ public interface J_N_H_HttpResponse<T> {
 
                     String value;
 
-                    if (Character.isWhitespace((char)reader.peek())) {
+                    if (Character.isWhitespace((char) reader.peek())) {
                         reader.takeWhitespace();
                     }
 
                     if (reader.peek() == '"') {
                         value = reader.takeString();
 
-                        if (Character.isWhitespace((char)reader.peek())) {
+                        if (Character.isWhitespace((char) reader.peek())) {
                             reader.takeWhitespace();
                         }
                     } else {
@@ -226,13 +246,14 @@ public interface J_N_H_HttpResponse<T> {
     @Adapter("Ljava/net/http/HttpResponse$BodySubscribers;")
     class BodySubscribers {
 
-        private BodySubscribers() {}
+        private BodySubscribers() {
+        }
 
         public static BodySubscriber<Void> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber) {
             return fromSubscriber(subscriber, (s) -> null);
         }
 
-        public static <S extends Flow.Subscriber<? super List<ByteBuffer>>, T> BodySubscriber<T> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber, Function<? super S,? extends T> finisher) {
+        public static <S extends Flow.Subscriber<? super List<ByteBuffer>>, T> BodySubscriber<T> fromSubscriber(Flow.Subscriber<? super List<ByteBuffer>> subscriber, Function<? super S, ? extends T> finisher) {
             CompletableFuture<T> result = new CompletableFuture<>();
             return new BodySubscriber<>() {
                 @Override
@@ -254,7 +275,7 @@ public interface J_N_H_HttpResponse<T> {
                 @Override
                 public void onComplete() {
                     subscriber.onComplete();
-                    result.complete(finisher.apply((S)subscriber));
+                    result.complete(finisher.apply((S) subscriber));
                 }
 
                 @Override
@@ -270,7 +291,7 @@ public interface J_N_H_HttpResponse<T> {
 
         public static BodySubscriber<Void> fromLineSubscriber(
             Flow.Subscriber<? super String> subscriber,
-            Function<? super Flow.Subscriber<? super String>,? extends Void> finisher,
+            Function<? super Flow.Subscriber<? super String>, ? extends Void> finisher,
             Charset charset,
             String lineSeparator
         ) {
@@ -662,7 +683,7 @@ public interface J_N_H_HttpResponse<T> {
             };
         }
 
-        public static <T, U> BodySubscriber<U> mapping(BodySubscriber<T> downstream, Function<? super T,? extends U> mapper) {
+        public static <T, U> BodySubscriber<U> mapping(BodySubscriber<T> downstream, Function<? super T, ? extends U> mapper) {
             CompletableFuture<U> result = new CompletableFuture<>();
             return new BodySubscriber<>() {
                 @Override
@@ -692,24 +713,6 @@ public interface J_N_H_HttpResponse<T> {
                     return result;
                 }
             };
-        }
-
-    }
-
-    @Adapter("Ljava/net/http/HttpResponse$PushPromiseHandler;")
-    interface PushPromiseHandler<T> {
-
-        void applyPushPromise(
-            J_N_H_HttpRequest initiatingRequest,
-            J_N_H_HttpRequest pushPromiseRequest,
-            Function<BodyHandler<T>, CompletableFuture<J_N_H_HttpResponse<T>>> acceptor
-        );
-
-        static <T> PushPromiseHandler<T> of(
-            Function<J_N_H_HttpRequest, BodyHandler<T>> pushPromiseHandler,
-            ConcurrentMap<J_N_H_HttpRequest, CompletableFuture<J_N_H_HttpResponse<T>>> pushPromisesMap
-        ) {
-            throw MissingStubError.create();
         }
 
     }

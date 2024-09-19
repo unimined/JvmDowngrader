@@ -58,4 +58,5 @@ public class DoubleIteratorFromSpliterator implements J_U_F_DoubleConsumer, J_U_
     public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
         return J_U_F_DoubleConsumer.DoubleConsumerDefaults.andThen(this, after);
     }
+
 }

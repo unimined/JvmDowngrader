@@ -58,4 +58,5 @@ public class LongIteratorFromSpliterator implements J_U_F_LongConsumer, J_U_Prim
     public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
         return J_U_F_LongConsumer.LongConsumerDefaults.andThen(this, after);
     }
+
 }

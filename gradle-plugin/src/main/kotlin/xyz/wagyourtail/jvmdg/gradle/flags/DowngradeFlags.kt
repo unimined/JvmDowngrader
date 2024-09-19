@@ -6,12 +6,10 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.*
-import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.logging.Logger
-import xyz.wagyourtail.jvmdg.util.toOpcode
 import java.io.File
 
-interface DowngradeFlags : TransformParameters {
+interface DowngradeFlags: TransformParameters {
 
     /**
      * sets the target class version to downgrade to,

@@ -12,12 +12,7 @@ import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpResponse;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Java11Downgrader extends VersionProvider {
     public Java11Downgrader() {

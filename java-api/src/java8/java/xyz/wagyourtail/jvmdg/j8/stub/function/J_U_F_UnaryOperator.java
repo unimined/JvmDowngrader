@@ -34,5 +34,7 @@ public interface J_U_F_UnaryOperator<T> extends J_U_F_Function<T, T> {
         public <V> J_U_F_Function<T, V> andThen(J_U_F_Function<? super T, ? extends V> after) {
             return FunctionDefaults.andThen(this, after);
         }
+
     }
+
 }

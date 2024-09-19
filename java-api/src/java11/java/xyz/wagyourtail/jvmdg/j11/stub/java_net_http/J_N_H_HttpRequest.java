@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
-import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j11.impl.http.HttpRequestBuilderImpl;
 import xyz.wagyourtail.jvmdg.j11.impl.http.IterablePublisher;
 import xyz.wagyourtail.jvmdg.j11.impl.http.StreamIterator;
@@ -14,13 +13,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.*;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.function.Supplier;
 
 @Adapter("Ljava/net/http/HttpRequest;")
 public abstract class J_N_H_HttpRequest {
-    protected J_N_H_HttpRequest() {}
+    protected J_N_H_HttpRequest() {
+    }
 
     public static Builder newBuilder() {
         return new HttpRequestBuilderImpl();
@@ -65,6 +67,7 @@ public abstract class J_N_H_HttpRequest {
     @Adapter("Ljava/net/http/HttpRequest$BodyPublisher;")
     public interface BodyPublisher extends Flow.Publisher<ByteBuffer> {
         long contentLength();
+
     }
 
     @Adapter("Ljava/net/http/HttpRequest$Builder;")
@@ -96,6 +99,7 @@ public abstract class J_N_H_HttpRequest {
         J_N_H_HttpRequest build();
 
         Builder copy();
+
     }
 
     @Adapter("Ljava/net/http/HttpRequest$BodyPublishers;")
@@ -285,5 +289,7 @@ public abstract class J_N_H_HttpRequest {
                 }
             };
         }
+
     }
+
 }

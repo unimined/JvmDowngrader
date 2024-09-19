@@ -19,7 +19,7 @@ public class ModuleFinderImpl implements J_L_M_ModuleFinder {
     @Override
     public Optional<J_L_M_ModuleReference> find(String name) {
         for (J_L_M_ModuleReference moduleReference : this.moduleReferences) {
-            J_L_M_ModuleDescriptor descriptor =  moduleReference.descriptor();
+            J_L_M_ModuleDescriptor descriptor = moduleReference.descriptor();
             if (descriptor != null && descriptor.name().equals(name)) {
                 return Optional.of(moduleReference);
             }
@@ -31,4 +31,5 @@ public class ModuleFinderImpl implements J_L_M_ModuleFinder {
     public Set<J_L_M_ModuleReference> findAll() {
         return this.moduleReferences;
     }
+
 }

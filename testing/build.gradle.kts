@@ -65,9 +65,13 @@ tasks.test {
         "-Djvmdg.test.javaVersion=${versions.keys.joinToString(File.pathSeparator) { it.majorVersion }}",
         "-Djvmdg.test.launcher=${versions.values.joinToString(File.pathSeparator)}",
         "-Djvmdg.test.downgradeClasspath=${rootProject.sourceSets["shared"].compileClasspath.joinToString(File.pathSeparator) { it.absolutePath }}",
-        "-Djvmdg.test.downgradePath=${project(":testing:downgrade").tasks.named("annotationASMJar").get().outputs.files.singleFile.absolutePath}",
+        "-Djvmdg.test.downgradePath=${
+            project(":testing:downgrade").tasks.named("annotationASMJar").get().outputs.files.singleFile.absolutePath
+        }",
         "-Djvmdg.test.multiVersionPath=${project(":testing:multi-version").tasks.jar.get().outputs.files.singleFile.absolutePath}",
-        "-Djvmdg.test.javaApiPath=${project(":java-api").tasks.named("testJar").get().outputs.files.singleFile.absolutePath}",
+        "-Djvmdg.test.javaApiPath=${
+            project(":java-api").tasks.named("testJar").get().outputs.files.singleFile.absolutePath
+        }",
     )
 
     testLogging {

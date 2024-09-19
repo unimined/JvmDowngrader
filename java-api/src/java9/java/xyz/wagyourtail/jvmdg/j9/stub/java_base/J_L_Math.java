@@ -64,10 +64,10 @@ public class J_L_Math {
                 return a * b + c; // Handled signed zero cases
             } else {
                 return (
-                        BigDecimal.valueOf((double) a * (double) b) // Exact multiply
-                                .add(new BigDecimal(c))
+                    BigDecimal.valueOf((double) a * (double) b) // Exact multiply
+                        .add(new BigDecimal(c))
                 )      // Exact sum
-                        .floatValue();                            // One rounding
+                    .floatValue();                            // One rounding
                 // to a float value
             }
         } else {
@@ -87,7 +87,7 @@ public class J_L_Math {
 
             if (infiniteA || infiniteB || infiniteC) {
                 if (infiniteA && b == 0.0 ||
-                        infiniteB && a == 0.0) {
+                    infiniteB && a == 0.0) {
                     return Double.NaN;
                 }
                 double product = a * b;

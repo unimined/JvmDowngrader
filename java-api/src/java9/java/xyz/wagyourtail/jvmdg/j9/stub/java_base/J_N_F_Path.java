@@ -4,11 +4,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.WatchEvent;
-import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
+import java.nio.file.*;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 

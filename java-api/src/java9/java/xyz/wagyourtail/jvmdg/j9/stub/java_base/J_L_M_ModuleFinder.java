@@ -15,4 +15,5 @@ public interface J_L_M_ModuleFinder {
     Optional<J_L_M_ModuleReference> find(String name);
 
     Set<J_L_M_ModuleReference> findAll();
+
 }

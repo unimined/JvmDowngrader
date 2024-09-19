@@ -16,4 +16,5 @@ public class J_U_Iterator {
             action.accept(iterator.next());
         }
     }
+
 }

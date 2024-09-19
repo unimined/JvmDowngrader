@@ -37,7 +37,7 @@ public class J_I_Console {
         PrintWriter pw = console.writer();
         pw.printf(locale, format, args);
         pw.flush();
-        return  console.readPassword();
+        return console.readPassword();
     }
 
 }

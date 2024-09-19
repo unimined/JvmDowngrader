@@ -87,4 +87,5 @@ public class SequencedSet<E> implements Set<E> {
     public boolean contains(Object o) {
         return map.containsKey(o);
     }
+
 }

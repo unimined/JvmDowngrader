@@ -2,11 +2,7 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.VarInsnNode;
+import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
@@ -90,4 +86,5 @@ public class J_N_URLClassLoader {
         mnode.instructions.insert(node, list);
         mnode.instructions.remove(node);
     }
+
 }

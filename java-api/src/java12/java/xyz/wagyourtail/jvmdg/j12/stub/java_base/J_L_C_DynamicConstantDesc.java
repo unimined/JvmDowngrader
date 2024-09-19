@@ -41,7 +41,8 @@ public abstract class J_L_C_DynamicConstantDesc<T> implements J_L_C_ConstantDesc
         J_L_C_ClassDesc constantType,
         J_L_C_ConstantDesc... bsmArgs
     ) {
-        return new J_L_C_DynamicConstantDesc<>(bsm, constantName, constantType, bsmArgs) {};
+        return new J_L_C_DynamicConstantDesc<>(bsm, constantName, constantType, bsmArgs) {
+        };
     }
 
     public static <T> J_L_C_DynamicConstantDesc<T> of(J_L_C_DirectMethodHandleDesc bsm, J_L_C_ConstantDesc[] args) {
@@ -95,7 +96,6 @@ public abstract class J_L_C_DynamicConstantDesc<T> implements J_L_C_ConstantDesc
             throw new BootstrapMethodError(e);
         }
     }
-
 
 
 }

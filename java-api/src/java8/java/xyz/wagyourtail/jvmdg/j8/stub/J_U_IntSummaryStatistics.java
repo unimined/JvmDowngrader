@@ -50,15 +50,16 @@ public class J_U_IntSummaryStatistics implements J_U_F_IntConsumer {
     @Override
     public String toString() {
         return "IntSummaryStatistics{" +
-                "count=" + count +
-                ", sum=" + sum +
-                ", min=" + min +
-                ", max=" + max +
-                '}';
+            "count=" + count +
+            ", sum=" + sum +
+            ", min=" + min +
+            ", max=" + max +
+            '}';
     }
 
     @Override
     public J_U_F_IntConsumer andThen(J_U_F_IntConsumer after) {
         return J_U_F_IntConsumer.IntConsumerDefaults.andThen(this, after);
     }
+
 }

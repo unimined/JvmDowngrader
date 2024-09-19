@@ -33,7 +33,7 @@ public class J_U_S_LongStream {
             }
         }
         return LongStream.concat(LongStream.of(next),
-                StreamSupport.longStream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
+            StreamSupport.longStream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
     }
 
     @Stub(ref = @Ref("Ljava/util/stream/LongStream;"))

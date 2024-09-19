@@ -3,14 +3,12 @@ package xyz.wagyourtail.gradle.coverage
 import org.gradle.api.JavaVersion
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.internal.ConventionTask
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 
 @CacheableTask
-abstract class CoverageRunTask : JavaExec() {
+abstract class CoverageRunTask: JavaExec() {
 
     @get:InputFile
     @get:PathSensitive(PathSensitivity.NONE)
@@ -52,6 +50,5 @@ abstract class CoverageRunTask : JavaExec() {
 
         super.exec()
     }
-
 
 }

@@ -1,7 +1,5 @@
 package xyz.wagyourtail.jvmdg.site.maven.transform
 
-import kotlinx.html.dom.document
-import java.io.ByteArrayInputStream
 import java.io.InputStream
 import java.nio.file.Path
 import javax.xml.parsers.DocumentBuilderFactory

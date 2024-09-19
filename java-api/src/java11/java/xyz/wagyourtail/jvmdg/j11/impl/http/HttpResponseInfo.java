@@ -29,4 +29,5 @@ public class HttpResponseInfo implements J_N_H_HttpResponse.ResponseInfo {
     public J_N_H_HttpClient.Version version() {
         return version;
     }
+
 }

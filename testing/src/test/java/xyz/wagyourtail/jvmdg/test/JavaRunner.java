@@ -1,19 +1,9 @@
 package xyz.wagyourtail.jvmdg.test;
 
-import com.google.gson.JsonParser;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-
 import java.io.*;
-import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.zip.GZIPInputStream;
 
 public class JavaRunner {
 //    private static final String os = System.getProperty("os.name").toLowerCase();
@@ -245,6 +235,10 @@ public class JavaRunner {
             return JavaVersion.values()[vers - 1];
         }
 
+        public static JavaVersion fromOpcode(int opcode) {
+            return JavaVersion.values()[opcode - 45];
+        }
+
         public int getMajorVersion() {
             return this.ordinal() + 1;
         }
@@ -252,9 +246,6 @@ public class JavaRunner {
         public int toOpcode() {
             return this.ordinal() + 45;
         }
-
-        public static JavaVersion fromOpcode(int opcode) {
-            return JavaVersion.values()[opcode - 45];
-        }
     }
+
 }

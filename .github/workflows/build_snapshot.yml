@@ -47,7 +47,7 @@ jobs:
         with:
           name: gradle
           path: gradle-plugin/build/libs
-          
+
       - uses: actions/upload-artifact@v4
         with:
           name: test-downgrade

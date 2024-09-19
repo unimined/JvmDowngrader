@@ -4,8 +4,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.eclipse.aether.transfer.TransferEvent
 import org.eclipse.aether.transfer.TransferListener
 
-class ConsoleTransferListener : TransferListener {
-    private val LOGGER = KotlinLogging.logger {  }
+class ConsoleTransferListener: TransferListener {
+    private val LOGGER = KotlinLogging.logger { }
 
     override fun transferInitiated(p0: TransferEvent) {
         val message = if (p0.requestType == TransferEvent.RequestType.PUT) "Uploading" else "Downloading"

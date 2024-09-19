@@ -1,26 +1,18 @@
 package xyz.wagyourtail.jvmdg.compile;
 
 import org.jetbrains.annotations.Nullable;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.ConstantDynamic;
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.SimpleRemapper;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.InvokeDynamicInsnNode;
-import org.objectweb.asm.tree.LdcInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.shade.ReferenceGraph;
 import xyz.wagyourtail.jvmdg.logging.Logger;
-import xyz.wagyourtail.jvmdg.util.*;
+import xyz.wagyourtail.jvmdg.util.AsyncUtils;
+import xyz.wagyourtail.jvmdg.util.IOConsumer;
+import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
@@ -90,7 +82,7 @@ public class ApiShader {
     public static void shadeApis(Flags flags, List<String> prefix, List<Path> inputRoots, List<Path> outputRoots, Set<File> downgradedApi) throws IOException {
         for (String p : prefix) {
             if (!p.endsWith("/")) {
-                throw new IllegalArgumentException("prefix \""+ p +"\" must end with /");
+                throw new IllegalArgumentException("prefix \"" + p + "\" must end with /");
             }
         }
         Set<Path> downgradedApiPath = resolveDowngradedApi(flags, downgradedApi);
