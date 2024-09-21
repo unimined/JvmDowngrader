@@ -15,6 +15,7 @@ public class Java18Downgrader extends VersionProvider {
         stub(J_I_PrintStream.class);
         stub(J_L_Math.class);
         stub(J_L_StrictMath.class);
+        stub(J_L_System.class);
         stub(J_N_C_Charset.class);
         // InetAddressResolver
         // InetAddressResolverProvider
