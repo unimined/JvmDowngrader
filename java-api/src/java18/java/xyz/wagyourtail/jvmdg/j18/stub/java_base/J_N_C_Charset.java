@@ -4,6 +4,7 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 
 public class J_N_C_Charset {
@@ -16,5 +17,14 @@ public class J_N_C_Charset {
             return defaultCharset;
         }
     }
+
+    /**
+     * JEP 400
+     */
+    @Stub(ref = @Ref("java/nio/charset/Charset"))
+    public static Charset defaultCharset() {
+        return StandardCharsets.UTF_8;
+    }
+
 
 }
