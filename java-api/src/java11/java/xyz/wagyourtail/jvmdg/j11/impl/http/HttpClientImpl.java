@@ -8,14 +8,12 @@ import xyz.wagyourtail.jvmdg.util.Utils;
 
 import javax.net.ssl.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
@@ -98,6 +96,21 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         return sendImpl(var1, handler, null);
     }
 
+    protected static void putHeaders(URLConnection connection, String key, List<String> values) {
+        if (values.isEmpty()) {
+            return;
+        }
+        if (key.equalsIgnoreCase("cookie")) {
+            connection.setRequestProperty("Cookie", String.join("; ", values));
+        } else {
+            Iterator<String> iter = values.iterator();
+            connection.setRequestProperty(key, iter.next());
+            while (iter.hasNext()) {
+                connection.addRequestProperty(key, iter.next());
+            }
+        }
+    }
+
     protected <T> J_N_H_HttpResponse<T> sendImpl(J_N_H_HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler, J_N_H_HttpResponse.PushPromiseHandler<T> pushPromiseHandler) throws IOException, InterruptedException {
         HttpURLConnection connection;
         Objects.requireNonNull(var1);
@@ -126,7 +139,18 @@ public class HttpClientImpl extends J_N_H_HttpClient {
 
         HttpRequestImpl request = (HttpRequestImpl) var1;
 
-        request.headers.forEach((k, v) -> connection.setRequestProperty(k, String.join(",", v)));
+        Map<String, List<String>> headers = new HashMap<>();
+        for (Map.Entry<String, List<String>> header : request.headers.entrySet()) {
+            headers.computeIfAbsent(header.getKey(), k -> new ArrayList<>()).addAll(header.getValue());
+        }
+        if (cookieHandler != null) {
+            for (Map.Entry<String, List<String>> header : cookieHandler.get(var1.uri(), request.headers).entrySet()) {
+                headers.computeIfAbsent(header.getKey(), k -> new ArrayList<>()).addAll(header.getValue());
+            }
+        }
+        for (Map.Entry<String, List<String>> header : headers.entrySet()) {
+            putHeaders(connection, header.getKey(), header.getValue());
+        }
 
         J_N_H_HttpRequest.BodyPublisher publisher = request.publisher;
 
@@ -156,7 +180,7 @@ public class HttpClientImpl extends J_N_H_HttpClient {
                 @Override
                 public void onNext(ByteBuffer item) {
                     try {
-                        out.write(item.array());
+                        out.write(item.array(), item.arrayOffset() + item.position(), item.remaining());
                     } catch (IOException e) {
                         Utils.sneakyThrow(e);
                     }
@@ -186,15 +210,23 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         }
 
         int responseCode = connection.getResponseCode();
-        Map<String, List<String>> headers = connection.getHeaderFields();
+        headers = new HashMap<>(connection.getHeaderFields());
+        if (cookieHandler != null) {
+            cookieHandler.put(var1.uri(), headers);
+        }
+        headers.remove(null);
         Version version = J_N_H_HttpClient.Version.HTTP_1_1;
         HttpResponseInfo info = new HttpResponseInfo(responseCode, new J_N_H_HttpHeaders(headers), version);
         J_N_H_HttpResponse.BodySubscriber<T> subscriber = handler.apply(info);
-        subscriber.onNext(List.of(ByteBuffer.wrap(connection.getInputStream().readAllBytes())));
-        subscriber.onComplete();
-        T body = subscriber.getBody().toCompletableFuture().join();
+        try (InputStream is = responseCode >= 400 ? connection.getErrorStream() : connection.getInputStream()) {
+            if (is != null) {
+                subscriber.onNext(List.of(ByteBuffer.wrap(is.readAllBytes())));
+            }
+            subscriber.onComplete();
+            T body = subscriber.getBody().toCompletableFuture().join();
 
-        return new HttpResponseImpl<>(var1, info, body, null);
+            return new HttpResponseImpl<>(var1, info, body, null);
+        }
     }
 
     @Override

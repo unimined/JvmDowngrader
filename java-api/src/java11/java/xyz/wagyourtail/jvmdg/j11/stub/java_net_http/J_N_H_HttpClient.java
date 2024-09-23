@@ -23,12 +23,12 @@ import java.util.concurrent.Executor;
  * the following attributes are <i>currently</i> a no-op
  * {@link #version()},
  * {@link J_N_H_HttpRequest#expectContinue()},
- * {@link #cookieHandler()},
  * {@link #authenticator()}
  * <p>
  * the following attributes haven't been tested for correctness
  * {@link #proxy()},
  * {@link #followRedirects()},
+ * {@link #cookieHandler()},
  * {@link #sslParameters()}
  * <p>
  * Body publishers and all the {@link java.util.concurrent.Flow} implementations also haven't been tested completely.

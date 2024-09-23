@@ -304,7 +304,7 @@ public interface J_N_H_HttpResponse<T> {
 
                 @Override
                 public void onNext(List<ByteBuffer> item) {
-                    subscriber.onNext(item.stream().map((b) -> new String(b.array(), charset)).reduce("", String::concat));
+                    subscriber.onNext(item.stream().map((b) -> new String(b.array(), b.arrayOffset() + b.position(), b.remaining(), charset)).reduce("", String::concat));
                 }
 
                 @Override
@@ -338,7 +338,7 @@ public interface J_N_H_HttpResponse<T> {
 
                 @Override
                 public void onNext(List<ByteBuffer> item) {
-                    item.forEach((b) -> builder.append(new String(b.array(), charset)));
+                    item.forEach((b) -> builder.append(new String(b.array(), b.arrayOffset() + b.position(), b.remaining(), charset)));
                 }
 
                 @Override
@@ -371,11 +371,7 @@ public interface J_N_H_HttpResponse<T> {
                 @Override
                 public void onNext(List<ByteBuffer> item) {
                     item.forEach((b) -> {
-                        try {
-                            out.write(b.array());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                        out.write(b.array(), b.arrayOffset() + b.position(), b.remaining());
                     });
                 }
 
@@ -409,7 +405,7 @@ public interface J_N_H_HttpResponse<T> {
                     try {
                         try (var out = Files.newOutputStream(file, options)) {
                             for (ByteBuffer b : item) {
-                                out.write(b.array());
+                                out.write(b.array(), b.arrayOffset() + b.position(), b.remaining());
                             }
                         }
                     } catch (IOException e) {
@@ -450,11 +446,7 @@ public interface J_N_H_HttpResponse<T> {
                 public void onNext(List<ByteBuffer> item) {
                     ByteArrayOutputStream out = new ByteArrayOutputStream();
                     item.forEach((b) -> {
-                        try {
-                            out.write(b.array());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                        out.write(b.array(), b.arrayOffset() + b.position(), b.remaining());
                     });
                     consumer.accept(Optional.of(out.toByteArray()));
                 }
@@ -490,11 +482,7 @@ public interface J_N_H_HttpResponse<T> {
                 @Override
                 public void onNext(List<ByteBuffer> item) {
                     item.forEach((b) -> {
-                        try {
-                            out.write(b.array());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                        out.write(b.array(), b.arrayOffset() + b.position(), b.remaining());
                     });
                 }
 
@@ -527,7 +515,7 @@ public interface J_N_H_HttpResponse<T> {
 
                 @Override
                 public void onNext(List<ByteBuffer> item) {
-                    item.forEach((b) -> builder.append(new String(b.array(), charset)));
+                    item.forEach((b) -> builder.append(new String(b.array(), b.arrayOffset() + b.position(), b.remaining(), charset)));
                 }
 
                 @Override
