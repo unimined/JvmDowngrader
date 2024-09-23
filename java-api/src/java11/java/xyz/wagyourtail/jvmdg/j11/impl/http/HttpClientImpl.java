@@ -125,6 +125,7 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         HttpRequestImpl request = (HttpRequestImpl) var1;
 
         request.headers.forEach((k, v) -> connection.setRequestProperty(k, String.join(",", v)));
+        cookieHandler.get(var1.uri(), request.headers).forEach((k, v) -> connection.setRequestProperty(k, String.join(",", v)));
 
         J_N_H_HttpRequest.BodyPublisher publisher = request.publisher;
 
@@ -185,6 +186,7 @@ public class HttpClientImpl extends J_N_H_HttpClient {
 
         int responseCode = connection.getResponseCode();
         Map<String, List<String>> headers = new HashMap<>(connection.getHeaderFields());
+        cookieHandler.put(var1.uri(), headers);
         headers.remove(null);
         Version version = J_N_H_HttpClient.Version.HTTP_1_1;
         HttpResponseInfo info = new HttpResponseInfo(responseCode, new J_N_H_HttpHeaders(headers), version);
