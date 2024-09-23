@@ -1,16 +1,16 @@
-package xyz.wagyourtail.jvmdg.classloader;
+package xyz.wagyourtail.jvmdg.collection;
 
 import xyz.wagyourtail.jvmdg.util.Function;
 
 import java.util.Enumeration;
 
-public class FlatEnumeration<T, E> implements Enumeration<E> {
+public class FlatMapEnumeration<T, E> implements Enumeration<E> {
     private final Enumeration<T> enumeration;
     private final Function<T, Enumeration<E>> mapper;
 
     private Enumeration<E> currentEnumeration = null;
 
-    public FlatEnumeration(Enumeration<T> enumeration, Function<T, Enumeration<E>> mapper) {
+    public FlatMapEnumeration(Enumeration<T> enumeration, Function<T, Enumeration<E>> mapper) {
         this.enumeration = enumeration;
         this.mapper = mapper;
     }

@@ -64,8 +64,6 @@ public class Flags {
      * @since 0.9.0
      */
     public TreeMap<String, WildcardType> ignoreWarningsIn = new TreeMap<>();
-
-    // debug
     /**
      * sets if maven lookup is allowed for auto resolving {@link #api}
      */

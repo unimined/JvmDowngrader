@@ -37,6 +37,7 @@ public class ClassDowngrader implements Closeable {
     public final Logger logger;
     private final Map<Integer, VersionProvider> downgraders;
     private final DowngradingClassLoader classLoader;
+    protected int maxVersion = -1;
 
     protected ClassDowngrader(@NotNull Flags flags) {
         this.flags = flags;
@@ -48,6 +49,22 @@ public class ClassDowngrader implements Closeable {
             throw new RuntimeException(e);
         }
         downgraders = collectProviders();
+    }
+
+    public int maxVersion() {
+        if (maxVersion == -1) {
+            synchronized (this) {
+                if (maxVersion == -1) {
+                    int max = target;
+                    Set<Integer> ints = downgraders.keySet();
+                    for (Integer i : ints) {
+                        max = Math.max(max, i);
+                    }
+                    maxVersion = max;
+                }
+            }
+        }
+        return maxVersion;
     }
 
     @NotNull

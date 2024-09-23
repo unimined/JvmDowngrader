@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.classloader;
 
 import xyz.wagyourtail.jvmdg.classloader.providers.ClassLoaderResourceProvider;
 import xyz.wagyourtail.jvmdg.classloader.providers.JarFileResourceProvider;
+import xyz.wagyourtail.jvmdg.collection.FlatMapEnumeration;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -38,7 +39,9 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
             }
         }
         // fallback on normal classloader
-        addDelegate(failed.toArray(new URL[0]));
+        if (!failed.isEmpty()) {
+            addDelegate(failed.toArray(new URL[0]));
+        }
     }
 
     public void addDelegate(ClassLoader loader) {
@@ -78,7 +81,7 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
 
     @Override
     protected Enumeration<URL> findResources(final String name) {
-        return new FlatEnumeration<>(Collections.enumeration(delegates), new Function<ResourceProvider, Enumeration<URL>>() {
+        return new FlatMapEnumeration<>(Collections.enumeration(delegates), new Function<ResourceProvider, Enumeration<URL>>() {
             @Override
             public Enumeration<URL> apply(ResourceProvider resourceProvider) {
                 try {

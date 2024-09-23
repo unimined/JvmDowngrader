@@ -64,6 +64,12 @@ public class PathDowngrader {
             for (int i = 0; i < inputRoots.size(); i++) {
                 final Path in = inputRoots.get(i);
                 final Path out = outputRoots.get(i);
+
+                final List<Path> multiReleasePaths = new ArrayList<>();
+                for (int j = downgrader.maxVersion(); j >= 52; i--) {
+                    multiReleasePaths.add(in.resolve("META-INF/versions/" + Utils.classVersionToMajorVersion(j)));
+                }
+
                 AsyncUtils.visitPathsAsync(in, new IOFunction<Path, Boolean>() {
 
                     @Override
@@ -79,12 +85,15 @@ public class PathDowngrader {
                         Path relativized = in.relativize(path);
                         Path outFile = out.resolve(relativized.toString());
                         if (path.getFileName().toString().endsWith(".class")) {
-                            if (relativized.startsWith("META-INF/versions")) {
-                                String version = relativized.getName(2).toString();
-                                if (downgrader.flags.multiReleaseOriginal || downgrader.flags.multiReleaseVersions.contains(Utils.majorVersionToClassVersion(Integer.parseInt(version)))) {
-                                    Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
+                            if (!relativized.startsWith("META-INF/versions")) {
+                                // prefer multi-release over normal
+                                for (Path pth : multiReleasePaths) {
+                                    if (Files.exists(pth.resolve(relativized))) {
+                                        path = pth.resolve(relativized);
+                                        break;
+                                    }
                                 }
-                            } else {
+
                                 try {
                                     String relativizedName = relativized.toString();
                                     if (relativized.getFileSystem().getSeparator().equals("\\")) {
