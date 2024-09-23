@@ -5,6 +5,7 @@ import xyz.wagyourtail.jvmdg.collection.FlatMapEnumeration;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.io.Closeable;
 import java.io.File;
@@ -38,10 +39,6 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
             this.currentVersionDowngrader = downgrader;
         }
         logger = holder.logger.subLogger(DowngradingClassLoader.class);
-        for (int i = holder.maxVersion(); i >= 52; i--) {
-            multiVersionList.add(i);
-        }
-        multiVersionList.add(-1);
     }
 
     public DowngradingClassLoader(ClassDowngrader downgrader, ClassLoader parent) throws IOException {
@@ -122,6 +119,19 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
 
     @Override
     protected Enumeration<URL> findResources(final String name) {
+        if (name.equals("META-INF/services/" + VersionProvider.class.getName())) {
+            return super.findResources(name);
+        }
+        if (multiVersionList.isEmpty()) {
+            synchronized (this) {
+                if (multiVersionList.isEmpty()) {
+                    for (int i = holder.maxVersion(); i >= 52; i--) {
+                        multiVersionList.add(i);
+                    }
+                    multiVersionList.add(-1);
+                }
+            }
+        }
         return new FlatMapEnumeration<>(Collections.enumeration(multiVersionList), new Function<Integer, Enumeration<URL>>() {
             @Override
             public Enumeration<URL> apply(Integer integer) {
