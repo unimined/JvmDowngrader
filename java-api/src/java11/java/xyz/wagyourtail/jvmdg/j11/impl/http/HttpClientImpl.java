@@ -139,8 +139,16 @@ public class HttpClientImpl extends J_N_H_HttpClient {
 
         HttpRequestImpl request = (HttpRequestImpl) var1;
 
-        request.headers.forEach((k, v) -> putHeaders(connection, k, v));
-        cookieHandler.get(var1.uri(), request.headers).forEach((k, v) -> putHeaders(connection, k, v));
+        Map<String, List<String>> headers = new HashMap<>();
+        for (Map.Entry<String, List<String>> header : request.headers.entrySet()) {
+            headers.computeIfAbsent(header.getKey(), k -> new ArrayList<>()).addAll(header.getValue());
+        }
+        for (Map.Entry<String, List<String>> header : cookieHandler.get(var1.uri(), request.headers).entrySet()) {
+            headers.computeIfAbsent(header.getKey(), k -> new ArrayList<>()).addAll(header.getValue());
+        }
+        for (Map.Entry<String, List<String>> header : headers.entrySet()) {
+            putHeaders(connection, header.getKey(), header.getValue());
+        }
 
         J_N_H_HttpRequest.BodyPublisher publisher = request.publisher;
 
