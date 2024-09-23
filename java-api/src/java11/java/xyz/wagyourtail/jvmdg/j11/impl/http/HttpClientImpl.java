@@ -96,6 +96,17 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         return sendImpl(var1, handler, null);
     }
 
+    protected static void putHeaders(URLConnection connection, String key, List<String> values) {
+        if (values.isEmpty()) {
+            return;
+        }
+        Iterator<String> iter = values.iterator();
+        connection.setRequestProperty(key, iter.next());
+        while (iter.hasNext()) {
+            connection.addRequestProperty(key, iter.next());
+        }
+    }
+
     protected <T> J_N_H_HttpResponse<T> sendImpl(J_N_H_HttpRequest var1, J_N_H_HttpResponse.BodyHandler<T> handler, J_N_H_HttpResponse.PushPromiseHandler<T> pushPromiseHandler) throws IOException, InterruptedException {
         HttpURLConnection connection;
         Objects.requireNonNull(var1);
@@ -124,8 +135,8 @@ public class HttpClientImpl extends J_N_H_HttpClient {
 
         HttpRequestImpl request = (HttpRequestImpl) var1;
 
-        request.headers.forEach((k, v) -> connection.setRequestProperty(k, String.join(",", v)));
-        cookieHandler.get(var1.uri(), request.headers).forEach((k, v) -> connection.setRequestProperty(k, String.join(",", v)));
+        request.headers.forEach((k, v) -> putHeaders(connection, k, v));
+        cookieHandler.get(var1.uri(), request.headers).forEach((k, v) -> putHeaders(connection, k, v));
 
         J_N_H_HttpRequest.BodyPublisher publisher = request.publisher;
 
