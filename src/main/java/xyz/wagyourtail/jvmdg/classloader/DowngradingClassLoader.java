@@ -119,13 +119,17 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
 
     @Override
     protected Enumeration<URL> findResources(final String name) {
-        if (name.equals("META-INF/services/" + VersionProvider.class.getName())) {
-            return super.findResources(name);
-        }
         if (multiVersionList.isEmpty()) {
             synchronized (this) {
                 if (multiVersionList.isEmpty()) {
-                    for (int i = holder.maxVersion(); i >= 52; i--) {
+
+                    int max = holder.maxVersion();
+                    // still initializing?
+                    if (max == -1) {
+                        return super.findResources(name);
+                    }
+
+                    for (int i = max; i >= 52; i--) {
                         multiVersionList.add(i);
                     }
                     multiVersionList.add(-1);

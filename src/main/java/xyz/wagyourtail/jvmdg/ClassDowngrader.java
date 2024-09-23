@@ -52,6 +52,9 @@ public class ClassDowngrader implements Closeable {
     }
 
     public int maxVersion() {
+        if (downgraders == null) {
+            return -1;
+        }
         if (maxVersion == -1) {
             synchronized (this) {
                 if (maxVersion == -1) {
