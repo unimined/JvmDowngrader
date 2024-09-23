@@ -143,8 +143,10 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         for (Map.Entry<String, List<String>> header : request.headers.entrySet()) {
             headers.computeIfAbsent(header.getKey(), k -> new ArrayList<>()).addAll(header.getValue());
         }
-        for (Map.Entry<String, List<String>> header : cookieHandler.get(var1.uri(), request.headers).entrySet()) {
-            headers.computeIfAbsent(header.getKey(), k -> new ArrayList<>()).addAll(header.getValue());
+        if (cookieHandler != null) {
+            for (Map.Entry<String, List<String>> header : cookieHandler.get(var1.uri(), request.headers).entrySet()) {
+                headers.computeIfAbsent(header.getKey(), k -> new ArrayList<>()).addAll(header.getValue());
+            }
         }
         for (Map.Entry<String, List<String>> header : headers.entrySet()) {
             putHeaders(connection, header.getKey(), header.getValue());
