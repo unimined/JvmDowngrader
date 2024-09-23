@@ -178,9 +178,7 @@ public abstract class J_N_H_HttpRequest {
                                 return;
                             }
                             completed = true;
-                            ByteBuffer buffer = ByteBuffer.wrap(bytes, offset, length);
-                            buffer.flip();
-                            subscriber.onNext(buffer);
+                            subscriber.onNext(ByteBuffer.wrap(bytes, offset, length));
                             subscriber.onComplete();
                         }
 
@@ -220,9 +218,7 @@ public abstract class J_N_H_HttpRequest {
                             }
                             completed = true;
                             try (InputStream is = Files.newInputStream(file)) {
-                                ByteBuffer buffer = ByteBuffer.wrap(is.readAllBytes());
-                                buffer.flip();
-                                subscriber.onNext(buffer);
+                                subscriber.onNext(ByteBuffer.wrap(is.readAllBytes()));
                                 subscriber.onComplete();
                             } catch (Exception e) {
                                 subscriber.onError(e);

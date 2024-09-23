@@ -154,7 +154,7 @@ public class HttpClientImpl extends J_N_H_HttpClient {
                 @Override
                 public void onNext(ByteBuffer item) {
                     try {
-                        out.write(item.array());
+                        out.write(item.array(), item.arrayOffset() + item.position(), item.remaining());
                     } catch (IOException e) {
                         Utils.sneakyThrow(e);
                     }
@@ -190,7 +190,9 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         HttpResponseInfo info = new HttpResponseInfo(responseCode, new J_N_H_HttpHeaders(headers), version);
         J_N_H_HttpResponse.BodySubscriber<T> subscriber = handler.apply(info);
         try (InputStream is = responseCode >= 400 ? connection.getErrorStream() : connection.getInputStream()) {
-            subscriber.onNext(List.of(ByteBuffer.wrap(is.readAllBytes())));
+            if (is != null) {
+                subscriber.onNext(List.of(ByteBuffer.wrap(is.readAllBytes())));
+            }
             subscriber.onComplete();
             T body = subscriber.getBody().toCompletableFuture().join();
 
