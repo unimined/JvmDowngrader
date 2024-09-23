@@ -208,7 +208,7 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         }
 
         int responseCode = connection.getResponseCode();
-        Map<String, List<String>> headers = new HashMap<>(connection.getHeaderFields());
+        headers = new HashMap<>(connection.getHeaderFields());
         cookieHandler.put(var1.uri(), headers);
         headers.remove(null);
         Version version = J_N_H_HttpClient.Version.HTTP_1_1;
