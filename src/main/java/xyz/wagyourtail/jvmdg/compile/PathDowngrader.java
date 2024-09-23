@@ -66,7 +66,7 @@ public class PathDowngrader {
                 final Path out = outputRoots.get(i);
 
                 final List<Path> multiReleasePaths = new ArrayList<>();
-                for (int j = downgrader.maxVersion(); j >= 52; i--) {
+                for (int j = downgrader.maxVersion(); j >= 52; j--) {
                     multiReleasePaths.add(in.resolve("META-INF/versions/" + Utils.classVersionToMajorVersion(j)));
                 }
 
