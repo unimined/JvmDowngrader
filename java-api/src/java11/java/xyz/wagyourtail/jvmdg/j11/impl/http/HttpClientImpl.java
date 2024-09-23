@@ -100,10 +100,14 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         if (values.isEmpty()) {
             return;
         }
-        Iterator<String> iter = values.iterator();
-        connection.setRequestProperty(key, iter.next());
-        while (iter.hasNext()) {
-            connection.addRequestProperty(key, iter.next());
+        if (key.equalsIgnoreCase("cookie")) {
+            connection.setRequestProperty("Cookie", String.join("; ", values));
+        } else {
+            Iterator<String> iter = values.iterator();
+            connection.setRequestProperty(key, iter.next());
+            while (iter.hasNext()) {
+                connection.addRequestProperty(key, iter.next());
+            }
         }
     }
 
