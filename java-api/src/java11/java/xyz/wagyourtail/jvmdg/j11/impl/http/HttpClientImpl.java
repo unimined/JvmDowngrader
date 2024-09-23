@@ -24,10 +24,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
@@ -198,7 +195,8 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         }
 
         int responseCode = connection.getResponseCode();
-        Map<String, List<String>> headers = connection.getHeaderFields();
+        Map<String, List<String>> headers = new HashMap<>(connection.getHeaderFields());
+        headers.remove(null);
         Version version = J_N_H_HttpClient.Version.HTTP_1_1;
         HttpResponseInfo info = new HttpResponseInfo(responseCode, new J_N_H_HttpHeaders(headers), version);
         J_N_H_HttpResponse.BodySubscriber<T> subscriber = handler.apply(info);
