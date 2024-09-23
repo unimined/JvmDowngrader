@@ -143,7 +143,7 @@ val coverageReport by tasks.registering(CoverageRunTask::class) {
     apiJar.set(testJar.get().archiveFile.get().asFile)
     classpath = coverage.runtimeClasspath
     ctSym.set(genCtSym.get().ctSym)
-    javaVersion = toVersion
+    javaVersion = toVersion - 1
 }
 
 tasks.jar {
