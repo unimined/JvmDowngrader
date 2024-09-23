@@ -6,25 +6,17 @@ import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpRequest;
 import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpResponse;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.Authenticator;
-import java.net.CookieHandler;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.Proxy;
-import java.net.ProxySelector;
-import java.net.Socket;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.time.Duration;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
@@ -195,16 +187,17 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         }
 
         int responseCode = connection.getResponseCode();
-        Map<String, List<String>> headers = new HashMap<>(connection.getHeaderFields());
-        headers.remove(null);
+        Map<String, List<String>> headers = connection.getHeaderFields();
         Version version = J_N_H_HttpClient.Version.HTTP_1_1;
         HttpResponseInfo info = new HttpResponseInfo(responseCode, new J_N_H_HttpHeaders(headers), version);
         J_N_H_HttpResponse.BodySubscriber<T> subscriber = handler.apply(info);
-        subscriber.onNext(List.of(ByteBuffer.wrap(connection.getInputStream().readAllBytes())));
-        subscriber.onComplete();
-        T body = subscriber.getBody().toCompletableFuture().join();
+        try (InputStream is = responseCode >= 400 ? connection.getErrorStream() : connection.getInputStream()) {
+            subscriber.onNext(List.of(ByteBuffer.wrap(is.readAllBytes())));
+            subscriber.onComplete();
+            T body = subscriber.getBody().toCompletableFuture().join();
 
-        return new HttpResponseImpl<>(var1, info, body, null);
+            return new HttpResponseImpl<>(var1, info, body, null);
+        }
     }
 
     @Override
@@ -278,6 +271,7 @@ public class HttpClientImpl extends J_N_H_HttpClient {
             socket.setSSLParameters(sslParams);
             return socket;
         }
+
     }
 
 }
