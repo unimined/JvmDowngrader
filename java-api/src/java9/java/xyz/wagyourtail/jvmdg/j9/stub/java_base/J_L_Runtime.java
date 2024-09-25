@@ -29,10 +29,7 @@ public class J_L_Runtime {
         private final Optional<Integer> build;
         private final Optional<String> optional;
 
-        private Version(List<Integer> unmodifiableListOfVersions,
-                        Optional<String> pre,
-                        Optional<Integer> build,
-                        Optional<String> optional) {
+        private Version(List<Integer> unmodifiableListOfVersions, Optional<String> pre, Optional<Integer> build, Optional<String> optional) {
             this.version = unmodifiableListOfVersions;
             this.pre = pre;
             this.build = build;
@@ -40,19 +37,15 @@ public class J_L_Runtime {
         }
 
         public static Version parse(String s) {
-            if (s == null)
-                throw new NullPointerException();
+            if (s == null) throw new NullPointerException();
 
             // Shortcut to avoid initializing VersionPattern when creating
             // feature-version constants during startup
             if (isSimpleNumber(s)) {
-                return new Version(Collections.singletonList(Integer.parseInt(s)),
-                    Optional.empty(), Optional.empty(), Optional.empty());
+                return new Version(Collections.singletonList(Integer.parseInt(s)), Optional.empty(), Optional.empty(), Optional.empty());
             }
             Matcher m = VersionPattern.VSTR_PATTERN.matcher(s);
-            if (!m.matches())
-                throw new IllegalArgumentException("Invalid version string: '"
-                    + s + "'");
+            if (!m.matches()) throw new IllegalArgumentException("Invalid version string: '" + s + "'");
 
             // $VNUM is a dot-separated list of integers of arbitrary length
             String[] split = m.group(VersionPattern.VNUM_GROUP).split("[._]");
@@ -61,40 +54,31 @@ public class J_L_Runtime {
                 version[i] = Integer.parseInt(split[i]);
             }
 
-            Optional<String> pre = Optional.ofNullable(
-                m.group(VersionPattern.PRE_GROUP));
+            Optional<String> pre = Optional.ofNullable(m.group(VersionPattern.PRE_GROUP));
 
             String b = m.group(VersionPattern.BUILD_GROUP);
             // $BUILD is an integer
-            Optional<Integer> build = (b == null)
-                ? Optional.empty()
-                : Optional.of(Integer.parseInt(b));
+            Optional<Integer> build = (b == null) ? Optional.empty() : Optional.of(Integer.parseInt(b));
 
             if (pre.isPresent() && !build.isPresent() && pre.get().matches("b\\d+")) {
                 build = Optional.of(Integer.parseInt(pre.get().substring(1)));
                 pre = Optional.empty();
             }
 
-            Optional<String> optional = Optional.ofNullable(
-                m.group(VersionPattern.OPT_GROUP));
+            Optional<String> optional = Optional.ofNullable(m.group(VersionPattern.OPT_GROUP));
 
             // empty '+'
             if (!build.isPresent()) {
                 if (m.group(VersionPattern.PLUS_GROUP) != null) {
                     if (optional.isPresent()) {
                         if (pre.isPresent())
-                            throw new IllegalArgumentException("'+' found with"
-                                + " pre-release and optional components:'" + s
-                                + "'");
+                            throw new IllegalArgumentException("'+' found with" + " pre-release and optional components:'" + s + "'");
                     } else {
-                        throw new IllegalArgumentException("'+' found with neither"
-                            + " build or optional components: '" + s + "'");
+                        throw new IllegalArgumentException("'+' found with neither" + " build or optional components: '" + s + "'");
                     }
                 } else {
                     if (optional.isPresent() && !pre.isPresent()) {
-                        throw new IllegalArgumentException("optional component"
-                            + " must be preceded by a pre-release component"
-                            + " or '+': '" + s + "'");
+                        throw new IllegalArgumentException("optional component" + " must be preceded by a pre-release component" + " or '+': '" + s + "'");
                     }
                 }
             }
@@ -150,23 +134,18 @@ public class J_L_Runtime {
         }
 
         private int compare(Version obj, boolean ignoreOpt) {
-            if (obj == null)
-                throw new NullPointerException();
+            if (obj == null) throw new NullPointerException();
 
             int ret = compareVersion(obj);
-            if (ret != 0)
-                return ret;
+            if (ret != 0) return ret;
 
             ret = comparePre(obj);
-            if (ret != 0)
-                return ret;
+            if (ret != 0) return ret;
 
             ret = compareBuild(obj);
-            if (ret != 0)
-                return ret;
+            if (ret != 0) return ret;
 
-            if (!ignoreOpt)
-                return compareOptional(obj);
+            if (!ignoreOpt) return compareOptional(obj);
 
             return 0;
         }
@@ -178,8 +157,7 @@ public class J_L_Runtime {
             for (int i = 0; i < min; i++) {
                 int val = version.get(i);
                 int oVal = obj.version().get(i);
-                if (val != oVal)
-                    return val - oVal;
+                if (val != oVal) return val - oVal;
             }
             return size - oSize;
         }
@@ -187,21 +165,15 @@ public class J_L_Runtime {
         private int comparePre(Version obj) {
             Optional<String> oPre = obj.pre();
             if (!pre.isPresent()) {
-                if (oPre.isPresent())
-                    return 1;
+                if (oPre.isPresent()) return 1;
             } else {
-                if (!oPre.isPresent())
-                    return -1;
+                if (!oPre.isPresent()) return -1;
                 String val = pre.get();
                 String oVal = oPre.get();
                 if (val.matches("\\d+")) {
-                    return (oVal.matches("\\d+")
-                        ? (new BigInteger(val)).compareTo(new BigInteger(oVal))
-                        : -1);
+                    return (oVal.matches("\\d+") ? (new BigInteger(val)).compareTo(new BigInteger(oVal)) : -1);
                 } else {
-                    return (oVal.matches("\\d+")
-                        ? 1
-                        : val.compareTo(oVal));
+                    return (oVal.matches("\\d+") ? 1 : val.compareTo(oVal));
                 }
             }
             return 0;
@@ -220,8 +192,7 @@ public class J_L_Runtime {
         private int compareOptional(Version obj) {
             Optional<String> oOpt = obj.optional();
             if (!optional.isPresent()) {
-                if (oOpt.isPresent())
-                    return -1;
+                if (oOpt.isPresent()) return -1;
             } else {
                 return oOpt.map(s -> optional.get().compareTo(s)).orElse(1);
             }
@@ -230,10 +201,7 @@ public class J_L_Runtime {
 
         @Override
         public String toString() {
-            StringBuilder sb
-                = new StringBuilder(version.stream()
-                .map(Object::toString)
-                .collect(Collectors.joining(".")));
+            StringBuilder sb = new StringBuilder(version.stream().map(Object::toString).collect(Collectors.joining(".")));
 
             pre.ifPresent(v -> sb.append("-").append(v));
 
@@ -253,21 +221,17 @@ public class J_L_Runtime {
         @Override
         public boolean equals(Object obj) {
             boolean ret = equalsIgnoreOptional(obj);
-            if (!ret)
-                return false;
+            if (!ret) return false;
 
             Version that = (Version) obj;
             return (this.optional().equals(that.optional()));
         }
 
         public boolean equalsIgnoreOptional(Object obj) {
-            if (this == obj)
-                return true;
+            if (this == obj) return true;
             if (obj instanceof Version) {
                 Version that = (Version) obj;
-                return (this.version().equals(that.version())
-                    && this.pre().equals(that.pre())
-                    && this.build().equals(that.build()));
+                return (this.version().equals(that.version()) && this.pre().equals(that.pre()) && this.build().equals(that.build()));
             }
             return false;
         }
@@ -295,12 +259,10 @@ public class J_L_Runtime {
             static final String PLUS_GROUP = "PLUS";
             static final String BUILD_GROUP = "BUILD";
             static final String OPT_GROUP = "OPT";
-            private static final String VNUM
-                = "(?:1\\.)?(?<VNUM>[1-9][0-9]*(?:(?:\\.0)*[._][1-9][0-9]*)*)";
+            private static final String VNUM = "(?:1\\.)?(?<VNUM>[1-9][0-9]*(?:(?:\\.0)*[._][1-9][0-9]*)*)";
             private static final String PRE = "(?:-(?<PRE>[a-zA-Z0-9]+))?";
-            private static final String BUILD
-                = "(?:(?<PLUS>\\+|-b)(?<BUILD>[0-9]+)?)?";
-            private static final String OPT = "(?:-(?<OPT>[-a-zA-Z0-9.]+))?";
+            private static final String BUILD = "(?:(?<PLUS>\\+|-b)(?<BUILD>[0-9]+)?)?";
+            private static final String OPT = "(?:-(?<OPT>[-~a-zA-Z0-9.]+))?";
             private static final String VSTR_FORMAT = VNUM + PRE + BUILD + OPT;
             static final Pattern VSTR_PATTERN = Pattern.compile(VSTR_FORMAT);
 
