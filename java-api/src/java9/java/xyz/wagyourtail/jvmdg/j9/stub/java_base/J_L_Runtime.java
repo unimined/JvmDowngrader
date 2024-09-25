@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,7 +24,8 @@ public class J_L_Runtime {
 
     @Adapter("java/lang/Runtime$Version")
     public static final class Version implements Comparable<Version> {
-        public static final Version INSTANCE = Version.parse(System.getProperty("java.runtime.version"));
+        private static final String RUNTIME_VERSION = System.getProperty("java.runtime.version");
+        public static final Version INSTANCE;
         private final List<Integer> version;
         private final Optional<String> pre;
         private final Optional<Integer> build;
@@ -39,6 +41,33 @@ public class J_L_Runtime {
             this.optional = optional;
         }
 
+        static {
+            Version version;
+            try {
+                version = Version.parse(RUNTIME_VERSION);
+            } catch (RuntimeException e1) {
+                // We need to support java8 versions properly there
+                int tmp = RUNTIME_VERSION.indexOf('-');
+                String verTrimmed = RUNTIME_VERSION;
+                // Put optional in a separate field
+                String optional = null;
+                if (tmp != -1) {
+                    verTrimmed = RUNTIME_VERSION.substring(0, tmp);
+                    optional = RUNTIME_VERSION.substring(tmp + 1);
+                }
+                // Get versions
+                String[] tokens = verTrimmed.split("[._]");
+                int start = verTrimmed.startsWith("1.") ? 1 : 0;
+                Integer[] versions = new Integer[tokens.length - start];
+                for (int i = start; i < tokens.length; i++) {
+                    versions[i - start] = Integer.parseInt(tokens[i]);
+                }
+                version = new Version(Arrays.asList(versions), Optional.empty(),
+                        Optional.of(versions[0]), Optional.ofNullable(optional));
+            }
+            INSTANCE = Objects.requireNonNull(version, "version");
+        }
+
         public static Version parse(String s) {
             if (s == null)
                 throw new NullPointerException();
@@ -50,9 +79,14 @@ public class J_L_Runtime {
                         Optional.empty(), Optional.empty(), Optional.empty());
             }
             Matcher m = VersionPattern.VSTR_PATTERN.matcher(s);
-            if (!m.matches())
-                throw new IllegalArgumentException("Invalid version string: '"
-                        + s + "'");
+            if (!m.matches()) {
+                // If parsing the current runtime version, and we fail to parse it,
+                // return a copy of "INSTANCE" instead of throwing an exception
+                if (RUNTIME_VERSION.equals(s)) {
+                    return new Version(INSTANCE.version, INSTANCE.pre, INSTANCE.build, INSTANCE.optional);
+                }
+                throw new IllegalArgumentException("Invalid version string: '" + s + "'");
+            }
 
             // $VNUM is a dot-separated list of integers of arbitrary length
             String[] split = m.group(VersionPattern.VNUM_GROUP).split("[._]");
