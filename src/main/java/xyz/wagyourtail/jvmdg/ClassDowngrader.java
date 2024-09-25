@@ -277,6 +277,7 @@ public class ClassDowngrader implements Closeable {
                                 public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
                                     super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments.clone());
                                 }
+
                             };
                         }
                     });

@@ -5,7 +5,6 @@ import xyz.wagyourtail.jvmdg.collection.FlatMapEnumeration;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
-import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.io.Closeable;
 import java.io.File;

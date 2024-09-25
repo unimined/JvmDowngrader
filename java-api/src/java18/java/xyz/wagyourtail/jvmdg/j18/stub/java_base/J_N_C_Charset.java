@@ -18,13 +18,14 @@ public class J_N_C_Charset {
         }
     }
 
-    /**
-     * JEP 400
-     */
-    @Stub(ref = @Ref("java/nio/charset/Charset"))
-    public static Charset defaultCharset() {
-        return StandardCharsets.UTF_8;
-    }
+// this causes more issues than it solves
+//    /**
+//     * JEP 400
+//     */
+//    @Stub(ref = @Ref("java/nio/charset/Charset"))
+//    public static Charset defaultCharset() {
+//        return StandardCharsets.UTF_8;
+//    }
 
 
 }
