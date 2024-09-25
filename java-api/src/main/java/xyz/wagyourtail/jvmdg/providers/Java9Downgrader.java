@@ -42,7 +42,7 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_L_Runtime.class);
         stub(J_L_Runtime.Version.class);
         stub(J_L_Short.class);
-        // StackTraceElement
+        stub(J_L_StackTraceElement.class);
         stub(J_L_StackWalker.class);
         stub(J_L_StrictMath.class);
         // String -- handled by CharSequence
