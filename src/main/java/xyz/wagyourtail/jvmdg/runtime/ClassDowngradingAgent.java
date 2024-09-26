@@ -6,12 +6,15 @@ import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.ProtectionDomain;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -20,6 +23,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
     public static final boolean DUMP_CLASSES = Boolean.parseBoolean(System.getProperty("jvmdg.dump", "false"));
     private static final Logger LOGGER = Bootstrap.LOGGER.subLogger("Agent");
     private static final int currentVersion;
+    static final List<Integer> multiVersionsList = new ArrayList<>();
 
     static {
         Method md;
@@ -28,6 +32,9 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             defineClass = Utils.getImplLookup().unreflect(md);
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
+        }
+        for (int i = Bootstrap.currentVersionDowngrader.maxVersion(); i > Bootstrap.currentVersionDowngrader.target; i--) {
+            multiVersionsList.add(i);
         }
     }
 
@@ -74,6 +81,18 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             if (className != null && className.equals("java/security/CodeSource")) {
                 return retransformCodeSource(bytes);
             }
+
+            if (loader != null) {
+                for (Integer version : multiVersionsList) {
+                    try (InputStream stream = loader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + className + ".class")) {
+                        if (stream != null) {
+                            bytes = Utils.readAllBytes(stream);
+                            break;
+                        }
+                    }
+                }
+            }
+
             // check magic
             if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
                 bytes[3] != (byte) 0xBE) {
@@ -93,15 +112,25 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                 @Override
                 public byte[] apply(String s) {
                     try {
-                        URL url = loader.getResource(s + ".class");
-                        if (url == null) return null;
-                        return Utils.readAllBytes(url.openStream());
+                        for (Integer version : multiVersionsList) {
+                            try (InputStream stream = loader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + s + ".class")) {
+                                if (stream != null) {
+                                    return Utils.readAllBytes(stream);
+                                }
+                            }
+                        }
+                        try (InputStream stream = loader.getResourceAsStream(s + ".class")) {
+                            if (stream != null) {
+                                return Utils.readAllBytes(stream);
+                            }
+                        }
+                        return null;
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
             });
-            LOGGER.trace("transform size: " + (outputs == null ? null : outputs.size()));
+            LOGGER.trace("transform size for " + className + ": " + (outputs == null ? null : outputs.size()));
             if (outputs == null) return bytes;
             bytes = null;
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {

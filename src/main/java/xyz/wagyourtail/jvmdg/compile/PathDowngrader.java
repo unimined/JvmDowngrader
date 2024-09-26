@@ -59,15 +59,22 @@ public class PathDowngrader {
     }
 
     public static void downgradePaths(final ClassDowngrader downgrader, final List<Path> inputRoots, List<Path> outputRoots, Set<URL> classpath) throws IOException {
-        try (final ResourceClassLoader extraClasspath = new ResourceClassLoader(classpath, PathDowngrader.class.getClassLoader())) {
+        try (final ResourceClassLoader extraClasspath = new ResourceClassLoader(classpath, PathDowngrader.class.getClassLoader()) {
+
+            @Override
+            protected int maxClassVersionSupported() {
+                return downgrader.maxVersion();
+            }
+
+        }) {
             // zip input and output
             for (int i = 0; i < inputRoots.size(); i++) {
                 final Path in = inputRoots.get(i);
                 final Path out = outputRoots.get(i);
 
-                final List<Path> multiReleasePaths = new ArrayList<>();
+                final List<String> multiReleasePaths = new ArrayList<>();
                 for (int j = downgrader.maxVersion(); j >= 52; j--) {
-                    multiReleasePaths.add(in.resolve("META-INF/versions/" + Utils.classVersionToMajorVersion(j)));
+                    multiReleasePaths.add("META-INF/versions/" + Utils.classVersionToMajorVersion(j));
                 }
 
                 AsyncUtils.visitPathsAsync(in, new IOFunction<Path, Boolean>() {
@@ -87,9 +94,9 @@ public class PathDowngrader {
                         if (path.getFileName().toString().endsWith(".class")) {
                             if (!relativized.startsWith("META-INF/versions")) {
                                 // prefer multi-release over normal
-                                for (Path pth : multiReleasePaths) {
-                                    if (Files.exists(pth.resolve(relativized))) {
-                                        path = pth.resolve(relativized);
+                                for (String pth : multiReleasePaths) {
+                                    if (Files.exists(in.resolve(pth).resolve(relativized))) {
+                                        path = in.resolve(pth).resolve(relativized);
                                         break;
                                     }
                                 }
@@ -105,12 +112,24 @@ public class PathDowngrader {
                                         @Override
                                         public byte[] apply(String s) {
                                             try {
+                                                // multi-version
+                                                for (String pth : multiReleasePaths) {
+                                                    for (Path in : inputRoots) {
+                                                        Path p = in.resolve(pth).resolve(s + ".class");
+                                                        if (Files.exists(p)) {
+                                                            return Files.readAllBytes(p);
+                                                        }
+                                                    }
+                                                }
+
+                                                // main version
                                                 for (Path in : inputRoots) {
                                                     Path p = in.resolve(s + ".class");
                                                     if (Files.exists(p)) {
                                                         return Files.readAllBytes(p);
                                                     }
                                                 }
+
                                                 URL url = extraClasspath.getResource(s + ".class");
                                                 if (url == null) return null;
                                                 try (InputStream is = url.openStream()) {

@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.jar.JarFile;
 
 public class ResourceClassLoader extends ClassLoader implements Closeable {
+    private final List<String> multiVersionList = new ArrayList<>();
     private final List<ResourceProvider> delegates = new ArrayList<>();
 
     public ResourceClassLoader(ClassLoader parent) {
@@ -56,6 +57,27 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
         delegates.add(new ClassLoaderResourceProvider(new URLClassLoader(urls)));
     }
 
+    protected int maxClassVersionSupported() {
+        return Utils.getCurrentClassVersion();
+    }
+
+    protected List<String> multiVersionPrefixes() {
+        if (multiVersionList.isEmpty()) {
+            synchronized (multiVersionList) {
+                if (multiVersionList.isEmpty()) {
+                    for (int i = maxClassVersionSupported(); i >= 51; --i) {
+                        if (i == 51) {
+                            multiVersionList.add("");
+                        } else {
+                            multiVersionList.add("META-INF/versions/" + Utils.classVersionToMajorVersion(i) + "/");
+                        }
+                    }
+                }
+            }
+        }
+        return multiVersionList;
+    }
+
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         String internalName = name.replace('.', '/');
         String path = internalName + ".class";
@@ -81,14 +103,19 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
 
     @Override
     protected Enumeration<URL> findResources(final String name) {
-        return new FlatMapEnumeration<>(Collections.enumeration(delegates), new Function<ResourceProvider, Enumeration<URL>>() {
+        return new FlatMapEnumeration<>(Collections.enumeration(name.startsWith("META-INF/versions/") ? Collections.singleton("") : multiVersionPrefixes()), new Function<String, Enumeration<URL>>() {
             @Override
-            public Enumeration<URL> apply(ResourceProvider resourceProvider) {
-                try {
-                    return resourceProvider.getResources(name);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            public Enumeration<URL> apply(final String prefix) {
+                return new FlatMapEnumeration<>(Collections.enumeration(delegates), new Function<ResourceProvider, Enumeration<URL>>() {
+                    @Override
+                    public Enumeration<URL> apply(ResourceProvider resourceProvider) {
+                        try {
+                            return resourceProvider.getResources(prefix + name);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
             }
         });
     }

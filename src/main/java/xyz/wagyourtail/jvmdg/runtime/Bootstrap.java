@@ -18,7 +18,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.CodeSource;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.jar.JarFile;
 
 public class Bootstrap {

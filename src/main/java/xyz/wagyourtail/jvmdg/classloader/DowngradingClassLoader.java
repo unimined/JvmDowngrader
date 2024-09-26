@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.classloader;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
-import xyz.wagyourtail.jvmdg.collection.FlatMapEnumeration;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
@@ -16,8 +15,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarFile;
 
 public class DowngradingClassLoader extends ResourceClassLoader implements Closeable {
-    private final List<Integer> multiVersionList = new ArrayList<>();
-
     private final ClassDowngrader holder;
     private final ClassDowngrader currentVersionDowngrader;
 
@@ -117,35 +114,16 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
     }
 
     @Override
-    protected Enumeration<URL> findResources(final String name) {
-        if (multiVersionList.isEmpty()) {
-            synchronized (this) {
-                if (multiVersionList.isEmpty()) {
+    protected int maxClassVersionSupported() {
+        return holder.maxVersion();
+    }
 
-                    int max = holder.maxVersion();
-                    // still initializing?
-                    if (max == -1) {
-                        return super.findResources(name);
-                    }
-
-                    for (int i = max; i >= 52; i--) {
-                        multiVersionList.add(i);
-                    }
-                    multiVersionList.add(-1);
-                }
-            }
+    @Override
+    protected List<String> multiVersionPrefixes() {
+        if (holder.maxVersion() == -1) {
+            return Collections.singletonList("");
         }
-        return new FlatMapEnumeration<>(Collections.enumeration(multiVersionList), new Function<Integer, Enumeration<URL>>() {
-            @Override
-            public Enumeration<URL> apply(Integer integer) {
-                if (integer != -1) {
-                    int major = Utils.classVersionToMajorVersion(integer);
-                    return DowngradingClassLoader.super.findResources("META-INF/versions/" + major + "/" + name);
-                } else {
-                    return DowngradingClassLoader.super.findResources(name);
-                }
-            }
-        });
+        return super.multiVersionPrefixes();
     }
 
     @Override

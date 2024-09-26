@@ -9,7 +9,7 @@ import java.util.Locale;
 public class J_I_Console {
 
     @Stub
-    public Console format(Console console, Locale locale, String format, Object... args) {
+    public static Console format(Console console, Locale locale, String format, Object... args) {
         PrintWriter pw = console.writer();
         pw.format(locale, format, args);
         pw.flush();
@@ -17,7 +17,7 @@ public class J_I_Console {
     }
 
     @Stub
-    public Console printf(Console console, Locale locale, String format, Object... args) {
+    public static Console printf(Console console, Locale locale, String format, Object... args) {
         PrintWriter pw = console.writer();
         pw.printf(locale, format, args);
         pw.flush();
@@ -25,7 +25,7 @@ public class J_I_Console {
     }
 
     @Stub
-    public String readLine(Console console, Locale locale, String format, Object... args) {
+    public static String readLine(Console console, Locale locale, String format, Object... args) {
         PrintWriter pw = console.writer();
         pw.printf(locale, format, args);
         pw.flush();
@@ -33,7 +33,7 @@ public class J_I_Console {
     }
 
     @Stub
-    public char[] readPassword(Console console, Locale locale, String format, Object... args) {
+    public static char[] readPassword(Console console, Locale locale, String format, Object... args) {
         PrintWriter pw = console.writer();
         pw.printf(locale, format, args);
         pw.flush();

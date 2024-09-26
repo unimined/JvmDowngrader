@@ -426,6 +426,7 @@ public class ClassDowngrader implements Closeable {
             throw new RuntimeException("Failed to downgrade " + name.get(), e);
         }
         if (logger.is(Logger.Level.DEBUG) || flags.debugDumpClasses) {
+            logger.debug("Classes from " + name.get());
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 if (!entry.getKey().equals(name.get())) {
                     logger.debug("Downgraded " + entry.getKey() + " from unknown to " + target);

@@ -7,7 +7,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 
 @Adapter("Ljava/lang/reflect/RecordComponent;")
-public class J_L_R_RecordComponent {
+public class J_L_R_RecordComponent implements AnnotatedElement {
 
     private final Class<?> declaring;
     private final Field field;
@@ -72,18 +72,22 @@ public class J_L_R_RecordComponent {
         return accessor;
     }
 
+    @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         return field.getAnnotation(annotationClass);
     }
 
+    @Override
     public Annotation[] getAnnotations() {
         return field.getAnnotations();
     }
 
+    @Override
     public Annotation[] getDeclaredAnnotations() {
         return field.getDeclaredAnnotations();
     }
 
+    @Override
     public String toString() {
         return getType().getTypeName() + " " + getName();
     }
