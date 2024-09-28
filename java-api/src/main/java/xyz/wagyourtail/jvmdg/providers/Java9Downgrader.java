@@ -54,7 +54,7 @@ public class Java9Downgrader extends VersionProvider {
         // MethodHandles$Lookup
         // StringConcatException
         stub(J_L_I_StringConcatFactory.class);
-        // VarHandle
+        stub(J_L_I_VarHandle.class);
         // Configuration
         // FindException
         // InvalidModuleDescriptorException

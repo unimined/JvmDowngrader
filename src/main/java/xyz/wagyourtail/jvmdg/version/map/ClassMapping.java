@@ -253,7 +253,10 @@ public class ClassMapping {
         try {
             Pair<Method, Modify> pair = methodModify.get(member);
             if (pair == null) {
-                if (!invoke_static && !member.getName().equals("<init>")) {
+                pair = methodModify.get(null);
+            }
+            if (pair == null) {
+                if (!invoke_static && (member == null || !member.getName().equals("<init>"))) {
                     Map<MemberNameAndDesc, Pair<Boolean, Type>> members = this.members.get();
                     if (members != null && members.containsKey(member)) {
                         return null;

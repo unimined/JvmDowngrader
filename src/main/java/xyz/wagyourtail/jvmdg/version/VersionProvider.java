@@ -64,7 +64,7 @@ public abstract class VersionProvider {
                 }
             }
             if (ref.member().isEmpty()) {
-                throw new IllegalArgumentException("ref must have a member");
+                return new FullyQualifiedMemberNameAndDesc(owner, null, null);
             } else {
                 name = ref.member();
             }

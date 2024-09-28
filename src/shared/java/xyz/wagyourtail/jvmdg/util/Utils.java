@@ -96,6 +96,24 @@ public class Utils {
         throw (T) t;
     }
 
+    public static String getDescForClass(Class<?> cls) {
+        if (cls.isPrimitive()) {
+            if (cls == void.class) return "V";
+            if (cls == boolean.class) return "Z";
+            if (cls == byte.class) return "B";
+            if (cls == char.class) return "C";
+            if (cls == short.class) return "S";
+            if (cls == int.class) return "I";
+            if (cls == long.class) return "J";
+            if (cls == float.class) return "F";
+            if (cls == double.class) return "D";
+        }
+        if (cls.isArray()) {
+            return "[" + getDescForClass(cls.getComponentType());
+        }
+        return "L" + cls.getName().replace('.', '/') + ";";
+    }
+
     public static Class<?> getClassForDesc(String desc) throws ClassNotFoundException {
         if (desc.length() == 1) {
             switch (desc) {

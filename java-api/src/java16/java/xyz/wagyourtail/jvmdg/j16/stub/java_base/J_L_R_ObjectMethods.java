@@ -8,6 +8,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
@@ -131,84 +132,7 @@ public class J_L_R_ObjectMethods {
             visitor.visitVarInsn(Opcodes.ALOAD, 0);
             visitor.visitFieldInsn(Opcodes.GETFIELD, recordClass.getInternalName(), getter.getName(), getter.getDesc());
             var type = Type.getType(getter.getDesc());
-            switch (type.getSort()) {
-                case Type.BOOLEAN -> {
-                    visitor.visitMethodInsn(
-                        Opcodes.INVOKESTATIC,
-                        "java/lang/Boolean",
-                        "valueOf",
-                        "(Z)Ljava/lang/Boolean;",
-                        false
-                    );
-                }
-                case Type.BYTE -> {
-                    visitor.visitMethodInsn(
-                        Opcodes.INVOKESTATIC,
-                        "java/lang/Byte",
-                        "valueOf",
-                        "(B)Ljava/lang/Byte;",
-                        false
-                    );
-                }
-                case Type.CHAR -> {
-                    visitor.visitMethodInsn(
-                        Opcodes.INVOKESTATIC,
-                        "java/lang/Character",
-                        "valueOf",
-                        "(C)Ljava/lang/Character;",
-                        false
-                    );
-                }
-                case Type.SHORT -> {
-                    visitor.visitMethodInsn(
-                        Opcodes.INVOKESTATIC,
-                        "java/lang/Short",
-                        "valueOf",
-                        "(S)Ljava/lang/Short;",
-                        false
-                    );
-                }
-                case Type.INT -> {
-                    visitor.visitMethodInsn(
-                        Opcodes.INVOKESTATIC,
-                        "java/lang/Integer",
-                        "valueOf",
-                        "(I)Ljava/lang/Integer;",
-                        false
-                    );
-                }
-                case Type.LONG -> {
-                    visitor.visitMethodInsn(
-                        Opcodes.INVOKESTATIC,
-                        "java/lang/Long",
-                        "valueOf",
-                        "(J)Ljava/lang/Long;",
-                        false
-                    );
-                }
-                case Type.FLOAT -> {
-                    visitor.visitMethodInsn(
-                        Opcodes.INVOKESTATIC,
-                        "java/lang/Float",
-                        "valueOf",
-                        "(F)Ljava/lang/Float;",
-                        false
-                    );
-                }
-                case Type.DOUBLE -> {
-                    visitor.visitMethodInsn(
-                        Opcodes.INVOKESTATIC,
-                        "java/lang/Double",
-                        "valueOf",
-                        "(D)Ljava/lang/Double;",
-                        false
-                    );
-                }
-                case Type.ARRAY, Type.OBJECT -> {
-                    // do nothing
-                }
-                default -> throw new IllegalStateException("Unexpected value: " + type.getSort());
-            }
+            ASMUtils.boxType(visitor, type);
             visitor.visitInsn(Opcodes.AASTORE);
         }
         // return Objects.hashCode(fields);
