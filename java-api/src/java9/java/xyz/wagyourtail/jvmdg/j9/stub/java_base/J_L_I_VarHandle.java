@@ -334,6 +334,11 @@ public class J_L_I_VarHandle {
         unsafe.putFloat(owner, fieldOffset, value);
     }
 
+    public final void set(Object owner, double value) {
+        checkOwner(owner, double.class);
+        unsafe.putDouble(owner, fieldOffset, value);
+    }
+
     public final void set(Object owner, int index, Object value) {
         checkArray(owner, index, Object.class);
         unsafe.putObject(owner, fieldOffset + index * arrayIndexScale, value);

@@ -1,101 +1,118 @@
 package xyz.wagyourtail.jvmdg.asm;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.tree.ClassNode;
 
 public class ASMUtils {
 
-    public static void boxType(MethodVisitor visitor, Type type) {
+    public static Handle boxType(Type type) {
         Type box = getBoxFor(type);
         if (box != null) {
-            visitor.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
+            return new Handle(
+                Opcodes.H_INVOKESTATIC,
                 box.getInternalName(),
                 "valueOf",
                 Type.getMethodDescriptor(box, type),
                 false
             );
         }
+        return null;
     }
 
-    public static void unboxType(MethodVisitor visitor, Type type) {
+    public static void boxType(MethodVisitor visitor, Type type) {
+        Handle box = boxType(type);
+        if (box != null) {
+            visitor.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                box.getOwner(),
+                box.getName(),
+                box.getDesc(),
+                false
+            );
+        }
+    }
+
+    public static Handle unboxType(Type type) {
         switch (type.getInternalName()) {
             case "java/lang/Boolean":
-                visitor.visitMethodInsn(
-                    Opcodes.INVOKEVIRTUAL,
+                return new Handle(
+                    Opcodes.H_INVOKEVIRTUAL,
                     "java/lang/Boolean",
                     "booleanValue",
                     "()Z",
                     false
                 );
-                break;
             case "java/lang/Byte":
-                visitor.visitMethodInsn(
-                    Opcodes.INVOKEVIRTUAL,
+                return new Handle(
+                    Opcodes.H_INVOKEVIRTUAL,
                     "java/lang/Byte",
                     "byteValue",
                     "()B",
                     false
                 );
-                break;
             case "java/lang/Character":
-                visitor.visitMethodInsn(
-                    Opcodes.INVOKEVIRTUAL,
+                return new Handle(
+                    Opcodes.H_INVOKEVIRTUAL,
                     "java/lang/Character",
                     "charValue",
                     "()C",
                     false
                 );
-                break;
             case "java/lang/Short":
-                visitor.visitMethodInsn(
-                    Opcodes.INVOKEVIRTUAL,
+                return new Handle(
+                    Opcodes.H_INVOKEVIRTUAL,
                     "java/lang/Short",
                     "shortValue",
                     "()S",
                     false
                 );
-                break;
             case "java/lang/Integer":
-                visitor.visitMethodInsn(
-                    Opcodes.INVOKEVIRTUAL,
+                return new Handle(
+                    Opcodes.H_INVOKEVIRTUAL,
                     "java/lang/Integer",
                     "intValue",
                     "()I",
                     false
                 );
-                break;
             case "java/lang/Long":
-                visitor.visitMethodInsn(
-                    Opcodes.INVOKEVIRTUAL,
+                return new Handle(
+                    Opcodes.H_INVOKEVIRTUAL,
                     "java/lang/Long",
                     "longValue",
                     "()J",
                     false
                 );
-                break;
             case "java/lang/Float":
-                visitor.visitMethodInsn(
-                    Opcodes.INVOKEVIRTUAL,
+                return new Handle(
+                    Opcodes.H_INVOKEVIRTUAL,
                     "java/lang/Float",
                     "floatValue",
                     "()F",
                     false
                 );
-                break;
             case "java/lang/Double":
-                visitor.visitMethodInsn(
-                    Opcodes.INVOKEVIRTUAL,
+                return new Handle(
+                    Opcodes.H_INVOKEVIRTUAL,
                     "java/lang/Double",
                     "doubleValue",
                     "()D",
                     false
                 );
-                break;
             default:
+                return null;
+        }
+    }
+
+    public static void unboxType(MethodVisitor visitor, Type type) {
+        Handle h = unboxType(type);
+        if (h != null) {
+            visitor.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                h.getOwner(),
+                h.getName(),
+                h.getDesc(),
+                false
+            );
         }
     }
 
