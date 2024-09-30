@@ -117,8 +117,12 @@ public class Java11Downgrader extends VersionProvider {
     @Override
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
         super.otherTransforms(clazz);
+        if (clazz.name.equals("module-info")) {
+            return null;
+        }
         fixNests(clazz, getReadOnly);
         replaceCondy(clazz);
+        fixPrivateMethodsInInterfaces(clazz);
         return clazz;
     }
 
@@ -607,6 +611,42 @@ public class Java11Downgrader extends VersionProvider {
                 insertCondyArgs((ConstantDynamic) o, bsmArgs);
             } else {
                 bsmArgs.add(o);
+            }
+        }
+    }
+
+    public void fixPrivateMethodsInInterfaces(ClassNode node) {
+        if ((node.access & Opcodes.ACC_INTERFACE) == 0) return;
+
+        List<String> privateMethods = new ArrayList<>();
+        for (MethodNode method : node.methods) {
+            if ((method.access & Opcodes.ACC_PRIVATE) != 0) {
+                privateMethods.add(method.name + method.desc);
+            }
+        }
+
+        for (MethodNode method : node.methods) {
+            if (method.instructions == null) continue;
+            for (AbstractInsnNode insn : method.instructions) {
+                if (insn instanceof MethodInsnNode) {
+                    MethodInsnNode min = (MethodInsnNode) insn;
+                    if (min.getOpcode() == Opcodes.INVOKEINTERFACE && min.owner.equals(node.name) && privateMethods.contains(min.name + min.desc)) {
+                        min.setOpcode(Opcodes.INVOKESPECIAL);
+                    }
+                } else if (insn instanceof InvokeDynamicInsnNode) {
+                    InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
+                    if (indy.bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
+                        if (indy.bsmArgs[1] instanceof Handle) {
+                            Handle lambda = (Handle) indy.bsmArgs[1];
+                            if (lambda.getOwner().equals(node.name) &&
+                                lambda.getTag() == Opcodes.H_INVOKEINTERFACE &&
+                                privateMethods.contains(lambda.getName() + lambda.getDesc())
+                            ) {
+                                indy.bsmArgs[1] = new Handle(Opcodes.H_INVOKESPECIAL, lambda.getOwner(), lambda.getName(), lambda.getDesc(), lambda.isInterface());
+                            }
+                        }
+                    }
+                }
             }
         }
     }
