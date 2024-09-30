@@ -123,6 +123,11 @@ public class Java11Downgrader extends VersionProvider {
     }
 
     public void fixNests(ClassNode clazz, Function<String, ClassNode> getReadOnly) {
+        for (MethodNode method : clazz.methods) {
+            if (method.name.equals("<init>")) {
+                method.access &= ~Opcodes.ACC_PRIVATE;
+            }
+        }
         if (clazz.nestHostClass == null) {
             fixNestsForParent(clazz, getReadOnly);
         } else {
