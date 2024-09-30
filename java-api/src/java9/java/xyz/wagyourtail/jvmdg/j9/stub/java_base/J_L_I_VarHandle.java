@@ -1,11 +1,13 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import sun.misc.Unsafe;
+import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Modify;
@@ -29,7 +31,8 @@ public class J_L_I_VarHandle {
     @Modify(ref = @Ref("xyz/wagyourtail/jvmdg/j9/stub/java_base/J_L_I_VarHandle"))
     public static void modifyPolymorphics(MethodNode mnode, int i) {
         MethodInsnNode min = (MethodInsnNode) mnode.instructions.get(i);
-        if (!AccessMode.byName.containsKey(min.name)) return;
+        AccessMode am = AccessMode.byName.get(min.name);
+        if (am == null) return;
         Type ret = Type.getReturnType(min.desc);
         min.name = fixMethodName(min.name, ret.getDescriptor());
         Type[] args = Type.getArgumentTypes(min.desc);
@@ -37,8 +40,34 @@ public class J_L_I_VarHandle {
             if (args[j].getSort() >= 9) args[j] = Type.getObjectType("java/lang/Object");
         }
         if (ret.getSort() >= 9) {
-            mnode.instructions.insert(min, new TypeInsnNode(Opcodes.CHECKCAST, ret.getInternalName()));
+            if (!ret.getInternalName().equals("java/lang/Object")) {
+                mnode.instructions.insert(min, new TypeInsnNode(Opcodes.CHECKCAST, ret.getInternalName()));
+            }
             ret = Type.getObjectType("java/lang/Object");
+        }
+        if (ret.getInternalName().equals("java/lang/Object")) {
+            switch (am.accessType) {
+                case GET:
+                    break;
+                case SET:
+                case COMPARE_AND_SET:
+                    throw new IllegalStateException();
+                case COMPARE_AND_EXCHANGE:
+                case GET_AND_UPDATE:
+                    Type lastArg = args[args.length - 1];
+                    if (lastArg.getSort() < 9) {
+                        ret = lastArg;
+                        Handle box = ASMUtils.boxType(lastArg);
+                        assert box != null;
+                        mnode.instructions.insert(min, new MethodInsnNode(
+                            Opcodes.INVOKESTATIC,
+                            box.getOwner(),
+                            box.getName(),
+                            box.getDesc(),
+                            false
+                        ));
+                    }
+            }
         }
         min.desc = Type.getMethodDescriptor(ret, args);
     }
@@ -115,8 +144,37 @@ public class J_L_I_VarHandle {
     }
 
     public final Object get() {
-        checkStatic(Object.class);
-        return unsafe.getObject(staticFieldBase, fieldOffset);
+        if (Object.class.isAssignableFrom(type)) {
+            checkStatic(Object.class);
+            return unsafe.getObject(staticFieldBase, fieldOffset);
+        } else {
+            if (type == boolean.class) {
+                checkStatic(boolean.class);
+                return unsafe.getBoolean(staticFieldBase, fieldOffset);
+            } else if (type == byte.class) {
+                checkStatic(byte.class);
+                return unsafe.getByte(staticFieldBase, fieldOffset);
+            } else if (type == char.class) {
+                checkStatic(char.class);
+                return unsafe.getChar(staticFieldBase, fieldOffset);
+            } else if (type == short.class) {
+                checkStatic(short.class);
+                return unsafe.getShort(staticFieldBase, fieldOffset);
+            } else if (type == int.class) {
+                checkStatic(int.class);
+                return unsafe.getInt(staticFieldBase, fieldOffset);
+            } else if (type == long.class) {
+                checkStatic(long.class);
+                return unsafe.getLong(staticFieldBase, fieldOffset);
+            } else if (type == float.class) {
+                checkStatic(float.class);
+                return unsafe.getFloat(staticFieldBase, fieldOffset);
+            } else if (type == double.class) {
+                checkStatic(double.class);
+                return unsafe.getDouble(staticFieldBase, fieldOffset);
+            }
+            throw new WrongMethodTypeException();
+        }
     }
 
     public final boolean getZ() {
@@ -160,8 +218,37 @@ public class J_L_I_VarHandle {
     }
 
     public final Object get(Object owner) {
-        checkOwner(owner, Object.class);
-        return unsafe.getObject(owner, fieldOffset);
+        if (Object.class.isAssignableFrom(type)) {
+            checkOwner(owner, Object.class);
+            return unsafe.getObject(owner, fieldOffset);
+        } else {
+            if (type == boolean.class) {
+                checkOwner(owner, boolean.class);
+                return unsafe.getBoolean(owner, fieldOffset);
+            } else if (type == byte.class) {
+                checkOwner(owner, byte.class);
+                return unsafe.getByte(owner, fieldOffset);
+            } else if (type == char.class) {
+                checkOwner(owner, char.class);
+                return unsafe.getChar(owner, fieldOffset);
+            } else if (type == short.class) {
+                checkOwner(owner, short.class);
+                return unsafe.getShort(owner, fieldOffset);
+            } else if (type == int.class) {
+                checkOwner(owner, int.class);
+                return unsafe.getInt(owner, fieldOffset);
+            } else if (type == long.class) {
+                checkOwner(owner, long.class);
+                return unsafe.getLong(owner, fieldOffset);
+            } else if (type == float.class) {
+                checkOwner(owner, float.class);
+                return unsafe.getFloat(owner, fieldOffset);
+            } else if (type == double.class) {
+                checkOwner(owner, double.class);
+                return unsafe.getDouble(owner, fieldOffset);
+            }
+            throw new WrongMethodTypeException();
+        }
     }
 
     public final boolean getZ(Object owner) {
@@ -205,8 +292,37 @@ public class J_L_I_VarHandle {
     }
 
     public final Object get(Object owner, int index) {
-        checkArray(owner, index, Object.class);
-        return unsafe.getObject(owner, fieldOffset + index * arrayIndexScale);
+        if (Object.class.isAssignableFrom(type)) {
+            checkArray(owner, index, Object.class);
+            return unsafe.getObject(owner, fieldOffset + index * arrayIndexScale);
+        } else {
+            if (type == boolean.class) {
+                checkArray(owner, index, boolean.class);
+                return unsafe.getBoolean(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == byte.class) {
+                checkArray(owner, index, byte.class);
+                return unsafe.getByte(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == char.class) {
+                checkArray(owner, index, char.class);
+                return unsafe.getChar(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == short.class) {
+                checkArray(owner, index, short.class);
+                return unsafe.getShort(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == int.class) {
+                checkArray(owner, index, int.class);
+                return unsafe.getInt(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == long.class) {
+                checkArray(owner, index, long.class);
+                return unsafe.getLong(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == float.class) {
+                checkArray(owner, index, float.class);
+                return unsafe.getFloat(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == double.class) {
+                checkArray(owner, index, double.class);
+                return unsafe.getDouble(owner, fieldOffset + index * arrayIndexScale);
+            }
+            throw new WrongMethodTypeException();
+        }
     }
 
     public final boolean getZ(Object owner, int index) {
@@ -385,8 +501,37 @@ public class J_L_I_VarHandle {
     }
 
     public final Object getVolatile() {
-        checkStatic(Object.class);
-        return unsafe.getObjectVolatile(staticFieldBase, fieldOffset);
+        if (Object.class.isAssignableFrom(type)) {
+            checkStatic(Object.class);
+            return unsafe.getObjectVolatile(staticFieldBase, fieldOffset);
+        } else {
+            if (type == boolean.class) {
+                checkStatic(boolean.class);
+                return unsafe.getBooleanVolatile(staticFieldBase, fieldOffset);
+            } else if (type == byte.class) {
+                checkStatic(byte.class);
+                return unsafe.getByteVolatile(staticFieldBase, fieldOffset);
+            } else if (type == char.class) {
+                checkStatic(char.class);
+                return unsafe.getCharVolatile(staticFieldBase, fieldOffset);
+            } else if (type == short.class) {
+                checkStatic(short.class);
+                return unsafe.getShortVolatile(staticFieldBase, fieldOffset);
+            } else if (type == int.class) {
+                checkStatic(int.class);
+                return unsafe.getIntVolatile(staticFieldBase, fieldOffset);
+            } else if (type == long.class) {
+                checkStatic(long.class);
+                return unsafe.getLongVolatile(staticFieldBase, fieldOffset);
+            } else if (type == float.class) {
+                checkStatic(float.class);
+                return unsafe.getFloatVolatile(staticFieldBase, fieldOffset);
+            } else if (type == double.class) {
+                checkStatic(double.class);
+                return unsafe.getDoubleVolatile(staticFieldBase, fieldOffset);
+            }
+            throw new WrongMethodTypeException();
+        }
     }
 
     public final boolean getVolatileZ() {
@@ -430,8 +575,37 @@ public class J_L_I_VarHandle {
     }
 
     public final Object getVolatile(Object owner) {
-        checkOwner(owner, Object.class);
-        return unsafe.getObjectVolatile(owner, fieldOffset);
+        if (Object.class.isAssignableFrom(type)) {
+            checkOwner(owner, Object.class);
+            return unsafe.getObjectVolatile(owner, fieldOffset);
+        } else {
+            if (type == boolean.class) {
+                checkOwner(owner, boolean.class);
+                return unsafe.getBooleanVolatile(owner, fieldOffset);
+            } else if (type == byte.class) {
+                checkOwner(owner, byte.class);
+                return unsafe.getByteVolatile(owner, fieldOffset);
+            } else if (type == char.class) {
+                checkOwner(owner, char.class);
+                return unsafe.getCharVolatile(owner, fieldOffset);
+            } else if (type == short.class) {
+                checkOwner(owner, short.class);
+                return unsafe.getShortVolatile(owner, fieldOffset);
+            } else if (type == int.class) {
+                checkOwner(owner, int.class);
+                return unsafe.getIntVolatile(owner, fieldOffset);
+            } else if (type == long.class) {
+                checkOwner(owner, long.class);
+                return unsafe.getLongVolatile(owner, fieldOffset);
+            } else if (type == float.class) {
+                checkOwner(owner, float.class);
+                return unsafe.getFloatVolatile(owner, fieldOffset);
+            } else if (type == double.class) {
+                checkOwner(owner, double.class);
+                return unsafe.getDoubleVolatile(owner, fieldOffset);
+            }
+            throw new WrongMethodTypeException();
+        }
     }
 
     public final boolean getVolatileZ(Object owner) {
@@ -475,8 +649,37 @@ public class J_L_I_VarHandle {
     }
 
     public final Object getVolatile(Object owner, int index) {
-        checkArray(owner, index, Object.class);
-        return unsafe.getObjectVolatile(owner, fieldOffset + index * arrayIndexScale);
+        if (Object.class.isAssignableFrom(type)) {
+            checkArray(owner, index, Object.class);
+            return unsafe.getObjectVolatile(owner, fieldOffset + index * arrayIndexScale);
+        } else {
+            if (type == boolean.class) {
+                checkArray(owner, index, boolean.class);
+                return unsafe.getBooleanVolatile(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == byte.class) {
+                checkArray(owner, index, byte.class);
+                return unsafe.getByteVolatile(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == char.class) {
+                checkArray(owner, index, char.class);
+                return unsafe.getCharVolatile(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == short.class) {
+                checkArray(owner, index, short.class);
+                return unsafe.getShortVolatile(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == int.class) {
+                checkArray(owner, index, int.class);
+                return unsafe.getIntVolatile(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == long.class) {
+                checkArray(owner, index, long.class);
+                return unsafe.getLongVolatile(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == float.class) {
+                checkArray(owner, index, float.class);
+                return unsafe.getFloatVolatile(owner, fieldOffset + index * arrayIndexScale);
+            } else if (type == double.class) {
+                checkArray(owner, index, double.class);
+                return unsafe.getDoubleVolatile(owner, fieldOffset + index * arrayIndexScale);
+            }
+            throw new WrongMethodTypeException();
+        }
     }
 
     public final boolean getVolatileZ(Object owner, int index) {
@@ -655,8 +858,7 @@ public class J_L_I_VarHandle {
     }
 
     public final Object getOpaque() {
-        checkStatic(Object.class);
-        return unsafe.getObjectVolatile(staticFieldBase, fieldOffset);
+        return getVolatile();
     }
 
     public final boolean getOpaqueZ() {
@@ -700,8 +902,7 @@ public class J_L_I_VarHandle {
     }
 
     public final Object getOpaque(Object owner) {
-        checkOwner(owner, Object.class);
-        return unsafe.getObjectVolatile(owner, fieldOffset);
+        return getVolatile(owner);
     }
 
     public final boolean getOpaqueZ(Object owner) {
@@ -745,8 +946,7 @@ public class J_L_I_VarHandle {
     }
 
     public final Object getOpaque(Object owner, int index) {
-        checkArray(owner, index, Object.class);
-        return unsafe.getObjectVolatile(owner, fieldOffset + index * arrayIndexScale);
+        return getVolatile(owner, index);
     }
 
     public final boolean getOpaqueZ(Object owner, int index) {
@@ -926,7 +1126,7 @@ public class J_L_I_VarHandle {
 
     public final Object getAcquire() {
         checkStatic(Object.class);
-        Object obj = unsafe.getObjectVolatile(staticFieldBase, fieldOffset);
+        Object obj = getVolatile();
         unsafe.fullFence();
         return obj;
     }
@@ -989,7 +1189,7 @@ public class J_L_I_VarHandle {
 
     public final Object getAcquire(Object owner) {
         checkOwner(owner, Object.class);
-        Object obj = unsafe.getObjectVolatile(owner, fieldOffset);
+        Object obj = getVolatile(owner);
         unsafe.fullFence();
         return obj;
     }
@@ -1052,7 +1252,7 @@ public class J_L_I_VarHandle {
 
     public final Object getAcquire(Object owner, int index) {
         checkArray(owner, index, Object.class);
-        Object obj = unsafe.getObjectVolatile(owner, fieldOffset + index * arrayIndexScale);
+        Object obj = getVolatile(owner, index);
         unsafe.fullFence();
         return obj;
     }
@@ -1285,7 +1485,7 @@ public class J_L_I_VarHandle {
         int i;
         do {
             i = unsafe.getIntVolatile(staticFieldBase, fieldOffset);
-            if ((i != 0) != expected) return false;
+            if (((byte) i != 0) != expected) return false;
         } while (!unsafe.compareAndSwapInt(staticFieldBase, fieldOffset, i, newValue ? 1 : 0));
         return true;
     }
@@ -1350,7 +1550,7 @@ public class J_L_I_VarHandle {
         int i;
         do {
             i = unsafe.getIntVolatile(owner, fieldOffset);
-            if ((i != 0) != expected) return false;
+            if (((byte) i != 0) != expected) return false;
         } while (!unsafe.compareAndSwapInt(owner, fieldOffset, i, newValue ? 1 : 0));
         return true;
     }
@@ -1415,7 +1615,7 @@ public class J_L_I_VarHandle {
         int i;
         do {
             i = unsafe.getIntVolatile(owner, fieldOffset + index * arrayIndexScale);
-            if ((i != 0) != expected) return false;
+            if (((byte) i != 0) != expected) return false;
         } while (!unsafe.compareAndSwapInt(owner, fieldOffset + index * arrayIndexScale, i, newValue ? 1 : 0));
         return true;
     }
@@ -1485,7 +1685,7 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(staticFieldBase, fieldOffset);
-            if ((v != 0) != expected) return v != 0;
+            if (((byte) v != 0) != expected) return (byte) v != 0;
         } while (!unsafe.compareAndSwapInt(staticFieldBase, fieldOffset, v, newValue ? 1 : 0));
         return expected;
     }
@@ -1575,7 +1775,7 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(owner, fieldOffset);
-            if ((v != 0) != expected) return v != 0;
+            if (((byte) v != 0) != expected) return (byte) v != 0;
         } while (!unsafe.compareAndSwapInt(owner, fieldOffset, v, newValue ? 1 : 0));
         return expected;
     }
@@ -1665,7 +1865,7 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(owner, fieldOffset + index * arrayIndexScale);
-            if ((v != 0) != expected) return v != 0;
+            if (((byte) v != 0) != expected) return (byte) v != 0;
         } while (!unsafe.compareAndSwapInt(owner, fieldOffset + index * arrayIndexScale, v, newValue ? 1 : 0));
         return expected;
     }
@@ -2557,7 +2757,7 @@ public class J_L_I_VarHandle {
 
     public final boolean getAndSet(boolean newValue) {
         checkStatic(boolean.class);
-        return unsafe.getAndSetInt(staticFieldBase, fieldOffset, newValue ? 1 : 0) != 0;
+        return (byte) unsafe.getAndSetInt(staticFieldBase, fieldOffset, newValue ? 1 : 0) != 0;
     }
 
     public final byte getAndSet(byte newValue) {
@@ -2602,7 +2802,7 @@ public class J_L_I_VarHandle {
 
     public final boolean getAndSet(Object owner, boolean newValue) {
         checkOwner(owner, boolean.class);
-        return unsafe.getAndSetInt(owner, fieldOffset, newValue ? 1 : 0) != 0;
+        return (byte) unsafe.getAndSetInt(owner, fieldOffset, newValue ? 1 : 0) != 0;
     }
 
     public final byte getAndSet(Object owner, byte newValue) {
@@ -2647,7 +2847,7 @@ public class J_L_I_VarHandle {
 
     public final boolean getAndSet(Object owner, int index, boolean newValue) {
         checkArray(owner, index, boolean.class);
-        return unsafe.getAndSetInt(owner, fieldOffset + index * arrayIndexScale, newValue ? 1 : 0) != 0;
+        return (byte) unsafe.getAndSetInt(owner, fieldOffset + index * arrayIndexScale, newValue ? 1 : 0) != 0;
     }
 
     public final byte getAndSet(Object owner, int index, byte newValue) {
@@ -3384,8 +3584,8 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(staticFieldBase, fieldOffset);
-        } while (!unsafe.compareAndSwapInt(staticFieldBase, fieldOffset, v, value || v != 0 ? 1 : 0));
-        return v != 0;
+        } while (!unsafe.compareAndSwapInt(staticFieldBase, fieldOffset, v, value || (byte) v != 0 ? 1 : 0));
+        return (byte) v != 0;
     }
 
     public final byte getAndBitwiseOr(byte value) {
@@ -3438,8 +3638,8 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(owner, fieldOffset);
-        } while (!unsafe.compareAndSwapInt(owner, fieldOffset, v, value || v != 0 ? 1 : 0));
-        return v != 0;
+        } while (!unsafe.compareAndSwapInt(owner, fieldOffset, v, value || (byte) v != 0 ? 1 : 0));
+        return (byte) v != 0;
     }
 
     public final byte getAndBitwiseOr(Object owner, byte value) {
@@ -3492,8 +3692,8 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(owner, fieldOffset + index * arrayIndexScale);
-        } while (!unsafe.compareAndSwapInt(owner, fieldOffset + index * arrayIndexScale, v, v != 0 || value ? 1 : 0));
-        return v != 0;
+        } while (!unsafe.compareAndSwapInt(owner, fieldOffset + index * arrayIndexScale, v, (byte) v != 0 || value ? 1 : 0));
+        return (byte) v != 0;
     }
 
     public final byte getAndBitwiseOr(Object owner, int index, byte value) {
@@ -3745,8 +3945,8 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(staticFieldBase, fieldOffset);
-        } while (!unsafe.compareAndSwapInt(staticFieldBase, fieldOffset, v, v != 0 && value ? 1 : 0));
-        return v != 0;
+        } while (!unsafe.compareAndSwapInt(staticFieldBase, fieldOffset, v, (byte) v != 0 && value ? 1 : 0));
+        return (byte) v != 0;
     }
 
     public final byte getAndBitwiseAnd(byte value) {
@@ -3799,8 +3999,8 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(owner, fieldOffset);
-        } while (!unsafe.compareAndSwapInt(owner, fieldOffset, v, v != 0 && value ? 1 : 0));
-        return v != 0;
+        } while (!unsafe.compareAndSwapInt(owner, fieldOffset, v, (byte) v != 0 && value ? 1 : 0));
+        return (byte) v != 0;
     }
 
     public final byte getAndBitwiseAnd(Object owner, byte value) {
@@ -3853,8 +4053,8 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(owner, fieldOffset + index * arrayIndexScale);
-        } while (!unsafe.compareAndSwapInt(owner, fieldOffset + index * arrayIndexScale, v, v != 0 && value ? 1 : 0));
-        return v != 0;
+        } while (!unsafe.compareAndSwapInt(owner, fieldOffset + index * arrayIndexScale, v, (byte) v != 0 && value ? 1 : 0));
+        return (byte) v != 0;
     }
 
     public final byte getAndBitwiseAnd(Object owner, int index, byte value) {
@@ -4105,8 +4305,8 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(staticFieldBase, fieldOffset);
-        } while (!unsafe.compareAndSwapInt(staticFieldBase, fieldOffset, v, (v != 0) ^ value ? 1 : 0));
-        return v != 0;
+        } while (!unsafe.compareAndSwapInt(staticFieldBase, fieldOffset, v, ((byte) v != 0) ^ value ? 1 : 0));
+        return (byte) v != 0;
     }
 
     public final byte getAndBitwiseXor(byte value) {
@@ -4160,8 +4360,8 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(owner, fieldOffset);
-        } while (!unsafe.compareAndSwapInt(owner, fieldOffset, v, (v != 0) ^ value ? 1 : 0));
-        return v != 0;
+        } while (!unsafe.compareAndSwapInt(owner, fieldOffset, v, ((byte) v != 0) ^ value ? 1 : 0));
+        return (byte) v != 0;
     }
 
     public final byte getAndBitwiseXor(Object owner, byte value) {
@@ -4214,8 +4414,8 @@ public class J_L_I_VarHandle {
         int v;
         do {
             v = unsafe.getIntVolatile(owner, fieldOffset + index * arrayIndexScale);
-        } while (!unsafe.compareAndSwapInt(owner, fieldOffset + index * arrayIndexScale, v, (v != 0) ^ value ? 1 : 0));
-        return v != 0;
+        } while (!unsafe.compareAndSwapInt(owner, fieldOffset + index * arrayIndexScale, v, ((byte) v != 0) ^ value ? 1 : 0));
+        return (byte) v != 0;
     }
 
     public final byte getAndBitwiseXor(Object owner, int index, byte value) {
@@ -4477,45 +4677,60 @@ public class J_L_I_VarHandle {
                 if (isStatic) {
                     mt = MethodType.methodType(t);
                     vmt = MethodType.methodType(vt);
+                } else if (isArray) {
+                    mt = MethodType.methodType(t, Object.class, int.class);
+                    vmt = MethodType.methodType(vt, ownerClass, int.class);
                 } else {
                     mt = MethodType.methodType(t, Object.class);
-                    vmt = MethodType.methodType(vt, field.getDeclaringClass());
+                    vmt = MethodType.methodType(vt, ownerClass);
                 }
                 break;
             case SET:
                 if (isStatic) {
                     mt = MethodType.methodType(void.class, t);
                     vmt = MethodType.methodType(void.class, vt);
+                } else if (isArray) {
+                    mt = MethodType.methodType(void.class, Object.class, int.class, t);
+                    vmt = MethodType.methodType(void.class, ownerClass, int.class, vt);
                 } else {
                     mt = MethodType.methodType(void.class, Object.class, t);
-                    vmt = MethodType.methodType(void.class, field.getDeclaringClass(), vt);
+                    vmt = MethodType.methodType(void.class, ownerClass, vt);
                 }
                 break;
             case COMPARE_AND_SET:
                 if (isStatic) {
                     mt = MethodType.methodType(boolean.class, t, t);
                     vmt = MethodType.methodType(boolean.class, vt, vt);
-                } else {
+                } else if (isArray) {
+                    mt = MethodType.methodType(boolean.class, Object.class, int.class, t, t);
+                    vmt = MethodType.methodType(boolean.class, ownerClass, int.class, vt, vt);
+                } else  {
                     mt = MethodType.methodType(boolean.class, Object.class, t, t);
-                    vmt = MethodType.methodType(boolean.class, field.getDeclaringClass(), vt, vt);
+                    vmt = MethodType.methodType(boolean.class, ownerClass, vt, vt);
                 }
                 break;
             case COMPARE_AND_EXCHANGE:
                 if (isStatic) {
                     mt = MethodType.methodType(t, t, t);
                     vmt = MethodType.methodType(vt, vt, vt);
-                } else {
+                } else if (isArray) {
+                    mt = MethodType.methodType(t, Object.class, int.class, t, t);
+                    vmt = MethodType.methodType(vt, ownerClass, int.class, vt, vt);
+                } else  {
                     mt = MethodType.methodType(t, Object.class, t, t);
-                    vmt = MethodType.methodType(vt, field.getDeclaringClass(), vt, vt);
+                    vmt = MethodType.methodType(vt, ownerClass, vt, vt);
                 }
                 break;
             case GET_AND_UPDATE:
                 if (isStatic) {
                     mt = MethodType.methodType(t, t);
                     vmt = MethodType.methodType(vt, vt);
+                } else if (isArray) {
+                    mt = MethodType.methodType(t, Object.class, int.class, t);
+                    vmt = MethodType.methodType(vt, ownerClass, int.class, vt);
                 } else {
                     mt = MethodType.methodType(t, Object.class, t);
-                    vmt = MethodType.methodType(vt, field.getDeclaringClass(), vt);
+                    vmt = MethodType.methodType(vt, ownerClass, vt);
                 }
                 break;
             default:
@@ -4580,6 +4795,9 @@ public class J_L_I_VarHandle {
         GET_AND_BITWISE_OR("getAndBitwiseOr", AccessType.GET_AND_UPDATE),
         GET_AND_BITWISE_OR_RELEASE("getAndBitwiseOrRelease", AccessType.GET_AND_UPDATE),
         GET_AND_BITWISE_OR_ACQUIRE("getAndBitwiseOrAcquire", AccessType.GET_AND_UPDATE),
+        GET_AND_BITWISE_AND("getAndBitwiseAnd", AccessType.GET_AND_UPDATE),
+        GET_AND_BITWISE_AND_RELEASE("getAndBitwiseAndRelease", AccessType.GET_AND_UPDATE),
+        GET_AND_BITWISE_AND_ACQUIRE("getAndBitwiseAndAcquire", AccessType.GET_AND_UPDATE),
         GET_AND_BITWISE_XOR("getAndBitwiseXor", AccessType.GET_AND_UPDATE),
         GET_AND_BITWISE_XOR_RELEASE("getAndBitwiseXorRelease", AccessType.GET_AND_UPDATE),
         GET_AND_BITWISE_XOR_ACQUIRE("getAndBitwiseXorAcquire", AccessType.GET_AND_UPDATE)
