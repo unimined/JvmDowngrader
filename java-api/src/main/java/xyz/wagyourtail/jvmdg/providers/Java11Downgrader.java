@@ -127,11 +127,6 @@ public class Java11Downgrader extends VersionProvider {
     }
 
     public void fixNests(ClassNode clazz, Function<String, ClassNode> getReadOnly) {
-        for (MethodNode method : clazz.methods) {
-            if (method.name.equals("<init>")) {
-                method.access &= ~Opcodes.ACC_PRIVATE;
-            }
-        }
         if (clazz.nestHostClass == null) {
             fixNestsForParent(clazz, getReadOnly);
         } else {
@@ -184,26 +179,6 @@ public class Java11Downgrader extends VersionProvider {
                     if (methodInsn.owner.equals(clazz.name)) {
                         if (nestMemberPrivates.containsKey(methodInsn.name + methodInsn.desc)) {
                             fields.put(methodInsn.name + methodInsn.desc, nestMemberPrivates.get(methodInsn.name + methodInsn.desc));
-                        }
-                    }
-                } else if (insn instanceof InvokeDynamicInsnNode) {
-                    InvokeDynamicInsnNode methodInsn = (InvokeDynamicInsnNode) insn;
-                    if (methodInsn.bsm.getOwner().equals(clazz.name)) {
-                        if (nestMemberPrivates.containsKey(methodInsn.name + methodInsn.desc)) {
-                            fields.put(methodInsn.name + methodInsn.desc, nestMemberPrivates.get(methodInsn.name + methodInsn.desc));
-                        }
-                    } else {
-                        for (Object arg : methodInsn.bsmArgs) {
-                            if (arg instanceof Handle) {
-                                Handle handle = (Handle) arg;
-                                if (handle.getOwner().equals(clazz.name)) {
-                                    if (nestMemberPrivates.containsKey(handle.getName() + handle.getDesc())) {
-                                        fields.put(handle.getName() + handle.getDesc(), nestMemberPrivates.get(handle.getName() + handle.getDesc()));
-                                    } else if (nestMemberPrivates.containsKey(handle.getName())) {
-                                        fields.put(handle.getName(), nestMemberPrivates.get(handle.getName()));
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -276,91 +251,6 @@ public class Java11Downgrader extends VersionProvider {
                                         throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
                                 }
                                 break;
-                            }
-                        }
-                    }
-                } else if (insn instanceof InvokeDynamicInsnNode) {
-                    InvokeDynamicInsnNode methodInsn = (InvokeDynamicInsnNode) insn;
-                    if (nestMembers.containsKey(methodInsn.bsm.getOwner())) {
-                        ClassNode target = nestMembers.get(methodInsn.bsm.getOwner());
-                        for (MethodNode methodNode : target.methods) {
-                            if (methodNode.name.equals(methodInsn.name) && methodNode.desc.equals(methodInsn.desc)) {
-                                if ((methodNode.access & Opcodes.ACC_PRIVATE) == 0) {
-                                    break;
-                                }
-                                switch (methodInsn.bsm.getTag()) {
-                                    case Opcodes.H_INVOKESTATIC:
-                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKESTATIC, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "_") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
-                                        break;
-                                    case Opcodes.H_INVOKEVIRTUAL:
-                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKEVIRTUAL, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "_") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
-                                        break;
-                                    case Opcodes.H_INVOKESPECIAL:
-                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKESPECIAL, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "_") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
-                                        break;
-                                    default:
-                                        throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    for (int j = 0; j < methodInsn.bsmArgs.length; j++) {
-                        Object arg = methodInsn.bsmArgs[j];
-                        if (arg instanceof Handle) {
-                            Handle handle = (Handle) arg;
-                            if (nestMembers.containsKey(handle.getOwner())) {
-                                ClassNode target = nestMembers.get(handle.getOwner());
-                                if (handle.getOwner().equals(target.name)) {
-                                    if (handle.getName().equals("<init>")) {
-                                        continue;
-                                    }
-                                    for (MethodNode methodNode : target.methods) {
-                                        if (methodNode.name.equals(handle.getName()) && methodNode.desc.equals(handle.getDesc())) {
-                                            if ((methodNode.access & Opcodes.ACC_PRIVATE) == 0) {
-                                                break;
-                                            }
-                                            switch (handle.getTag()) {
-                                                case Opcodes.H_INVOKESTATIC:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                case Opcodes.H_INVOKEVIRTUAL:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                case Opcodes.H_INVOKESPECIAL:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESPECIAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                default:
-                                                    throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
-                                            }
-                                            break;
-                                        }
-                                    }
-                                    for (FieldNode fieldNode : target.fields) {
-                                        if (fieldNode.name.equals(handle.getName()) && fieldNode.desc.equals(handle.getDesc())) {
-                                            if ((fieldNode.access & Opcodes.ACC_PRIVATE) == 0) {
-                                                break;
-                                            }
-                                            switch (handle.getTag()) {
-                                                case Opcodes.H_GETFIELD:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$get$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                case Opcodes.H_PUTFIELD:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$set$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                case Opcodes.H_GETSTATIC:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$get$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                case Opcodes.H_PUTSTATIC:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$set$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                default:
-                                                    throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
                             }
                         }
                     }
