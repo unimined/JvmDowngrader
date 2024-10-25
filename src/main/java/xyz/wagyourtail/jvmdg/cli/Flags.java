@@ -5,6 +5,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Consumer;
 import xyz.wagyourtail.jvmdg.util.Function;
@@ -19,90 +20,88 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 public class Flags {
     public static final String jvmdgVersion = Flags.class.getPackage().getImplementationVersion();
-
+    /**
+     * internal method to resolve the java api jar
+     */
+    private static List<File> foundApi = null;
     /**
      * sets the target class version, default is {@link Opcodes#V1_8}
      */
     public int classVersion = Opcodes.V1_8;
-
     /**
      * sets the api jar to use, if null will attempt to automatically find it
      */
     public List<File> api = null;
-
     /**
      * sets the log level to {@link Logger.Level#FATAL}
+     *
      * @deprecated use logLevel, if this is true, it will override {@link #logLevel} to {@link Logger.Level#FATAL}
      */
     @Deprecated
     public boolean quiet = Boolean.getBoolean(Constants.QUIET);
-
     /**
      * sets if the logger should use ansi colors for the console to look pretty
      */
     public boolean logAnsiColors = Boolean.getBoolean(System.getProperty(Constants.LOG_ANSI_COLORS, "true"));
     /**
      * sets the log level
+     *
      * @see Logger.Level
      * @since 0.9.0
      */
     public Logger.Level logLevel = Logger.Level.valueOf(System.getProperty(Constants.LOG_LEVEL, "INFO").toUpperCase());
-
     /**
      * sets if any classes should be set to ignore missing class/member warnings
      * this will prevent {@link xyz.wagyourtail.jvmdg.version.VersionProvider#printWarnings(Set, String)} for
      * any classes in this set
      * <p>
      * This set also allows for packages to be ignored, by ending with a {@code *} or {@code **} to ignore all sub-packages
+     *
      * @since 0.9.0
      */
     public TreeMap<String, WildcardType> ignoreWarningsIn = new TreeMap<>();
-
     /**
      * sets if maven lookup is allowed for auto resolving {@link #api}
      */
     public boolean allowMaven = Boolean.getBoolean(Constants.ALLOW_MAVEN_LOOKUP);
-
-    // debug
     /**
      * sets the log level to {@link Logger.Level#DEBUG}
+     *
      * @deprecated use logLevel, if this is true, it will override {@link #logLevel} to {@link Logger.Level#DEBUG}
      */
     @Deprecated
     public boolean printDebug = Boolean.getBoolean(Constants.DEBUG);
-
+    /**
+     * sets whether to enable "inlining" of methods during {@link ApiShader} tasks.
+     *
+     * @since 1.2.0
+     */
+    public boolean shadeInlining = Boolean.getBoolean(Constants.SHADE_INLINING);
     /**
      * this skips applying stubs for the specified input class version, this will still apply the
      * {@link xyz.wagyourtail.jvmdg.version.VersionProvider#otherTransforms(ClassNode, Set, Function, Set)}
      * such as {@code INVOKE_INTERFACE} -> {@code INVOKE_SPECIAL} for private interface methods in java 9 -> 8
      */
     public Set<Integer> debugSkipStubs = new HashSet<>(getDebugSkip());
-
     /**
      * sets if classes should be dumped to the {@link Constants#DEBUG_DIR} directory
+     *
      * @since 0.9.0
      */
     public boolean debugDumpClasses = Boolean.getBoolean(Constants.DEBUG_DUMP_CLASSES);
-
     /**
      * if should move the original class file to the multi-release directory
+     *
      * @since 1.0.0
      */
     public boolean multiReleaseOriginal = Boolean.getBoolean(Constants.MULTI_RELEASE_ORIGINAL);
-
     /**
      * if should provide extra multi-release versions. As class versions, not java versions.
+     *
      * @since 1.0.0
      */
     public Set<Integer> multiReleaseVersions = new HashSet<>(getMultiReleaseVersions());
@@ -137,19 +136,20 @@ public class Flags {
     @Override
     public String toString() {
         return "Flags{" +
-                "classVersion=" + classVersion +
-                ", api=" + api +
-                ", quiet=" + quiet +
-                ", logAnsiColors=" + logAnsiColors +
-                ", logLevel=" + logLevel +
-                ", allowMaven=" + allowMaven +
-                ", printDebug=" + printDebug +
-                ", debugSkipStubs=" + debugSkipStubs +
-                ", ignoreWarningsIn=" + ignoreWarningsIn +
-                ", debugDumpClasses=" + debugDumpClasses +
-                ", multiReleaseOriginal=" + multiReleaseOriginal +
-                ", multiReleaseVersions=" + multiReleaseVersions +
-                '}';
+            "classVersion=" + classVersion +
+            ", api=" + api +
+            ", quiet=" + quiet +
+            ", logAnsiColors=" + logAnsiColors +
+            ", logLevel=" + logLevel +
+            ", ignoreWarningsIn=" + ignoreWarningsIn +
+            ", allowMaven=" + allowMaven +
+            ", printDebug=" + printDebug +
+            ", shadeInlining=" + shadeInlining +
+            ", debugSkipStubs=" + debugSkipStubs +
+            ", debugDumpClasses=" + debugDumpClasses +
+            ", multiReleaseOriginal=" + multiReleaseOriginal +
+            ", multiReleaseVersions=" + multiReleaseVersions +
+            '}';
     }
 
     @Override
@@ -157,13 +157,15 @@ public class Flags {
         if (this == o) return true;
         if (!(o instanceof Flags)) return false;
         Flags flags = (Flags) o;
-        return classVersion == flags.classVersion && quiet == flags.quiet && logAnsiColors == flags.logAnsiColors && allowMaven == flags.allowMaven && printDebug == flags.printDebug && debugDumpClasses == flags.debugDumpClasses && multiReleaseOriginal == flags.multiReleaseOriginal && Objects.equals(api, flags.api) && logLevel == flags.logLevel && Objects.equals(ignoreWarningsIn, flags.ignoreWarningsIn) && Objects.equals(debugSkipStubs, flags.debugSkipStubs) && Objects.equals(multiReleaseVersions, flags.multiReleaseVersions);
+        return classVersion == flags.classVersion && quiet == flags.quiet && logAnsiColors == flags.logAnsiColors && allowMaven == flags.allowMaven && printDebug == flags.printDebug && shadeInlining == flags.shadeInlining && debugDumpClasses == flags.debugDumpClasses && multiReleaseOriginal == flags.multiReleaseOriginal && Objects.equals(api, flags.api) && logLevel == flags.logLevel && Objects.equals(ignoreWarningsIn, flags.ignoreWarningsIn) && Objects.equals(debugSkipStubs, flags.debugSkipStubs) && Objects.equals(multiReleaseVersions, flags.multiReleaseVersions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(classVersion, api, quiet, logAnsiColors, logLevel, ignoreWarningsIn, allowMaven, printDebug, debugSkipStubs, debugDumpClasses, multiReleaseOriginal, multiReleaseVersions);
+        return Objects.hash(classVersion, api, quiet, logAnsiColors, logLevel, ignoreWarningsIn, allowMaven, printDebug, shadeInlining, debugSkipStubs, debugDumpClasses, multiReleaseOriginal, multiReleaseVersions);
     }
+
+    /* getters */
 
     public void addIgnore(String s) {
         if (s.endsWith("**")) {
@@ -174,8 +176,6 @@ public class Flags {
             ignoreWarningsIn.put(s, WildcardType.NONE);
         }
     }
-
-    /* getters */
 
     /**
      * internal method for retrieving the actual log level
@@ -190,11 +190,6 @@ public class Flags {
         }
         return logLevel;
     }
-
-    /**
-     * internal method to resolve the java api jar
-     */
-    private static List<File> foundApi = null;
 
     public List<File> findJavaApi() {
         try {
@@ -361,12 +356,6 @@ public class Flags {
         }
     }
 
-    public enum WildcardType {
-        NONE,
-        SINGLE,
-        DOUBLE
-    }
-
     private String hash(InputStream is) {
         MessageDigest digest = null;
         try {
@@ -385,6 +374,12 @@ public class Flags {
         } catch (Exception e) {
             throw new RuntimeException("Failed to hash", e);
         }
+    }
+
+    public enum WildcardType {
+        NONE,
+        SINGLE,
+        DOUBLE
     }
 
 }

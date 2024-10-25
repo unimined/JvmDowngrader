@@ -1,26 +1,16 @@
 package xyz.wagyourtail.jvmdg.site.maven.transform
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.sync.Semaphore
 import org.objectweb.asm.Opcodes
-import org.w3c.dom.Element
-import xyz.wagyourtail.jvmdg.compile.PathDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.site.maven.Cache
 import xyz.wagyourtail.jvmdg.site.maven.MavenClient
 import xyz.wagyourtail.jvmdg.site.maven.lock.StringKeyLock
-import java.io.InputStream
 import java.nio.file.Path
-import java.util.*
-import java.util.regex.Pattern
-import java.util.stream.IntStream
-import java.util.stream.Stream
-import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.io.path.createParentDirectories
-import kotlin.io.path.outputStream
 
 object JarTransformer {
-    val LOGGER = KotlinLogging.logger {  }
+    val LOGGER = KotlinLogging.logger { }
     val lock = StringKeyLock.LockEntry()
 
     fun transform(jar: Path, majorVersion: Int, path: String, targetJar: Path) {

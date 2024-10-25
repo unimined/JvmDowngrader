@@ -82,4 +82,5 @@ public class FullyQualifiedMemberNameAndDesc {
     public int hashCode() {
         return Objects.hash(owner, name, desc);
     }
+
 }

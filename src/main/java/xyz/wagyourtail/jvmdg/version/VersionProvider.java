@@ -1,13 +1,11 @@
 package xyz.wagyourtail.jvmdg.version;
 
-import org.jetbrains.annotations.ApiStatus;
 import org.objectweb.asm.*;
 import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.all.RemovedInterfaces;
-import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
@@ -44,23 +42,41 @@ public abstract class VersionProvider {
 
     private volatile boolean initialized = false;
 
-    /**
-     * will be made package-private in a future release
-     */
-    @Deprecated
-    @ApiStatus.ScheduledForRemoval(inVersion = "1.2.0")
-    protected VersionProvider(int inputVersion, int outputVersion) {
-        this.inputVersion = inputVersion;
-        this.outputVersion = outputVersion;
-        this.coverage = new Coverage(inputVersion, this);
-        this.priotity = 0;
-    }
-
     protected VersionProvider(int inputVersion, int outputVersion, int priotity) {
         this.inputVersion = inputVersion;
         this.outputVersion = outputVersion;
         this.coverage = new Coverage(inputVersion, this);
         this.priotity = priotity;
+    }
+
+    public static FullyQualifiedMemberNameAndDesc resolveModifyTarget(Member member, Ref ref) {
+        if (member instanceof Method) {
+            Type owner;
+            String name;
+            Type desc;
+            if (ref.value().isEmpty()) {
+                throw new IllegalArgumentException("ref must have a value");
+            } else {
+                if (ref.value().startsWith("L") && ref.value().endsWith(";")) {
+                    owner = Type.getType(ref.value());
+                } else {
+                    owner = Type.getObjectType(ref.value());
+                }
+            }
+            if (ref.member().isEmpty()) {
+                return new FullyQualifiedMemberNameAndDesc(owner, null, null);
+            } else {
+                name = ref.member();
+            }
+            if (ref.desc().isEmpty()) {
+                throw new IllegalArgumentException("ref must have a desc");
+            } else {
+                desc = Type.getMethodType(ref.desc());
+            }
+            return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
+        } else {
+            throw new IllegalArgumentException("member must be a method");
+        }
     }
 
     public FullyQualifiedMemberNameAndDesc resolveStubTarget(Member member, Ref ref) {
@@ -134,36 +150,6 @@ public abstract class VersionProvider {
             throw new UnsupportedOperationException("Not implemented yet");
         } else {
             throw new IllegalArgumentException("member must be a method or field");
-        }
-    }
-
-    public static FullyQualifiedMemberNameAndDesc resolveModifyTarget(Member member, Ref ref) {
-        if (member instanceof Method) {
-            Type owner;
-            String name;
-            Type desc;
-            if (ref.value().isEmpty()) {
-                throw new IllegalArgumentException("ref must have a value");
-            } else {
-                if (ref.value().startsWith("L") && ref.value().endsWith(";")) {
-                    owner = Type.getType(ref.value());
-                } else {
-                    owner = Type.getObjectType(ref.value());
-                }
-            }
-            if (ref.member().isEmpty()) {
-                throw new IllegalArgumentException("ref must have a member");
-            } else {
-                name = ref.member();
-            }
-            if (ref.desc().isEmpty()) {
-                throw new IllegalArgumentException("ref must have a desc");
-            } else {
-                desc = Type.getMethodType(ref.desc());
-            }
-            return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
-        } else {
-            throw new IllegalArgumentException("member must be a method");
         }
     }
 
@@ -398,6 +384,238 @@ public abstract class VersionProvider {
         return null;
     }
 
+    public void stubBSMArgs(ClassNode owner, MethodNode method, Set<ClassNode> extra, Handle bsm, String indyDesc, Object[] bsmArgs, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Set<String> warnings) throws IOException {
+        for (int j = 0; j < bsmArgs.length; j++) {
+            Object arg = bsmArgs[j];
+            if (arg instanceof Handle) {
+                arg = stubHandle(owner, method, extra, bsm, indyDesc, enableRuntime, memberResolver, superTypeResolver, warnings, (Handle) arg);
+            } else if (arg instanceof Type) {
+                arg = stubClass((Type) arg, warnings);
+            } else if (arg instanceof ConstantDynamic) {
+                arg = stubCondy(owner, method, extra, (ConstantDynamic) arg, enableRuntime, memberResolver, superTypeResolver, warnings);
+            }
+            bsmArgs[j] = arg;
+        }
+    }
+
+    private Handle stubHandle(ClassNode owner, MethodNode method, Set<ClassNode> extra, Handle bsm, String indyDesc, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Set<String> warnings, Handle handle) throws IOException {
+        handle = new Handle(
+            handle.getTag(),
+            stubClass(Type.getObjectType(handle.getOwner()), warnings).getInternalName(),
+            handle.getName(),
+            stubClass(Type.getType(handle.getDesc()), warnings).getDescriptor(),
+            handle.isInterface()
+        );
+        switch (handle.getTag()) {
+            case Opcodes.H_GETFIELD:
+            case Opcodes.H_GETSTATIC:
+            case Opcodes.H_PUTFIELD:
+            case Opcodes.H_PUTSTATIC:
+                //TODO
+                break;
+            case Opcodes.H_INVOKEVIRTUAL:
+            case Opcodes.H_INVOKESTATIC:
+            case Opcodes.H_INVOKESPECIAL:
+            case Opcodes.H_NEWINVOKESPECIAL:
+            case Opcodes.H_INVOKEINTERFACE:
+                Type[] captured = null;
+                if (bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
+                    captured = Type.getMethodType(indyDesc).getArgumentTypes();
+                }
+                Type hOwner = Type.getObjectType(handle.getOwner());
+                if (hOwner.getSort() == Type.ARRAY) {
+                    return handle;
+                }
+                Type hDesc = Type.getMethodType(handle.getDesc());
+                MemberNameAndDesc member = new MemberNameAndDesc(handle.getName(), hDesc);
+                ClassMapping stubMapper = getStubMapper(hOwner, handle.isInterface(), memberResolver, superTypeResolver);
+                boolean isStatic = handle.getTag() == Opcodes.H_INVOKESTATIC;
+                boolean isSpecial = handle.getTag() == Opcodes.H_INVOKESPECIAL || handle.getTag() == Opcodes.H_NEWINVOKESPECIAL;
+                Pair<Method, Stub> min = stubMapper.getStubFor(member, isStatic, enableRuntime, isSpecial, warnings);
+                if (min != null) {
+                    if (min.getSecond().downgradeVersion()) {
+                        warnings.add("Invalid stub for bsm handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
+                    } else if (!min.getSecond().abstractDefault()) {
+                        Type hStaticDesc;
+                        if (isStatic) {
+                            hStaticDesc = hDesc;
+                        } else {
+                            Type[] params = new Type[hDesc.getArgumentCount() + 1];
+                            params[0] = hOwner;
+                            System.arraycopy(hDesc.getArgumentTypes(), 0, params, 1, hDesc.getArgumentCount());
+                            if (captured != null) {
+                                // replace actual with capture, fixes invokeInterface on LambdaMetafactory
+                                System.arraycopy(captured, 0, params, 0, captured.length);
+                            }
+                            hStaticDesc = Type.getMethodType(hDesc.getReturnType(), params);
+                        }
+
+                        Method m = min.getFirst();
+                        String newOwner = Type.getType(m.getDeclaringClass()).getInternalName();
+                        String name = m.getName();
+                        String desc = Type.getMethodDescriptor(m);
+                        boolean intf = m.getDeclaringClass().isInterface();
+                        if (!desc.equals(hStaticDesc.getDescriptor())) {
+                            // create wrapper as desc should exactly match.
+                            newOwner = owner.name;
+                            desc = hStaticDesc.getDescriptor();
+                            intf = (owner.access & Opcodes.ACC_INTERFACE) != 0;
+                            MethodNode found = null;
+                            int num = 0;
+                            for (MethodNode mn : owner.methods) {
+                                if (mn instanceof HandleMethodNode) {
+                                    Handle h = ((HandleMethodNode) mn).ref;
+                                    if (h.getTag() == handle.getTag() &&
+                                        h.getOwner().equals(handle.getOwner()) &&
+                                        h.getName().equals(handle.getName()) &&
+                                        h.getDesc().equals(handle.getDesc()) &&
+                                        h.isInterface() == handle.isInterface()) {
+                                        if (!mn.desc.equals(hStaticDesc.getDescriptor())) {
+                                            num++;
+                                        } else {
+                                            found = mn;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (found != null) {
+                                name = found.name;
+                            } else {
+                                HandleMethodNode mv = new HandleMethodNode(method.name, handle, num);
+                                mv.access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC;
+                                mv.desc = hStaticDesc.getDescriptor();
+                                mv.visitCode();
+                                Type returnType = hStaticDesc.getReturnType();
+                                Type[] arguments = hStaticDesc.getArgumentTypes();
+                                Type actualReturnType = Type.getType(m.getReturnType());
+                                int k = 0;
+                                for (Type argument : arguments) {
+                                    mv.visitVarInsn(argument.getOpcode(Opcodes.ILOAD), k);
+                                    k += argument.getSize();
+                                }
+                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getType(m.getDeclaringClass()).getInternalName(), m.getName(), Type.getMethodDescriptor(m), false);
+                                if (!actualReturnType.equals(returnType)) {
+                                    mv.visitTypeInsn(Opcodes.CHECKCAST, returnType.getInternalName());
+                                }
+                                mv.visitInsn(returnType.getOpcode(Opcodes.IRETURN));
+
+                                mv.visitMaxs(0, 0);
+                                mv.visitEnd();
+                                owner.methods.add(mv);
+                                name = mv.name;
+                            }
+                        }
+                        handle = new Handle(
+                            Opcodes.H_INVOKESTATIC,
+                            newOwner,
+                            name,
+                            desc,
+                            intf
+                        );
+                    }
+                } else {
+                    Pair<Method, Modify> mod = stubMapper.getModifyFor(member, isStatic, warnings);
+                    if (mod != null) {
+                        if (handle.getTag() != Opcodes.H_NEWINVOKESPECIAL) {
+                            warnings.add("Invalid modify for indy handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
+                        } else {
+                            Type returnType = Type.getObjectType(handle.getOwner());
+                            Type[] arguments = hDesc.getArgumentTypes();
+
+                            String name;
+                            String desc = Type.getMethodDescriptor(returnType, arguments);
+                            boolean intf = (owner.access & Opcodes.ACC_INTERFACE) != 0;
+
+                            MethodNode found = null;
+                            int num = 0;
+                            for (MethodNode mn : owner.methods) {
+                                if (mn instanceof HandleMethodNode) {
+                                    Handle h = ((HandleMethodNode) mn).ref;
+                                    if (h.getTag() == handle.getTag() &&
+                                        h.getOwner().equals(handle.getOwner()) &&
+                                        h.getName().equals(handle.getName()) &&
+                                        h.getDesc().equals(handle.getDesc()) &&
+                                        h.isInterface() == handle.isInterface()) {
+                                        if (!mn.desc.equals(desc)) {
+                                            num++;
+                                        } else {
+                                            found = mn;
+                                            break;
+                                        }
+                                    }
+                                }
+//                                                if (mn.name.equals(name) && mn.desc.equals(desc)) {
+//                                                    found = true;
+//                                                    break;
+//                                                }
+                            }
+
+                            if (found != null) {
+                                name = found.name;
+                            } else {
+                                // construct wrapper
+                                HandleMethodNode mn = new HandleMethodNode(method.name, handle, num);
+                                mn.access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
+                                mn.desc = desc;
+                                mn.visitCode();
+                                mn.visitTypeInsn(Opcodes.NEW, returnType.getInternalName());
+                                mn.visitInsn(Opcodes.DUP);
+                                int k = 0;
+                                for (Type argument : arguments) {
+                                    mn.visitVarInsn(argument.getOpcode(Opcodes.ILOAD), k);
+                                    k += argument.getSize();
+                                }
+                                mn.visitMethodInsn(Opcodes.INVOKESPECIAL, returnType.getInternalName(), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, arguments), false);
+                                mn.visitInsn(Opcodes.ARETURN);
+                                mn.visitMaxs(0, 0);
+                                mn.visitEnd();
+                                owner.methods.add(mn);
+
+                                // invoke modify
+                                try {
+                                    List<Object> modifyArgs = Arrays.asList(mn, mn.instructions.size() - 2, owner, extra);
+                                    mod.getFirst().invoke(null, modifyArgs.subList(0, mod.getFirst().getParameterTypes().length).toArray());
+                                } catch (Throwable e) {
+                                    throw new RuntimeException(e);
+                                }
+
+                                name = mn.name;
+                            }
+
+                            handle = new Handle(
+                                Opcodes.H_INVOKESTATIC,
+                                owner.name,
+                                name,
+                                desc,
+                                intf
+                            );
+
+                        }
+                    }
+                }
+                break;
+        }
+        return handle;
+    }
+
+    public ConstantDynamic stubCondy(ClassNode owner, MethodNode method, Set<ClassNode> extra, ConstantDynamic condy, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Set<String> warnings) throws IOException {
+        Handle bsm = condy.getBootstrapMethod();
+        Object[] bsmArgs = new Object[condy.getBootstrapMethodArgumentCount()];
+        for (int i = 0; i < condy.getBootstrapMethodArgumentCount(); i++) {
+            bsmArgs[i] = condy.getBootstrapMethodArgument(i);
+        }
+        Type desc = stubClass(Type.getType(condy.getDescriptor()), warnings);
+        stubBSMArgs(owner, method, extra, bsm, desc.getDescriptor(), bsmArgs, enableRuntime, memberResolver, superTypeResolver, warnings);
+        bsm = stubHandle(owner, method, extra, bsm, desc.getDescriptor(), enableRuntime, memberResolver, superTypeResolver, warnings, bsm);
+        return new ConstantDynamic(
+            condy.getName(),
+            desc.getDescriptor(),
+            bsm,
+            bsmArgs
+        );
+    }
+
     public Type stubClass(Type desc, Set<String> warnings) {
         switch (desc.getSort()) {
             case Type.METHOD:
@@ -469,7 +687,7 @@ public abstract class VersionProvider {
                 FieldInsnNode fin = (FieldInsnNode) insn;
                 fin.owner = stubClass(Type.getObjectType(fin.owner), warnings).getInternalName();
                 fin.desc = stubClass(Type.getType(fin.desc), warnings).getDescriptor();
-                //TODO: field stubs (upgrade to method)
+                //TODO: field stubs (upgrade to method?)
             } else if (insn instanceof InvokeDynamicInsnNode) {
                 InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
                 indy.desc = stubClass(Type.getMethodType(indy.desc), warnings).getDescriptor();
@@ -480,214 +698,7 @@ public abstract class VersionProvider {
                     stubClass(Type.getMethodType(indy.bsm.getDesc()), warnings).getDescriptor(),
                     indy.bsm.isInterface()
                 );
-                for (int j = 0; j < indy.bsmArgs.length; j++) {
-                    Object arg = indy.bsmArgs[j];
-                    if (arg instanceof Handle) {
-                        Handle handle = (Handle) arg;
-                        handle = new Handle(
-                            handle.getTag(),
-                            stubClass(Type.getObjectType(handle.getOwner()), warnings).getInternalName(),
-                            handle.getName(),
-                            stubClass(Type.getType(handle.getDesc()), warnings).getDescriptor(),
-                            handle.isInterface()
-                        );
-                        indy.bsmArgs[j] = handle;
-                        switch (handle.getTag()) {
-                            case Opcodes.H_GETFIELD:
-                            case Opcodes.H_GETSTATIC:
-                            case Opcodes.H_PUTFIELD:
-                            case Opcodes.H_PUTSTATIC:
-                                //TODO
-                                break;
-                            case Opcodes.H_INVOKEVIRTUAL:
-                            case Opcodes.H_INVOKESTATIC:
-                            case Opcodes.H_INVOKESPECIAL:
-                            case Opcodes.H_NEWINVOKESPECIAL:
-                            case Opcodes.H_INVOKEINTERFACE:
-                                Type[] captured = null;
-                                if (indy.bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
-                                    captured = Type.getMethodType(indy.desc).getArgumentTypes();
-                                }
-                                Type hOwner = Type.getObjectType(handle.getOwner());
-                                if (hOwner.getSort() == Type.ARRAY) {
-                                    continue;
-                                }
-                                Type hDesc = Type.getMethodType(handle.getDesc());
-                                MemberNameAndDesc member = new MemberNameAndDesc(handle.getName(), hDesc);
-                                ClassMapping stubMapper = getStubMapper(hOwner, handle.isInterface(), memberResolver, superTypeResolver);
-                                boolean isStatic = handle.getTag() == Opcodes.H_INVOKESTATIC;
-                                boolean isSpecial = handle.getTag() == Opcodes.H_INVOKESPECIAL || handle.getTag() == Opcodes.H_NEWINVOKESPECIAL;
-                                Pair<Method, Stub> min = stubMapper.getStubFor(member, isStatic, enableRuntime, isSpecial, warnings);
-                                if (min != null) {
-                                    if (min.getSecond().downgradeVersion()) {
-                                        warnings.add("Invalid stub for indy handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
-                                    } else if (!min.getSecond().abstractDefault()) {
-                                        Type hStaticDesc;
-                                        if (isStatic) {
-                                            hStaticDesc = hDesc;
-                                        } else {
-                                            Type[] params = new Type[hDesc.getArgumentCount() + 1];
-                                            params[0] = hOwner;
-                                            System.arraycopy(hDesc.getArgumentTypes(), 0, params, 1, hDesc.getArgumentCount());
-                                            if (captured != null) {
-                                                // replace actual with capture, fixes invokeInterface on LambdaMetafactory
-                                                System.arraycopy(captured, 0, params, 0, captured.length);
-                                            }
-                                            hStaticDesc = Type.getMethodType(hDesc.getReturnType(), params);
-                                        }
-
-                                        Method m = min.getFirst();
-                                        String newOwner = Type.getType(m.getDeclaringClass()).getInternalName();
-                                        String name = m.getName();
-                                        String desc = Type.getMethodDescriptor(m);
-                                        boolean intf = m.getDeclaringClass().isInterface();
-                                        if (!desc.equals(hStaticDesc.getDescriptor())) {
-                                            // create wrapper as desc should exactly match.
-                                            newOwner = owner.name;
-                                            desc = hStaticDesc.getDescriptor();
-                                            intf = (owner.access & Opcodes.ACC_INTERFACE) != 0;
-                                            MethodNode found = null;
-                                            int num = 0;
-                                            for (MethodNode mn : owner.methods) {
-                                                if (mn instanceof HandleMethodNode) {
-                                                    Handle h = ((HandleMethodNode) mn).ref;
-                                                    if (h.getTag() == handle.getTag() &&
-                                                        h.getOwner().equals(handle.getOwner()) &&
-                                                        h.getName().equals(handle.getName()) &&
-                                                        h.getDesc().equals(handle.getDesc()) &&
-                                                        h.isInterface() == handle.isInterface()) {
-                                                        if (!mn.desc.equals(hStaticDesc.getDescriptor())) {
-                                                            num++;
-                                                        } else {
-                                                            found = mn;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            if (found != null) {
-                                                name = found.name;
-                                            } else {
-                                                HandleMethodNode mv = new HandleMethodNode(method.name, handle, num);
-                                                mv.access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC;
-                                                mv.desc = hStaticDesc.getDescriptor();
-                                                mv.visitCode();
-                                                Type returnType = hStaticDesc.getReturnType();
-                                                Type[] arguments = hStaticDesc.getArgumentTypes();
-                                                Type actualReturnType = Type.getType(m.getReturnType());
-                                                int k = 0;
-                                                for (Type argument : arguments) {
-                                                    mv.visitVarInsn(argument.getOpcode(Opcodes.ILOAD), k);
-                                                    k += argument.getSize();
-                                                }
-                                                mv.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getType(m.getDeclaringClass()).getInternalName(), m.getName(), Type.getMethodDescriptor(m), false);
-                                                if (!actualReturnType.equals(returnType)) {
-                                                    mv.visitTypeInsn(Opcodes.CHECKCAST, returnType.getInternalName());
-                                                }
-                                                mv.visitInsn(returnType.getOpcode(Opcodes.IRETURN));
-
-                                                mv.visitMaxs(0, 0);
-                                                mv.visitEnd();
-                                                owner.methods.add(mv);
-                                                name = mv.name;
-                                            }
-                                        }
-                                        indy.bsmArgs[j] = new Handle(
-                                            Opcodes.H_INVOKESTATIC,
-                                            newOwner,
-                                            name,
-                                            desc,
-                                            intf
-                                        );
-                                    }
-                                } else {
-                                    Pair<Method, Modify> mod = stubMapper.getModifyFor(member, isStatic, warnings);
-                                    if (mod != null) {
-                                        if (handle.getTag() != Opcodes.H_NEWINVOKESPECIAL) {
-                                            warnings.add("Invalid modify for indy handle: " + handle.getOwner() + "." + handle.getName() + handle.getDesc());
-                                        } else {
-                                            Type returnType = Type.getObjectType(handle.getOwner());
-                                            Type[] arguments = hDesc.getArgumentTypes();
-
-                                            String name;
-                                            String desc = Type.getMethodDescriptor(returnType, arguments);
-                                            boolean intf = (owner.access & Opcodes.ACC_INTERFACE) != 0;
-
-                                            MethodNode found = null;
-                                            int num = 0;
-                                            for (MethodNode mn : owner.methods) {
-                                                if (mn instanceof HandleMethodNode) {
-                                                    Handle h = ((HandleMethodNode) mn).ref;
-                                                    if (h.getTag() == handle.getTag() &&
-                                                        h.getOwner().equals(handle.getOwner()) &&
-                                                        h.getName().equals(handle.getName()) &&
-                                                        h.getDesc().equals(handle.getDesc()) &&
-                                                        h.isInterface() == handle.isInterface()) {
-                                                        if (!mn.desc.equals(desc)) {
-                                                            num++;
-                                                        } else {
-                                                            found = mn;
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-//                                                if (mn.name.equals(name) && mn.desc.equals(desc)) {
-//                                                    found = true;
-//                                                    break;
-//                                                }
-                                            }
-
-                                            if (found != null) {
-                                                name = found.name;
-                                            } else {
-                                                // construct wrapper
-                                                HandleMethodNode mn = new HandleMethodNode(method.name, handle, num);
-                                                mn.access = Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC;
-                                                mn.desc = desc;
-                                                mn.visitCode();
-                                                mn.visitTypeInsn(Opcodes.NEW, returnType.getInternalName());
-                                                mn.visitInsn(Opcodes.DUP);
-                                                int k = 0;
-                                                for (Type argument : arguments) {
-                                                    mn.visitVarInsn(argument.getOpcode(Opcodes.ILOAD), k);
-                                                    k += argument.getSize();
-                                                }
-                                                mn.visitMethodInsn(Opcodes.INVOKESPECIAL, returnType.getInternalName(), "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, arguments), false);
-                                                mn.visitInsn(Opcodes.ARETURN);
-                                                mn.visitMaxs(0, 0);
-                                                mn.visitEnd();
-                                                owner.methods.add(mn);
-
-                                                // invoke modify
-                                                try {
-                                                    List<Object> modifyArgs = Arrays.asList(mn, mn.instructions.size() - 2, owner, extra);
-                                                    mod.getFirst().invoke(null, modifyArgs.subList(0, mod.getFirst().getParameterTypes().length).toArray());
-                                                } catch (Throwable e) {
-                                                    throw new RuntimeException(e);
-                                                }
-
-                                                name = mn.name;
-                                            }
-
-                                            indy.bsmArgs[j] = new Handle(
-                                                Opcodes.H_INVOKESTATIC,
-                                                owner.name,
-                                                name,
-                                                desc,
-                                                intf
-                                            );
-
-                                        }
-                                    }
-                                }
-                                break;
-                        }
-
-                    } else if (arg instanceof Type) {
-                        Type type = (Type) arg;
-                        indy.bsmArgs[j] = stubClass(type, warnings);
-                    }
-                }
+                stubBSMArgs(owner, method, extra, indy.bsm, indy.desc, indy.bsmArgs, enableRuntime, memberResolver, superTypeResolver, warnings);
                 getStubMapper(Type.getObjectType(indy.bsm.getOwner()), indy.bsm.isInterface(), memberResolver, superTypeResolver).transform(method, i, owner, extra, enableRuntime, warnings);
             } else if (insn instanceof MultiANewArrayInsnNode) {
                 MultiANewArrayInsnNode manain = (MultiANewArrayInsnNode) insn;
@@ -698,8 +709,7 @@ public abstract class VersionProvider {
                     ldc.cst = stubClass((Type) ldc.cst, warnings);
                 } else if (ldc.cst instanceof ConstantDynamic) {
                     ConstantDynamic condy = (ConstantDynamic) ldc.cst;
-                    Handle bsm = condy.getBootstrapMethod();
-                    throw MissingStubError.create(Type.getObjectType(bsm.getOwner()), bsm.getName(), Type.getType(bsm.getDesc()));
+                    ldc.cst = stubCondy(owner, method, extra, condy, enableRuntime, memberResolver, superTypeResolver, warnings);
                 }
             } else if (insn instanceof FrameNode) {
                 FrameNode fn = (FrameNode) insn;
@@ -1085,6 +1095,7 @@ public abstract class VersionProvider {
             }
             name += caller + "$" + num;
         }
+
     }
 
 }

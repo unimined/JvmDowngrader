@@ -39,7 +39,7 @@ object MavenClient {
         locator.addService(TransporterFactory::class.java, FileTransporterFactory::class.java)
         locator.addService(TransporterFactory::class.java, HttpTransporterFactory::class.java)
 
-        locator.setErrorHandler(object : DefaultServiceLocator.ErrorHandler() {
+        locator.setErrorHandler(object: DefaultServiceLocator.ErrorHandler() {
 
             override fun serviceCreationFailed(type: Class<*>?, impl: Class<*>?, exception: Throwable?) {
                 exception?.printStackTrace()
@@ -74,7 +74,6 @@ object MavenClient {
     val session = createSession(repo, LocalRepository(Cache.cache.resolve("orig").toFile()))
     val repositories = Settings.mavens.map { remoteRepository(it.first, it.second) }
 
-
     fun resolve(artifact: DefaultArtifact): Pair<File, List<File>> {
         val request = ArtifactRequest()
         request.artifact = artifact
@@ -84,7 +83,8 @@ object MavenClient {
         depRequest.collectRequest = CollectRequest(Dependency(artifact, "compile"), repositories)
 
         val result = repo.resolveArtifact(session, request).artifact.file
-        val deps = repo.resolveDependencies(session, depRequest).artifactResults.map { it.artifact.file }.filter { it != result }
+        val deps = repo.resolveDependencies(session, depRequest).artifactResults.map { it.artifact.file }
+            .filter { it != result }
 
         return result to deps
     }
@@ -106,7 +106,10 @@ object MavenClient {
                 url += "/"
             }
             url += path
-            val request = metadataClient.send(HttpRequest.newBuilder(URI.create(url)).build(), HttpResponse.BodyHandlers.ofInputStream())
+            val request = metadataClient.send(
+                HttpRequest.newBuilder(URI.create(url)).build(),
+                HttpResponse.BodyHandlers.ofInputStream()
+            )
             if (request.statusCode() == 200) {
                 return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(request.body())
             }

@@ -77,4 +77,5 @@ public class MemberNameAndDesc {
             return Objects.hash(name, desc);
         }
     }
+
 }

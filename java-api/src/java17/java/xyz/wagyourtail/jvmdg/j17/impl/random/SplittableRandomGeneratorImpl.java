@@ -227,4 +227,5 @@ public class SplittableRandomGeneratorImpl implements J_U_R_RandomGenerator.Spli
     public double nextExponential() {
         return SplittableGenerator.super.nextExponential();
     }
+
 }

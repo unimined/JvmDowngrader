@@ -17,11 +17,11 @@ public class J_U_SequencedCollection {
 
     public static boolean jvmdg$instanceof(Object obj) {
         return obj instanceof List<?> ||
-                obj instanceof LinkedHashSet<?> ||
-                obj instanceof Deque<?> ||
-                obj instanceof SortedSet<?> ||
-                obj instanceof ReverseSet<?> ||
-                obj instanceof ReverseCollection<?>;
+            obj instanceof LinkedHashSet<?> ||
+            obj instanceof Deque<?> ||
+            obj instanceof SortedSet<?> ||
+            obj instanceof ReverseSet<?> ||
+            obj instanceof ReverseCollection<?>;
     }
 
     public static <E> Collection<E> jvmdg$checkcast(Object obj) {

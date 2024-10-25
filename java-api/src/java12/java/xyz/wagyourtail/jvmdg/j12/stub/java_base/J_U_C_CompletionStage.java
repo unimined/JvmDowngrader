@@ -33,4 +33,5 @@ public class J_U_C_CompletionStage {
     public static <T> CompletionStage<T> exceptionallyComposeAsync(CompletionStage<T> stage, Function<Throwable, ? extends CompletionStage<T>> fn, Executor executor) {
         return stage.handle((r, ex) -> (ex == null) ? stage : stage.handleAsync((r1, ex1) -> fn.apply(ex1), executor).thenCompose(Function.identity())).thenCompose(Function.identity());
     }
+
 }

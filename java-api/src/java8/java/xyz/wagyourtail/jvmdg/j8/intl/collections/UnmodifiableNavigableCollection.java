@@ -95,4 +95,5 @@ public class UnmodifiableNavigableCollection<E> extends BackingCollection<E> imp
     public E last() {
         return backing.last();
     }
+
 }

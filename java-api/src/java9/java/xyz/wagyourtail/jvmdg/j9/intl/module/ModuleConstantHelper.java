@@ -8,18 +8,18 @@ import java.util.*;
 
 public class ModuleConstantHelper {
     private static final Map<String, J_L_Module> MODULES = new HashMap<>();
+    public static final J_L_ModuleLayer BOOT_LAYER =
+        // Note: This field is in this class as it's initialization is execution order sensitive as it need
+        // to be loaded after "MODULES" HashMap is initialized, but before initializing any boot "Module"
+        new J_L_ModuleLayer(Collections.emptyList(), MODULES);
     private static final Map<String, J_L_Module> MODULES_FROM_PACKAGE = new HashMap<>();
     private static final ClassLoader ORIGINAL_SYSTEM_CLASS_LOADER = ClassLoader.getSystemClassLoader();
-    public static final J_L_ModuleLayer BOOT_LAYER =
-            // Note: This field is in this class as it's initialization is execution order sensitive as it need
-            // to be loaded after "MODULES" HashMap is initialized, but before initializing any boot "Module"
-            new J_L_ModuleLayer(Collections.emptyList(), MODULES);
 
     static {
         // TODO: Auto generate this data in a separate "ModuleConstants" class
         registerBootModule("java.base", "java.io", "java.lang", "java.math",
-                "java.net", "java.nio", "java.security", "java.text", "java.time", "java.util",
-                "javax.crypto", "javax.net", "javax.security");
+            "java.net", "java.nio", "java.security", "java.text", "java.time", "java.util",
+            "javax.crypto", "javax.net", "javax.security");
         registerBootModule("java.logging", "java.util.logging");
         registerBootModule("java.net.http", "java.net.http");
         registerBootModule("jdk.httpserver", "com.sun.net.httpserver");
@@ -28,7 +28,7 @@ public class ModuleConstantHelper {
 
     private static void registerBootModule(String name, String... packages) {
         J_L_M_ModuleDescriptor descriptor = new J_L_M_ModuleDescriptor.Builder(name, false, Collections.emptySet())
-                .packages(new HashSet<>(Arrays.asList(packages))).build();
+            .packages(new HashSet<>(Arrays.asList(packages))).build();
         J_L_Module module = new J_L_Module(ORIGINAL_SYSTEM_CLASS_LOADER, BOOT_LAYER, descriptor);
         MODULES.put(name, module);
         for (String packageName : packages) {
@@ -39,7 +39,7 @@ public class ModuleConstantHelper {
     public static J_L_Module bootModuleFromClass(Class<?> clazz) {
         boolean bootClassLoader;
         if ((bootClassLoader = clazz.getClassLoader() == null) ||
-                clazz.getClassLoader() == ORIGINAL_SYSTEM_CLASS_LOADER) {
+            clazz.getClassLoader() == ORIGINAL_SYSTEM_CLASS_LOADER) {
             J_L_Module module = bootModuleFromClassName(clazz.getName());
             // Unnamed modules must have a class loader
             // but on java8, the boot class loader is null
@@ -63,4 +63,5 @@ public class ModuleConstantHelper {
             if (module != null) return module;
         }
     }
+
 }

@@ -44,7 +44,7 @@ public class J_L_Long {
 
             // return (upper << 32) + lower
             return (BigInteger.valueOf(J_L_Integer.toUnsignedLong(upper))).shiftLeft(32).
-                    add(BigInteger.valueOf(J_L_Integer.toUnsignedLong(lower)));
+                add(BigInteger.valueOf(J_L_Integer.toUnsignedLong(lower)));
         }
     }
 

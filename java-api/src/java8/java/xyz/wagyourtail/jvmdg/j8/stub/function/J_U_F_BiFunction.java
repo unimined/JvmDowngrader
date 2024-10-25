@@ -26,6 +26,7 @@ public interface J_U_F_BiFunction<T, U, R> {
                 }
             };
         }
+
     }
 
     abstract class BiFunctionAdapter<T, U, R> implements J_U_F_BiFunction<T, U, R> {

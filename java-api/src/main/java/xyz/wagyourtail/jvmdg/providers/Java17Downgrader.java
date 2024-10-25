@@ -11,7 +11,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java17Downgrader extends VersionProvider {
     public Java17Downgrader() {
-        super(Opcodes.V17, Opcodes.V16);
+        super(Opcodes.V17, Opcodes.V16, 0);
     }
 
     public void init() {
@@ -97,4 +97,5 @@ public class Java17Downgrader extends VersionProvider {
             node.permittedSubclasses = null;
         }
     }
+
 }

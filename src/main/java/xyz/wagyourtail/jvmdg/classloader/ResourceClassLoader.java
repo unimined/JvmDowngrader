@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.classloader;
 
 import xyz.wagyourtail.jvmdg.classloader.providers.ClassLoaderResourceProvider;
 import xyz.wagyourtail.jvmdg.classloader.providers.JarFileResourceProvider;
+import xyz.wagyourtail.jvmdg.collection.FlatMapEnumeration;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
@@ -11,17 +12,12 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarFile;
 
 public class ResourceClassLoader extends ClassLoader implements Closeable {
+    private final List<String> multiVersionList = new ArrayList<>();
     private final List<ResourceProvider> delegates = new ArrayList<>();
 
     public ResourceClassLoader(ClassLoader parent) {
@@ -44,7 +40,9 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
             }
         }
         // fallback on normal classloader
-        addDelegate(failed.toArray(new URL[0]));
+        if (!failed.isEmpty()) {
+            addDelegate(failed.toArray(new URL[0]));
+        }
     }
 
     public void addDelegate(ClassLoader loader) {
@@ -57,6 +55,27 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
 
     public void addDelegate(URL[] urls) {
         delegates.add(new ClassLoaderResourceProvider(new URLClassLoader(urls)));
+    }
+
+    protected int maxClassVersionSupported() {
+        return Utils.getCurrentClassVersion();
+    }
+
+    protected List<String> multiVersionPrefixes() {
+        if (multiVersionList.isEmpty()) {
+            synchronized (multiVersionList) {
+                if (multiVersionList.isEmpty()) {
+                    for (int i = maxClassVersionSupported(); i >= 51; --i) {
+                        if (i == 51) {
+                            multiVersionList.add("");
+                        } else {
+                            multiVersionList.add("META-INF/versions/" + Utils.classVersionToMajorVersion(i) + "/");
+                        }
+                    }
+                }
+            }
+        }
+        return multiVersionList;
     }
 
     protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -84,14 +103,19 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
 
     @Override
     protected Enumeration<URL> findResources(final String name) {
-        return new FlatEnumeration<>(Collections.enumeration(delegates), new Function<ResourceProvider, Enumeration<URL>>() {
+        return new FlatMapEnumeration<>(Collections.enumeration(name.startsWith("META-INF/versions/") ? Collections.singleton("") : multiVersionPrefixes()), new Function<String, Enumeration<URL>>() {
             @Override
-            public Enumeration<URL> apply(ResourceProvider resourceProvider) {
-                try {
-                    return resourceProvider.getResources(name);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            public Enumeration<URL> apply(final String prefix) {
+                return new FlatMapEnumeration<>(Collections.enumeration(delegates), new Function<ResourceProvider, Enumeration<URL>>() {
+                    @Override
+                    public Enumeration<URL> apply(ResourceProvider resourceProvider) {
+                        try {
+                            return resourceProvider.getResources(prefix + name);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
             }
         });
     }
@@ -102,4 +126,5 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
             delegate.close();
         }
     }
+
 }

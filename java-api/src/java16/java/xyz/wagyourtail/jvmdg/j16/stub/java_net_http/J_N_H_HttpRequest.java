@@ -7,7 +7,6 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +50,7 @@ public class J_N_H_HttpRequest {
     }
 
     public static class BodyPublishers {
-    
+
         @Stub(ref = @Ref("java/net/http/HttpRequest$BodyPublishers"))
         public static HttpRequest.BodyPublisher concat(HttpRequest.BodyPublisher... publishers) {
             return new HttpRequest.BodyPublisher() {
@@ -63,13 +62,13 @@ public class J_N_H_HttpRequest {
                     }
                     return sum;
                 }
-    
+
                 @Override
                 public void subscribe(Flow.Subscriber<? super ByteBuffer> subscriber) {
                     subscriber.onSubscribe(new Flow.Subscription() {
                         private final Iterator<HttpRequest.BodyPublisher> iterator = List.of(publishers).iterator();
                         private boolean completed;
-    
+
                         @Override
                         public void request(long n) {
                             if (n <= 0) {
@@ -91,12 +90,12 @@ public class J_N_H_HttpRequest {
                                     if (contentLength > 0) {
                                         publisher.subscribe(new Flow.Subscriber<>() {
                                             private long remaining = contentLength;
-    
+
                                             @Override
                                             public void onSubscribe(Flow.Subscription subscription) {
                                                 subscription.request(Long.MAX_VALUE);
                                             }
-    
+
                                             @Override
                                             public void onNext(ByteBuffer item) {
                                                 subscriber.onNext(item);
@@ -105,12 +104,12 @@ public class J_N_H_HttpRequest {
                                                     subscriber.onComplete();
                                                 }
                                             }
-    
+
                                             @Override
                                             public void onError(Throwable throwable) {
                                                 subscriber.onError(throwable);
                                             }
-    
+
                                             @Override
                                             public void onComplete() {
                                             }
@@ -121,17 +120,17 @@ public class J_N_H_HttpRequest {
                                             public void onSubscribe(Flow.Subscription subscription) {
                                                 subscription.request(Long.MAX_VALUE);
                                             }
-    
+
                                             @Override
                                             public void onNext(ByteBuffer item) {
                                                 subscriber.onNext(item);
                                             }
-    
+
                                             @Override
                                             public void onError(Throwable throwable) {
                                                 subscriber.onError(throwable);
                                             }
-    
+
                                             @Override
                                             public void onComplete() {
                                                 subscriber.onComplete();
@@ -144,7 +143,7 @@ public class J_N_H_HttpRequest {
                                 subscriber.onError(t);
                             }
                         }
-    
+
                         @Override
                         public void cancel() {
                             completed = true;
@@ -153,6 +152,7 @@ public class J_N_H_HttpRequest {
                 }
             };
         }
-    
+
     }
+
 }

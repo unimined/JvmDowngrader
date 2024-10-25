@@ -19,18 +19,12 @@ public interface J_L_M_ModuleReader extends Closeable {
      * <p> If the module reader can determine that the name locates a directory
      * then the resulting URI will end with a slash ('/'). </p>
      *
-     * @param  name
-     *         The name of the resource to open for reading
-     *
+     * @param name The name of the resource to open for reading
      * @return A URI to the resource; an empty {@code Optional} if the resource
-     *         is not found or a URI cannot be constructed to locate the
-     *         resource
-     *
-     * @throws IOException
-     *         If an I/O error occurs or the module reader is closed
-     * @throws SecurityException
-     *         If denied by the security manager
-     *
+     * is not found or a URI cannot be constructed to locate the
+     * resource
+     * @throws IOException       If an I/O error occurs or the module reader is closed
+     * @throws SecurityException If denied by the security manager
      * @see ClassLoader#getResource(String)
      */
     Optional<URI> find(String name) throws IOException;
@@ -58,4 +52,5 @@ public interface J_L_M_ModuleReader extends Closeable {
     }
 
     Stream<String> list() throws IOException;
+
 }

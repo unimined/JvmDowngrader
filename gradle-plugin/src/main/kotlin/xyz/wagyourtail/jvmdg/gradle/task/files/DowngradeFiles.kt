@@ -2,20 +2,26 @@ package xyz.wagyourtail.jvmdg.gradle.task.files
 
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.SourceSetContainer
+import org.gradle.api.tasks.TaskAction
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
-import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
+import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
-import xyz.wagyourtail.jvmdg.util.*
+import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
+import xyz.wagyourtail.jvmdg.util.LazyMutable
+import xyz.wagyourtail.jvmdg.util.MustSet
+import xyz.wagyourtail.jvmdg.util.Utils
 import java.io.File
 import java.nio.file.FileSystem
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 
-abstract class DowngradeFiles : ConventionTask(), DowngradeFlags {
+abstract class DowngradeFiles: ConventionTask(), DowngradeFlags {
 
     @get:Internal
     protected val jvmdg by lazy {

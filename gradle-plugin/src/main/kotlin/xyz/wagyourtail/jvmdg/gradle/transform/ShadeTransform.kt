@@ -13,7 +13,7 @@ import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 
 @CacheableTransform
-abstract class ShadeTransform : TransformAction<ShadeFlags> {
+abstract class ShadeTransform: TransformAction<ShadeFlags> {
 
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     @get:InputArtifact
@@ -24,7 +24,13 @@ abstract class ShadeTransform : TransformAction<ShadeFlags> {
         val flags = parameters
         val output = outputs.file("${input.nameWithoutExtension}-shaded-${flags.downgradeTo.get()}.${input.extension}")
 
-        ApiShader.shadeApis(flags.toFlags(), flags.shadePath.get().invoke(input.nameWithoutExtension), input, output, flags.apiJar.get().toSet())
+        ApiShader.shadeApis(
+            flags.toFlags(),
+            flags.shadePath.get().invoke(input.nameWithoutExtension),
+            input,
+            output,
+            flags.apiJar.get().toSet()
+        )
     }
 
 }

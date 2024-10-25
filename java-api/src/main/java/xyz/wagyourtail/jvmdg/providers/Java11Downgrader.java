@@ -12,14 +12,11 @@ import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpResponse;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Java11Downgrader extends VersionProvider {
     public Java11Downgrader() {
-        super(Opcodes.V11, Opcodes.V10);
+        super(Opcodes.V11, Opcodes.V10, 0);
     }
 
     public void init() {
@@ -39,7 +36,7 @@ public class Java11Downgrader extends VersionProvider {
         stub(J_L_String.class);
         stub(J_L_StringBuffer.class);
         stub(J_L_StringBuilder.class);
-        // ConstantBootstraps
+        stub(J_L_I_ConstantBootstraps.class);
         // Reference
         stub(J_N_C_SelectionKey.class);
         stub(J_N_C_Selector.class);
@@ -120,7 +117,12 @@ public class Java11Downgrader extends VersionProvider {
     @Override
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
         super.otherTransforms(clazz);
+        if (clazz.name.equals("module-info")) {
+            return null;
+        }
         fixNests(clazz, getReadOnly);
+        replaceCondy(clazz);
+        fixPrivateMethodsInInterfaces(clazz);
         return clazz;
     }
 
@@ -177,26 +179,6 @@ public class Java11Downgrader extends VersionProvider {
                     if (methodInsn.owner.equals(clazz.name)) {
                         if (nestMemberPrivates.containsKey(methodInsn.name + methodInsn.desc)) {
                             fields.put(methodInsn.name + methodInsn.desc, nestMemberPrivates.get(methodInsn.name + methodInsn.desc));
-                        }
-                    }
-                } else if (insn instanceof InvokeDynamicInsnNode) {
-                    InvokeDynamicInsnNode methodInsn = (InvokeDynamicInsnNode) insn;
-                    if (methodInsn.bsm.getOwner().equals(clazz.name)) {
-                        if (nestMemberPrivates.containsKey(methodInsn.name + methodInsn.desc)) {
-                            fields.put(methodInsn.name + methodInsn.desc, nestMemberPrivates.get(methodInsn.name + methodInsn.desc));
-                        }
-                    } else {
-                        for (Object arg : methodInsn.bsmArgs) {
-                            if (arg instanceof Handle) {
-                                Handle handle = (Handle) arg;
-                                if (handle.getOwner().equals(clazz.name)) {
-                                    if (nestMemberPrivates.containsKey(handle.getName() + handle.getDesc())) {
-                                        fields.put(handle.getName() + handle.getDesc(), nestMemberPrivates.get(handle.getName() + handle.getDesc()));
-                                    } else if (nestMemberPrivates.containsKey(handle.getName())) {
-                                        fields.put(handle.getName(), nestMemberPrivates.get(handle.getName()));
-                                    }
-                                }
-                            }
                         }
                     }
                 }
@@ -269,91 +251,6 @@ public class Java11Downgrader extends VersionProvider {
                                         throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
                                 }
                                 break;
-                            }
-                        }
-                    }
-                } else if (insn instanceof InvokeDynamicInsnNode) {
-                    InvokeDynamicInsnNode methodInsn = (InvokeDynamicInsnNode) insn;
-                    if (nestMembers.containsKey(methodInsn.bsm.getOwner())) {
-                        ClassNode target = nestMembers.get(methodInsn.bsm.getOwner());
-                        for (MethodNode methodNode : target.methods) {
-                            if (methodNode.name.equals(methodInsn.name) && methodNode.desc.equals(methodInsn.desc)) {
-                                if ((methodNode.access & Opcodes.ACC_PRIVATE) == 0) {
-                                    break;
-                                }
-                                switch (methodInsn.bsm.getTag()) {
-                                    case Opcodes.H_INVOKESTATIC:
-                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKESTATIC, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "_") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
-                                        break;
-                                    case Opcodes.H_INVOKEVIRTUAL:
-                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKEVIRTUAL, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "_") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
-                                        break;
-                                    case Opcodes.H_INVOKESPECIAL:
-                                        methodInsn.bsm = new Handle(Opcodes.H_INVOKESPECIAL, methodInsn.bsm.getOwner(), "jvmdowngrader$nest$" + methodInsn.bsm.getOwner().replace("/", "_") + "$" + methodInsn.bsm.getName(), methodInsn.bsm.getDesc(), false);
-                                        break;
-                                    default:
-                                        throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
-                                }
-                                break;
-                            }
-                        }
-                    }
-                    for (int j = 0; j < methodInsn.bsmArgs.length; j++) {
-                        Object arg = methodInsn.bsmArgs[j];
-                        if (arg instanceof Handle) {
-                            Handle handle = (Handle) arg;
-                            if (nestMembers.containsKey(handle.getOwner())) {
-                                ClassNode target = nestMembers.get(handle.getOwner());
-                                if (handle.getOwner().equals(target.name)) {
-                                    if (handle.getName().equals("<init>")) {
-                                        continue;
-                                    }
-                                    for (MethodNode methodNode : target.methods) {
-                                        if (methodNode.name.equals(handle.getName()) && methodNode.desc.equals(handle.getDesc())) {
-                                            if ((methodNode.access & Opcodes.ACC_PRIVATE) == 0) {
-                                                break;
-                                            }
-                                            switch (handle.getTag()) {
-                                                case Opcodes.H_INVOKESTATIC:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                case Opcodes.H_INVOKEVIRTUAL:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                case Opcodes.H_INVOKESPECIAL:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESPECIAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                default:
-                                                    throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
-                                            }
-                                            break;
-                                        }
-                                    }
-                                    for (FieldNode fieldNode : target.fields) {
-                                        if (fieldNode.name.equals(handle.getName()) && fieldNode.desc.equals(handle.getDesc())) {
-                                            if ((fieldNode.access & Opcodes.ACC_PRIVATE) == 0) {
-                                                break;
-                                            }
-                                            switch (handle.getTag()) {
-                                                case Opcodes.H_GETFIELD:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$get$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                case Opcodes.H_PUTFIELD:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKEVIRTUAL, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$set$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                case Opcodes.H_GETSTATIC:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$get$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                case Opcodes.H_PUTSTATIC:
-                                                    methodInsn.bsmArgs[j] = new Handle(Opcodes.H_INVOKESTATIC, handle.getOwner(), "jvmdowngrader$nest$" + handle.getOwner().replace("/", "_") + "$set$" + handle.getName(), handle.getDesc(), false);
-                                                    break;
-                                                default:
-                                                    throw new RuntimeException("Unexpected opcode: " + insn.getOpcode());
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
                             }
                         }
                     }
@@ -511,4 +408,137 @@ public class Java11Downgrader extends VersionProvider {
 
         clazz.nestHostClass = null;
     }
+
+    public void replaceCondy(ClassNode clazz) {
+        for (MethodNode method : clazz.methods) {
+            replaceCondy(method);
+        }
+    }
+
+    public void replaceCondy(MethodNode method) {
+        for (int i = 0; i < method.instructions.size(); i++) {
+            AbstractInsnNode insn = method.instructions.get(i);
+            if (insn instanceof LdcInsnNode) {
+                LdcInsnNode ldc = (LdcInsnNode) insn;
+                if (ldc.cst instanceof ConstantDynamic) {
+                    // "upgrade" to indy
+                    ConstantDynamic condy = (ConstantDynamic) ldc.cst;
+                    Object[] bsmArgs = new Object[condy.getBootstrapMethodArgumentCount() + 1];
+                    bsmArgs[0] = condy.getBootstrapMethod();
+                    for (int j = 0; j < condy.getBootstrapMethodArgumentCount(); j++) {
+                        bsmArgs[j + 1] = condy.getBootstrapMethodArgument(j);
+                    }
+                    InvokeDynamicInsnNode indy = new InvokeDynamicInsnNode(
+                        condy.getName(),
+                        "()" + condy.getDescriptor(),
+                        new Handle(
+                            Opcodes.H_INVOKESTATIC,
+                            Type.getInternalName(J_L_I_ConstantBootstraps.class),
+                            "ldcCondyToIndy",
+                            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;",
+                            false
+                        ),
+                        bsmArgs
+                    );
+                    method.instructions.set(insn, indy);
+                    insn = indy;
+                }
+            }
+            if (insn instanceof InvokeDynamicInsnNode) {
+                InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
+                StringBuilder condyArgs = new StringBuilder();
+                for (int j = 0; j < indy.bsmArgs.length; j++) {
+                    if (indy.bsmArgs[j] instanceof ConstantDynamic) {
+                        condyArgs.append((char) j);
+                    }
+                }
+                if (condyArgs.length() > 0) {
+                    // replace with nest indy
+                    List<Object> bsmArgs = new ArrayList<>();
+                    bsmArgs.add(indy.bsm);
+                    bsmArgs.add(condyArgs.toString());
+                    for (Object bsmArg : indy.bsmArgs) {
+                        if (bsmArg instanceof ConstantDynamic) {
+                            ConstantDynamic condy = (ConstantDynamic) bsmArg;
+                            insertCondyArgs(condy, bsmArgs);
+                        } else {
+                            bsmArgs.add(bsmArg);
+                        }
+                    }
+                    indy = new InvokeDynamicInsnNode(
+                        indy.name,
+                        indy.desc,
+                        new Handle(
+                            Opcodes.H_INVOKESTATIC,
+                            Type.getInternalName(J_L_I_ConstantBootstraps.class),
+                            "nestedCondyInIndy",
+                            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;",
+                            false
+                        ),
+                        bsmArgs.toArray()
+                    );
+                    method.instructions.set(insn, indy);
+                }
+            }
+        }
+    }
+
+    public void insertCondyArgs(ConstantDynamic condy, List<Object> bsmArgs) {
+        bsmArgs.add(condy.getBootstrapMethod());
+        bsmArgs.add(condy.getName());
+        bsmArgs.add(Type.getType(condy.getDescriptor()));
+        bsmArgs.add(condy.getBootstrapMethodArgumentCount());
+        StringBuilder condyArgs = new StringBuilder();
+        for (int j = 0; j < condy.getBootstrapMethodArgumentCount(); j++) {
+            if (condy.getBootstrapMethodArgument(j) instanceof ConstantDynamic) {
+                condyArgs.append((char) j);
+            }
+        }
+        bsmArgs.add(condyArgs.toString());
+        for (int j = 0; j < condy.getBootstrapMethodArgumentCount(); j++) {
+            Object o = condy.getBootstrapMethodArgument(j);
+            if (o instanceof ConstantDynamic) {
+                insertCondyArgs((ConstantDynamic) o, bsmArgs);
+            } else {
+                bsmArgs.add(o);
+            }
+        }
+    }
+
+    public void fixPrivateMethodsInInterfaces(ClassNode node) {
+        if ((node.access & Opcodes.ACC_INTERFACE) == 0) return;
+
+        List<String> privateMethods = new ArrayList<>();
+        for (MethodNode method : node.methods) {
+            if ((method.access & Opcodes.ACC_PRIVATE) != 0) {
+                privateMethods.add(method.name + method.desc);
+            }
+        }
+
+        for (MethodNode method : node.methods) {
+            if (method.instructions == null) continue;
+            for (AbstractInsnNode insn : method.instructions) {
+                if (insn instanceof MethodInsnNode) {
+                    MethodInsnNode min = (MethodInsnNode) insn;
+                    if (min.getOpcode() == Opcodes.INVOKEINTERFACE && min.owner.equals(node.name) && privateMethods.contains(min.name + min.desc)) {
+                        min.setOpcode(Opcodes.INVOKESPECIAL);
+                    }
+                } else if (insn instanceof InvokeDynamicInsnNode) {
+                    InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
+                    if (indy.bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
+                        if (indy.bsmArgs[1] instanceof Handle) {
+                            Handle lambda = (Handle) indy.bsmArgs[1];
+                            if (lambda.getOwner().equals(node.name) &&
+                                lambda.getTag() == Opcodes.H_INVOKEINTERFACE &&
+                                privateMethods.contains(lambda.getName() + lambda.getDesc())
+                            ) {
+                                indy.bsmArgs[1] = new Handle(Opcodes.H_INVOKESPECIAL, lambda.getOwner(), lambda.getName(), lambda.getDesc(), lambda.isInterface());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }

@@ -11,7 +11,7 @@ import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
-import java.io.*;
+import java.io.FileReader;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.charset.Charset;
@@ -22,6 +22,7 @@ public class J_I_FileReader {
     private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
     private static final MethodHandle sdGetter;
     private static final MethodHandle decSetter;
+
     static {
         MethodHandle seGet = null;
         MethodHandle decSet = null;

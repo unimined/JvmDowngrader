@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java19Downgrader extends VersionProvider {
     public Java19Downgrader() {
-        super(Opcodes.V19, Opcodes.V18);
+        super(Opcodes.V19, Opcodes.V18, 0);
     }
 
     public void init() {
@@ -46,4 +46,5 @@ public class Java19Downgrader extends VersionProvider {
 
         // -- java.compiler --
     }
+
 }

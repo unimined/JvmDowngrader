@@ -30,4 +30,5 @@ public class SynchronizedBackingSet<E> extends SynchronizedBackingCollection<E> 
             return backing.hashCode();
         }
     }
+
 }

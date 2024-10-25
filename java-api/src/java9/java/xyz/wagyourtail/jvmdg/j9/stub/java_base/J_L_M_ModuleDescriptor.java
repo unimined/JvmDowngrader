@@ -5,17 +5,7 @@ import xyz.wagyourtail.jvmdg.j9.intl.NameChecks;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Adapter("java/lang/module/ModuleDescriptor")
 public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor> {
@@ -30,19 +20,20 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
     private final Set<Provides> provides;
     private final Set<String> packages;
     private final String mainClass;
+    private transient int hash = 0;
 
     private J_L_M_ModuleDescriptor(
-            String name,
-            Version version,
-            String rawVersion,
-            Set<Modifier> modifiers,
-            Set<Requires> requiresSet,
-            Set<Exports> exportsSet,
-            Set<Opens> opensSet,
-            Set<String> uses,
-            Set<Provides> provides,
-            Set<String> packages,
-            String mainClass
+        String name,
+        Version version,
+        String rawVersion,
+        Set<Modifier> modifiers,
+        Set<Requires> requiresSet,
+        Set<Exports> exportsSet,
+        Set<Opens> opensSet,
+        Set<String> uses,
+        Set<Provides> provides,
+        Set<String> packages,
+        String mainClass
     ) {
         this.name = name;
         this.version = version;
@@ -55,6 +46,32 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         this.provides = Collections.unmodifiableSet(provides);
         this.packages = Collections.unmodifiableSet(packages);
         this.mainClass = mainClass;
+    }
+
+    private static long longHash(EnumSet<?> enums) {
+        long hash = 0;
+        for (Enum<?> anEnum : enums) {
+            hash |= 1L << anEnum.ordinal();
+        }
+        return hash;
+    }
+
+    private static <T extends Object & Comparable<T>> int compare(T a, T b) {
+        if (a == b) return 0;
+        if (a == null) return -1;
+        if (b == null) return 1;
+        return a.compareTo(b);
+    }
+
+    private static <T extends Object & Comparable<T>> int compare(Set<T> a, Set<T> b) {
+        if (a == b) return 0;
+        if (a == null) return -1;
+        if (b == null) return 1;
+        T[] aArray = (T[]) a.toArray();
+        T[] bArray = (T[]) b.toArray();
+        Arrays.sort(aArray);
+        Arrays.sort(bArray);
+        return J_U_Arrays.compare(aArray, bArray);
     }
 
     public String name() {
@@ -161,8 +178,6 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         return Objects.equals(name, that.name) && Objects.equals(version, that.version) && Objects.equals(rawVersion, that.rawVersion) && Objects.equals(modifiers, that.modifiers) && Objects.equals(requiresSet, that.requiresSet) && Objects.equals(exportsSet, that.exportsSet) && Objects.equals(opensSet, that.opensSet) && Objects.equals(uses, that.uses) && Objects.equals(provides, that.provides) && Objects.equals(packages, that.packages) && Objects.equals(mainClass, that.mainClass);
     }
 
-    private transient int hash = 0;
-
     @Override
     public int hashCode() {
         if (hash != 0) {
@@ -224,32 +239,6 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         return sb.toString();
     }
 
-    private static long longHash(EnumSet<?> enums) {
-        long hash = 0;
-        for (Enum<?> anEnum : enums) {
-            hash |= 1L << anEnum.ordinal();
-        }
-        return hash;
-    }
-
-    private static <T extends Object & Comparable<T>> int compare(T a, T b) {
-        if (a == b) return 0;
-        if (a == null) return -1;
-        if (b == null) return 1;
-        return a.compareTo(b);
-    }
-
-    private static <T extends Object & Comparable<T>> int compare(Set<T> a, Set<T> b) {
-        if (a == b) return 0;
-        if (a == null) return -1;
-        if (b == null) return 1;
-        T[] aArray = (T[]) a.toArray();
-        T[] bArray = (T[]) b.toArray();
-        Arrays.sort(aArray);
-        Arrays.sort(bArray);
-        return J_U_Arrays.compare(aArray, bArray);
-    }
-
     @Adapter("java/lang/module/ModuleDescriptor$Modifier")
     public enum Modifier {
         OPEN, AUTOMATIC, SYNTHETIC, MANDATED
@@ -276,6 +265,11 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
             this.strict = strict;
             this.modifiers = modifiers;
             assert !(modifiers.contains(Modifier.OPEN) && modifiers.contains(Modifier.AUTOMATIC));
+        }
+
+        private static String packageName(String cn) {
+            int index = cn.lastIndexOf('.');
+            return (index == -1) ? "" : cn.substring(0, index);
         }
 
         public Builder requires(Requires requires) {
@@ -408,11 +402,6 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
             return this;
         }
 
-        private static String packageName(String cn) {
-            int index = cn.lastIndexOf('.');
-            return (index == -1) ? "" : cn.substring(0, index);
-        }
-
         public Builder provides(String service, List<String> providers) {
             if (providers.isEmpty()) {
                 throw new IllegalArgumentException("Empty providers set");
@@ -488,19 +477,20 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
             }
 
             return new J_L_M_ModuleDescriptor(
-                    name,
-                    version,
-                    rawVersion,
-                    modifiers,
-                    requires,
-                    exports,
-                    opens,
-                    uses,
-                    provides,
-                    packages,
-                    mainClass
+                name,
+                version,
+                rawVersion,
+                modifiers,
+                requires,
+                exports,
+                opens,
+                uses,
+                provides,
+                packages,
+                mainClass
             );
         }
+
     }
 
     @Adapter("java/lang/module/ModuleDescriptor$Requires")
@@ -587,9 +577,10 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         }
 
         @Adapter("java/lang/module/ModuleDescriptor$Requires$Modifier")
-        public  enum Modifier {
+        public enum Modifier {
             TRANSITIVE, STATIC, SYNTHETIC, MANDATED
         }
+
     }
 
     @Adapter("java/lang/module/ModuleDescriptor$Exports")
@@ -664,6 +655,7 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         public enum Modifier {
             SYNTHETIC, MANDATED
         }
+
     }
 
     @Adapter("java/lang/module/ModuleDescriptor$Opens")
@@ -738,6 +730,7 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         public enum Modifier {
             SYNTHETIC, MANDATED
         }
+
     }
 
     @Adapter("java/lang/module/ModuleDescriptor$Provides")
@@ -786,6 +779,7 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         public String toString() {
             return service + " with " + providers;
         }
+
     }
 
     @Adapter("java/lang/module/ModuleDescriptor$Version")
@@ -901,5 +895,7 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         public String toString() {
             return version;
         }
+
     }
+
 }

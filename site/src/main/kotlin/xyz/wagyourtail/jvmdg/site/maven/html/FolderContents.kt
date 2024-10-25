@@ -7,7 +7,7 @@ class FolderContents(
     val majorVersion: Int,
     val folder: String,
     val files: List<String>
-) : Template<HTML> {
+): Template<HTML> {
 
     override fun HTML.apply() {
         head {

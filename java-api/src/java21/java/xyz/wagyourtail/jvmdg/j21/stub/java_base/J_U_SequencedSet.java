@@ -2,7 +2,6 @@ package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseSet;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.LinkedHashSet;
@@ -17,8 +16,8 @@ public class J_U_SequencedSet {
 
     public static boolean jvmdg$instanceof(Object obj) {
         return obj instanceof LinkedHashSet<?> ||
-                obj instanceof SortedSet<?> ||
-                obj instanceof ReverseSet<?>;
+            obj instanceof SortedSet<?> ||
+            obj instanceof ReverseSet<?>;
     }
 
     public static <E> Set<E> jvmdg$checkcast(Object obj) {

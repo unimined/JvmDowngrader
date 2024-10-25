@@ -13,7 +13,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java16Downgrader extends VersionProvider {
     public Java16Downgrader() {
-        super(Opcodes.V16, Opcodes.V15);
+        super(Opcodes.V16, Opcodes.V15, 0);
     }
 
     public void init() {
@@ -131,4 +131,5 @@ public class Java16Downgrader extends VersionProvider {
             node.recordComponents = null;
         }
     }
+
 }

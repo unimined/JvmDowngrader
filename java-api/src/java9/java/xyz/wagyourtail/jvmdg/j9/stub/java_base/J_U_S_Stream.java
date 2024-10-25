@@ -33,7 +33,7 @@ public class J_U_S_Stream {
             }
         }
         return Stream.concat(Stream.of(next),
-                StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
+            StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false));
     }
 
     @Stub(ref = @Ref("Ljava/util/stream/Stream;"))

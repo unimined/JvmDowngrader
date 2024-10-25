@@ -75,4 +75,5 @@ public class BackingCollection<E> implements Collection<E> {
     public void clear() {
         backing.clear();
     }
+
 }

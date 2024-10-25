@@ -14,7 +14,7 @@ public class J_L_Class {
     public static J_L_Module getModule(Class<?> clazz) {
         J_L_Module module = ModuleConstantHelper.bootModuleFromClass(clazz);
         return module != null ? module :
-                J_L_ClassLoader.getUnnamedModule(clazz.getClassLoader());
+            J_L_ClassLoader.getUnnamedModule(clazz.getClassLoader());
     }
 
     @Stub

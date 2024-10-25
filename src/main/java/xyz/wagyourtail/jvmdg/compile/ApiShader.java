@@ -1,26 +1,18 @@
 package xyz.wagyourtail.jvmdg.compile;
 
 import org.jetbrains.annotations.Nullable;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.ConstantDynamic;
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.SimpleRemapper;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.InvokeDynamicInsnNode;
-import org.objectweb.asm.tree.LdcInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.shade.ReferenceGraph;
 import xyz.wagyourtail.jvmdg.logging.Logger;
-import xyz.wagyourtail.jvmdg.util.*;
+import xyz.wagyourtail.jvmdg.util.AsyncUtils;
+import xyz.wagyourtail.jvmdg.util.IOConsumer;
+import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
@@ -90,7 +82,7 @@ public class ApiShader {
     public static void shadeApis(Flags flags, List<String> prefix, List<Path> inputRoots, List<Path> outputRoots, Set<File> downgradedApi) throws IOException {
         for (String p : prefix) {
             if (!p.endsWith("/")) {
-                throw new IllegalArgumentException("prefix \""+ p +"\" must end with /");
+                throw new IllegalArgumentException("prefix \"" + p + "\" must end with /");
             }
         }
         Set<Path> downgradedApiPath = resolveDowngradedApi(flags, downgradedApi);
@@ -224,19 +216,7 @@ public class ApiShader {
                 handle = new Handle(handle.getTag(), target.getInternalName(), "jvmdg$inlined$" + handle.getName(), handle.getDesc(), isInterface);
                 indy.bsm = handle;
             }
-            for (int i = 0; i < indy.bsmArgs.length; i++) {
-                Object arg = indy.bsmArgs[i];
-                if (arg instanceof Handle) {
-                    Handle handleArg = (Handle) arg;
-                    if (FullyQualifiedMemberNameAndDesc.of(handleArg).equals(ref)) {
-                        handleArg = new Handle(handleArg.getTag(), target.getInternalName(), "jvmdg$inlined$" + handleArg.getName(), handleArg.getDesc(), isInterface);
-                        indy.bsmArgs[i] = handleArg;
-                    }
-                } else if (arg instanceof ConstantDynamic) {
-                    ConstantDynamic cd = (ConstantDynamic) arg;
-                    inlineRef(ref, cd, target, isInterface);
-                }
-            }
+            inlineRef(ref, indy.bsmArgs, target, isInterface);
         } else if (insn instanceof LdcInsnNode) {
             LdcInsnNode ldc = (LdcInsnNode) insn;
             if (ldc.cst instanceof Handle) {
@@ -244,15 +224,45 @@ public class ApiShader {
                 ldc.cst = new Handle(handle.getTag(), target.getInternalName(), handle.getName(), handle.getDesc(), isInterface);
             } else if (ldc.cst instanceof ConstantDynamic) {
                 ConstantDynamic cd = (ConstantDynamic) ldc.cst;
-                inlineRef(ref, cd, target, isInterface);
+                ldc.cst = inlineRef(ref, cd, target, isInterface);
             }
         } else {
             throw new IllegalStateException("Unknown insn type: " + insn.getClass().getName());
         }
     }
 
-    private static void inlineRef(FullyQualifiedMemberNameAndDesc ref, ConstantDynamic cd, Type target, boolean isInterface) {
-        throw new UnsupportedOperationException("Not implemented");
+    private static ConstantDynamic inlineRef(FullyQualifiedMemberNameAndDesc ref, ConstantDynamic cd, Type target, boolean isInterface) {
+        Handle handle = cd.getBootstrapMethod();
+        if (FullyQualifiedMemberNameAndDesc.of(handle).equals(ref)) {
+            handle = new Handle(handle.getTag(), target.getInternalName(), "jvmdg$inlined$" + handle.getName(), handle.getDesc(), isInterface);
+        }
+        Object[] bsmArgs = new Object[cd.getBootstrapMethodArgumentCount()];
+        for (int i = 0; i < cd.getBootstrapMethodArgumentCount(); i++) {
+            bsmArgs[i] = cd.getBootstrapMethodArgument(i);
+        }
+        inlineRef(ref, bsmArgs, target, isInterface);
+        return new ConstantDynamic(
+            cd.getName(),
+            cd.getDescriptor(),
+            handle,
+            bsmArgs
+        );
+    }
+
+    private static void inlineRef(FullyQualifiedMemberNameAndDesc ref, Object[] bsmArgs, Type target, boolean isInterface) {
+        for (int i = 0; i < bsmArgs.length; i++) {
+            Object arg = bsmArgs[i];
+            if (arg instanceof Handle) {
+                Handle handleArg = (Handle) arg;
+                if (FullyQualifiedMemberNameAndDesc.of(handleArg).equals(ref)) {
+                    handleArg = new Handle(handleArg.getTag(), target.getInternalName(), "jvmdg$inlined$" + handleArg.getName(), handleArg.getDesc(), isInterface);
+                    bsmArgs[i] = handleArg;
+                }
+            } else if (arg instanceof ConstantDynamic) {
+                ConstantDynamic cd = (ConstantDynamic) arg;
+                bsmArgs[i] = inlineRef(ref, cd, target, isInterface);
+            }
+        }
     }
 
     public static void shadeApis(final Flags flags, final String prefix, final Path inputRoot, final Path outputRoot, final List<Path> apiRoots, final ReferenceGraph apiRefs, final Set<Type> apiClasses) throws IOException {
@@ -260,7 +270,7 @@ public class ApiShader {
         Logger logger = new Logger(ApiShader.class, flags.getLogLevel(), flags.logAnsiColors, System.out);
         try {
             // step 3: traverse the input classes for references to the api
-            final ReferenceGraph inputRefs = new ReferenceGraph(logger, true, true);
+            final ReferenceGraph inputRefs = new ReferenceGraph(logger, true, flags.shadeInlining);
             inputRefs.scan(inputRoot, new ReferenceGraph.Filter() {
                 @Override
                 public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
@@ -282,33 +292,36 @@ public class ApiShader {
                         keys.add(key);
                     }
                 }
-                Map<FullyQualifiedMemberNameAndDesc, Type> inlineCandidates = inlineCandidates(logger, required.getFirst(), keys);
-                for (Map.Entry<FullyQualifiedMemberNameAndDesc, Type> entry : inlineCandidates.entrySet()) {
-                    ClassNode node = inputRefs.getClassFor(entry.getValue(), version);
-                    required.getFirst().remove(entry.getKey());
-                    required.getFirst().remove(new FullyQualifiedMemberNameAndDesc(entry.getKey().getOwner(), null, null));
 
-                    // change insn's owner to the inlined class
-                    for (AbstractInsnNode insn : inputRefs.getAllInsnsFor(entry.getKey(), version)) {
-                        inlineRef(entry.getKey(), insn, entry.getValue(), (node.access & Opcodes.ACC_INTERFACE) != 0);
-                    }
+                if (flags.shadeInlining) {
+                    Map<FullyQualifiedMemberNameAndDesc, Type> inlineCandidates = inlineCandidates(logger, required.getFirst(), keys);
+                    for (Map.Entry<FullyQualifiedMemberNameAndDesc, Type> entry : inlineCandidates.entrySet()) {
+                        ClassNode node = inputRefs.getClassFor(entry.getValue(), version);
+                        required.getFirst().remove(entry.getKey());
+                        required.getFirst().remove(new FullyQualifiedMemberNameAndDesc(entry.getKey().getOwner(), null, null));
 
-                    // actually inline it
-                    ClassNode apiNode = apiRefs.getClassFor(entry.getKey().getOwner(), version);
-                    // find api method
-                    MethodNode method = null;
-                    for (MethodNode m : apiNode.methods) {
-                        if (m.name.equals(entry.getKey().getName()) && m.desc.equals(entry.getKey().getDesc().getDescriptor())) {
-                            method = m;
-                            break;
+                        // change insn's owner to the inlined class
+                        for (AbstractInsnNode insn : inputRefs.getAllInsnsFor(entry.getKey(), version)) {
+                            inlineRef(entry.getKey(), insn, entry.getValue(), (node.access & Opcodes.ACC_INTERFACE) != 0);
                         }
+
+                        // actually inline it
+                        ClassNode apiNode = apiRefs.getClassFor(entry.getKey().getOwner(), version);
+                        // find api method
+                        MethodNode method = null;
+                        for (MethodNode m : apiNode.methods) {
+                            if (m.name.equals(entry.getKey().getName()) && m.desc.equals(entry.getKey().getDesc().getDescriptor())) {
+                                method = m;
+                                break;
+                            }
+                        }
+                        if (method == null) {
+                            throw new IllegalStateException("Method not found in class: " + entry.getKey());
+                        }
+                        MethodNode copy = new MethodNode(method.access & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE, "jvmdg$inlined$" + method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
+                        method.accept(copy);
+                        node.methods.add(copy);
                     }
-                    if (method == null) {
-                        throw new IllegalStateException("Method not found in class: " + entry.getKey());
-                    }
-                    MethodNode copy = new MethodNode(method.access & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE, "jvmdg$inlined$" + method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
-                    method.accept(copy);
-                    node.methods.add(copy);
                 }
 
                 // step 4.5: create remapper for api classes to prefixed api classes

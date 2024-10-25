@@ -18,7 +18,7 @@ public class J_U_ServiceLoader {
     @Stub
     public static <S> Stream<Provider<S>> stream(ServiceLoader<S> loader) {
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(loader.iterator(), 0), false)
-                .map(ProviderImpl::new);
+            .map(ProviderImpl::new);
     }
 
 //    @Stub(javaVersion = Opcodes.V9)

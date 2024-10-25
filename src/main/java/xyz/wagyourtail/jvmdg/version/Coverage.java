@@ -23,7 +23,7 @@ public class Coverage {
 
     public Coverage(int inputVersion, VersionProvider versionProvider) {
         this.javaVersion = Utils.classVersionToMajorVersion(inputVersion);
-        this.path = "/META-INF/coverage/" + javaVersion+ "/missing.txt";
+        this.path = "/META-INF/coverage/" + javaVersion + "/missing.txt";
         this.versionProvider = versionProvider;
     }
 

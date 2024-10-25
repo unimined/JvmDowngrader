@@ -64,16 +64,17 @@ public class J_U_DoubleSummaryStatistics implements J_U_F_DoubleConsumer {
     @Override
     public String toString() {
         return "DoubleSummaryStatistics{" +
-                "count=" + count +
-                ", sum=" + getSum() +
-                ", min=" + min +
-                ", average=" + getAverage() +
-                ", max=" + max +
-                '}';
+            "count=" + count +
+            ", sum=" + getSum() +
+            ", min=" + min +
+            ", average=" + getAverage() +
+            ", max=" + max +
+            '}';
     }
 
     @Override
     public J_U_F_DoubleConsumer andThen(J_U_F_DoubleConsumer after) {
         return null;
     }
+
 }

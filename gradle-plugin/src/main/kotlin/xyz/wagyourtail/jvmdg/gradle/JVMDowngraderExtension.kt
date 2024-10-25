@@ -21,7 +21,7 @@ import xyz.wagyourtail.jvmdg.util.defaultedMapOf
 import java.io.File
 import javax.inject.Inject
 
-abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val project: Project) : ShadeFlags {
+abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val project: Project): ShadeFlags {
     @get:Internal
     val version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.7.0")
 
@@ -71,6 +71,8 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         debugSkipStubs.convention(emptySet()).finalizeValueOnRead()
         debugDumpClasses.convention(false).finalizeValueOnRead()
         shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/" }
+            .finalizeValueOnRead()
+        shadeInlining.convention(true).finalizeValueOnRead()
         multiReleaseOriginal.convention(false).finalizeValueOnRead()
         multiReleaseVersions.convention(emptySet()).finalizeValueOnRead()
     }
@@ -78,6 +80,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
     fun convention(flags: ShadeFlags) {
         convention(flags as DowngradeFlags)
         flags.shadePath.convention(shadePath).finalizeValueOnRead()
+        flags.shadeInlining.convention(shadeInlining).finalizeValueOnRead()
     }
 
     fun convention(flags: DowngradeFlags) {

@@ -14,8 +14,8 @@ public class J_U_S_Collectors {
 
     @Stub(ref = @Ref("Ljava/util/stream/Collectors;"))
     public static <T, U, A, R> Collector<T, ?, R> flatMapping(
-            Function<? super T, ? extends Stream<? extends U>> mapper,
-            Collector<? super U, A, R> downstream
+        Function<? super T, ? extends Stream<? extends U>> mapper,
+        Collector<? super U, A, R> downstream
     ) {
         BiConsumer<A, ? super U> downstreamAccumulator = downstream.accumulator();
         return (Collector<T, ?, R>) new FlatMappingCollector<>(mapper, downstream).get();
@@ -39,11 +39,11 @@ public class J_U_S_Collectors {
         public Collector<T, ?, R> get() {
             BiConsumer<A, ? super U> downstreamAccumulator = downstream.accumulator();
             return Collector.of(
-                    downstream.supplier(),
-                    this::accumulator,
-                    downstream.combiner(),
-                    downstream.finisher(),
-                    downstream.characteristics().toArray(new Collector.Characteristics[0])
+                downstream.supplier(),
+                this::accumulator,
+                downstream.combiner(),
+                downstream.finisher(),
+                downstream.characteristics().toArray(new Collector.Characteristics[0])
             );
         }
 
@@ -68,11 +68,11 @@ public class J_U_S_Collectors {
 
         public Collector<T, ?, R> get() {
             return Collector.of(
-                    downstream.supplier(),
-                    this::accumulator,
-                    downstream.combiner(),
-                    downstream.finisher(),
-                    downstream.characteristics().toArray(new Collector.Characteristics[0])
+                downstream.supplier(),
+                this::accumulator,
+                downstream.combiner(),
+                downstream.finisher(),
+                downstream.characteristics().toArray(new Collector.Characteristics[0])
             );
         }
 

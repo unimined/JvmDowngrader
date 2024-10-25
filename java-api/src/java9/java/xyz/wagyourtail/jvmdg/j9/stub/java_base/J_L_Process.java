@@ -4,15 +4,32 @@ import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.invoke.MethodHandles;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public class J_L_Process {
     private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
 
     @Stub
+    public static long pid(Process process) throws Throwable {
+        return (long) IMPL_LOOKUP.findGetter(process.getClass(), "pid", int.class).invoke(process);
+    }
+
+
+    public static CompletableFuture<Process> onExit(Process process) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                process.waitFor();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            return process;
+        });
+    }
+
+    @Stub
     public static J_L_ProcessHandle toHandle(Process process) throws Throwable {
-        long pid = (long) IMPL_LOOKUP.findGetter(process.getClass(), "pid", int.class).invoke(process);
-        return J_L_ProcessHandle.of(pid).get();
+        return J_L_ProcessHandle.of(pid(process)).get();
     }
 
     @Stub

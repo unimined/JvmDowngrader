@@ -23,7 +23,7 @@ public class J_U_Z_Inflater {
     @Stub
     public static void setInput(Deflater def, ByteBuffer buf) {
         throw new UnsupportedOperationException(
-                "JVMDowngrader, setInput(ByteBuffer) is not supported because it's impure.");
+            "JVMDowngrader, setInput(ByteBuffer) is not supported because it's impure.");
     }
 
 }

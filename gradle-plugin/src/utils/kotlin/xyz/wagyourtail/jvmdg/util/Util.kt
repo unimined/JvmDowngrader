@@ -2,8 +2,6 @@ package xyz.wagyourtail.jvmdg.util
 
 import org.apache.commons.compress.archivers.zip.ZipFile
 import org.gradle.api.JavaVersion
-import org.gradle.jvm.toolchain.JavaLanguageVersion
-import org.gradle.jvm.toolchain.JavaToolchainSpec
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.tree.ClassNode
@@ -103,6 +101,5 @@ operator fun JavaVersion.plus(int: Int): JavaVersion {
 }
 
 val CONSTANT_TIME_FOR_ZIP_ENTRIES = GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).timeInMillis
-
 
 fun safeName(name: String): String = name.replace(Regex("[.;\\[/]"), "-")

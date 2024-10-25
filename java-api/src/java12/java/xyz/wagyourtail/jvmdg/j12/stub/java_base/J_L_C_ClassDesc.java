@@ -12,7 +12,7 @@ import static java.util.Objects.requireNonNull;
 public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescriptor.OfField<J_L_C_ClassDesc> {
 
     private static void validateBinaryClassName(String name) {
-        for (int i=0; i<name.length(); i++) {
+        for (int i = 0; i < name.length(); i++) {
             char ch = name.charAt(i);
             if (ch == ';' || ch == '[' || ch == '/') {
                 throw new IllegalArgumentException("Invalid class name: " + name);
@@ -24,7 +24,7 @@ public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescripto
         requireNonNull(name);
         if (name.isEmpty())
             throw new IllegalArgumentException("zero-length member name");
-        for (int i=0; i<name.length(); i++) {
+        for (int i = 0; i < name.length(); i++) {
             char ch = name.charAt(i);
             if (ch == '.' || ch == ';' || ch == '[' || ch == '/')
                 throw new IllegalArgumentException("Invalid member name: " + name);
@@ -34,7 +34,7 @@ public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescripto
 
     static J_L_C_ClassDesc of(String name) {
         validateBinaryClassName(name);
-        return J_L_C_ClassDesc.ofDescriptor("L" + name + ";");
+        return J_L_C_ClassDesc.ofDescriptor("L" + name.replace('.', '/') + ";");
     }
 
     static J_L_C_ClassDesc of(String packageName, String className) {
@@ -133,16 +133,26 @@ public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescripto
     default String displayName() {
         if (isPrimitive()) {
             switch (descriptorString()) {
-                case "B": return "byte";
-                case "C": return "char";
-                case "D": return "double";
-                case "F": return "float";
-                case "I": return "int";
-                case "J": return "long";
-                case "S": return "short";
-                case "Z": return "boolean";
-                case "V": return "void";
-                default: throw new InternalError("Unexpected primitive type descriptor: " + descriptorString());
+                case "B":
+                    return "byte";
+                case "C":
+                    return "char";
+                case "D":
+                    return "double";
+                case "F":
+                    return "float";
+                case "I":
+                    return "int";
+                case "J":
+                    return "long";
+                case "S":
+                    return "short";
+                case "Z":
+                    return "boolean";
+                case "V":
+                    return "void";
+                default:
+                    throw new InternalError("Unexpected primitive type descriptor: " + descriptorString());
             }
         }
         if (isArray()) {
@@ -165,7 +175,8 @@ public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescripto
     }
 
     @Override
-    @CoverageIgnore // for generics
+    @CoverageIgnore
+        // for generics
     Class<?> resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 
     boolean equals(Object obj);
@@ -181,16 +192,26 @@ public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescripto
         public Class<?> resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException {
             if (isPrimitive()) {
                 switch (descriptorString()) {
-                    case "B": return byte.class;
-                    case "C": return char.class;
-                    case "D": return double.class;
-                    case "F": return float.class;
-                    case "I": return int.class;
-                    case "J": return long.class;
-                    case "S": return short.class;
-                    case "Z": return boolean.class;
-                    case "V": return void.class;
-                    default: throw new InternalError("Unexpected primitive type descriptor: " + descriptorString());
+                    case "B":
+                        return byte.class;
+                    case "C":
+                        return char.class;
+                    case "D":
+                        return double.class;
+                    case "F":
+                        return float.class;
+                    case "I":
+                        return int.class;
+                    case "J":
+                        return long.class;
+                    case "S":
+                        return short.class;
+                    case "Z":
+                        return boolean.class;
+                    case "V":
+                        return void.class;
+                    default:
+                        throw new InternalError("Unexpected primitive type descriptor: " + descriptorString());
                 }
             }
             if (isArray()) {
@@ -230,5 +251,7 @@ public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescripto
         public String toString() {
             return "ClassDesc[" + displayName() + "]";
         }
+
     }
+
 }

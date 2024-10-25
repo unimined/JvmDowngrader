@@ -9,7 +9,6 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.j8.stub.*;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
 import xyz.wagyourtail.jvmdg.j8.stub.stream.*;
-import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
@@ -24,13 +23,13 @@ public class Java8Downgrader extends VersionProvider {
 
 
     public Java8Downgrader() {
-        super(Opcodes.V1_8, Opcodes.V1_7);
+        super(Opcodes.V1_8, Opcodes.V1_7, 0);
     }
 
     @Override
     public void ensureInit(ClassDowngrader downgrader) {
         if (!isInitialized()) {
-            if (!downgrader.flags.quiet) downgrader.logger.warn("Java 8 -> 7 Stubs are VERY incomplete!");
+            downgrader.logger.warn("Java 8 -> 7 Stubs are VERY incomplete!");
         }
         super.ensureInit(downgrader);
     }
@@ -223,10 +222,6 @@ public class Java8Downgrader extends VersionProvider {
         // SortedSet
         stub(J_U_Spliterator.class);
         stub(J_U_Spliterators.class);
-        stub(J_U_Spliterators$AbstractDoubleSpliterator.class);
-        stub(J_U_Spliterators$AbstractIntSpliterator.class);
-        stub(J_U_Spliterators$AbstractLongSpliterator.class);
-        stub(J_U_Spliterators$AbstractSpliterator.class);
         // SplittableRandom
         stub(J_U_StringJoiner.class);
         // TimeZone
@@ -366,11 +361,11 @@ public class Java8Downgrader extends VersionProvider {
                     if ((mnode.access & Opcodes.ACC_PUBLIC) != 0) {
                         // write back an abstract version
                         toAdd.add(new MethodNode(
-                                Opcodes.ACC_ABSTRACT | Opcodes.ACC_PUBLIC,
-                                mnode.name,
-                                mnode.desc,
-                                mnode.signature,
-                                mnode.exceptions.toArray(new String[0])
+                            Opcodes.ACC_ABSTRACT | Opcodes.ACC_PUBLIC,
+                            mnode.name,
+                            mnode.desc,
+                            mnode.signature,
+                            mnode.exceptions.toArray(new String[0])
                         ));
                     }
                     // move to StaticDefault
@@ -388,18 +383,18 @@ public class Java8Downgrader extends VersionProvider {
         clazz.methods.addAll(toAdd);
         if (removed) {
             interfaceStaticDefaults.visit(
-                    Opcodes.V1_7,
-                    Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                    clazz.name + "$jvmdg$StaticDefaults",
-                    null,
-                    "java/lang/Object",
-                    new String[0]
+                Opcodes.V1_7,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                clazz.name + "$jvmdg$StaticDefaults",
+                null,
+                "java/lang/Object",
+                new String[0]
             );
             clazz.visitInnerClass(
-                    clazz.name + "$jvmdg$StaticDefaults",
-                    clazz.name,
-                    "jvmdg$StaticDefaults",
-                    Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
+                clazz.name + "$jvmdg$StaticDefaults",
+                clazz.name,
+                "jvmdg$StaticDefaults",
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC
             );
             interfaceStaticDefaults.visitOuterClass(clazz.name, null, null);
             extra.add(interfaceStaticDefaults);
@@ -431,9 +426,9 @@ public class Java8Downgrader extends VersionProvider {
                     MethodInsnNode min = (MethodInsnNode) insn;
                     if (min.itf) {
                         if (min.owner.startsWith("java/") ||
-                                min.owner.startsWith("sun/") ||
-                                min.owner.startsWith("jdk/") ||
-                                min.owner.startsWith("com/sun/")
+                            min.owner.startsWith("sun/") ||
+                            min.owner.startsWith("jdk/") ||
+                            min.owner.startsWith("com/sun/")
                         ) {
                             if (min.getOpcode() == Opcodes.INVOKESTATIC || min.getOpcode() == Opcodes.INVOKESPECIAL) {
                                 warnings.add("Found java interface missing stub: " + FullyQualifiedMemberNameAndDesc.of(min));
@@ -463,9 +458,9 @@ public class Java8Downgrader extends VersionProvider {
                             Handle handle = (Handle) arg;
                             if (handle.isInterface()) {
                                 if (handle.getOwner().startsWith("java/") ||
-                                        handle.getOwner().startsWith("sun/") ||
-                                        handle.getOwner().startsWith("jdk/") ||
-                                        handle.getOwner().startsWith("com/sun/")) {
+                                    handle.getOwner().startsWith("sun/") ||
+                                    handle.getOwner().startsWith("jdk/") ||
+                                    handle.getOwner().startsWith("com/sun/")) {
                                     if (handle.getTag() == Opcodes.H_INVOKESTATIC || handle.getTag() == Opcodes.H_INVOKESPECIAL) {
                                         warnings.add("Found java interface missing stub: " + FullyQualifiedMemberNameAndDesc.of(handle));
                                     }
@@ -473,11 +468,11 @@ public class Java8Downgrader extends VersionProvider {
                                 }
                                 if (handle.getTag() == Opcodes.H_INVOKESTATIC) {
                                     handle = new Handle(
-                                            Opcodes.H_INVOKESTATIC,
-                                            handle.getOwner() + "$jvmdg$StaticDefaults",
-                                            handle.getName(),
-                                            handle.getDesc(),
-                                            false
+                                        Opcodes.H_INVOKESTATIC,
+                                        handle.getOwner() + "$jvmdg$StaticDefaults",
+                                        handle.getName(),
+                                        handle.getDesc(),
+                                        false
                                     );
                                     indy.bsmArgs[i] = handle;
                                 } else if (handle.getTag() == Opcodes.H_INVOKESPECIAL) {
@@ -486,11 +481,11 @@ public class Java8Downgrader extends VersionProvider {
                                     newArgs[0] = Type.getObjectType(handle.getOwner());
                                     System.arraycopy(args, 0, newArgs, 1, args.length);
                                     handle = new Handle(
-                                            Opcodes.H_INVOKESTATIC,
-                                            handle.getOwner() + "$jvmdg$StaticDefaults",
-                                            handle.getName(),
-                                            Type.getMethodDescriptor(Type.getReturnType(handle.getDesc()), newArgs),
-                                            false
+                                        Opcodes.H_INVOKESTATIC,
+                                        handle.getOwner() + "$jvmdg$StaticDefaults",
+                                        handle.getName(),
+                                        Type.getMethodDescriptor(Type.getReturnType(handle.getDesc()), newArgs),
+                                        false
                                     );
                                     indy.bsmArgs[i] = handle;
                                 }
@@ -506,19 +501,19 @@ public class Java8Downgrader extends VersionProvider {
         for (Map.Entry<MemberNameAndDesc, Type> member : members.entrySet()) {
             String internalName = member.getValue().getInternalName();
             if (internalName.startsWith("java/") ||
-                    internalName.startsWith("sun/") ||
-                    internalName.startsWith("jdk/") ||
-                    internalName.startsWith("com/sun/")) {
+                internalName.startsWith("sun/") ||
+                internalName.startsWith("jdk/") ||
+                internalName.startsWith("com/sun/")) {
                 warnings.add("[Java8 Interface Downgrader] Found java interface default missing implementation: " + member.getKey().toFullyQualified(member.getValue()));
                 continue;
             }
             // create method redirecting to static default
             MethodVisitor mn = clazz.visitMethod(
-                    Opcodes.ACC_PUBLIC,
-                    member.getKey().getName(),
-                    member.getKey().getDesc().getDescriptor(),
-                    null,
-                    null
+                Opcodes.ACC_PUBLIC,
+                member.getKey().getName(),
+                member.getKey().getDesc().getDescriptor(),
+                null,
+                null
             );
             mn.visitCode();
             mn.visitVarInsn(Opcodes.ALOAD, 0);
@@ -533,11 +528,11 @@ public class Java8Downgrader extends VersionProvider {
             System.arraycopy(args, 0, newArgs, 1, args.length);
 
             mn.visitMethodInsn(
-                    Opcodes.INVOKESTATIC,
-                    member.getValue().getInternalName() + "$jvmdg$StaticDefaults",
-                    member.getKey().getName(),
-                    Type.getMethodDescriptor(member.getKey().getDesc().getReturnType(), newArgs),
-                    false
+                Opcodes.INVOKESTATIC,
+                member.getValue().getInternalName() + "$jvmdg$StaticDefaults",
+                member.getKey().getName(),
+                Type.getMethodDescriptor(member.getKey().getDesc().getReturnType(), newArgs),
+                false
             );
             mn.visitInsn(Type.getReturnType(member.getKey().getDesc().getDescriptor()).getOpcode(Opcodes.IRETURN));
             mn.visitMaxs(0, 0);

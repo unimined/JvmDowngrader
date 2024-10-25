@@ -35,6 +35,7 @@ public interface J_U_F_DoubleUnaryOperator {
             Objects.requireNonNull(f2);
             return compose(f2, f1);
         }
+
     }
 
     class DoubleUnaryOperatorStatic {

@@ -21,7 +21,7 @@ public class CheckedNavigableSet<E> extends BackingCollection<E> implements Navi
 
     private String badElementMsg(Object o) {
         return "Attempt to insert " + o.getClass() +
-                " element into collection with element type " + type;
+            " element into collection with element type " + type;
     }
 
     @Override
@@ -108,4 +108,5 @@ public class CheckedNavigableSet<E> extends BackingCollection<E> implements Navi
     public E last() {
         return backing.last();
     }
+
 }

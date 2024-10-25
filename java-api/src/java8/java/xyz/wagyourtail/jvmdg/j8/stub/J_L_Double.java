@@ -32,4 +32,5 @@ public class J_L_Double {
     public static double min(double a, double b) {
         return Math.min(a, b);
     }
+
 }

@@ -10,7 +10,7 @@ import java.io.FilterReader
 import java.io.Reader
 import java.nio.charset.StandardCharsets
 
-class PackageRelocateReader(input: Reader) : FilterReader(input) {
+class PackageRelocateReader(input: Reader): FilterReader(input) {
 
     var remapper: PackageRelocator by MustSet()
 

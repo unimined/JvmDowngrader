@@ -18,9 +18,9 @@ public class AnnotationUtils {
     @SuppressWarnings("unchecked")
     public static <T extends Annotation> T createAnnotation(AnnotationNode classNode) throws ClassNotFoundException {
         return (T) Proxy.newProxyInstance(
-                AnnotationUtils.class.getClassLoader(),
-                new Class[]{Class.forName(Type.getType(classNode.desc).getClassName())},
-                new Handler(classNode)
+            AnnotationUtils.class.getClassLoader(),
+            new Class[]{Class.forName(Type.getType(classNode.desc).getClassName())},
+            new Handler(classNode)
         );
     }
 
@@ -94,6 +94,7 @@ public class AnnotationUtils {
             }
             return (T) value;
         }
+
     }
 
 }

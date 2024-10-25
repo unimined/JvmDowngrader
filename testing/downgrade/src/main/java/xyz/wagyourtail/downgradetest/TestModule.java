@@ -6,4 +6,5 @@ public class TestModule {
             throw new RuntimeException("Failing module implementation");
         }
     }
+
 }

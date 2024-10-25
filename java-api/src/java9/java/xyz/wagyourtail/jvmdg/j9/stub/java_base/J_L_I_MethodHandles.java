@@ -1,13 +1,19 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
+import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.lang.invoke.*;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.net.URL;
+import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -37,6 +43,25 @@ public class J_L_I_MethodHandles {
         return (MethodHandles.Lookup) LookupCtor.invokeExact(cls);
     }
 
+
+    @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
+    public static J_L_I_VarHandle arrayElementVarHandle(Class<?> cls) {
+        Objects.requireNonNull(cls);
+        if (!cls.isArray()) {
+            throw new IllegalArgumentException();
+        }
+        return new J_L_I_VarHandle(cls);
+    }
+
+    @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
+    public static MethodHandle arrayLength(Class<?> arrayClass) throws NoSuchMethodException, IllegalAccessException {
+        Objects.requireNonNull(arrayClass);
+        if (!arrayClass.isArray()) {
+            throw new IllegalArgumentException();
+        }
+        return IMPL_LOOKUP.findStatic(Array.class, "getLength", MethodType.methodType(int.class, Object.class)).asType(MethodType.methodType(int.class, arrayClass));
+    }
+
     public static class Lookup {
         private static final MethodHandle DefineClass;
 
@@ -48,6 +73,43 @@ public class J_L_I_MethodHandles {
             }
         }
 
+        @Stub
+        public static J_L_I_VarHandle findVarHandle(MethodHandles.Lookup lookup, Class<?> owner, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
+            Objects.requireNonNull(owner);
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(type);
+            for (Field declaredField : owner.getDeclaredFields()) {
+                if (declaredField.getName().equals(name) && declaredField.getType().equals(type)) {
+                    if ((declaredField.getModifiers() & Opcodes.ACC_STATIC) != 0) {
+                        throw new IllegalAccessException();
+                    }
+                    return new J_L_I_VarHandle(declaredField);
+                }
+            }
+            throw new NoSuchFieldException();
+        }
+
+        @Stub
+        public static J_L_I_VarHandle findStaticVarHandle(MethodHandles.Lookup lookup, Class<?> owner, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
+            Objects.requireNonNull(owner);
+            Objects.requireNonNull(name);
+            Objects.requireNonNull(type);
+            for (Field declaredField : owner.getDeclaredFields()) {
+                if (declaredField.getName().equals(name) && declaredField.getType().equals(type)) {
+                    if ((declaredField.getModifiers() & Opcodes.ACC_STATIC) == 0) {
+                        throw new IllegalAccessException();
+                    }
+                    return new J_L_I_VarHandle(declaredField);
+                }
+            }
+            throw new NoSuchFieldException();
+        }
+
+        @Stub
+        public static J_L_I_VarHandle unreflectVarHandle(MethodHandles.Lookup lookup, Field field) {
+            Objects.requireNonNull(field);
+            return new J_L_I_VarHandle(field);
+        }
         @Stub(requiresRuntime = true)
         public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] bytes) throws Throwable {
             Objects.requireNonNull(bytes);
@@ -82,4 +144,5 @@ public class J_L_I_MethodHandles {
         }
 
     }
+
 }

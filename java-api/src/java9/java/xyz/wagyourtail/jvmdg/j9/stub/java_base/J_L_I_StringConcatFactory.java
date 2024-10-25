@@ -79,22 +79,22 @@ public class J_L_I_StringConcatFactory {
                     // last is object
                     if (!type.equals("Ljava/lang/String;")) {
                         list.add(new MethodInsnNode(
-                                Opcodes.INVOKESTATIC,
-                                "java/lang/String",
-                                "valueOf",
-                                "(Ljava/lang/Object;)Ljava/lang/String;",
-                                false
+                            Opcodes.INVOKESTATIC,
+                            "java/lang/String",
+                            "valueOf",
+                            "(Ljava/lang/Object;)Ljava/lang/String;",
+                            false
                         ));
                     }
                     break;
                 default:
                     // last is primitive
                     list.add(new MethodInsnNode(
-                            Opcodes.INVOKESTATIC,
-                            "java/lang/String",
-                            "valueOf",
-                            "(" + type + ")Ljava/lang/String;",
-                            false
+                        Opcodes.INVOKESTATIC,
+                        "java/lang/String",
+                        "valueOf",
+                        "(" + type + ")Ljava/lang/String;",
+                        false
                     ));
                     break;
             }
@@ -128,11 +128,11 @@ public class J_L_I_StringConcatFactory {
                             list.add(new InsnNode(Opcodes.SWAP));
                             // stack = [...types, String, last]
                             list.add(new MethodInsnNode(
-                                    Opcodes.INVOKESTATIC,
-                                    "java/lang/String",
-                                    "valueOf",
-                                    "(Ljava/lang/Object;)Ljava/lang/String;",
-                                    false
+                                Opcodes.INVOKESTATIC,
+                                "java/lang/String",
+                                "valueOf",
+                                "(Ljava/lang/Object;)Ljava/lang/String;",
+                                false
                             ));
                             // stack = [...types, String, String(last)]
                             // or if last was String
@@ -154,11 +154,11 @@ public class J_L_I_StringConcatFactory {
                         }
                         // stack = [...types, String. last]
                         list.add(new MethodInsnNode(
-                                Opcodes.INVOKESTATIC,
-                                "java/lang/String",
-                                "valueOf",
-                                "(" + type + ")Ljava/lang/String;",
-                                false
+                            Opcodes.INVOKESTATIC,
+                            "java/lang/String",
+                            "valueOf",
+                            "(" + type + ")Ljava/lang/String;",
+                            false
                         ));
                         // stack = [...types, String, String(last)]
                         break;
@@ -170,11 +170,11 @@ public class J_L_I_StringConcatFactory {
                 }
                 // stack = [...types, String(last), String]
                 list.add(new MethodInsnNode(
-                        Opcodes.INVOKEVIRTUAL,
-                        "java/lang/String",
-                        "concat",
-                        "(Ljava/lang/String;)Ljava/lang/String;",
-                        false
+                    Opcodes.INVOKEVIRTUAL,
+                    "java/lang/String",
+                    "concat",
+                    "(Ljava/lang/String;)Ljava/lang/String;",
+                    false
                 ));
                 // stack = [...types, String]
                 args = args.substring(0, args.length() - 1);
@@ -187,11 +187,11 @@ public class J_L_I_StringConcatFactory {
                 list.add(new InsnNode(Opcodes.SWAP));
                 // stack = [...types, literal, String]
                 list.add(new MethodInsnNode(
-                        Opcodes.INVOKEVIRTUAL,
-                        "java/lang/String",
-                        "concat",
-                        "(Ljava/lang/String;)Ljava/lang/String;",
-                        false
+                    Opcodes.INVOKEVIRTUAL,
+                    "java/lang/String",
+                    "concat",
+                    "(Ljava/lang/String;)Ljava/lang/String;",
+                    false
                 ));
                 // stack = [...types, String]
                 if (last == -1) {
@@ -260,21 +260,21 @@ public class J_L_I_StringConcatFactory {
                     // last is object
                     if (!type.equals("Ljava/lang/String;")) {
                         list.add(new MethodInsnNode(
-                                Opcodes.INVOKESPECIAL,
-                                "java/lang/StringBuilder",
-                                "<init>",
-                                "()V",
-                                false
+                            Opcodes.INVOKESPECIAL,
+                            "java/lang/StringBuilder",
+                            "<init>",
+                            "()V",
+                            false
                         ));
                         // stack = [...types, last, StringBuilder]
                         list.add(new InsnNode(Opcodes.SWAP));
                         // stack = [...types, StringBuilder, last]
                         list.add(new MethodInsnNode(
-                                Opcodes.INVOKEVIRTUAL,
-                                "java/lang/StringBuilder",
-                                "append",
-                                "(Ljava/lang/Object;)Ljava/lang/StringBuilder;",
-                                false
+                            Opcodes.INVOKEVIRTUAL,
+                            "java/lang/StringBuilder",
+                            "append",
+                            "(Ljava/lang/Object;)Ljava/lang/StringBuilder;",
+                            false
                         ));
                         // stack = [...types, StringBuilder]
                     } else {
@@ -285,11 +285,11 @@ public class J_L_I_StringConcatFactory {
                         list.add(new InsnNode(Opcodes.SWAP));
                         // stack = [...types, StringBuilder, StringBuilder, last]
                         list.add(new MethodInsnNode(
-                                Opcodes.INVOKESPECIAL,
-                                "java/lang/StringBuilder",
-                                "<init>",
-                                "(Ljava/lang/String;)V",
-                                false
+                            Opcodes.INVOKESPECIAL,
+                            "java/lang/StringBuilder",
+                            "<init>",
+                            "(Ljava/lang/String;)V",
+                            false
                         ));
                         // stack = [...types, StringBuilder]
                     }
@@ -297,11 +297,11 @@ public class J_L_I_StringConcatFactory {
                 default:
                     // last is primitive
                     list.add(new MethodInsnNode(
-                            Opcodes.INVOKESPECIAL,
-                            "java/lang/StringBuilder",
-                            "<init>",
-                            "()V",
-                            false
+                        Opcodes.INVOKESPECIAL,
+                        "java/lang/StringBuilder",
+                        "<init>",
+                        "()V",
+                        false
                     ));
                     // stack = [...types, last, StringBuilder]
                     switch (last.getSize()) {
@@ -317,11 +317,11 @@ public class J_L_I_StringConcatFactory {
                     }
                     // stack = [...types, StringBuilder, last]
                     list.add(new MethodInsnNode(
-                            Opcodes.INVOKEVIRTUAL,
-                            "java/lang/StringBuilder",
-                            "append",
-                            "(" + type + ")Ljava/lang/StringBuilder;",
-                            false
+                        Opcodes.INVOKEVIRTUAL,
+                        "java/lang/StringBuilder",
+                        "append",
+                        "(" + type + ")Ljava/lang/StringBuilder;",
+                        false
                     ));
                     // stack = [...types, StringBuilder]
                     break;
@@ -341,11 +341,11 @@ public class J_L_I_StringConcatFactory {
             String literal = args.substring(last + 1);
             list.add(new LdcInsnNode(literal));
             list.add(new MethodInsnNode(
-                    Opcodes.INVOKESPECIAL,
-                    "java/lang/StringBuilder",
-                    "<init>",
-                    "(Ljava/lang/String;)V",
-                    false
+                Opcodes.INVOKESPECIAL,
+                "java/lang/StringBuilder",
+                "<init>",
+                "(Ljava/lang/String;)V",
+                false
             ));
             args = args.substring(0, last + 1);
         }
@@ -366,19 +366,19 @@ public class J_L_I_StringConcatFactory {
                         // stack = [...types, StringBuilder, 0, last]
                         if (!type.equals("Ljava/lang/String;")) {
                             list.add(new MethodInsnNode(
-                                    Opcodes.INVOKEVIRTUAL,
-                                    "java/lang/StringBuilder",
-                                    "insert",
-                                    "(ILjava/lang/Object;)Ljava/lang/StringBuilder;",
-                                    false
+                                Opcodes.INVOKEVIRTUAL,
+                                "java/lang/StringBuilder",
+                                "insert",
+                                "(ILjava/lang/Object;)Ljava/lang/StringBuilder;",
+                                false
                             ));
                         } else {
                             list.add(new MethodInsnNode(
-                                    Opcodes.INVOKEVIRTUAL,
-                                    "java/lang/StringBuilder",
-                                    "insert",
-                                    "(ILjava/lang/String;)Ljava/lang/StringBuilder;",
-                                    false
+                                Opcodes.INVOKEVIRTUAL,
+                                "java/lang/StringBuilder",
+                                "insert",
+                                "(ILjava/lang/String;)Ljava/lang/StringBuilder;",
+                                false
                             ));
                         }
                         break;
@@ -398,11 +398,11 @@ public class J_L_I_StringConcatFactory {
                         }
                         // stack = [...types, StringBuilder, 0, last]
                         list.add(new MethodInsnNode(
-                                Opcodes.INVOKEVIRTUAL,
-                                "java/lang/StringBuilder",
-                                "insert",
-                                "(I" + type + ")Ljava/lang/StringBuilder;",
-                                false
+                            Opcodes.INVOKEVIRTUAL,
+                            "java/lang/StringBuilder",
+                            "insert",
+                            "(I" + type + ")Ljava/lang/StringBuilder;",
+                            false
                         ));
                 }
                 // stack = [...types, StringBuilder]
@@ -415,11 +415,11 @@ public class J_L_I_StringConcatFactory {
                 list.add(new LdcInsnNode(literal));
                 // stack = [...types, StringBuilder, 0, literal]
                 list.add(new MethodInsnNode(
-                        Opcodes.INVOKEVIRTUAL,
-                        "java/lang/StringBuilder",
-                        "insert",
-                        "(ILjava/lang/String;)Ljava/lang/StringBuilder;",
-                        false
+                    Opcodes.INVOKEVIRTUAL,
+                    "java/lang/StringBuilder",
+                    "insert",
+                    "(ILjava/lang/String;)Ljava/lang/StringBuilder;",
+                    false
                 ));
                 // stack = [...types, StringBuilder]
                 if (last == -1) {
@@ -430,11 +430,11 @@ public class J_L_I_StringConcatFactory {
             }
         }
         list.add(new MethodInsnNode(
-                Opcodes.INVOKEVIRTUAL,
-                "java/lang/StringBuilder",
-                "toString",
-                "()Ljava/lang/String;",
-                false
+            Opcodes.INVOKEVIRTUAL,
+            "java/lang/StringBuilder",
+            "toString",
+            "()Ljava/lang/String;",
+            false
         ));
         return list;
     }
@@ -458,11 +458,11 @@ public class J_L_I_StringConcatFactory {
                 if (concatMethod.args.equals(args)) {
                     InsnList list = new InsnList();
                     list.add(new MethodInsnNode(
-                            Opcodes.INVOKESTATIC,
-                            node.name,
-                            concatMethod.name,
-                            concatMethod.desc,
-                            (node.access & Opcodes.ACC_INTERFACE) != 0
+                        Opcodes.INVOKESTATIC,
+                        node.name,
+                        concatMethod.name,
+                        concatMethod.desc,
+                        (node.access & Opcodes.ACC_INTERFACE) != 0
                     ));
                     return list;
                 }
@@ -476,11 +476,11 @@ public class J_L_I_StringConcatFactory {
         node.methods.add(method);
         InsnList list = new InsnList();
         list.add(new MethodInsnNode(
-                Opcodes.INVOKESTATIC,
-                node.name,
-                method.name,
-                method.desc,
-                (node.access & Opcodes.ACC_INTERFACE) != 0
+            Opcodes.INVOKESTATIC,
+            node.name,
+            method.name,
+            method.desc,
+            (node.access & Opcodes.ACC_INTERFACE) != 0
         ));
         return list;
     }
@@ -622,4 +622,5 @@ public class J_L_I_StringConcatFactory {
         }
 
     }
+
 }

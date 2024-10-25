@@ -4,13 +4,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
@@ -39,11 +33,11 @@ public class ClassDowngrader implements Closeable {
     private static ClassDowngrader currentVersionDowngrader = null;
     public final Flags flags;
     public final int target;
-    private final Map<Integer, VersionProvider> downgraders;
-    private final DowngradingClassLoader classLoader;
-
     @ApiStatus.Internal
     public final Logger logger;
+    private final Map<Integer, VersionProvider> downgraders;
+    private final DowngradingClassLoader classLoader;
+    protected int maxVersion = -1;
 
     protected ClassDowngrader(@NotNull Flags flags) {
         this.flags = flags;
@@ -55,6 +49,25 @@ public class ClassDowngrader implements Closeable {
             throw new RuntimeException(e);
         }
         downgraders = collectProviders();
+    }
+
+    public int maxVersion() {
+        if (downgraders == null) {
+            return -1;
+        }
+        if (maxVersion == -1) {
+            synchronized (this) {
+                if (maxVersion == -1) {
+                    int max = target;
+                    Set<Integer> ints = downgraders.keySet();
+                    for (Integer i : ints) {
+                        max = Math.max(max, i);
+                    }
+                    maxVersion = max;
+                }
+            }
+        }
+        return maxVersion;
     }
 
     @NotNull
@@ -104,7 +117,7 @@ public class ClassDowngrader implements Closeable {
                     } else if (prev.priotity == provider.priotity) {
                         logger.warn(
                             "Duplicate version providers with same priority for " + provider.inputVersion
-                            + " \"" + provider.getClass().getName() + "\" and \"" + prev.getClass().getName() + "\""
+                                + " \"" + provider.getClass().getName() + "\" and \"" + prev.getClass().getName() + "\""
                         );
                     }
                 } else {
@@ -170,7 +183,7 @@ public class ClassDowngrader implements Closeable {
     }
 
     public List<Pair<Type, Boolean>> getSupertypes(int version, Type type, Set<String> warnings) throws IOException {
-        for (int vers = version; vers > target;) {
+        for (int vers = version; vers > target; ) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
@@ -229,7 +242,7 @@ public class ClassDowngrader implements Closeable {
     }
 
     public Type stubClass(int version, Type type, Set<String> warnings) {
-        for (int vers = version; vers > target;) {
+        for (int vers = version; vers > target; ) {
             VersionProvider downgrader = downgraders.get(vers);
             if (downgrader == null) {
                 throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
@@ -264,6 +277,7 @@ public class ClassDowngrader implements Closeable {
                                 public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
                                     super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments.clone());
                                 }
+
                             };
                         }
                     });
@@ -412,6 +426,7 @@ public class ClassDowngrader implements Closeable {
             throw new RuntimeException("Failed to downgrade " + name.get(), e);
         }
         if (logger.is(Logger.Level.DEBUG) || flags.debugDumpClasses) {
+            logger.debug("Classes from " + name.get());
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 if (!entry.getKey().equals(name.get())) {
                     logger.debug("Downgraded " + entry.getKey() + " from unknown to " + target);

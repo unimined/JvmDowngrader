@@ -12,12 +12,9 @@ import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardWatchEventKinds;
-import java.nio.file.WatchService;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -50,8 +47,8 @@ public class UnixProcessHandle implements J_L_ProcessHandle {
     }
 
     private final long pid;
-    private String[] pidInfo;
     private final String[] cmdline;
+    private String[] pidInfo;
 
     public UnixProcessHandle(long pid) {
         this.pid = pid;
@@ -114,7 +111,7 @@ public class UnixProcessHandle implements J_L_ProcessHandle {
     @Override
     public Stream<J_L_ProcessHandle> children() {
         Path pth = Paths.get("/proc/" + pid + "/task");
-        try(Stream<Path> stream = Files.list(pth)) {
+        try (Stream<Path> stream = Files.list(pth)) {
             return Stream.of(stream.toArray(Path[]::new)).flatMap(e -> {
                 try {
                     String s = new String(Files.readAllBytes(e.resolve("children")));
@@ -247,4 +244,5 @@ public class UnixProcessHandle implements J_L_ProcessHandle {
     public int compareTo(@NotNull J_L_ProcessHandle other) {
         return Long.compare(pid, other.pid());
     }
+
 }

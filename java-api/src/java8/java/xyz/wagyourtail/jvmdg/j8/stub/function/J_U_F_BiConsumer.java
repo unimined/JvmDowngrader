@@ -27,6 +27,7 @@ public interface J_U_F_BiConsumer<T, U> {
                 }
             };
         }
+
     }
 
     abstract class BiConsumerAdapter<T, U> implements J_U_F_BiConsumer<T, U> {
@@ -35,6 +36,7 @@ public interface J_U_F_BiConsumer<T, U> {
         public J_U_F_BiConsumer<T, U> andThen(J_U_F_BiConsumer<? super T, ? super U> after) {
             return BiConsumerDefaults.andThen(this, after);
         }
+
     }
 
 }

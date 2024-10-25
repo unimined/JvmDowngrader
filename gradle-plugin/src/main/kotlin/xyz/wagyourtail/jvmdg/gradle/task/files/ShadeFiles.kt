@@ -2,19 +2,23 @@ package xyz.wagyourtail.jvmdg.gradle.task.files
 
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
-import org.gradle.api.tasks.*
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.TaskAction
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
-import xyz.wagyourtail.jvmdg.util.*
+import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
+import xyz.wagyourtail.jvmdg.util.MustSet
+import xyz.wagyourtail.jvmdg.util.Utils
 import java.io.File
 import java.nio.file.FileSystem
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 
-abstract class ShadeFiles : ConventionTask(), ShadeFlags {
+abstract class ShadeFiles: ConventionTask(), ShadeFlags {
 
     @get:Internal
     protected val jvmdg by lazy {
@@ -77,7 +81,13 @@ abstract class ShadeFiles : ConventionTask(), ShadeFlags {
             for (i in toDowngradePaths.indices) {
                 val toDowngradeFile = toDowngradePaths[i]
                 val downgradedFile = downgraded[i]
-                ApiShader.shadeApis(this.toFlags(), shadePath.get().invoke(toDowngrade[i].name), toDowngradeFile, downgradedFile, jvmdg.downgradedApis[downgradeTo.get()])
+                ApiShader.shadeApis(
+                    this.toFlags(),
+                    shadePath.get().invoke(toDowngrade[i].name),
+                    toDowngradeFile,
+                    downgradedFile,
+                    jvmdg.downgradedApis[downgradeTo.get()]
+                )
             }
         } finally {
             fileSystems.forEach { it.close() }

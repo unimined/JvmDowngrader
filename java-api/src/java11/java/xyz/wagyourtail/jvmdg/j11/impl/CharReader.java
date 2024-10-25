@@ -26,6 +26,16 @@ public class CharReader {
         return buffer.charAt(pos++);
     }
 
+    public String takeUntil(char character) {
+        StringBuilder sb = new StringBuilder();
+        int next = peek();
+        while (next != -1 && next != character) {
+            sb.append((char) take());
+            next = peek();
+        }
+        return sb.toString();
+    }
+
     public String takeUntil(Set<Integer> c) {
         StringBuilder sb = new StringBuilder();
         while (pos < buffer.length()) {

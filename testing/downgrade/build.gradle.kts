@@ -1,11 +1,21 @@
 plugins {
     java
+    id("xyz.wagyourtail.annotationasm") version "1.0.0-SNAPSHOT"
 }
 
 base {
     archivesName = "downgradetest"
 }
 version = "1.0.0"
+
+repositories {
+    maven("https://maven.wagyourtail.xyz/snapshots")
+    mavenCentral()
+}
+
+dependencies {
+    implementation("org.ow2.asm:asm:9.7")
+}
 
 val testVersion = JavaVersion.toVersion(project.properties["testVersion"] as String)
 
@@ -29,4 +39,9 @@ val removeLibs by tasks.registering {
 
 tasks.jar {
     dependsOn(removeLibs)
+    destinationDirectory = temporaryDir
+}
+
+tasks.build {
+    dependsOn("annotationASMJar")
 }

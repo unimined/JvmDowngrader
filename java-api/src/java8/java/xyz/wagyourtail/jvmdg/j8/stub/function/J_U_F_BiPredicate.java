@@ -51,6 +51,7 @@ public interface J_U_F_BiPredicate<T, U> {
                 }
             };
         }
+
     }
 
     abstract class BiPredicateAdapter<T, U> implements J_U_F_BiPredicate<T, U> {

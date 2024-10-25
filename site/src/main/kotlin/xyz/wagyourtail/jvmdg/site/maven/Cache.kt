@@ -14,7 +14,7 @@ import kotlin.time.measureTime
 
 @OptIn(ExperimentalPathApi::class)
 object Cache {
-    private val LOGGER = KotlinLogging.logger {  }
+    private val LOGGER = KotlinLogging.logger { }
     private val lock = StringKeyLock()
     val cache = Path.of("./cache").toAbsolutePath().also {
         if (!it.exists()) {
@@ -130,7 +130,8 @@ object Cache {
                 // remove remaining files until size is less than maxSize
                 val maxSize = Settings.maxSize
                 val current = System.currentTimeMillis()
-                val filesToDelete = files.filter { it.isRegularFile() }.sortedBy { accessTimes[it.relativeTo(cache).toString()] ?: current }
+                val filesToDelete = files.filter { it.isRegularFile() }
+                    .sortedBy { accessTimes[it.relativeTo(cache).toString()] ?: current }
                 var currentSize = size
                 var deletedCount = 0
                 for (file in filesToDelete) {

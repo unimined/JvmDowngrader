@@ -7,10 +7,14 @@ import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.Collections;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -18,6 +22,17 @@ import java.util.WeakHashMap;
 public class J_L_ClassLoader {
     private static final Map<ClassLoader, String> nameMap = Collections.synchronizedMap(new WeakHashMap<>());
     private static final Map<ClassLoader, J_L_Module> unnamedModuleMap = Collections.synchronizedMap(new WeakHashMap<>());
+    private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
+    private static final MethodHandle IS_REGISTERED;
+
+    static {
+        try {
+            Class<?> parallelLoaders = Class.forName("java.lang.ClassLoader$ParallelLoaders");
+            IS_REGISTERED = IMPL_LOOKUP.findStatic(parallelLoaders, "isRegistered", MethodType.methodType(boolean.class, Class.class));
+        } catch (NoSuchMethodException | IllegalAccessException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Modify(ref = @Ref(value = "Ljava/lang/ClassLoader;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/ClassLoader;)V"))
     public static void init(MethodNode mnode, int i) {
@@ -66,6 +81,11 @@ public class J_L_ClassLoader {
     @Stub(ref = @Ref("Ljava/lang/ClassLoader;"))
     public static ClassLoader getPlatformClassLoader() {
         return ClassLoader.getSystemClassLoader();
+    }
+
+    @Stub
+    public static boolean isRegisteredAsParallelCapable(ClassLoader loader) throws Throwable {
+        return (boolean) IS_REGISTERED.invokeExact(loader.getClass());
     }
 
 }

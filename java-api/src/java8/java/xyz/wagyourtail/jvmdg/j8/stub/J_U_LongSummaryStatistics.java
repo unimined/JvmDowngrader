@@ -48,11 +48,11 @@ public class J_U_LongSummaryStatistics implements J_U_F_IntConsumer, J_U_F_LongC
     @Override
     public String toString() {
         return "IntSummaryStatistics{" +
-                "count=" + count +
-                ", sum=" + sum +
-                ", min=" + min +
-                ", max=" + max +
-                '}';
+            "count=" + count +
+            ", sum=" + sum +
+            ", min=" + min +
+            ", max=" + max +
+            '}';
     }
 
     @Override
@@ -72,4 +72,5 @@ public class J_U_LongSummaryStatistics implements J_U_F_IntConsumer, J_U_F_LongC
     public J_U_F_LongConsumer andThen(J_U_F_LongConsumer after) {
         return LongConsumerDefaults.andThen(this, after);
     }
+
 }

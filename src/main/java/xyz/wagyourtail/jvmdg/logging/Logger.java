@@ -3,7 +3,9 @@ package xyz.wagyourtail.jvmdg.logging;
 import xyz.wagyourtail.jvmdg.util.Consumer;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -123,8 +125,7 @@ public class Logger {
         INFO(AnsiColor.WHITE),
         WARN(AnsiColor.YELLOW),
         ERROR(AnsiColor.RED),
-        FATAL(AnsiColor.LIGHT_RED);
-        ;
+        FATAL(AnsiColor.LIGHT_RED);;
 
         private final AnsiColor ansiColor;
 
@@ -183,4 +184,5 @@ public class Logger {
         }
 
     }
+
 }

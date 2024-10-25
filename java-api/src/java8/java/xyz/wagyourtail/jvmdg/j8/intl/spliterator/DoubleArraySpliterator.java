@@ -116,4 +116,5 @@ public class DoubleArraySpliterator implements J_U_Spliterator.OfDouble {
             } while (++i < hi);
         }
     }
+
 }

@@ -8,4 +8,5 @@ public class J_L_Module {
     public static boolean isNativeAccessEnabled(Module module) {
         return true;
     }
+
 }

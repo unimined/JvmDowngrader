@@ -106,4 +106,5 @@ public class SynchronizedBackingCollection<E> implements Collection<E> {
             backing.clear();
         }
     }
+
 }

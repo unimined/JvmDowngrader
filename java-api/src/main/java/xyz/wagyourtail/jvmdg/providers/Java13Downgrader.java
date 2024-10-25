@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java13Downgrader extends VersionProvider {
     public Java13Downgrader() {
-        super(Opcodes.V13, Opcodes.V12);
+        super(Opcodes.V13, Opcodes.V12, 0);
     }
 
     public void init() {
@@ -49,4 +49,5 @@ public class Java13Downgrader extends VersionProvider {
         // JavacTask
         // ParameterNameProvider
     }
+
 }

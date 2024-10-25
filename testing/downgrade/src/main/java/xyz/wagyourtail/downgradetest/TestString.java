@@ -25,10 +25,10 @@ public class TestString {
         System.out.println(a + b + "ccc");
 
         System.out.println("""
-                    This is a test
-                  \t \tof the new multiline
-                    string literal
-                """.stripIndent());
+                This is a test
+              \t \tof the new multiline
+                string literal
+            """.stripIndent());
 
         System.out.println("this is a \\t test \\\" \\n ".translateEscapes());
         System.out.println("test %s".formatted("test2"));

@@ -142,11 +142,11 @@ public class ClassMapping {
                 }
                 Method m = newMin.getFirst();
                 insnList.add(new MethodInsnNode(
-                        Opcodes.INVOKESTATIC,
-                        Type.getType(m.getDeclaringClass()).getInternalName(),
-                        m.getName(),
-                        Type.getMethodDescriptor(m),
-                        newMin.getFirst().getDeclaringClass().isInterface()
+                    Opcodes.INVOKESTATIC,
+                    Type.getType(m.getDeclaringClass()).getInternalName(),
+                    m.getName(),
+                    Type.getMethodDescriptor(m),
+                    newMin.getFirst().getDeclaringClass().isInterface()
                 ));
                 method.instructions.insertBefore(min, insnList);
                 if (!returnType.equals(Type.getReturnType(m))) {
@@ -253,7 +253,10 @@ public class ClassMapping {
         try {
             Pair<Method, Modify> pair = methodModify.get(member);
             if (pair == null) {
-                if (!invoke_static && !member.getName().equals("<init>")) {
+                pair = methodModify.get(null);
+            }
+            if (pair == null) {
+                if (!invoke_static && (member == null || !member.getName().equals("<init>"))) {
                     Map<MemberNameAndDesc, Pair<Boolean, Type>> members = this.members.get();
                     if (members != null && members.containsKey(member)) {
                         return null;

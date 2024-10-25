@@ -3,7 +3,7 @@ package xyz.wagyourtail.jvmdg.util
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-class MustSet<T> : ReadWriteProperty<Any?, T> {
+class MustSet<T>: ReadWriteProperty<Any?, T> {
 
     @Suppress("ClassName")
     private object UNINITIALIZED_VALUE

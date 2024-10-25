@@ -14,23 +14,23 @@ public class J_U_C_ForkJoinPool {
         int pc = 0, preset = 0; // nonzero if size set as property
         try {  // ignore exceptions in accessing/parsing properties
             String pp = System.getProperty
-                    ("java.util.concurrent.ForkJoinPool.common.parallelism");
+                ("java.util.concurrent.ForkJoinPool.common.parallelism");
             if (pp != null) {
                 pc = Math.max(0, Integer.parseInt(pp));
                 preset = 1 << 21;
             }
             String sf = System.getProperty
-                    ("java.util.concurrent.ForkJoinPool.common.threadFactory");
+                ("java.util.concurrent.ForkJoinPool.common.threadFactory");
             String sh = System.getProperty
-                    ("java.util.concurrent.ForkJoinPool.common.exceptionHandler");
+                ("java.util.concurrent.ForkJoinPool.common.exceptionHandler");
             if (sf != null || sh != null) {
                 ClassLoader ldr = ClassLoader.getSystemClassLoader();
                 if (sf != null)
                     fac = (ForkJoinPool.ForkJoinWorkerThreadFactory)
-                            ldr.loadClass(sf).getConstructor().newInstance();
+                        ldr.loadClass(sf).getConstructor().newInstance();
                 if (sh != null)
                     handler = (Thread.UncaughtExceptionHandler)
-                            ldr.loadClass(sh).getConstructor().newInstance();
+                        ldr.loadClass(sh).getConstructor().newInstance();
             }
         } catch (Exception ignore) {
         }
@@ -49,4 +49,5 @@ public class J_U_C_ForkJoinPool {
     public static int getCommonPoolParallelism() {
         return COMMON_POOL.getParallelism();
     }
+
 }

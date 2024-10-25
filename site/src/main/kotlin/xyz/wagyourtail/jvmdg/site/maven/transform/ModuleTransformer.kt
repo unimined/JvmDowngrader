@@ -29,7 +29,7 @@ object ModuleTransformer {
                                                 }
                                             })
                                             // TODO: dependency transforms?
-            //                                    } else if (varkey.key == "dependencies") {
+                                            //                                    } else if (varkey.key == "dependencies") {
                                         } else {
                                             put(varkey.key, varkey.value)
                                         }
@@ -38,12 +38,17 @@ object ModuleTransformer {
                             }
                         })
                     }
+
                     "component" -> {
                         put(entry.key, buildJsonObject {
                             for ((key, value) in entry.value.jsonObject) {
                                 if (key == "group") {
                                     put(key, "jvmdg-$version.${value.jsonPrimitive.content}")
-                                } else if (key == "module" && entry.value.jsonObject["group"]?.jsonPrimitive?.content?.let { value.jsonPrimitive.content.startsWith(it) } == true) {
+                                } else if (key == "module" && entry.value.jsonObject["group"]?.jsonPrimitive?.content?.let {
+                                        value.jsonPrimitive.content.startsWith(
+                                            it
+                                        )
+                                    } == true) {
                                     put(key, "jvmdg-$version.${value.jsonPrimitive.content}")
                                 } else {
                                     put(key, value)
@@ -51,6 +56,7 @@ object ModuleTransformer {
                             }
                         })
                     }
+
                     else -> {
                         put(entry.key, entry.value)
                     }

@@ -1,12 +1,15 @@
 package xyz.wagyourtail.downgradetest;
 
+import java.security.Provider;
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 public class TestNests {
 
     private static String test = "test";
     private String test2 = "test2";
 
+    private TestNests() {}
 
     public static void main(String[] args) {
         System.out.println(test);
@@ -52,6 +55,7 @@ public class TestNests {
         private static String test5 = "test";
 
         private static String test11() {
+            Supplier<TestNests> test = TestNests::new;
             return test5;
         }
 
@@ -62,6 +66,7 @@ public class TestNests {
         private String test10() {
             return test5;
         }
+
     }
 
     public static class NestSuper1 {
@@ -80,6 +85,7 @@ public class TestNests {
                 test();
                 System.out.println(test);
             }
+
         }
 
     }
@@ -105,6 +111,7 @@ public class TestNests {
                 test();
                 System.out.println(test);
             }
+
         }
 
     }
@@ -127,7 +134,9 @@ public class TestNests {
                 System.out.println(Nest1.test11());
                 System.out.println(TestNests.this.test2);
             }
+
         }
+
     }
 
 }

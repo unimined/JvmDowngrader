@@ -93,7 +93,7 @@ public final class J_U_S_Collectors {
                                                            return o;
                                                        }
                                                    },
-                J_U_S_Collector.Characteristics.UNORDERED);
+            J_U_S_Collector.Characteristics.UNORDERED);
     }
 
     @Stub(ref = @Ref("java/util/stream/Collectors"))
@@ -123,7 +123,7 @@ public final class J_U_S_Collectors {
                                                            return Collections.unmodifiableSet(ts);
                                                        }
                                                    },
-                J_U_S_Collector.Characteristics.UNORDERED);
+            J_U_S_Collector.Characteristics.UNORDERED);
     }
 
 
@@ -140,48 +140,48 @@ public final class J_U_S_Collectors {
     @Stub(ref = @Ref("java/util/stream/Collectors"))
     public static J_U_S_Collector<CharSequence, ?, String> joining(final CharSequence delimiter, final CharSequence prefix, final CharSequence suffix) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<J_U_StringJoiner>() {
+            new J_U_F_Supplier<J_U_StringJoiner>() {
 
-                    @Override
-                    public J_U_StringJoiner get() {
-                        return new J_U_StringJoiner(delimiter, prefix, suffix);
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<J_U_StringJoiner, CharSequence>() {
-                    @Override
-                    public void accept(J_U_StringJoiner jUStringJoiner, CharSequence charSequence) {
-                        jUStringJoiner.add(charSequence);
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<J_U_StringJoiner>() {
-                    @Override
-                    public J_U_StringJoiner apply(J_U_StringJoiner jUStringJoiner, J_U_StringJoiner jUStringJoiner2) {
-                        jUStringJoiner.merge(jUStringJoiner2);
-                        return jUStringJoiner;
-                    }
-                },
-                new J_U_F_Function.FunctionAdapter<J_U_StringJoiner, String>() {
-                    @Override
-                    public String apply(J_U_StringJoiner jUStringJoiner) {
-                        return jUStringJoiner.toString();
-                    }
+                @Override
+                public J_U_StringJoiner get() {
+                    return new J_U_StringJoiner(delimiter, prefix, suffix);
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<J_U_StringJoiner, CharSequence>() {
+                @Override
+                public void accept(J_U_StringJoiner jUStringJoiner, CharSequence charSequence) {
+                    jUStringJoiner.add(charSequence);
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<J_U_StringJoiner>() {
+                @Override
+                public J_U_StringJoiner apply(J_U_StringJoiner jUStringJoiner, J_U_StringJoiner jUStringJoiner2) {
+                    jUStringJoiner.merge(jUStringJoiner2);
+                    return jUStringJoiner;
+                }
+            },
+            new J_U_F_Function.FunctionAdapter<J_U_StringJoiner, String>() {
+                @Override
+                public String apply(J_U_StringJoiner jUStringJoiner) {
+                    return jUStringJoiner.toString();
+                }
+            }
         );
     }
 
     @Stub(ref = @Ref("java/util/stream/Collectors"))
     public static <T, U, A, R> J_U_S_Collector<T, ?, R> mapping(final J_U_F_Function<? super T, ? extends U> mapper, final J_U_S_Collector<? super U, A, R> downstream) {
         return new CollectorImpl<>(
-                downstream.supplier(),
-                new J_U_F_BiConsumer.BiConsumerAdapter<A, T>() {
-                    @Override
-                    public void accept(A a, T t) {
-                        downstream.accumulator().accept(a, mapper.apply(t));
-                    }
-                },
-                downstream.combiner(),
-                downstream.finisher(),
-                downstream.characteristics()
+            downstream.supplier(),
+            new J_U_F_BiConsumer.BiConsumerAdapter<A, T>() {
+                @Override
+                public void accept(A a, T t) {
+                    downstream.accumulator().accept(a, mapper.apply(t));
+                }
+            },
+            downstream.combiner(),
+            downstream.finisher(),
+            downstream.characteristics()
         );
     }
 
@@ -190,11 +190,11 @@ public final class J_U_S_Collectors {
         EnumSet<J_U_S_Collector.Characteristics> characteristics = downstream.characteristics().isEmpty() ? EnumSet.noneOf(J_U_S_Collector.Characteristics.class) : EnumSet.copyOf(downstream.characteristics());
         characteristics.remove(J_U_S_Collector.Characteristics.IDENTITY_FINISH);
         return new CollectorImpl<>(
-                downstream.supplier(),
-                downstream.accumulator(),
-                downstream.combiner(),
-                downstream.finisher().andThen(andThen),
-                Collections.unmodifiableSet(characteristics)
+            downstream.supplier(),
+            downstream.accumulator(),
+            downstream.combiner(),
+            downstream.finisher().andThen(andThen),
+            Collections.unmodifiableSet(characteristics)
         );
     }
 
@@ -231,166 +231,166 @@ public final class J_U_S_Collectors {
     @Stub(ref = @Ref("java/util/stream/Collectors"))
     public static <T> J_U_S_Collector<T, ?, Integer> summingInt(final J_U_F_ToIntFunction<? super T> mapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<int[]>() {
+            new J_U_F_Supplier<int[]>() {
 
-                    @Override
-                    public int[] get() {
-                        return new int[1];
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<int[], T>() {
-
-                    @Override
-                    public void accept(int[] ints, T t) {
-                        ints[0] += mapper.applyAsInt(t);
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<int[]>() {
-                    @Override
-                    public int[] apply(int[] ints, int[] ints2) {
-                        ints[0] += ints2[0];
-                        return ints;
-                    }
-                },
-                new J_U_F_Function.FunctionAdapter<int[], Integer>() {
-                    @Override
-                    public Integer apply(int[] ints) {
-                        return ints[0];
-                    }
+                @Override
+                public int[] get() {
+                    return new int[1];
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<int[], T>() {
+
+                @Override
+                public void accept(int[] ints, T t) {
+                    ints[0] += mapper.applyAsInt(t);
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<int[]>() {
+                @Override
+                public int[] apply(int[] ints, int[] ints2) {
+                    ints[0] += ints2[0];
+                    return ints;
+                }
+            },
+            new J_U_F_Function.FunctionAdapter<int[], Integer>() {
+                @Override
+                public Integer apply(int[] ints) {
+                    return ints[0];
+                }
+            }
         );
     }
 
     @Stub(ref = @Ref("java/util/stream/Collectors"))
     public static <T> J_U_S_Collector<T, ?, Long> summingLong(final J_U_F_ToLongFunction<? super T> mapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<long[]>() {
+            new J_U_F_Supplier<long[]>() {
 
-                    @Override
-                    public long[] get() {
-                        return new long[1];
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<long[], T>() {
-
-                    @Override
-                    public void accept(long[] longs, T t) {
-                        longs[0] += mapper.applyAsLong(t);
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<long[]>() {
-                    @Override
-                    public long[] apply(long[] longs, long[] longs2) {
-                        longs[0] += longs2[0];
-                        return longs;
-                    }
-                },
-                new J_U_F_Function.FunctionAdapter<long[], Long>() {
-                    @Override
-                    public Long apply(long[] longs) {
-                        return longs[0];
-                    }
+                @Override
+                public long[] get() {
+                    return new long[1];
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<long[], T>() {
+
+                @Override
+                public void accept(long[] longs, T t) {
+                    longs[0] += mapper.applyAsLong(t);
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<long[]>() {
+                @Override
+                public long[] apply(long[] longs, long[] longs2) {
+                    longs[0] += longs2[0];
+                    return longs;
+                }
+            },
+            new J_U_F_Function.FunctionAdapter<long[], Long>() {
+                @Override
+                public Long apply(long[] longs) {
+                    return longs[0];
+                }
+            }
         );
     }
 
     @Stub(ref = @Ref("java/util/stream/Collectors"))
     public static <T> J_U_S_Collector<T, ?, Double> summingDouble(final J_U_F_ToDoubleFunction<? super T> mapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<double[]>() {
+            new J_U_F_Supplier<double[]>() {
 
-                    @Override
-                    public double[] get() {
-                        return new double[1];
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<double[], T>() {
-
-                    @Override
-                    public void accept(double[] doubles, T t) {
-                        doubles[0] += mapper.applyAsDouble(t);
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<double[]>() {
-                    @Override
-                    public double[] apply(double[] doubles, double[] doubles2) {
-                        doubles[0] += doubles2[0];
-                        return doubles;
-                    }
-                },
-                new J_U_F_Function.FunctionAdapter<double[], Double>() {
-                    @Override
-                    public Double apply(double[] longs) {
-                        return longs[0];
-                    }
+                @Override
+                public double[] get() {
+                    return new double[1];
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<double[], T>() {
+
+                @Override
+                public void accept(double[] doubles, T t) {
+                    doubles[0] += mapper.applyAsDouble(t);
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<double[]>() {
+                @Override
+                public double[] apply(double[] doubles, double[] doubles2) {
+                    doubles[0] += doubles2[0];
+                    return doubles;
+                }
+            },
+            new J_U_F_Function.FunctionAdapter<double[], Double>() {
+                @Override
+                public Double apply(double[] longs) {
+                    return longs[0];
+                }
+            }
         );
     }
 
 
     public static <T> J_U_S_Collector<T, ?, Double> averagingInt(final J_U_F_ToIntFunction<? super T> mapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<long[]>() {
+            new J_U_F_Supplier<long[]>() {
 
-                    @Override
-                    public long[] get() {
-                        return new long[2];
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<long[], T>() {
-                    @Override
-                    public void accept(long[] longs, T t) {
-                        longs[0] += mapper.applyAsInt(t);
-                        longs[1]++;
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<long[]>() {
-                    @Override
-                    public long[] apply(long[] longs, long[] longs2) {
-                        longs[0] += longs2[0];
-                        longs[1] += longs2[1];
-                        return longs;
-                    }
-                },
-                new J_U_F_Function.FunctionAdapter<long[], Double>() {
-                    @Override
-                    public Double apply(long[] longs) {
-                        return longs[1] == 0 ? 0.0d : (double) longs[0] / longs[1];
-                    }
+                @Override
+                public long[] get() {
+                    return new long[2];
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<long[], T>() {
+                @Override
+                public void accept(long[] longs, T t) {
+                    longs[0] += mapper.applyAsInt(t);
+                    longs[1]++;
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<long[]>() {
+                @Override
+                public long[] apply(long[] longs, long[] longs2) {
+                    longs[0] += longs2[0];
+                    longs[1] += longs2[1];
+                    return longs;
+                }
+            },
+            new J_U_F_Function.FunctionAdapter<long[], Double>() {
+                @Override
+                public Double apply(long[] longs) {
+                    return longs[1] == 0 ? 0.0d : (double) longs[0] / longs[1];
+                }
+            }
         );
     }
 
     public static <T> J_U_S_Collector<T, ?, Double> averagingLong(final J_U_F_ToLongFunction<? super T> mapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<long[]>() {
+            new J_U_F_Supplier<long[]>() {
 
-                    @Override
-                    public long[] get() {
-                        return new long[2];
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<long[], T>() {
-                    @Override
-                    public void accept(long[] longs, T t) {
-                        longs[0] += mapper.applyAsLong(t);
-                        longs[1]++;
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<long[]>() {
-                    @Override
-                    public long[] apply(long[] longs, long[] longs2) {
-                        longs[0] += longs2[0];
-                        longs[1] += longs2[1];
-                        return longs;
-                    }
-                },
-                new J_U_F_Function.FunctionAdapter<long[], Double>() {
-                    @Override
-                    public Double apply(long[] longs) {
-                        return longs[1] == 0 ? 0.0d : (double) longs[0] / longs[1];
-                    }
+                @Override
+                public long[] get() {
+                    return new long[2];
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<long[], T>() {
+                @Override
+                public void accept(long[] longs, T t) {
+                    longs[0] += mapper.applyAsLong(t);
+                    longs[1]++;
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<long[]>() {
+                @Override
+                public long[] apply(long[] longs, long[] longs2) {
+                    longs[0] += longs2[0];
+                    longs[1] += longs2[1];
+                    return longs;
+                }
+            },
+            new J_U_F_Function.FunctionAdapter<long[], Double>() {
+                @Override
+                public Double apply(long[] longs) {
+                    return longs[1] == 0 ? 0.0d : (double) longs[0] / longs[1];
+                }
+            }
         );
     }
 
@@ -415,64 +415,64 @@ public final class J_U_S_Collectors {
 
     public static <T> J_U_S_Collector<T, ?, Double> averagingDouble(final J_U_F_ToDoubleFunction<? super T> mapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<double[]>() {
+            new J_U_F_Supplier<double[]>() {
 
-                    @Override
-                    public double[] get() {
-                        return new double[4];
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<double[], T>() {
-                    @Override
-                    public void accept(double[] doubles, T t) {
-                        double val = mapper.applyAsDouble(t);
-                        sumWithCompensation(doubles, val);
-                        doubles[2]++;
-                        doubles[3] += val;
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<double[]>() {
-                    @Override
-                    public double[] apply(double[] doubles, double[] doubles2) {
-                        sumWithCompensation(doubles, doubles2[0]);
-                        sumWithCompensation(doubles, -doubles2[1]);
-                        doubles[2] += doubles2[2];
-                        doubles[3] += doubles2[3];
-                        return doubles;
-                    }
-                },
-                new J_U_F_Function.FunctionAdapter<double[], Double>() {
-                    @Override
-                    public Double apply(double[] doubles) {
-                        return doubles[2] == 0 ? 0.0d : (computeFinalSum(doubles) / doubles[2]);
-                    }
+                @Override
+                public double[] get() {
+                    return new double[4];
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<double[], T>() {
+                @Override
+                public void accept(double[] doubles, T t) {
+                    double val = mapper.applyAsDouble(t);
+                    sumWithCompensation(doubles, val);
+                    doubles[2]++;
+                    doubles[3] += val;
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<double[]>() {
+                @Override
+                public double[] apply(double[] doubles, double[] doubles2) {
+                    sumWithCompensation(doubles, doubles2[0]);
+                    sumWithCompensation(doubles, -doubles2[1]);
+                    doubles[2] += doubles2[2];
+                    doubles[3] += doubles2[3];
+                    return doubles;
+                }
+            },
+            new J_U_F_Function.FunctionAdapter<double[], Double>() {
+                @Override
+                public Double apply(double[] doubles) {
+                    return doubles[2] == 0 ? 0.0d : (computeFinalSum(doubles) / doubles[2]);
+                }
+            }
         );
     }
 
     public static <T> J_U_S_Collector<T, ?, T> reducing(T identity, final J_U_F_BinaryOperator<T> op) {
         return J_U_S_Collector.CollectorStatics.of(
-                boxSupplier(identity),
-                new J_U_F_BiConsumer.BiConsumerAdapter<T[], T>() {
+            boxSupplier(identity),
+            new J_U_F_BiConsumer.BiConsumerAdapter<T[], T>() {
 
-                    @Override
-                    public void accept(T[] ts, T t) {
-                        ts[0] = op.apply(ts[0], t);
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<T[]>() {
-                    @Override
-                    public T[] apply(T[] ts, T[] ts2) {
-                        ts[0] = op.apply(ts[0], ts2[0]);
-                        return ts;
-                    }
-                },
-                new J_U_F_Function.FunctionAdapter<T[], T>() {
-                    @Override
-                    public T apply(T[] ts) {
-                        return ts[0];
-                    }
+                @Override
+                public void accept(T[] ts, T t) {
+                    ts[0] = op.apply(ts[0], t);
                 }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<T[]>() {
+                @Override
+                public T[] apply(T[] ts, T[] ts2) {
+                    ts[0] = op.apply(ts[0], ts2[0]);
+                    return ts;
+                }
+            },
+            new J_U_F_Function.FunctionAdapter<T[], T>() {
+                @Override
+                public T apply(T[] ts) {
+                    return ts[0];
+                }
+            }
         );
     }
 
@@ -504,60 +504,61 @@ public final class J_U_S_Collectors {
             public J_U_F_Consumer<T> andThen(J_U_F_Consumer<? super T> after) {
                 return J_U_F_Consumer.ConsumerDefaults.andThen(this, after);
             }
+
         }
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<OptionalBox>() {
-                    @Override
-                    public OptionalBox get() {
-                        return new OptionalBox();
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<OptionalBox, T>() {
-                    @Override
-                    public void accept(OptionalBox optionalBox, T t) {
-                        optionalBox.accept(t);
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<OptionalBox>() {
-                    @Override
-                    public OptionalBox apply(OptionalBox optionalBox, OptionalBox optionalBox2) {
-                        if (optionalBox2.present) {
-                            optionalBox.accept(optionalBox2.value);
-                        }
-                        return optionalBox;
-                    }
-                },
-                new J_U_F_Function.FunctionAdapter<OptionalBox, J_U_Optional<T>>() {
-                    @Override
-                    public J_U_Optional<T> apply(OptionalBox optionalBox) {
-                        return J_U_Optional.ofNullable(optionalBox.value);
-                    }
+            new J_U_F_Supplier<OptionalBox>() {
+                @Override
+                public OptionalBox get() {
+                    return new OptionalBox();
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<OptionalBox, T>() {
+                @Override
+                public void accept(OptionalBox optionalBox, T t) {
+                    optionalBox.accept(t);
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<OptionalBox>() {
+                @Override
+                public OptionalBox apply(OptionalBox optionalBox, OptionalBox optionalBox2) {
+                    if (optionalBox2.present) {
+                        optionalBox.accept(optionalBox2.value);
+                    }
+                    return optionalBox;
+                }
+            },
+            new J_U_F_Function.FunctionAdapter<OptionalBox, J_U_Optional<T>>() {
+                @Override
+                public J_U_Optional<T> apply(OptionalBox optionalBox) {
+                    return J_U_Optional.ofNullable(optionalBox.value);
+                }
+            }
         );
     }
 
     public static <T, U> J_U_S_Collector<T, ?, U> reducing(U identity, final J_U_F_Function<? super T, ? extends U> mapper, final J_U_F_BinaryOperator<U> op) {
         return J_U_S_Collector.CollectorStatics.of(
-                boxSupplier(identity),
-                new J_U_F_BiConsumer.BiConsumerAdapter<U[], T>() {
-                    @Override
-                    public void accept(U[] us, T t) {
-                        us[0] = op.apply(us[0], mapper.apply(t));
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<U[]>() {
-                    @Override
-                    public U[] apply(U[] us, U[] us2) {
-                        us[0] = op.apply(us[0], us2[0]);
-                        return us;
-                    }
-                },
-                new J_U_F_Function.FunctionAdapter<U[], U>() {
-                    @Override
-                    public U apply(U[] us) {
-                        return us[0];
-                    }
+            boxSupplier(identity),
+            new J_U_F_BiConsumer.BiConsumerAdapter<U[], T>() {
+                @Override
+                public void accept(U[] us, T t) {
+                    us[0] = op.apply(us[0], mapper.apply(t));
                 }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<U[]>() {
+                @Override
+                public U[] apply(U[] us, U[] us2) {
+                    us[0] = op.apply(us[0], us2[0]);
+                    return us;
+                }
+            },
+            new J_U_F_Function.FunctionAdapter<U[], U>() {
+                @Override
+                public U apply(U[] us) {
+                    return us[0];
+                }
+            }
         );
     }
 
@@ -601,9 +602,9 @@ public final class J_U_S_Collectors {
         J_U_F_Supplier<Map<K, A>> mangledFactory = (J_U_F_Supplier<Map<K, A>>) mapFactory;
         if (downstream.characteristics().contains(J_U_S_Collector.Characteristics.IDENTITY_FINISH)) {
             return (J_U_S_Collector<T, ?, M>) J_U_S_Collector.CollectorStatics.of(
-                    mangledFactory,
-                    accumulator,
-                    merger
+                mangledFactory,
+                accumulator,
+                merger
             );
         } else {
             @SuppressWarnings("unchecked") final J_U_F_Function<A, A> downstreamFinisher = (J_U_F_Function<A, A>) downstream.finisher();
@@ -623,10 +624,10 @@ public final class J_U_S_Collectors {
                 }
             };
             return J_U_S_Collector.CollectorStatics.of(
-                    mangledFactory,
-                    accumulator,
-                    merger,
-                    finisher
+                mangledFactory,
+                accumulator,
+                merger,
+                finisher
             );
         }
     }
@@ -687,10 +688,10 @@ public final class J_U_S_Collectors {
         }
         if (downstream.characteristics().contains(J_U_S_Collector.Characteristics.IDENTITY_FINISH)) {
             return (J_U_S_Collector<T, ?, M>) J_U_S_Collector.CollectorStatics.of(
-                    mangledFactory,
-                    accumulator,
-                    merger,
-                    J_U_S_Collector.Characteristics.CONCURRENT
+                mangledFactory,
+                accumulator,
+                merger,
+                J_U_S_Collector.Characteristics.CONCURRENT
             );
         } else {
             final J_U_F_Function<A, A> downstreamFinisher = (J_U_F_Function<A, A>) downstream.finisher();
@@ -708,11 +709,11 @@ public final class J_U_S_Collectors {
                 }
             };
             return J_U_S_Collector.CollectorStatics.of(
-                    mangledFactory,
-                    accumulator,
-                    merger,
-                    finisher,
-                    J_U_S_Collector.Characteristics.CONCURRENT
+                mangledFactory,
+                accumulator,
+                merger,
+                finisher,
+                J_U_S_Collector.Characteristics.CONCURRENT
             );
         }
     }
@@ -763,34 +764,34 @@ public final class J_U_S_Collectors {
 
     public static <T, K, U> J_U_S_Collector<T, ?, Map<K, U>> toMap(J_U_F_Function<? super T, ? extends K> keyMapper, J_U_F_Function<? super T, ? extends U> valueMapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<Map<K, U>>() {
-                    @Override
-                    public Map<K, U> get() {
-                        return new HashMap<>();
-                    }
-                },
-                uniqKeyMapAccumulator(keyMapper, valueMapper),
-                (J_U_F_BinaryOperator) uniqKeysMapMerger()
+            new J_U_F_Supplier<Map<K, U>>() {
+                @Override
+                public Map<K, U> get() {
+                    return new HashMap<>();
+                }
+            },
+            uniqKeyMapAccumulator(keyMapper, valueMapper),
+            (J_U_F_BinaryOperator) uniqKeysMapMerger()
         );
     }
 
     public static <T, K, U> J_U_S_Collector<T, ?, Map<K, U>> toUnmodifiableMap(J_U_F_Function<? super T, ? extends K> keyMapper, J_U_F_Function<? super T, ? extends U> valueMapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<Map<K, U>>() {
-                    @Override
-                    public Map<K, U> get() {
-                        return new HashMap<>();
-                    }
-                },
-                uniqKeyMapAccumulator(keyMapper, valueMapper),
-                (J_U_F_BinaryOperator) uniqKeysMapMerger(),
-                new J_U_F_Function.FunctionAdapter<Map<K, U>, Map<K, U>>() {
-
-                    @Override
-                    public Map<K, U> apply(Map<K, U> kuMap) {
-                        return Collections.unmodifiableMap(kuMap);
-                    }
+            new J_U_F_Supplier<Map<K, U>>() {
+                @Override
+                public Map<K, U> get() {
+                    return new HashMap<>();
                 }
+            },
+            uniqKeyMapAccumulator(keyMapper, valueMapper),
+            (J_U_F_BinaryOperator) uniqKeysMapMerger(),
+            new J_U_F_Function.FunctionAdapter<Map<K, U>, Map<K, U>>() {
+
+                @Override
+                public Map<K, U> apply(Map<K, U> kuMap) {
+                    return Collections.unmodifiableMap(kuMap);
+                }
+            }
         );
     }
 
@@ -808,35 +809,35 @@ public final class J_U_S_Collectors {
         Objects.requireNonNull(valueMapper, "valueMapper");
         Objects.requireNonNull(mergeFunction, "mergeFunction");
         return collectingAndThen(
-                toMap(keyMapper, valueMapper, mergeFunction),
-                new J_U_F_Function.FunctionAdapter<Map<K, U>, Map<K, U>>() {
-                    @Override
-                    public Map<K, U> apply(Map<K, U> kuMap) {
-                        return Collections.unmodifiableMap(kuMap);
-                    }
+            toMap(keyMapper, valueMapper, mergeFunction),
+            new J_U_F_Function.FunctionAdapter<Map<K, U>, Map<K, U>>() {
+                @Override
+                public Map<K, U> apply(Map<K, U> kuMap) {
+                    return Collections.unmodifiableMap(kuMap);
                 }
+            }
         );
     }
 
     public static <T, K, U, M extends Map<K, U>> J_U_S_Collector<T, ?, M> toMap(J_U_F_Function<? super T, ? extends K> keyMapper, J_U_F_Function<? super T, ? extends U> valueMapper, J_U_F_BinaryOperator<U> mergeFunction, J_U_F_Supplier<M> mapSupplier) {
         return J_U_S_Collector.CollectorStatics.of(
-                mapSupplier,
-                (J_U_F_BiConsumer<M, T>) uniqKeyMapAccumulator(keyMapper, valueMapper),
-                (J_U_F_BinaryOperator<M>) mapMerger(mergeFunction)
+            mapSupplier,
+            (J_U_F_BiConsumer<M, T>) uniqKeyMapAccumulator(keyMapper, valueMapper),
+            (J_U_F_BinaryOperator<M>) mapMerger(mergeFunction)
         );
     }
 
     public static <T, K, U> J_U_S_Collector<T, ?, ConcurrentMap<K, U>> toConcurrentMap(J_U_F_Function<? super T, ? extends K> keyMapper, J_U_F_Function<? super T, ? extends U> valueMapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<Map<K, U>>() {
-                    @Override
-                    public Map<K, U> get() {
-                        return new ConcurrentHashMap<>();
-                    }
-                },
-                uniqKeyMapAccumulator(keyMapper, valueMapper),
-                (J_U_F_BinaryOperator) uniqKeysMapMerger(),
-                J_U_S_Collector.Characteristics.CONCURRENT
+            new J_U_F_Supplier<Map<K, U>>() {
+                @Override
+                public Map<K, U> get() {
+                    return new ConcurrentHashMap<>();
+                }
+            },
+            uniqKeyMapAccumulator(keyMapper, valueMapper),
+            (J_U_F_BinaryOperator) uniqKeysMapMerger(),
+            J_U_S_Collector.Characteristics.CONCURRENT
         );
     }
 
@@ -851,82 +852,82 @@ public final class J_U_S_Collectors {
 
     public static <T, K, U, M extends ConcurrentMap<K, U>> J_U_S_Collector<T, ?, M> toConcurrentMap(J_U_F_Function<? super T, ? extends K> keyMapper, J_U_F_Function<? super T, ? extends U> valueMapper, J_U_F_BinaryOperator<U> mergeFunction, J_U_F_Supplier<M> mapSupplier) {
         return J_U_S_Collector.CollectorStatics.of(
-                mapSupplier,
-                (J_U_F_BiConsumer) uniqKeyMapAccumulator(keyMapper, valueMapper),
-                (J_U_F_BinaryOperator) mapMerger(mergeFunction),
-                J_U_S_Collector.Characteristics.CONCURRENT
+            mapSupplier,
+            (J_U_F_BiConsumer) uniqKeyMapAccumulator(keyMapper, valueMapper),
+            (J_U_F_BinaryOperator) mapMerger(mergeFunction),
+            J_U_S_Collector.Characteristics.CONCURRENT
         );
     }
 
     public static <T> J_U_S_Collector<T, ?, J_U_IntSummaryStatistics> summarizingInt(final J_U_F_ToIntFunction<? super T> mapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<J_U_IntSummaryStatistics>() {
-                    @Override
-                    public J_U_IntSummaryStatistics get() {
-                        return new J_U_IntSummaryStatistics();
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<J_U_IntSummaryStatistics, T>() {
-                    @Override
-                    public void accept(J_U_IntSummaryStatistics jUIntSummaryStatistics, T t) {
-                        jUIntSummaryStatistics.accept(mapper.applyAsInt(t));
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<J_U_IntSummaryStatistics>() {
-                    @Override
-                    public J_U_IntSummaryStatistics apply(J_U_IntSummaryStatistics jUIntSummaryStatistics, J_U_IntSummaryStatistics jUIntSummaryStatistics2) {
-                        jUIntSummaryStatistics.combine(jUIntSummaryStatistics2);
-                        return jUIntSummaryStatistics;
-                    }
+            new J_U_F_Supplier<J_U_IntSummaryStatistics>() {
+                @Override
+                public J_U_IntSummaryStatistics get() {
+                    return new J_U_IntSummaryStatistics();
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<J_U_IntSummaryStatistics, T>() {
+                @Override
+                public void accept(J_U_IntSummaryStatistics jUIntSummaryStatistics, T t) {
+                    jUIntSummaryStatistics.accept(mapper.applyAsInt(t));
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<J_U_IntSummaryStatistics>() {
+                @Override
+                public J_U_IntSummaryStatistics apply(J_U_IntSummaryStatistics jUIntSummaryStatistics, J_U_IntSummaryStatistics jUIntSummaryStatistics2) {
+                    jUIntSummaryStatistics.combine(jUIntSummaryStatistics2);
+                    return jUIntSummaryStatistics;
+                }
+            }
         );
     }
 
     public static <T> J_U_S_Collector<T, ?, J_U_LongSummaryStatistics> summarizingLong(final J_U_F_ToLongFunction<? super T> mapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<J_U_LongSummaryStatistics>() {
-                    @Override
-                    public J_U_LongSummaryStatistics get() {
-                        return new J_U_LongSummaryStatistics();
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<J_U_LongSummaryStatistics, T>() {
-                    @Override
-                    public void accept(J_U_LongSummaryStatistics jUIntSummaryStatistics, T t) {
-                        jUIntSummaryStatistics.accept(mapper.applyAsLong(t));
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<J_U_LongSummaryStatistics>() {
-                    @Override
-                    public J_U_LongSummaryStatistics apply(J_U_LongSummaryStatistics jUIntSummaryStatistics, J_U_LongSummaryStatistics jUIntSummaryStatistics2) {
-                        jUIntSummaryStatistics.combine(jUIntSummaryStatistics2);
-                        return jUIntSummaryStatistics;
-                    }
+            new J_U_F_Supplier<J_U_LongSummaryStatistics>() {
+                @Override
+                public J_U_LongSummaryStatistics get() {
+                    return new J_U_LongSummaryStatistics();
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<J_U_LongSummaryStatistics, T>() {
+                @Override
+                public void accept(J_U_LongSummaryStatistics jUIntSummaryStatistics, T t) {
+                    jUIntSummaryStatistics.accept(mapper.applyAsLong(t));
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<J_U_LongSummaryStatistics>() {
+                @Override
+                public J_U_LongSummaryStatistics apply(J_U_LongSummaryStatistics jUIntSummaryStatistics, J_U_LongSummaryStatistics jUIntSummaryStatistics2) {
+                    jUIntSummaryStatistics.combine(jUIntSummaryStatistics2);
+                    return jUIntSummaryStatistics;
+                }
+            }
         );
     }
 
     public static <T> J_U_S_Collector<T, ?, J_U_DoubleSummaryStatistics> summarizingDouble(final J_U_F_ToDoubleFunction<? super T> mapper) {
         return J_U_S_Collector.CollectorStatics.of(
-                new J_U_F_Supplier<J_U_DoubleSummaryStatistics>() {
-                    @Override
-                    public J_U_DoubleSummaryStatistics get() {
-                        return new J_U_DoubleSummaryStatistics();
-                    }
-                },
-                new J_U_F_BiConsumer.BiConsumerAdapter<J_U_DoubleSummaryStatistics, T>() {
-                    @Override
-                    public void accept(J_U_DoubleSummaryStatistics jUIntSummaryStatistics, T t) {
-                        jUIntSummaryStatistics.accept(mapper.applyAsDouble(t));
-                    }
-                },
-                new J_U_F_BinaryOperator.BinaryOperatorAdapter<J_U_DoubleSummaryStatistics>() {
-                    @Override
-                    public J_U_DoubleSummaryStatistics apply(J_U_DoubleSummaryStatistics jUIntSummaryStatistics, J_U_DoubleSummaryStatistics jUIntSummaryStatistics2) {
-                        jUIntSummaryStatistics.combine(jUIntSummaryStatistics2);
-                        return jUIntSummaryStatistics;
-                    }
+            new J_U_F_Supplier<J_U_DoubleSummaryStatistics>() {
+                @Override
+                public J_U_DoubleSummaryStatistics get() {
+                    return new J_U_DoubleSummaryStatistics();
                 }
+            },
+            new J_U_F_BiConsumer.BiConsumerAdapter<J_U_DoubleSummaryStatistics, T>() {
+                @Override
+                public void accept(J_U_DoubleSummaryStatistics jUIntSummaryStatistics, T t) {
+                    jUIntSummaryStatistics.accept(mapper.applyAsDouble(t));
+                }
+            },
+            new J_U_F_BinaryOperator.BinaryOperatorAdapter<J_U_DoubleSummaryStatistics>() {
+                @Override
+                public J_U_DoubleSummaryStatistics apply(J_U_DoubleSummaryStatistics jUIntSummaryStatistics, J_U_DoubleSummaryStatistics jUIntSummaryStatistics2) {
+                    jUIntSummaryStatistics.combine(jUIntSummaryStatistics2);
+                    return jUIntSummaryStatistics;
+                }
+            }
         );
     }
 
@@ -987,6 +988,7 @@ public final class J_U_S_Collectors {
         public Set<Characteristics> characteristics() {
             return characteristics;
         }
+
     }
 
 }

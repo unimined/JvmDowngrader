@@ -247,4 +247,5 @@ public class ReverseList<E> implements List<E> {
     public String toString() {
         return Arrays.toString(toArray());
     }
+
 }

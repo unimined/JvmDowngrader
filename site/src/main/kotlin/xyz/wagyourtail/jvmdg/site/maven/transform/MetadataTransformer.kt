@@ -6,7 +6,7 @@ import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 
 operator fun NodeList.iterator(): Iterator<Node> {
-    return object : Iterator<Node> {
+    return object: Iterator<Node> {
         private var index = 0
 
         override fun hasNext(): Boolean {

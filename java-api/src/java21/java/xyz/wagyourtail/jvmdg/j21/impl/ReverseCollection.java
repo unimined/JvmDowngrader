@@ -104,4 +104,5 @@ public class ReverseCollection<E> implements Collection<E> {
     public boolean contains(Object o) {
         return original.contains(o);
     }
+
 }

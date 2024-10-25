@@ -69,4 +69,5 @@ public final class J_U_StringJoiner {
         }
         return builder.length() + prefix.length() + suffix.length() - delimiter.length();
     }
+
 }

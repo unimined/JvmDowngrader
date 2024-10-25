@@ -25,7 +25,7 @@ public class J_L_R_AccessibleObject {
         Class<?> declaringClass = ((Member) obj).getDeclaringClass();
         int modifiers = ((Member) obj).getModifiers();
         if (!Modifier.isStatic(modifiers) &&
-                (obj instanceof Method || obj instanceof Field)) {
+            (obj instanceof Method || obj instanceof Field)) {
             if (target == null) {
                 throw new IllegalArgumentException("null object for " + obj);
             }
@@ -33,7 +33,7 @@ public class J_L_R_AccessibleObject {
             // must be a subclass of the declaring class of this reflected object
             if (!declaringClass.isAssignableFrom(obj.getClass())) {
                 throw new IllegalArgumentException("object is not an instance of "
-                        + declaringClass.getName());
+                    + declaringClass.getName());
             }
         } else if (target != null) {
             throw new IllegalArgumentException("non-null object for " + obj);
@@ -55,11 +55,11 @@ public class J_L_R_AccessibleObject {
 
         //noinspection JavaReflectionMemberAccess it's there in j8
         Method checkAccess = AccessibleObject.class.getDeclaredMethod(
-                "checkAccess",
-                Class.class,
-                Class.class,
-                Object.class,
-                int.class
+            "checkAccess",
+            Class.class,
+            Class.class,
+            Object.class,
+            int.class
         );
         checkAccess.setAccessible(true);
         try {

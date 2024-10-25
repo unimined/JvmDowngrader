@@ -223,7 +223,9 @@ public class TestWasAbstract {
             public WatchService newWatchService() throws IOException {
                 return null;
             }
+
         }
+
     }
 
 }

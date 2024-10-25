@@ -56,7 +56,7 @@ public class J_L_Module {
 
     public ClassLoader getClassLoader() {
         return this.classLoader == null ? null : // If ClassLoader has been freed, it's not a valid state
-                Objects.requireNonNull(this.classLoader.get(), "ClassLoader has been freed");
+            Objects.requireNonNull(this.classLoader.get(), "ClassLoader has been freed");
     }
 
     public J_L_M_ModuleDescriptor getDescriptor() {

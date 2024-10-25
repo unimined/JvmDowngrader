@@ -3,15 +3,7 @@ package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalLong;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.function.BiPredicate;
 
 @Adapter("Ljava/net/http/HttpHeaders;")
@@ -48,6 +40,15 @@ public class J_N_H_HttpHeaders {
         return new J_N_H_HttpHeaders(Map.copyOf(filtered));
     }
 
+    private static int entryHash(Map.Entry<String, List<String>> e) {
+        String key = e.getKey();
+        List<String> value = e.getValue();
+        // we know that by construction key and values can't be null
+        int keyHash = key.toLowerCase(Locale.ROOT).hashCode();
+        int valueHash = value.hashCode();
+        return keyHash ^ valueHash;
+    }
+
     public Optional<String> firstValue(String name) {
         return headers.containsKey(name) ? Optional.of(headers.get(name).get(0)) : Optional.empty();
     }
@@ -70,7 +71,7 @@ public class J_N_H_HttpHeaders {
         } else if (!(o instanceof J_N_H_HttpHeaders)) {
             return false;
         } else {
-            J_N_H_HttpHeaders that = (J_N_H_HttpHeaders)o;
+            J_N_H_HttpHeaders that = (J_N_H_HttpHeaders) o;
             return this.headers.equals(that.headers);
         }
     }
@@ -86,15 +87,6 @@ public class J_N_H_HttpHeaders {
     @Override
     public String toString() {
         return super.toString() + " { " + headers + " }";
-    }
-
-    private static int entryHash(Map.Entry<String, List<String>> e) {
-        String key = e.getKey();
-        List<String> value = e.getValue();
-        // we know that by construction key and values can't be null
-        int keyHash = key.toLowerCase(Locale.ROOT).hashCode();
-        int valueHash = value.hashCode();
-        return keyHash ^ valueHash;
     }
 
 

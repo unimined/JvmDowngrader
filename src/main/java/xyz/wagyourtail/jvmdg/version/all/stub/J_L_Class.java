@@ -11,7 +11,6 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -53,25 +52,6 @@ public class J_L_Class {
         }
     };
 
-    private static boolean isReflectionFrame(String className) {
-        return className.equals(Method.class.getName()) ||
-                className.equals(Constructor.class.getName()) ||
-                className.startsWith("sun.reflect.") ||
-                className.startsWith("jdk.internal.reflect.") ||
-                className.startsWith("java.lang.invoke.LambdaForm");
-    }
-
-    private static Class<?> getCaller() throws ClassNotFoundException {
-        StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-        for (int i = 2; i < stack.length; i++) {
-            String className = stack[i].getClassName();
-            if (!isReflectionFrame(className)) {
-                return Class.forName(className);
-            }
-        }
-        throw new ClassNotFoundException("Could not find caller class???");
-    }
-
     //TODO: FIELD STUBS
 
     @CoverageIgnore
@@ -79,7 +59,6 @@ public class J_L_Class {
     public static Class<?> forName(String className, int origVersion) throws ClassNotFoundException {
         List<VersionProvider> versionProviders = ClassDowngrader.getCurrentVersionDowngrader().versionProviders(origVersion);
         Type classType = Type.getObjectType(className.replace('.', '/'));
-        Class<?> caller = getCaller();
         for (VersionProvider vp : versionProviders) {
             if (vp.classStubs.containsKey(classType)) {
                 return Class.forName(vp.classStubs.get(classType).getFirst().getInternalName().replace('/', '.'));
