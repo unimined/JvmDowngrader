@@ -115,7 +115,11 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
 
     @Override
     protected int maxClassVersionSupported() {
-        return holder.maxVersion();
+        if (!holder.flags.downgradeFromMultiReleases) {
+            return Utils.getCurrentClassVersion();
+        } else {
+            return holder.maxVersion();
+        }
     }
 
     @Override

@@ -18,6 +18,7 @@ fun DowngradeFlags.toFlags(): Flags {
     flags.debugDumpClasses = debugDumpClasses.getOrElse(false)
     flags.multiReleaseOriginal = multiReleaseOriginal.getOrElse(false)
     flags.multiReleaseVersions = multiReleaseVersions.getOrElse(emptySet()).map { it.toOpcode() }.toSet()
+    flags.downgradeFromMultiReleases = downgradeFromMultiReleases.getOrElse(false)
     if (this is ShadeFlags) {
         flags.shadeInlining = shadeInlining.get()
     }

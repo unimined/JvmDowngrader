@@ -106,6 +106,13 @@ public class Flags {
      */
     public Set<Integer> multiReleaseVersions = new HashSet<>(getMultiReleaseVersions());
 
+    /**
+     * if should downgrade classes from the multi-release folder, instead of selecting the normal one
+     *
+     * @since 1.2.1
+     */
+    public boolean downgradeFromMultiReleases = false;
+
     public Flags() {
         getIgnoreWarnings();
     }
@@ -124,6 +131,7 @@ public class Flags {
         flags.debugDumpClasses = debugDumpClasses;
         flags.multiReleaseOriginal = multiReleaseOriginal;
         flags.multiReleaseVersions = new HashSet<>(multiReleaseVersions);
+        flags.downgradeFromMultiReleases = downgradeFromMultiReleases;
         return flags;
     }
 

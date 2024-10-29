@@ -66,6 +66,15 @@ public class PathDowngrader {
                 return downgrader.maxVersion();
             }
 
+            @Override
+            protected List<String> multiVersionPrefixes() {
+                if (downgrader.flags.downgradeFromMultiReleases) {
+                    return super.multiVersionPrefixes();
+                } else {
+                    return Collections.singletonList("");
+                }
+            }
+
         }) {
             // zip input and output
             for (int i = 0; i < inputRoots.size(); i++) {
@@ -76,6 +85,7 @@ public class PathDowngrader {
                 for (int j = downgrader.maxVersion(); j >= 52; j--) {
                     multiReleasePaths.add("META-INF/versions/" + Utils.classVersionToMajorVersion(j));
                 }
+                final Set<Path> visitedClasses = new HashSet<>();
 
                 AsyncUtils.visitPathsAsync(in, new IOFunction<Path, Boolean>() {
 
@@ -92,27 +102,45 @@ public class PathDowngrader {
                         Path relativized = in.relativize(path);
                         Path outFile = out.resolve(relativized.toString());
                         if (path.getFileName().toString().endsWith(".class")) {
-                            if (!relativized.startsWith("META-INF/versions")) {
-                                // prefer multi-release over normal
+
+                            if (relativized.startsWith("META-INF/versions")) {
+                                if (downgrader.flags.downgradeFromMultiReleases) {
+                                    relativized = relativized.subpath(3, relativized.getNameCount());
+                                    outFile = out.resolve(relativized);
+                                } else {
+                                    return;
+                                }
+                            }
+
+                            // dont if already visited
+                            if (visitedClasses.contains(outFile)) {
+                                return;
+                            }
+
+                            if (downgrader.flags.downgradeFromMultiReleases) {
+                                // prefer highest multi-release
                                 for (String pth : multiReleasePaths) {
                                     if (Files.exists(in.resolve(pth).resolve(relativized))) {
                                         path = in.resolve(pth).resolve(relativized);
                                         break;
                                     }
                                 }
+                            }
 
-                                try {
-                                    String relativizedName = relativized.toString();
-                                    if (relativized.getFileSystem().getSeparator().equals("\\")) {
-                                        relativizedName = relativizedName.replace('\\', '/');
-                                    }
-                                    String internalName = relativizedName.substring(0, relativizedName.length() - 6);
-                                    byte[] bytes = Files.readAllBytes(path);
-                                    Map<String, byte[]> outputs = downgrader.downgrade(new AtomicReference<>(internalName), bytes, false, new Function<String, byte[]>() {
-                                        @Override
-                                        public byte[] apply(String s) {
-                                            try {
-                                                // multi-version
+                            try {
+                                String relativizedName = relativized.toString();
+                                if (relativized.getFileSystem().getSeparator().equals("\\")) {
+                                    relativizedName = relativizedName.replace('\\', '/');
+                                }
+                                String internalName = relativizedName.substring(0, relativizedName.length() - 6);
+                                byte[] bytes = Files.readAllBytes(path);
+                                Map<String, byte[]> outputs = downgrader.downgrade(new AtomicReference<>(internalName), bytes, false, new Function<String, byte[]>() {
+                                    @Override
+                                    public byte[] apply(String s) {
+                                        try {
+
+                                            // multi-version
+                                            if (downgrader.flags.downgradeFromMultiReleases) {
                                                 for (String pth : multiReleasePaths) {
                                                     for (Path in : inputRoots) {
                                                         Path p = in.resolve(pth).resolve(s + ".class");
@@ -121,41 +149,41 @@ public class PathDowngrader {
                                                         }
                                                     }
                                                 }
-
-                                                // main version
-                                                for (Path in : inputRoots) {
-                                                    Path p = in.resolve(s + ".class");
-                                                    if (Files.exists(p)) {
-                                                        return Files.readAllBytes(p);
-                                                    }
-                                                }
-
-                                                URL url = extraClasspath.getResource(s + ".class");
-                                                if (url == null) return null;
-                                                try (InputStream is = url.openStream()) {
-                                                    return Utils.readAllBytes(is);
-                                                }
-                                            } catch (IOException e) {
-                                                throw new RuntimeException(e);
                                             }
-                                        }
-                                    });
-                                    if (outputs == null) {
-                                        Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
-                                    } else {
-                                        for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
-                                            String internal = entry.getKey();
-                                            Path p = out.resolve(internal + ".class");
-                                            Path parent = p.getParent();
-                                            if (parent != null) {
-                                                Files.createDirectories(parent);
+
+                                            // main version
+                                            for (Path in : inputRoots) {
+                                                Path p = in.resolve(s + ".class");
+                                                if (Files.exists(p)) {
+                                                    return Files.readAllBytes(p);
+                                                }
                                             }
-                                            Files.write(p, entry.getValue(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+                                            URL url = extraClasspath.getResource(s + ".class");
+                                            if (url == null) return null;
+                                            try (InputStream is = url.openStream()) {
+                                                return Utils.readAllBytes(is);
+                                            }
+                                        } catch (IOException e) {
+                                            throw new RuntimeException(e);
                                         }
                                     }
-                                } catch (IllegalClassFormatException e) {
-                                    throw new IOException("Failed to downgrade " + path, e);
+                                });
+                                if (outputs == null) {
+                                    Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
+                                } else {
+                                    for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
+                                        String internal = entry.getKey();
+                                        Path p = out.resolve(internal + ".class");
+                                        Path parent = p.getParent();
+                                        if (parent != null) {
+                                            Files.createDirectories(parent);
+                                        }
+                                        Files.write(p, entry.getValue(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                                    }
                                 }
+                            } catch (IllegalClassFormatException e) {
+                                throw new IOException("Failed to downgrade " + path, e);
                             }
                         } else if (relativized.toString().equals("META-INF/MANIFEST.MF")) {
                             // add version number to manifest

@@ -106,4 +106,12 @@ interface DowngradeFlags: TransformParameters {
     @get:Optional
     val multiReleaseVersions: SetProperty<JavaVersion>
 
+    /**
+     * sets if should downgrade classess from the multi-release folder, instead of selecting the normal one
+     * @since 1.2.1
+     */
+    @get:Input
+    @get:Optional
+    val downgradeFromMultiReleases: Property<Boolean>
+
 }
