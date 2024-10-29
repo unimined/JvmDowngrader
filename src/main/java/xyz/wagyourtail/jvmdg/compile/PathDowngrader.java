@@ -116,6 +116,7 @@ public class PathDowngrader {
                             if (visitedClasses.contains(outFile)) {
                                 return;
                             }
+                            visitedClasses.add(outFile);
 
                             if (downgrader.flags.downgradeFromMultiReleases) {
                                 // prefer highest multi-release
