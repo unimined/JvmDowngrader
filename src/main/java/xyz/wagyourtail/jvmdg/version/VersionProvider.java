@@ -398,7 +398,7 @@ public abstract class VersionProvider {
         }
     }
 
-    private Handle stubHandle(ClassNode owner, MethodNode method, Set<ClassNode> extra, Handle bsm, String indyDesc, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Set<String> warnings, Handle handle) throws IOException {
+    protected Handle stubHandle(ClassNode owner, MethodNode method, Set<ClassNode> extra, Handle bsm, String indyDesc, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Set<String> warnings, Handle handle) throws IOException {
         handle = new Handle(
             handle.getTag(),
             stubClass(Type.getObjectType(handle.getOwner()), warnings).getInternalName(),
@@ -419,7 +419,7 @@ public abstract class VersionProvider {
             case Opcodes.H_NEWINVOKESPECIAL:
             case Opcodes.H_INVOKEINTERFACE:
                 Type[] captured = null;
-                if (bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
+                if (bsm != null && bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
                     captured = Type.getMethodType(indyDesc).getArgumentTypes();
                 }
                 Type hOwner = Type.getObjectType(handle.getOwner());
@@ -859,7 +859,7 @@ public abstract class VersionProvider {
         clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
             @Override
             public ClassNode apply(ClassNode classNode) throws IOException {
-                return otherTransforms(classNode, extra, getReadOnly, warnings);
+                return otherTransforms(classNode, extra, getReadOnly, warnings, enableRuntime, getMembers, getSuperTypes);
             }
         });
         if (clazz == null) {
@@ -930,22 +930,27 @@ public abstract class VersionProvider {
         return clazz;
     }
 
-    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
+        clazz = otherTransforms(clazz, extra, getReadOnly, warnings);
+        return clazz;
+    }
+
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings) throws IOException {
         clazz = otherTransforms(clazz, extra, getReadOnly);
         return clazz;
     }
 
-    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) throws IOException {
         clazz = otherTransforms(clazz, extra);
         return clazz;
     }
 
-    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra) throws IOException {
         clazz = otherTransforms(clazz);
         return clazz;
     }
 
-    public ClassNode otherTransforms(ClassNode clazz) {
+    public ClassNode otherTransforms(ClassNode clazz) throws IOException {
         return clazz;
     }
 
