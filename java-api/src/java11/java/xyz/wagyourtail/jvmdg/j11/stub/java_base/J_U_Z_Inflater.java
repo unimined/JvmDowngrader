@@ -21,9 +21,10 @@ public class J_U_Z_Inflater {
     }
 
     @Stub
-    public static void setInput(Deflater def, ByteBuffer buf) {
-        throw new UnsupportedOperationException(
-            "JVMDowngrader, setInput(ByteBuffer) is not supported because it's impure.");
+    public static void setInput(Inflater inf, ByteBuffer buf) {
+        byte[] remain = new byte[buf.remaining()];
+        buf.get(remain);
+        inf.setInput(remain);
     }
 
 }

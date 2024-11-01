@@ -20,8 +20,9 @@ public class J_U_Z_Deflater {
 
     @Stub
     public static void setInput(Deflater def, ByteBuffer buf) {
-        throw new UnsupportedOperationException(
-            "JVMDowngrader, setInput(ByteBuffer) is not supported because it's impure.");
+        byte[] remain = new byte[buf.remaining()];
+        buf.get(remain);
+        def.setInput(remain);
     }
 
 }
