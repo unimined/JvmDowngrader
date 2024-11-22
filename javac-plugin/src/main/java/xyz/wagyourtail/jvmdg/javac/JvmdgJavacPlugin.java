@@ -55,9 +55,8 @@ public class JvmdgJavacPlugin implements Plugin, Closeable {
         compiler.closeables = compiler.closeables.prepend(this);
 
         this.flags = new Flags();
-        flags.findJavaApi();
+        flags.api = flags.findJavaApi();
 
-//        final String p = String.format("[%s]", File.separator);
         final String p = "[" + File.separator + "]";
 
         for(String arg : args) {
