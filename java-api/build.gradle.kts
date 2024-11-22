@@ -134,6 +134,7 @@ tasks.getByName<JavaCompile>("compileCoverageJava") {
 
 val genCtSym by tasks.registering(GenerateCtSymTask::class) {
     group = "jvmdg"
+    lowerVersion = fromVersion
     upperVersion = toVersion - 1
 }
 
