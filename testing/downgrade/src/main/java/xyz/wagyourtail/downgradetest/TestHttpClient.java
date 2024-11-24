@@ -4,12 +4,14 @@ import com.sun.net.httpserver.Filter;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.concurrent.ForkJoinPool;
 
@@ -59,6 +61,16 @@ public class TestHttpClient {
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString("test body"))
                 .build();
+
+            HttpRequest request3 = HttpRequest.newBuilder()
+                .header("User-Agent", "JVMDG Test 1.0")
+                .uri(URI.create("http://localhost:" + port))
+                .build();
+
+            HttpResponse<InputStream> stream = client.send(request2, HttpResponse.BodyHandlers.ofInputStream());
+            try (InputStream is = stream.body()) {
+                System.out.println(new String(is.readAllBytes(), StandardCharsets.UTF_8));
+            }
 
             HttpResponse<String> resp2 = client.send(request2, HttpResponse.BodyHandlers.ofString());
             System.out.println(resp2.body());

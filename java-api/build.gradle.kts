@@ -220,72 +220,47 @@ fun JavaCompile.configCompile(version: JavaVersion) {
     }
 }
 
-val tempFile11 =
-    project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("java-api-${project.version}-downgraded-11.jar")
+fun downgradeApi(version: JavaVersion): TaskProvider<Jar> {
+    val tempFile = project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("javaApi-${project.version}-downgraded-${version.majorVersion}.jar")
 
-val downgradeJar11Exec by tasks.registering(JavaExec::class) {
-    group = "jvmdg"
-    dependsOn(tasks.jar)
-    val apiJar = tasks.jar.get().archiveFile.get().asFile.absolutePath
+    val downgradeJarExec = tasks.register("downgradeJar${version.majorVersion}Exec", JavaExec::class) {
+        group = "jvmdg"
+        dependsOn(tasks.jar)
+        val apiJar = tasks.jar.get().archiveFile.get().asFile.absolutePath
 
-    val rootMain = project(":").sourceSets.main.get()
+        val rootMain = project(":").sourceSets.main.get()
 
-    mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
-    classpath = files(rootMain.output, rootMain.runtimeClasspath)
-    workingDir = project.layout.buildDirectory.get().asFile
-    jvmArgs = listOf("-Djvmdg.java-api=$apiJar")
-    args = listOf(
-        JavaVersion.VERSION_11.toOpcode().toString(),
-        apiJar,
-        tempFile11.absolutePath
-    )
+        mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
+        classpath = files(rootMain.output, rootMain.runtimeClasspath)
+        workingDir = project.layout.buildDirectory.get().asFile
+        jvmArgs = listOf("-Djvmdg.javaApi=$apiJar")
+        args = listOf(
+            version.toOpcode().toString(),
+            apiJar,
+            tempFile.absolutePath
+        )
 
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
+        }
+    }
+
+    return tasks.register("downgradeJar${version.majorVersion}", Jar::class) {
+        group = "jvmdg"
+        dependsOn(downgradeJarExec)
+        archiveClassifier.set("downgraded-${version.majorVersion}")
+        from(zipTree(tempFile))
     }
 }
 
-val downgradeJar11 by tasks.registering(Jar::class) {
-    group = "jvmdg"
-    dependsOn(downgradeJar11Exec)
-    archiveClassifier.set("downgraded-11")
-    from(zipTree(tempFile11))
-}
-
-val tempFile8 =
-    project.layout.buildDirectory.get().asFile.resolve("jvmdg").resolve("java-api-${project.version}-downgraded-8.jar")
-
-val downgradeJar8Exec by tasks.registering(JavaExec::class) {
-    group = "jvmdg"
-    dependsOn(tasks.jar)
-    val apiJar = tasks.jar.get().archiveFile.get().asFile.absolutePath
-
-    val rootMain = project(":").sourceSets.main.get()
-
-    mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
-    classpath = files(rootMain.output, rootMain.runtimeClasspath)
-    workingDir = project.layout.buildDirectory.get().asFile
-    jvmArgs = listOf("-Djvmdg.java-api=$apiJar")
-    args = listOf(
-        JavaVersion.VERSION_1_8.toOpcode().toString(),
-        apiJar,
-        tempFile8.absolutePath
-    )
-
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
-    }
-}
-
-
-val downgradeJar8 by tasks.registering(Jar::class) {
-    group = "jvmdg"
-    dependsOn(downgradeJar8Exec)
-    archiveClassifier.set("downgraded-8")
-    from(zipTree(tempFile8))
-}
+val downgradeJar21 = downgradeApi(JavaVersion.VERSION_21)
+val downgradeJar17 = downgradeApi(JavaVersion.VERSION_17)
+val downgradeJar11 = downgradeApi(JavaVersion.VERSION_11)
+val downgradeJar8 = downgradeApi(JavaVersion.VERSION_1_8)
 
 tasks.assemble {
+    dependsOn(downgradeJar21)
+    dependsOn(downgradeJar17)
     dependsOn(downgradeJar11)
     dependsOn(downgradeJar8)
 }
@@ -314,11 +289,19 @@ publishing {
 
             from(components["java"])
 
-            artifact(tasks["downgradeJar11"]) {
+            artifact(downgradeJar21) {
+                classifier = "downgraded-21"
+            }
+
+            artifact(downgradeJar17) {
+                classifier = "downgraded-17"
+            }
+
+            artifact(downgradeJar11) {
                 classifier = "downgraded-11"
             }
 
-            artifact(tasks["downgradeJar8"]) {
+            artifact(downgradeJar8) {
                 classifier = "downgraded-8"
             }
         }
