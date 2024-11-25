@@ -50,6 +50,11 @@ public class DowngradeTests extends BaseIntegrationTests {
         flags.logLevel = Logger.Level.FATAL;
 
         return Stream.of(
+//            new FlagsAndRunner(JavaRunner.JavaVersion.V1_8, flags.copy(e -> {
+//                e.classVersion = JavaRunner.JavaVersion.V1_5.toOpcode();
+//                e.shadeInlining = true;
+//                e.debugSkipStubs = Set.of(JavaRunner.JavaVersion.V1_8.toOpcode());
+//            })),
             new FlagsAndRunner(JavaRunner.JavaVersion.V1_8, flags.copy(e -> {
                 e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode();
                 e.shadeInlining = true;

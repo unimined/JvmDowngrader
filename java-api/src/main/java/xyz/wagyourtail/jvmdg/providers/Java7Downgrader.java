@@ -1,23 +1,25 @@
 package xyz.wagyourtail.jvmdg.providers;
 
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.StringType;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
+import xyz.wagyourtail.jvmdg.asm.AnnotationUtils;
 import xyz.wagyourtail.jvmdg.j7.stub.J_L_Throwable;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.ReflectionReferences;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class Java7Downgrader extends VersionProvider {
 
@@ -49,7 +51,8 @@ public class Java7Downgrader extends VersionProvider {
         Type methodType = stubClass(Type.getObjectType("java/lang/invoke/MethodType"), warnings);
 
         MethodNode clinit = null;
-        for (MethodNode method : clazz.methods) {
+        List<FullyQualifiedMemberNameAndDesc> reflectionRefList = new ArrayList<>();
+        for (MethodNode method : new ArrayList<>(clazz.methods)) {
             if (method.name.equals("<clinit>")) {
                 clinit = method;
             }
@@ -58,19 +61,22 @@ public class Java7Downgrader extends VersionProvider {
                     AbstractInsnNode insn = method.instructions.get(i);
                     if (insn.getType() == AbstractInsnNode.INVOKE_DYNAMIC_INSN) {
                         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
-                        String name = indyToMethodHandle(method, indy, clazz, addToClinit, callSiteType, handleType, lookupType, methodType);
+                        String name = indyToMethod(method, indy, clazz, addToClinit, callSiteType, handleType, lookupType, methodType, reflectionRefList);
                         InsnList insns = new InsnList();
-                        insns.add(new FieldInsnNode(Opcodes.GETSTATIC, clazz.name, name, handleType.getDescriptor()));
-                        // TODO: fix if stubbing MethodHandle properly
-                        insns.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, handlesType.getInternalName(), "invokeExact", indy.desc, false));
-                        method.instructions.insertBefore(indy, insns);
-                        method.instructions.remove(indy);
+
+                        method.instructions.set(indy, new MethodInsnNode(
+                            Opcodes.INVOKESTATIC,
+                            clazz.name,
+                            name,
+                            indy.desc,
+                            false
+                        ));
                     }
                     if (insn.getType() == AbstractInsnNode.LDC_INSN) {
                         assert insn instanceof LdcInsnNode;
                         Object cst = ((LdcInsnNode) insn).cst;
                         if (cst instanceof Handle) {
-                            String name = handleToLookupField((Handle) cst, clazz, addToClinit, handleType, lookupType, methodType);
+                            String name = handleToLookupField((Handle) cst, clazz, addToClinit, handleType, lookupType, methodType, reflectionRefList);
                             method.instructions.set(insn, new FieldInsnNode(Opcodes.GETSTATIC, clazz.name, name, handleType.getDescriptor()));
                         } else if (cst instanceof Type && ((Type) cst).getSort() == Type.METHOD) {
                             String name = methodDescToLookupField((Type) cst, clazz, addToClinit, methodType);
@@ -88,6 +94,32 @@ public class Java7Downgrader extends VersionProvider {
                 clinit.visitMaxs(0, 0);
                 clinit.visitEnd();
                 clazz.methods.add(clinit);
+            }
+            if (clinit.visibleAnnotations == null) {
+                clinit.visibleAnnotations = new ArrayList<>();
+            }
+            String reflectionRefs = Type.getType(ReflectionReferences.class).getDescriptor();
+            String refType = Type.getType(Ref.class).getDescriptor();
+            AnnotationNode node = null;
+            for (AnnotationNode a : clinit.visibleAnnotations) {
+                if (a.desc.equals(reflectionRefs)) {
+                    node = a;
+                    break;
+                }
+            }
+            if (node == null) {
+                node = new AnnotationNode(reflectionRefs);
+                clinit.visibleAnnotations.add(node);
+                node.values = new ArrayList<Object>(Arrays.asList("value", new ArrayList<AnnotationNode>()));
+            }
+            List<AnnotationNode> refs = ((List<AnnotationNode>) node.values.get(1));
+            for (FullyQualifiedMemberNameAndDesc ref : reflectionRefList) {
+                AnnotationNode refAnn = new AnnotationNode(refType);
+                refAnn.visit("value", ref.getOwner().getInternalName());
+                refAnn.visit("member", ref.getName());
+                refAnn.visit("desc", ref.getDesc().toString());
+                refAnn.visitEnd();
+                refs.add(refAnn);
             }
             Handle lookup = stubHandle(clazz, clinit, extra, null, null, enableRuntime, memberResolver, superTypeResolver, warnings,
                 new Handle(
@@ -109,17 +141,19 @@ public class Java7Downgrader extends VersionProvider {
         return super.otherTransforms(clazz);
     }
 
-    public String indyToMethodHandle(MethodNode method, InvokeDynamicInsnNode indy, ClassNode clazz, InsnList addToClinit, Type callsiteType, Type handleType, Type lookupType, Type methodType) {
+    public String indyToMethod(MethodNode method, InvokeDynamicInsnNode indy, ClassNode clazz, InsnList addToClinit, Type callsiteType, Type handleType, Type lookupType, Type methodType, List<FullyQualifiedMemberNameAndDesc> reflectionRefList) {
         InvokeDynamicType it = new InvokeDynamicType(indy);
         for (FieldNode field : clazz.fields) {
             if (field instanceof IndyField && ((IndyField) field).indy.equals(it)) {
                 return field.name;
             }
         }
-        IndyField indyField = new IndyField(it, callsiteType);
+        int count = clazz.fields.size();
+        IndyField indyField = new IndyField(it, callsiteType, count);
         clazz.fields.add(indyField);
 
         addToClinit.add(new FieldInsnNode(Opcodes.GETSTATIC, clazz.name, "jvmdg$lookup", lookupType.getDescriptor()));
+        addToClinit.add(new LdcInsnNode(indy.name));
         addToClinit.add(methodDescToMethodType(Type.getMethodType(indy.desc), methodType));
 
         for (Object arg : indy.bsmArgs) {
@@ -130,17 +164,18 @@ public class Java7Downgrader extends VersionProvider {
                     addToClinit.add(new LdcInsnNode(arg));
                 }
             } else if (arg instanceof Handle) {
-                addToClinit.add(handleToLookupStack((Handle) arg, clazz, handleType, lookupType, methodType));
+                addToClinit.add(handleToLookupStack((Handle) arg, clazz, handleType, lookupType, methodType, reflectionRefList));
             } else {
                 addToClinit.add(new LdcInsnNode(arg));
             }
         }
 
         addToClinit.add(new MethodInsnNode(
-            Opcodes.INVOKEVIRTUAL,
-            callsiteType.getInternalName(),
-            "getTarget",
-            Type.getMethodDescriptor(handleType)
+            Opcodes.INVOKESTATIC,
+            indy.bsm.getOwner(),
+            indy.bsm.getName(),
+            indy.bsm.getDesc(),
+            indy.bsm.isInterface()
         ));
 
         addToClinit.add(new FieldInsnNode(
@@ -150,23 +185,49 @@ public class Java7Downgrader extends VersionProvider {
             indyField.desc
         ));
 
-        return indyField.name;
+        IndyMethod indyMethod = new IndyMethod(it, count);
+        clazz.methods.add(indyMethod);
+        indyMethod.visitCode();
+        indyMethod.visitFieldInsn(Opcodes.GETSTATIC, clazz.name, indyField.name, callsiteType.getDescriptor());
+        indyMethod.visitMethodInsn(
+            Opcodes.INVOKEVIRTUAL,
+            callsiteType.getInternalName(),
+            "getTarget",
+            Type.getMethodDescriptor(handleType),
+            false
+        );
+
+        int i = 0;
+        for (Type arg : Type.getArgumentTypes(indy.desc)) {
+            indyMethod.visitVarInsn(arg.getOpcode(Opcodes.ILOAD), i);
+            i += arg.getSize();
+        }
+
+        // TODO: fix if stubbing MethodHandle properly
+        indyMethod.visitMethodInsn(Opcodes.INVOKEVIRTUAL, handleType.getInternalName(), "invokeExact", indy.desc, false);
+        Type returnType = Type.getReturnType(indy.desc);
+        indyMethod.visitInsn(returnType.getOpcode(Opcodes.IRETURN));
+        indyMethod.visitMaxs(0, 0);
+        indyMethod.visitEnd();
+
+        return indyMethod.name;
     }
 
-    public String handleToLookupField(Handle handle, ClassNode clazz, InsnList addToClinit, Type handleType, Type lookupType, Type methodType) {
+    public String handleToLookupField(Handle handle, ClassNode clazz, InsnList addToClinit, Type handleType, Type lookupType, Type methodType, List<FullyQualifiedMemberNameAndDesc> reflectionRefList) {
         for (FieldNode field : clazz.fields) {
             if (field instanceof HandleField && handle.equals(((HandleField) field).handle)) {
                 return field.name;
             }
         }
-        HandleField field = new HandleField(handle, handleType);
+        HandleField field = new HandleField(handle, handleType, clazz.fields.size());
         clazz.fields.add(field);
-        addToClinit.add(handleToLookupStack(handle, clazz, handleType, lookupType, methodType));
+        addToClinit.add(handleToLookupStack(handle, clazz, handleType, lookupType, methodType, reflectionRefList));
         addToClinit.add(new FieldInsnNode(Opcodes.PUTSTATIC, clazz.name, field.name, field.desc));
         return field.name;
     }
 
-    public InsnList handleToLookupStack(Handle handle, ClassNode clazz, Type handleType, Type lookupType, Type methodType) {
+    public InsnList handleToLookupStack(Handle handle, ClassNode clazz, Type handleType, Type lookupType, Type methodType, List<FullyQualifiedMemberNameAndDesc> reflectionRefList) {
+        reflectionRefList.add(FullyQualifiedMemberNameAndDesc.of(handle));
         InsnList insns = new InsnList();
         insns.add(new FieldInsnNode(Opcodes.GETSTATIC, clazz.name, "jvmdg$lookup", lookupType.getDescriptor()));
         insns.add(new LdcInsnNode(Type.getObjectType(handle.getOwner())));
@@ -298,6 +359,17 @@ public class Java7Downgrader extends VersionProvider {
         return l;
     }
 
+    public static class IndyMethod extends MethodNode {
+        private final InvokeDynamicType indy;
+
+
+        public IndyMethod(InvokeDynamicType indy, int count) {
+            super(Opcodes.ASM9, Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, "jvmdg$indy$" + indy.indy.name + "$" + count, indy.indy.desc, null, null);
+            this.indy = indy;
+        }
+
+    }
+
     public static class MethodTypeField extends FieldNode {
         private final Type type;
 
@@ -310,8 +382,8 @@ public class Java7Downgrader extends VersionProvider {
     public static class HandleField extends FieldNode {
         private final Handle handle;
 
-        public HandleField(Handle handle, Type handleType) {
-            super(Opcodes.ASM9, Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, "jvmdg$handle$" + handle.getOwner().replace("/", "_") + "$" + handle.getName(), handleType.getDescriptor(), null, null);
+        public HandleField(Handle handle, Type handleType, int count) {
+            super(Opcodes.ASM9, Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, "jvmdg$handle$" + handle.getName() + "$" + count, handleType.getDescriptor(), null, null);
             this.handle = handle;
         }
 
@@ -320,8 +392,8 @@ public class Java7Downgrader extends VersionProvider {
     public static class IndyField extends FieldNode {
         private final InvokeDynamicType indy;
 
-        public IndyField(InvokeDynamicType indy, Type callsiteType) {
-            super(Opcodes.ASM9, Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, indy.indy.name, callsiteType.getDescriptor(), null, null);
+        public IndyField(InvokeDynamicType indy, Type callsiteType, int count) {
+            super(Opcodes.ASM9, Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, "jvmdg$indy$" + indy.indy.name + "$" + count, callsiteType.getDescriptor(), null, null);
             this.indy = indy;
         }
 

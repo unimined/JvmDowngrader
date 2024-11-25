@@ -4,6 +4,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import xyz.wagyourtail.jvmdg.version.Ref;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -17,6 +18,19 @@ public class FullyQualifiedMemberNameAndDesc {
         this.owner = owner;
         this.name = name;
         this.desc = desc;
+    }
+
+    public static FullyQualifiedMemberNameAndDesc of(Ref ref) {
+        String owner;
+        if (ref.value().startsWith("L") && ref.value().endsWith(";")) {
+            owner = ref.value().substring(1, ref.value().length() - 1);
+        } else {
+            owner = ref.value();
+        }
+        if (ref.member().isEmpty()) {
+            return new FullyQualifiedMemberNameAndDesc(Type.getObjectType(owner), null, null);
+        }
+        return new FullyQualifiedMemberNameAndDesc(Type.getObjectType(owner), ref.member(), Type.getType(ref.desc()));
     }
 
     public static FullyQualifiedMemberNameAndDesc of(Method method) {
