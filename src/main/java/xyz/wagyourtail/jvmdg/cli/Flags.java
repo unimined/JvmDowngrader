@@ -80,7 +80,7 @@ public class Flags {
      *
      * @since 1.2.0
      */
-    public boolean shadeInlining = Boolean.getBoolean(Constants.SHADE_INLINING);
+    public boolean shadeInlining = Boolean.getBoolean(System.getProperty(Constants.SHADE_INLINING, "true"));
     /**
      * this skips applying stubs for the specified input class version, this will still apply the
      * {@link xyz.wagyourtail.jvmdg.version.VersionProvider#otherTransforms(ClassNode, Set, Function, Set)}
