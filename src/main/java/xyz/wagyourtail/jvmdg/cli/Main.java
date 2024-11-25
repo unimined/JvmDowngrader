@@ -23,6 +23,10 @@ public class Main {
     private static Deque<File> tempFiles = new ArrayDeque<>();
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        parseArgs(args, flags);
+    }
+
+    public static void parseArgs(String[] args, Flags flags) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         Arguments parser = new Arguments("JvmDowngrader", null, null, null);
         Arguments input = new Arguments("--target", "input to output\n  (required)\n  you can use - for a temp-file if you want to chain operations", new String[]{"-t"}, new String[]{"input jar|path", "output jar|path"});
         Arguments classpath = new Arguments("--classpath", "Classpath to use\n  (highly recommended)", new String[]{"-cp"}, new String[]{"classpath"});

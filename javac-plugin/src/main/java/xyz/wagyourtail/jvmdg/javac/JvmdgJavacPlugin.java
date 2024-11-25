@@ -6,8 +6,8 @@ import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.main.JavaCompiler;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
+import xyz.wagyourtail.jvmdg.cli.Main;
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader;
-import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import javax.tools.JavaFileManager;
@@ -15,6 +15,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
@@ -39,6 +40,7 @@ public class JvmdgJavacPlugin implements Plugin, Closeable {
         int vmVersion = Utils.classVersionToMajorVersion(Utils.getCurrentClassVersion());
         if(vmVersion > 8) {
             try {
+                //noinspection JavaReflectionMemberAccess
                 Method getModule = Class.class.getDeclaredMethod("getModule");
                 openModule(getModule.invoke(JavacTask.class));
             } catch (Throwable t) {
@@ -55,59 +57,20 @@ public class JvmdgJavacPlugin implements Plugin, Closeable {
         compiler.closeables = compiler.closeables.prepend(this);
 
         this.flags = new Flags();
-        flags.api = flags.findJavaApi();
 
-        final String p = "[" + File.separator + "]";
-
-        for(String arg : args) {
-            if(arg.contains("=")) {
-                String[] split = arg.split("=", 2);
-                switch(split[0]) {
-                    case "api":
-                        if(flags.api == null) {
-                            flags.api = new ArrayList<>();
-                        }
-                        for(String s : split[1].split(p)) {
-                            flags.api.add(new File(s));
-                        }
-                        break;
-                    case "logLevel":
-                    case "log":
-                        flags.logLevel = Logger.Level.valueOf(split[1].toUpperCase(Locale.ROOT));
-                        break;
-                    case "skipStubs":
-                        for(String s : split[1].split(",")) {
-                            flags.debugSkipStubs.add(Integer.parseInt(s));
-                        }
-                        break;
-                    case "target":
-                        flags.classVersion = Utils.majorVersionToClassVersion(Integer.parseInt(split[1]));
-                        break;
-                    case "classpath":
-                    case "cp":
-                        for(String s : split[1].split(p)) {
-                            try {
-                                classpathURLs.add(new File(s).toURI().toURL());
-                            } catch (Throwable t1) {
-                                Utils.sneakyThrow(t1);
-                            }
-                        }
-                        break;
-                }
-            }
+        try {
+            Main.parseArgs(args, flags);
+        } catch (Throwable e) {
+            Utils.sneakyThrow(e);
         }
     }
 
     @Override
-    public void close() {
-        try {
-            runDowngrade();
-        } catch (Throwable t) {
-            Utils.sneakyThrow(t);
-        }
+    public void close() throws IOException {
+        runDowngrade();
     }
 
-    private void runDowngrade() throws Throwable {
+    private void runDowngrade() throws IOException {
         final JavaFileManager fileManager = task.getContext().get(JavaFileManager.class);
 
         File root = new File(

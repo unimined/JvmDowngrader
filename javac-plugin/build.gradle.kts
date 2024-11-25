@@ -1,18 +1,16 @@
-import org.gradle.internal.os.OperatingSystem
-
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(8))
     }
 }
 
+val java8 = javaToolchains.compilerFor { languageVersion.set(JavaLanguageVersion.of(8)) }.get()
+
 dependencies {
     compileOnly(rootProject.sourceSets["main"].output)
     compileOnly(rootProject.sourceSets["shared"].output)
 
-    // macos doesn't link tools.jar by default for some reason
-    val javaHome = javaToolchains.compilerFor { languageVersion.set(JavaLanguageVersion.of(8)) }.get().metadata.installationPath
-    implementation(files("$javaHome/lib/tools.jar"))
+    implementation(files("${java8.metadata.installationPath}/lib/tools.jar"))
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -25,13 +23,9 @@ tasks.compileTestJava {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
 
-    options.compilerArgs.add("-Xplugin:jvmdg target=8 log=info")
+    options.compilerArgs.add("-Xplugin:jvmdg --classVersion 52 --logLevel info")
 }
 
 tasks.test {
     useJUnitPlatform()
-
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(8))
-    }
 }
