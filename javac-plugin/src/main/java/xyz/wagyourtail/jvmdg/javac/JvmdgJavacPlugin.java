@@ -25,11 +25,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
-@SuppressWarnings("UrlHashCode")
 public class JvmdgJavacPlugin implements Plugin, Closeable {
     private BasicJavacTask task;
     private Flags flags;
-    private final Set<URL> classpathURLs = new HashSet<>();
 
     @Override
     public String getName() {
@@ -70,6 +68,7 @@ public class JvmdgJavacPlugin implements Plugin, Closeable {
         runDowngrade();
     }
 
+    @SuppressWarnings("UrlHashCode")
     private void runDowngrade() throws IOException {
         final JavaFileManager fileManager = task.getContext().get(JavaFileManager.class);
 
@@ -80,11 +79,11 @@ public class JvmdgJavacPlugin implements Plugin, Closeable {
             ).toUri()
         ).getParentFile();
 
-        // must be mutable, since GradleStandardJavaFileManager calls remove
-        Set<JavaFileObject.Kind> kindSet = new HashSet<>();
-        kindSet.add(JavaFileObject.Kind.CLASS);
+        Set<URL> classpathURLs = new HashSet<>();
 
-        for(JavaFileObject jfo : fileManager.list(StandardLocation.CLASS_PATH, "", kindSet, true)) {
+        // the set argument must be mutable, since GradleStandardJavaFileManager calls remove
+        for(JavaFileObject jfo : fileManager.list(StandardLocation.CLASS_PATH, "",
+            new HashSet<>(Collections.singletonList(JavaFileObject.Kind.CLASS)), true)) {
             classpathURLs.add(jfo.toUri().toURL());
         }
 

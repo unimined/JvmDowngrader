@@ -17,7 +17,8 @@ dependencies {
 }
 
 tasks.compileTestJava {
-    classpath += rootProject.tasks["shadowJar"].outputs.files
+    classpath += project(":java-api").tasks.getByName("testJar").outputs.files +
+            files(rootProject.sourceSets.map { it.compileClasspath }.flatten())
 
     javaCompiler = javaToolchains.compilerFor {
         languageVersion.set(JavaLanguageVersion.of(17))
