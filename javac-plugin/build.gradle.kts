@@ -16,7 +16,6 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     testAnnotationProcessor(sourceSets["main"].output)
-    testAnnotationProcessor(project.project(":java-api").tasks.getByName("testJar").outputs.files)
     testAnnotationProcessor(rootProject.sourceSets["main"].runtimeClasspath)
 }
 
@@ -25,7 +24,8 @@ tasks.compileTestJava {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
 
-    options.compilerArgs.add("-Xplugin:jvmdg --classVersion 52 --logLevel info")
+    val apiJar = project(":java-api").tasks.named("testJar").get().outputs.files.singleFile
+    options.compilerArgs.add("-Xplugin:jvmdg --classVersion 52 --logLevel info --api ${apiJar.absolutePath}")
 }
 
 tasks.test {
