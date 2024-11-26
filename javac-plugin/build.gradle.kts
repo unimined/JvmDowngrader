@@ -14,12 +14,13 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    testAnnotationProcessor(sourceSets["main"].output)
+    testAnnotationProcessor(project.project(":java-api").tasks.getByName("testJar").outputs.files)
+    testAnnotationProcessor(rootProject.sourceSets["main"].runtimeClasspath)
 }
 
 tasks.compileTestJava {
-    classpath += project(":java-api").tasks.getByName("testJar").outputs.files +
-            files(rootProject.sourceSets.map { it.compileClasspath }.flatten())
-
     javaCompiler = javaToolchains.compilerFor {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
