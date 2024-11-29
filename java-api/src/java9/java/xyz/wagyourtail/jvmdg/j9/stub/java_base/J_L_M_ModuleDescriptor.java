@@ -239,6 +239,26 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         return sb.toString();
     }
 
+    public static Builder newModule(String name, Set<Modifier> ms) {
+        Set<Modifier> mods = new HashSet<>(ms);
+        if (mods.contains(Modifier.AUTOMATIC) && mods.size() > 1) {
+            throw new IllegalArgumentException("AUTOMATIC cannot be used with other modifiers");
+        }
+        return new Builder(name, true, mods);
+    }
+
+    public static Builder newModule(String name) {
+        return new Builder(name, true, Collections.emptySet());
+    }
+
+    public static Builder newOpenModule(String name) {
+        return new Builder(name, true, Collections.singleton(Modifier.OPEN));
+    }
+
+    public static Builder newAutomaticModule(String name) {
+        return new Builder(name, true, Collections.singleton(Modifier.AUTOMATIC));
+    }
+
     @Adapter("java/lang/module/ModuleDescriptor$Modifier")
     public enum Modifier {
         OPEN, AUTOMATIC, SYNTHETIC, MANDATED
