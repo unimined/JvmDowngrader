@@ -148,6 +148,8 @@ java {
 
 tasks.jar {
     from(sourceSets["main"].output, sourceSets["shared"].output)
+    from(project("javac-plugin").sourceSets["main"].output)
+
     from(rootDir.resolve("LICENSE.md"))
     from(rootDir.resolve("license")) {
         into("license")
@@ -171,6 +173,7 @@ tasks.jar {
 
 tasks.getByName<Jar>("sourcesJar") {
     from(sourceSets["shared"].allSource)
+    from(project("javac-plugin").sourceSets["main"].allSource)
     from(rootDir.resolve("LGPLv2.1.md"))
 
     isPreserveFileTimestamps = false
@@ -185,6 +188,7 @@ project.evaluationDependsOnChildren()
 
 val shadowJar by tasks.registering(ShadowJar::class) {
     from(sourceSets["main"].output, sourceSets["shared"].output)
+    from(project("javac-plugin").sourceSets["main"].output)
     from(rootDir.resolve("LGPLv2.1.md"))
 
     isPreserveFileTimestamps = false

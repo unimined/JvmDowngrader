@@ -46,6 +46,19 @@ public class Arguments {
         return this;
     }
 
+    public Arguments getChild(String arg) {
+        for (Set<String> strings : this.children.keySet()) {
+            if (strings.contains(arg.toLowerCase(Locale.ROOT))) {
+                return children.get(strings);
+            }
+        }
+        return null;
+    }
+
+    public Arguments removeChild(Arguments child) {
+        return this.children.remove(child.altNames);
+    }
+
     public String help() {
         StringBuilder ret = new StringBuilder();
         for (Arguments child : children.values()) {

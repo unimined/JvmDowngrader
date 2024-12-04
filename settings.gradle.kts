@@ -13,6 +13,7 @@ plugins {
 include("gradle-plugin")
 include("java-api")
 include("site")
+include("javac-plugin")
 
 include("testing")
 include("testing:downgrade")
