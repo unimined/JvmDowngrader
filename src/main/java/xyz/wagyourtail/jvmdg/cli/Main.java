@@ -42,6 +42,7 @@ public class Main {
                 new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
                 new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
             ),
+            new Arguments("--disable-inlining", "Disables shade inlining api's that are only used in one class into that class", null, null),
             new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
                 input,
                 classpath
@@ -148,6 +149,8 @@ public class Main {
                         }
                     }
                     flags.multiReleaseVersions = versions;
+                case "--disable-inlining":
+                    flags.shadeInlining = false;
                 default:
             }
         }
