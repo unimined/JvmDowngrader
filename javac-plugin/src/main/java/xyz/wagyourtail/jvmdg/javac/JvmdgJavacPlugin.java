@@ -66,7 +66,9 @@ public class JvmdgJavacPlugin extends Main implements Plugin, Closeable {
         Arguments target = downgrade.getChild("--target");
         // remove --target
         downgrade.removeChild(target);
+        downgrade.removeChild(downgrade.getChild("--classpath"));
         args.getChild("shade").removeChild(target);
+        args.removeChild(args.getChild("bootstrap"));
         return args;
     }
 
