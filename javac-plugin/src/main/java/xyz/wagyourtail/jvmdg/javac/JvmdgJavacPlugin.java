@@ -5,9 +5,11 @@ import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.main.JavaCompiler;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
-import xyz.wagyourtail.jvmdg.cli.Flags;
+import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.cli.Arguments;
 import xyz.wagyourtail.jvmdg.cli.Main;
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader;
+import xyz.wagyourtail.jvmdg.util.Lazy;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import javax.tools.JavaFileManager;
@@ -19,15 +21,25 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.stream.Stream;
 
-public class JvmdgJavacPlugin implements Plugin, Closeable {
+public class JvmdgJavacPlugin extends Main implements Plugin, Closeable {
     private BasicJavacTask task;
-    private Flags flags;
+    private String[] args;
+
+    private final Lazy<JavaFileManager> fileManager = new Lazy<JavaFileManager>() {
+        @Override
+        protected JavaFileManager init() {
+            return task.getContext().get(JavaFileManager.class);
+        }
+    };
 
     @Override
     public String getName() {
@@ -48,70 +60,94 @@ public class JvmdgJavacPlugin implements Plugin, Closeable {
     }
 
     @Override
+    protected Arguments buildArgumentList() {
+        Arguments args = super.buildArgumentList();
+        Arguments downgrade = args.getChild("downgrade");
+        Arguments target = downgrade.getChild("--target");
+        // remove --target
+        downgrade.removeChild(target);
+        args.getChild("shade").removeChild(target);
+        return args;
+    }
+
+    @Override
+    public void getTargets(Map<String, List<String[]>> args, Map<Path, Path> targets, List<FileSystem> fileSystems) throws IOException {
+        if (!Constants.DIR.exists() && !Constants.DIR.mkdirs()) {
+            throw new IOException("Failed to create directory: " + Constants.DIR);
+        }
+        Path files = Files.createTempDirectory(Constants.DIR.toPath(), "downgrade").toAbsolutePath();
+        System.out.println(files);
+        files.toFile().deleteOnExit();
+
+        targets.put(tempFiles.poll().toPath(), files);
+        tempFiles.push(files.toFile());
+    }
+
+    @Override
     public void init(JavacTask t, String... args) {
         this.task = (BasicJavacTask) t;
 
         JavaCompiler compiler = JavaCompiler.instance(task.getContext());
         compiler.closeables = compiler.closeables.prepend(this);
 
-        this.flags = new Flags();
-
-        try {
-            Main.parseArgs(args, flags);
-        } catch (Throwable e) {
-            Utils.sneakyThrow(e);
-        }
+        this.args = args;
     }
 
     @Override
     public void close() throws IOException {
-        runDowngrade();
+        execute();
     }
 
+    @Override
     @SuppressWarnings("UrlHashCode")
-    private void runDowngrade() throws IOException {
-        final JavaFileManager fileManager = task.getContext().get(JavaFileManager.class);
+    public Set<URL> getClasspath(Map<String, List<String[]>> args) throws MalformedURLException {
+        Set<URL> classpathURLs = new HashSet<>();
 
+        try {
+            // the set argument must be mutable, since GradleStandardJavaFileManager calls remove
+            for (JavaFileObject jfo : fileManager.get().list(StandardLocation.CLASS_PATH, "",
+                new HashSet<>(Collections.singletonList(JavaFileObject.Kind.CLASS)), true)) {
+                classpathURLs.add(jfo.toUri().toURL());
+            }
+        } catch (IOException e) {
+            Utils.sneakyThrow(e);
+        }
+
+        return classpathURLs;
+    }
+
+    private void execute() throws IOException {
         File root = new File(
-            fileManager.getJavaFileForOutput(
+            fileManager.get().getJavaFileForOutput(
                 StandardLocation.CLASS_OUTPUT,
                 "", JavaFileObject.Kind.CLASS, null
             ).toUri()
         ).getParentFile();
 
-        Set<URL> classpathURLs = new HashSet<>();
+        tempFiles.add(root);
 
-        // the set argument must be mutable, since GradleStandardJavaFileManager calls remove
-        for(JavaFileObject jfo : fileManager.list(StandardLocation.CLASS_PATH, "",
-            new HashSet<>(Collections.singletonList(JavaFileObject.Kind.CLASS)), true)) {
-            classpathURLs.add(jfo.toUri().toURL());
+        try {
+            parseArgs(args);
+        } catch (Exception e) {
+            Utils.sneakyThrow(e);
         }
 
-        Path tempOutput = Files.createTempDirectory("downgrade");
-        tempOutput.toFile().deleteOnExit();
+        File output = tempFiles.pollFirst();
 
-        try(ClassDowngrader cd = ClassDowngrader.downgradeTo(flags)) {
-            cd.logger.debug("classpath: " + classpathURLs);
+        assert output != null;
+        if (output.equals(root)) return;
 
-            PathDowngrader.downgradePaths(
-                cd,
-                Collections.singletonList(root.toPath()),
-                Collections.singletonList(tempOutput),
-                classpathURLs
-            );
-        }
-
-        Files.walk(tempOutput)
-            .filter(Files::isRegularFile)
-            .forEach(p -> {
-                try {
-                    Path target = root.toPath().resolve(tempOutput.relativize(p));
-                    Files.createDirectories(target.getParent());
-                    Files.move(p, target, StandardCopyOption.REPLACE_EXISTING);
-                } catch (Throwable t) {
-                    Utils.sneakyThrow(t);
-                }
-            });
+        Stream<Path> walk = Files.walk(output.toPath());
+            walk.filter(Files::isRegularFile)
+                .forEach(p -> {
+                    try {
+                        Path target = root.toPath().resolve(output.toPath().relativize(p));
+                        Files.createDirectories(target.getParent());
+                        Files.move(p, target, StandardCopyOption.REPLACE_EXISTING);
+                    } catch (Throwable t) {
+                        Utils.sneakyThrow(t);
+                    }
+                });
     }
 
     public static void openModule(Object o) throws Throwable {

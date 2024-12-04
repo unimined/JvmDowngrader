@@ -10,6 +10,8 @@ public class TheTest {
         // just make sure we're running on Java 8
         assertTrue(System.getProperty("java.version").startsWith("1.8"));
 
+        "test %s".formatted("test2");
+
         String h = """
         Hello World!
         """;

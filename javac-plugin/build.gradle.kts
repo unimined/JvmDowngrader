@@ -25,7 +25,7 @@ tasks.compileTestJava {
     }
 
     val apiJar = project(":java-api").tasks.named("testJar").get().outputs.files.singleFile
-    options.compilerArgs.add("-Xplugin:jvmdg --classVersion 52 --logLevel info --api ${apiJar.absolutePath}")
+    options.compilerArgs.add("-Xplugin:jvmdg downgrade shade --prefix test --classVersion 52 --logLevel info --api ${apiJar.absolutePath}")
 }
 
 tasks.test {
