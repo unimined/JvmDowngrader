@@ -1,13 +1,11 @@
 package xyz.wagyourtail.jvmdg.providers;
 
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.StringType;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
-import xyz.wagyourtail.jvmdg.asm.AnnotationUtils;
 import xyz.wagyourtail.jvmdg.j7.stub.J_L_Throwable;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
