@@ -22,6 +22,7 @@ public class FullyQualifiedMemberNameAndDesc {
 
     public static FullyQualifiedMemberNameAndDesc of(String value) {
         String[] vals = value.split(";", 3);
+        if (vals.length == 2 && vals[1].isEmpty()) vals = new String[] { vals[0] };
         Type owner;
         if (vals.length == 1) {
             if (value.startsWith("L") && value.endsWith(";")) {
