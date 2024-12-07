@@ -137,6 +137,7 @@ public class Flags {
         flags.allowMaven = allowMaven;
         flags.ignoreWarningsIn = new TreeMap<>(ignoreWarningsIn);
         flags.printDebug = printDebug;
+        flags.debugSkipStub = new HashSet<>(debugSkipStub);
         flags.debugSkipStubs = new HashSet<>(debugSkipStubs);
         flags.debugDumpClasses = debugDumpClasses;
         flags.multiReleaseOriginal = multiReleaseOriginal;
