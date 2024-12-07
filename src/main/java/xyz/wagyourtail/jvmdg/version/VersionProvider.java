@@ -261,65 +261,69 @@ public abstract class VersionProvider {
     public void stub(Class<?> clazz) {
         Set<String> warnings = new LinkedHashSet<>();
         try {
-            if (clazz.isAnnotationPresent(Adapter.class)) {
-                Adapter stub = clazz.getAnnotation(Adapter.class);
-                if (stub.value().isEmpty()) {
-                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter must have a ref");
-                } else {
-                    Type value;
-                    if (stub.value().startsWith("L") && stub.value().endsWith(";")) {
-                        value = Type.getType(stub.value());
+            FullyQualifiedMemberNameAndDesc fqm = FullyQualifiedMemberNameAndDesc.of(clazz);
+            if (!downgrader.flags.debugSkipStub.contains(fqm)) {
+                if (clazz.isAnnotationPresent(Adapter.class)) {
+                    Adapter stub = clazz.getAnnotation(Adapter.class);
+                    if (stub.value().isEmpty()) {
+                        throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter must have a ref");
                     } else {
-                        value = Type.getObjectType(stub.value());
-                    }
-//                if (classStubs.containsKey(type)) {
-//                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter ref " + type.getInternalName() + " already exists");
-//                }
-                    Type target;
-                    if (stub.target().isEmpty()) {
-                        target = Type.getType(clazz);
-                    } else {
-                        if (stub.target().startsWith("L") && stub.target().endsWith(";")) {
-                            target = Type.getType(stub.target());
+                        Type value;
+                        if (stub.value().startsWith("L") && stub.value().endsWith(";")) {
+                            value = Type.getType(stub.value());
                         } else {
-                            target = Type.getObjectType(stub.target());
+                            value = Type.getObjectType(stub.value());
                         }
-                    }
-                    classStubs.put(value, new Pair<>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
-                }
-            }
-            try {
-                for (Method method : clazz.getDeclaredMethods()) {
-                    try {
-                        if (method.isAnnotationPresent(Stub.class)) {
-                            Stub stub = method.getAnnotation(Stub.class);
-                            FullyQualifiedMemberNameAndDesc target = resolveStubTarget(method, stub.ref());
-                            Type owner = target.getOwner();
-                            MemberNameAndDesc member = target.toMemberNameAndDesc();
-                            getStubMapper(owner, warnings).addStub(member, method, stub);
-                        } else if (method.isAnnotationPresent(Modify.class)) {
-                            Modify modify = method.getAnnotation(Modify.class);
-                            FullyQualifiedMemberNameAndDesc target = resolveModifyTarget(method, modify.ref());
-                            Type owner = target.getOwner();
-                            MemberNameAndDesc member = target.toMemberNameAndDesc();
-                            // ensure method parameters are valid
-                            Class<?>[] params = method.getParameterTypes();
-                            for (int i = 0; i < params.length; i++) {
-                                if (i >= Modify.MODIFY_SIG.length) {
-                                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " has too many parameters");
-                                }
-                                if (params[i] != Modify.MODIFY_SIG[i]) {
-                                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " parameter " + i + " must be of type " + Modify.MODIFY_SIG[i].getName());
-                                }
+    //                if (classStubs.containsKey(type)) {
+    //                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter ref " + type.getInternalName() + " already exists");
+    //                }
+                        Type target;
+                        if (stub.target().isEmpty()) {
+                            target = Type.getType(clazz);
+                        } else {
+                            if (stub.target().startsWith("L") && stub.target().endsWith(";")) {
+                                target = Type.getType(stub.target());
+                            } else {
+                                target = Type.getObjectType(stub.target());
                             }
-                            getStubMapper(owner, warnings).addModify(member, method, modify);
                         }
-                    } catch (Throwable e) {
-                        logger.warn("failed to create stub for " + clazz.getName(), e);
+                        classStubs.put(value, new Pair<>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
                     }
                 }
-            } catch (Throwable e) {
-                logger.warn("failed to resolve methods for " + clazz.getName(), e);
+                try {
+                    for (Method method : clazz.getDeclaredMethods()) {
+                        if (downgrader.flags.debugSkipStub.contains(FullyQualifiedMemberNameAndDesc.of(method))) continue;
+                        try {
+                            if (method.isAnnotationPresent(Stub.class)) {
+                                Stub stub = method.getAnnotation(Stub.class);
+                                FullyQualifiedMemberNameAndDesc target = resolveStubTarget(method, stub.ref());
+                                Type owner = target.getOwner();
+                                MemberNameAndDesc member = target.toMemberNameAndDesc();
+                                getStubMapper(owner, warnings).addStub(member, method, stub);
+                            } else if (method.isAnnotationPresent(Modify.class)) {
+                                Modify modify = method.getAnnotation(Modify.class);
+                                FullyQualifiedMemberNameAndDesc target = resolveModifyTarget(method, modify.ref());
+                                Type owner = target.getOwner();
+                                MemberNameAndDesc member = target.toMemberNameAndDesc();
+                                // ensure method parameters are valid
+                                Class<?>[] params = method.getParameterTypes();
+                                for (int i = 0; i < params.length; i++) {
+                                    if (i >= Modify.MODIFY_SIG.length) {
+                                        throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " has too many parameters");
+                                    }
+                                    if (params[i] != Modify.MODIFY_SIG[i]) {
+                                        throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " parameter " + i + " must be of type " + Modify.MODIFY_SIG[i].getName());
+                                    }
+                                }
+                                getStubMapper(owner, warnings).addModify(member, method, modify);
+                            }
+                        } catch (Throwable e) {
+                            logger.warn("failed to create stub for " + clazz.getName(), e);
+                        }
+                    }
+                } catch (Throwable e) {
+                    logger.warn("failed to resolve methods for " + clazz.getName(), e);
+                }
             }
             try {
                 // inner classes

@@ -20,6 +20,28 @@ public class FullyQualifiedMemberNameAndDesc {
         this.desc = desc;
     }
 
+    public static FullyQualifiedMemberNameAndDesc of(String value) {
+        String[] vals = value.split(";", 3);
+        Type owner;
+        if (vals.length == 1) {
+            if (value.startsWith("L") && value.endsWith(";")) {
+                owner = Type.getType(value);
+            } else {
+                owner = Type.getObjectType(value);
+            }
+            return FullyQualifiedMemberNameAndDesc.of(owner);
+        } else {
+            owner = Type.getObjectType(vals[0].substring(1));
+        }
+        String name = vals[1];
+        Type desc = vals.length == 2 ? null : Type.getType(vals[2]);
+        return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
+    }
+
+    public static FullyQualifiedMemberNameAndDesc of(Class<?> clazz) {
+        return new FullyQualifiedMemberNameAndDesc(Type.getType(clazz), null, null);
+    }
+
     public static FullyQualifiedMemberNameAndDesc of(Ref ref) {
         String owner;
         if (ref.value().startsWith("L") && ref.value().endsWith(";")) {
