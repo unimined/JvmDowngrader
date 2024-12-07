@@ -68,6 +68,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         logLevel.convention("INFO").finalizeValueOnRead()
         ignoreWarningsIn.convention(emptySet()).finalizeValueOnRead()
         debug.convention(false).finalizeValueOnRead()
+        debugSkipStub.convention(emptySet()).finalizeValueOnRead()
         debugSkipStubs.convention(emptySet()).finalizeValueOnRead()
         debugDumpClasses.convention(false).finalizeValueOnRead()
         shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/" }
@@ -88,6 +89,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         flags.apiJar.convention(apiJar).finalizeValueOnRead()
         flags.quiet.convention(quiet).finalizeValueOnRead()
         flags.debug.convention(debug).finalizeValueOnRead()
+        flags.debugSkipStub.convention(debugSkipStub).finalizeValueOnRead()
         flags.debugSkipStubs.convention(debugSkipStubs).finalizeValueOnRead()
     }
 
