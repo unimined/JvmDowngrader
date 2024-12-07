@@ -10,6 +10,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.convention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeJar
@@ -78,21 +79,6 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         multiReleaseVersions.convention(emptySet()).finalizeValueOnRead()
     }
 
-    fun convention(flags: ShadeFlags) {
-        convention(flags as DowngradeFlags)
-        flags.shadePath.convention(shadePath).finalizeValueOnRead()
-        flags.shadeInlining.convention(shadeInlining).finalizeValueOnRead()
-    }
-
-    fun convention(flags: DowngradeFlags) {
-        flags.downgradeTo.convention(downgradeTo).finalizeValueOnRead()
-        flags.apiJar.convention(apiJar).finalizeValueOnRead()
-        flags.quiet.convention(quiet).finalizeValueOnRead()
-        flags.debug.convention(debug).finalizeValueOnRead()
-        flags.debugSkipStub.convention(debugSkipStub).finalizeValueOnRead()
-        flags.debugSkipStubs.convention(debugSkipStubs).finalizeValueOnRead()
-    }
-
     @get:Internal
     internal val downgradedApis = defaultedMapOf<JavaVersion, Set<File>> { version ->
         val jars = mutableSetOf<File>()
@@ -131,7 +117,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                 spec.to.attribute(artifactType, "jar").attribute(downgradeAttr, true).attribute(shadeAttr, false)
 
                 spec.parameters {
-                    this@JVMDowngraderExtension.convention(it)
+                    it.convention(this@JVMDowngraderExtension)
                     config(it)
                     javaVersion = it.downgradeTo.get()
                 }
@@ -151,7 +137,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                     spec.to.attribute(artifactType, "jar").attribute(shadeAttr, true).attribute(downgradeAttr, true)
 
                     spec.parameters {
-                        this@JVMDowngraderExtension.convention(it)
+                        it.convention(this@JVMDowngraderExtension)
                         config(it)
                     }
                 }

@@ -9,6 +9,7 @@ import org.gradle.api.tasks.bundling.Jar
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.convention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.deleteIfExists
 import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
@@ -31,7 +32,7 @@ abstract class ShadeJar: Jar(), ShadeFlags {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
 
-        jvmdg.convention(this)
+        convention(jvmdg)
     }
 
     @TaskAction
