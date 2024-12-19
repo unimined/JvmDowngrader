@@ -10,6 +10,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.convention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeJar
@@ -68,6 +69,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         logLevel.convention("INFO").finalizeValueOnRead()
         ignoreWarningsIn.convention(emptySet()).finalizeValueOnRead()
         debug.convention(false).finalizeValueOnRead()
+        debugSkipStub.convention(emptySet()).finalizeValueOnRead()
         debugSkipStubs.convention(emptySet()).finalizeValueOnRead()
         debugDumpClasses.convention(false).finalizeValueOnRead()
         shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/" }
@@ -75,20 +77,6 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         shadeInlining.convention(true).finalizeValueOnRead()
         multiReleaseOriginal.convention(false).finalizeValueOnRead()
         multiReleaseVersions.convention(emptySet()).finalizeValueOnRead()
-    }
-
-    fun convention(flags: ShadeFlags) {
-        convention(flags as DowngradeFlags)
-        flags.shadePath.convention(shadePath).finalizeValueOnRead()
-        flags.shadeInlining.convention(shadeInlining).finalizeValueOnRead()
-    }
-
-    fun convention(flags: DowngradeFlags) {
-        flags.downgradeTo.convention(downgradeTo).finalizeValueOnRead()
-        flags.apiJar.convention(apiJar).finalizeValueOnRead()
-        flags.quiet.convention(quiet).finalizeValueOnRead()
-        flags.debug.convention(debug).finalizeValueOnRead()
-        flags.debugSkipStubs.convention(debugSkipStubs).finalizeValueOnRead()
     }
 
     @get:Internal
@@ -129,7 +117,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                 spec.to.attribute(artifactType, "jar").attribute(downgradeAttr, true).attribute(shadeAttr, false)
 
                 spec.parameters {
-                    this@JVMDowngraderExtension.convention(it)
+                    it.convention(this@JVMDowngraderExtension)
                     config(it)
                     javaVersion = it.downgradeTo.get()
                 }
@@ -149,7 +137,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                     spec.to.attribute(artifactType, "jar").attribute(shadeAttr, true).attribute(downgradeAttr, true)
 
                     spec.parameters {
-                        this@JVMDowngraderExtension.convention(it)
+                        it.convention(this@JVMDowngraderExtension)
                         config(it)
                     }
                 }

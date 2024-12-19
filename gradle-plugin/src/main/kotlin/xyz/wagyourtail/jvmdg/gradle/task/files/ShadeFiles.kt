@@ -8,6 +8,7 @@ import org.gradle.api.tasks.TaskAction
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.convention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.MustSet
@@ -47,7 +48,7 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags {
     }
 
     init {
-        jvmdg.convention(this)
+        convention(jvmdg)
     }
 
 //    fun setShadePath(path: String) {

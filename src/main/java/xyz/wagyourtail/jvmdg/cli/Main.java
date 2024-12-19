@@ -7,6 +7,7 @@ import xyz.wagyourtail.jvmdg.compile.PathDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,6 +42,7 @@ public class Main {
             new Arguments("--multiRelease", "Use semi-downgraded files for a Multi-Release jar, versions as class version (ex. \"55\" for java 11)", new String[]{"-mr"}, new String[]{"version"}),
             new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
                 new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
+                new Arguments("--skipStub", "Skip a specific class/method, of form \"Lcom/example/ClassName;\" or \"Lcom/example/ClassName;methodName;()V\"", new String[] {"-ss"}, new String[] {"stub"}),
                 new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
                 new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
                 new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
@@ -193,6 +195,12 @@ public class Main {
                 case "--dumpClasses":
                     flags.debugDumpClasses = true;
                     break;
+                case "--skipStub":
+                    for (String[] s : entry.getValue()) {
+                        for (String string : s) {
+                            flags.debugSkipStub.add(FullyQualifiedMemberNameAndDesc.of(string));
+                        }
+                    }
                 case "--skipStubs":
                     for (String[] s : entry.getValue()) {
                         for (String string : s) {

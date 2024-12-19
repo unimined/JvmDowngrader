@@ -10,6 +10,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.convention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.LazyMutable
@@ -37,7 +38,7 @@ abstract class DowngradeJar: Jar(), DowngradeFlags {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
 
-        jvmdg.convention(this)
+        convention(jvmdg)
     }
 
     @TaskAction

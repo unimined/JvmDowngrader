@@ -10,6 +10,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.convention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.LazyMutable
@@ -62,7 +63,7 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags {
     }
 
     init {
-        jvmdg.convention(this)
+        convention(jvmdg)
     }
 
     @TaskAction
