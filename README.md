@@ -180,13 +180,14 @@ I do not automatically make the configuration shadowed into your output.
 
 #### Including newer dependencies on lower java version building
 
-This is not recommended due to the following but is still possible.
-It is recommended to just shade dependencies into your project and downgrade the combined output.
+It is **strongly** not recommended due to the following but is still possible.
+instead, you *should* just shade dependencies into your project and downgrade the combined output.
 The dependencies may not be correctly represented in the pom with this method.
 
-There may be issues with gradle metadata breaking because of how early gradle checks the java version,
-you can disable this by setting `mavenPom` and `artifact` in the `metadataSources` function on repositories
-to explicitly disable gradle metadata.
+There may be issues with metadata breaking because of how early gradle checks the java version,
+you can disable this by setting `artifact` in the `metadataSources` function on repositories
+to explicitly disable metadata, if you are lucky, you may be able to include `mavenPom` as well, so trasitive dependencies can resolve, otherwise
+**transitive dependencies will not be included**, and must be included manually.
 
 for example:
 
@@ -194,7 +195,7 @@ for example:
 repositories {
     mavenCentral {
         metadataSources {
-            mavenPom()
+            mavenPom() // may still break with this line on some dependencies
             artifact()
         }
     }
