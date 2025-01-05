@@ -40,6 +40,8 @@ public class Main {
             new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
             new Arguments("--multiReleaseOriginal", "Use the original class file for a Multi-Release jar", new String[]{"-mro"}, null),
             new Arguments("--multiRelease", "Use semi-downgraded files for a Multi-Release jar, versions as class version (ex. \"55\" for java 11)", new String[]{"-mr"}, new String[]{"version"}),
+            new Arguments("--noColor", "Disables ansi colors", new String[]{"-nc"}, null),
+            new Arguments("--multiReleaseInputs", "Use the Multi-Release files as inputs for downgrading when available, instead of the normal ones", new String[]{"-mri"}, null),
             new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
                 new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
                 new Arguments("--skipStub", "Skip a specific class/method, of form \"Lcom/example/ClassName;\" or \"Lcom/example/ClassName;methodName;()V\"", new String[] {"-ss"}, new String[] {"stub"}),
@@ -47,6 +49,7 @@ public class Main {
                 new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
                 new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
             ),
+            new Arguments("--noInlining", "Disable shade inlining when a method is only used in one class", new String[]{"-ni"}, null),
             new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
                 input,
                 classpath
@@ -158,6 +161,16 @@ public class Main {
                         }
                     }
                     flags.multiReleaseVersions = versions;
+                    break;
+                case "--noColor":
+                    flags.logAnsiColors = false;
+                    break;
+                case "--multiReleaseInputs":
+                    flags.downgradeFromMultiReleases = true;
+                    break;
+                case "--noInlining":
+                    flags.shadeInlining = false;
+                    break;
                 default:
             }
         }

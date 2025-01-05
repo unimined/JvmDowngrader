@@ -81,7 +81,7 @@ public class Flags {
      *
      * @since 1.2.0
      */
-    public boolean shadeInlining = Boolean.getBoolean(Constants.SHADE_INLINING);
+    public boolean shadeInlining = Boolean.getBoolean(System.getProperty(Constants.SHADE_INLINING, "true"));
     /**
      * this skips applying stubs for the specified input class version, this will still apply the
      * {@link xyz.wagyourtail.jvmdg.version.VersionProvider#otherTransforms(ClassNode, Set, Function, Set)}
@@ -403,6 +403,77 @@ public class Flags {
         } catch (Exception e) {
             throw new RuntimeException("Failed to hash", e);
         }
+    }
+
+    public String serialize() {
+        List<String> args = new ArrayList<>();
+        if (classVersion != Opcodes.V1_8) {
+            args.add("--classVersion");
+            args.add(String.valueOf(classVersion));
+        }
+        if (quiet) args.add("--quiet");
+        if (!logAnsiColors) args.add("--noColor");
+        if (logLevel != Logger.Level.INFO) {
+            args.add("--logLevel");
+            args.add(logLevel.name());
+        }
+        for (Map.Entry<String, WildcardType> entry : ignoreWarningsIn.entrySet()) {
+            args.add("--ignoreWarningsIn");
+            String key = entry.getKey();
+            switch (entry.getValue()) {
+                case DOUBLE:
+                    key += "*";
+                case SINGLE:
+                    key += "*";
+                case NONE:
+            }
+            args.add(key);
+        }
+        if (multiReleaseOriginal) {
+            args.add("--multiReleaseOriginal");
+        }
+        for (Integer v : multiReleaseVersions) {
+            args.add("--multiRelease");
+            args.add(String.valueOf(v));
+        }
+        if (downgradeFromMultiReleases) {
+            args.add("--multiReleaseInputs");
+        }
+        if (!shadeInlining) {
+            args.add("--noInlining");
+        }
+        for (File a : api) {
+            args.add("--api");
+            // todo: escape spaces, but, how does that work with javac plugin args?
+            args.add(a.getAbsolutePath());
+        }
+        if (printDebug || !debugSkipStub.isEmpty() || !debugSkipStubs.isEmpty() || debugDumpClasses) {
+            args.add("debug");
+            if (printDebug) {
+                args.add("--print");
+            }
+            if (!debugSkipStub.isEmpty()) {
+                for (FullyQualifiedMemberNameAndDesc f : debugSkipStub) {
+                    args.add("--skipStub");
+                    args.add(f.toString());
+                }
+            }
+            if (!debugSkipStubs.isEmpty()) {
+                for (int i : debugSkipStubs) {
+                    args.add("--skipStubs");
+                    args.add(String.valueOf(i));
+                }
+            }
+            if (debugDumpClasses) {
+                args.add("--dumpClasses");
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String arg : args) {
+            sb.append(arg).append(" ");
+        }
+        if (!args.isEmpty()) sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
     }
 
     public enum WildcardType {
