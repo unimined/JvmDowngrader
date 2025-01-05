@@ -201,6 +201,7 @@ public class Main {
                             flags.debugSkipStub.add(FullyQualifiedMemberNameAndDesc.of(string));
                         }
                     }
+                    break;
                 case "--skipStubs":
                     for (String[] s : entry.getValue()) {
                         for (String string : s) {
