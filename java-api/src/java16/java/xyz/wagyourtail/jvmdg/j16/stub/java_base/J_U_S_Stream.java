@@ -15,6 +15,16 @@ import java.util.stream.Stream;
 
 public class J_U_S_Stream {
 
+    private static final Class<?> REF_PIPELINE;
+
+    static {
+        try {
+            REF_PIPELINE = Class.forName("java.util.stream.ReferencePipeline");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Stub
     public static <T, R> Stream<R> mapMulti(Stream<T> stream, BiConsumer<? super T, ? super Consumer<R>> mapper) {
         return stream.flatMap(new MapMultiConsumer<>(mapper));
@@ -37,7 +47,12 @@ public class J_U_S_Stream {
 
     @Stub
     public static <T> List<T> toList(Stream<T> stream) {
-        return (List<T>) Collections.unmodifiableList(new ArrayList<>(Arrays.asList(stream.toArray())));
+        List unsafeList = Arrays.asList(stream.toArray());
+        if (REF_PIPELINE.isAssignableFrom(stream.getClass())) {
+            return Collections.unmodifiableList(unsafeList);
+        } else {
+            return Collections.unmodifiableList(new ArrayList<>(unsafeList));
+        }
     }
 
     public static class MapMultiConsumer<T, R> implements Function<T, Stream<R>> {
