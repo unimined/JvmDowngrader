@@ -2,6 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     java
+    id("me.champeau.jmh") version "0.7.2"
 }
 
 val testVersion = JavaVersion.toVersion(project.properties["testVersion"] as String)
@@ -37,6 +38,15 @@ dependencies {
 }
 
 val testTargetVersion = JavaVersion.toVersion(project.properties["testTargetVersion"] as String)
+
+jmh {
+    warmupIterations = 2
+    iterations = 2
+    fork = 2
+//    javaLauncher = javaToolchains.launcherFor {
+//        languageVersion.set(JavaLanguageVersion.of(8))
+//    }
+}
 
 tasks.test {
     useJUnitPlatform()
