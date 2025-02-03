@@ -11,7 +11,7 @@ public class J_I_PrintStream {
 
     @Stub
     public static Charset charset(PrintStream printStream) throws NoSuchFieldException, IllegalAccessException {
-        Field charOut = PrintStream.class.getField("charOut");
+        Field charOut = PrintStream.class.getDeclaredField("charOut");
         charOut.setAccessible(true);
         OutputStreamWriter writer = (OutputStreamWriter) charOut.get(printStream);
         String encoding = writer.getEncoding();
