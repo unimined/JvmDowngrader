@@ -32,7 +32,7 @@ public class Flags {
     /**
      * sets the target class version, default is {@link Opcodes#V1_8}
      */
-    public int classVersion = Opcodes.V1_8;
+    public int classVersion = Integer.parseInt(System.getProperty(Constants.CLASS_VERSION, "52"));
     /**
      * sets the api jar to use, if null will attempt to automatically find it
      */

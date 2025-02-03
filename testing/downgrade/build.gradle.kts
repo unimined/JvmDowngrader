@@ -42,6 +42,18 @@ tasks.jar {
     destinationDirectory = temporaryDir
 }
 
+tasks.annotationASMJar.configure {
+    doLast {
+        exec {
+            commandLine(
+                "jarsigner",
+                "-keystore", file("test_app_sign.jks").absolutePath,
+                "-storepass", "changeit",
+                outputs.files.singleFile.absolutePath, "test_app_alias")
+        }.rethrowFailure().assertNormalExitValue()
+    }
+}
+
 tasks.build {
     dependsOn("annotationASMJar")
 }

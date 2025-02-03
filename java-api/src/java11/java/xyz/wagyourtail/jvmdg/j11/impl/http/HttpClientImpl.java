@@ -181,6 +181,7 @@ public class HttpClientImpl extends J_N_H_HttpClient {
                 public void onNext(ByteBuffer item) {
                     try {
                         out.write(item.array(), item.arrayOffset() + item.position(), item.remaining());
+                        item.position(item.limit());
                     } catch (IOException e) {
                         Utils.sneakyThrow(e);
                     }
@@ -218,15 +219,25 @@ public class HttpClientImpl extends J_N_H_HttpClient {
         Version version = J_N_H_HttpClient.Version.HTTP_1_1;
         HttpResponseInfo info = new HttpResponseInfo(responseCode, new J_N_H_HttpHeaders(headers), version);
         J_N_H_HttpResponse.BodySubscriber<T> subscriber = handler.apply(info);
-        try (InputStream is = responseCode >= 400 ? connection.getErrorStream() : connection.getInputStream()) {
-            if (is != null) {
-                subscriber.onNext(List.of(ByteBuffer.wrap(is.readAllBytes())));
-            }
-            subscriber.onComplete();
-            T body = subscriber.getBody().toCompletableFuture().join();
 
-            return new HttpResponseImpl<>(var1, info, body, null);
-        }
+        CompletableFuture.runAsync(() -> {
+            try (InputStream is = responseCode >= 400 ? connection.getErrorStream() : connection.getInputStream()) {
+
+                byte[] buffer = new byte[StreamIterator.BUFSIZE];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer, 0, buffer.length)) != -1) {
+                    subscriber.onNext(List.of(ByteBuffer.wrap(buffer, 0, bytesRead)));
+                    buffer = new byte[StreamIterator.BUFSIZE];
+                }
+
+                subscriber.onComplete();
+            } catch (IOException e) {
+                subscriber.onError(e);
+            }
+        }, executor == null ? ForkJoinPool.commonPool() : executor);
+
+        T body = subscriber.getBody().toCompletableFuture().join();
+        return new HttpResponseImpl<>(var1, info, body, null);
     }
 
     @Override

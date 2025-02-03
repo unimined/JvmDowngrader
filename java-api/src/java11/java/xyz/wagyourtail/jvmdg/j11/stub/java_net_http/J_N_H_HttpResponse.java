@@ -18,17 +18,10 @@ import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Flow;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -470,10 +463,56 @@ public interface J_N_H_HttpResponse<T> {
         }
 
         public static BodySubscriber<InputStream> ofInputStream() {
-            CompletableFuture<InputStream> result = new CompletableFuture<>();
-            return new BodySubscriber<>() {
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
+            final BlockingDeque<ByteBuffer> deq = new LinkedBlockingDeque<>();
+            final AtomicBoolean completed = new AtomicBoolean(false);
+            final AtomicReference<Throwable> exception = new AtomicReference<>(null);
 
+            InputStream is = new InputStream() {
+                ByteBuffer current;
+
+                @Override
+                public int read() throws IOException {
+                    // Check if an exception was set
+                    Throwable t = exception.get();
+                    if (t != null) {
+                        if (completed.get()) {
+                            throw new IOException("closed");
+                        }
+                        completed.set(true);
+                        if (t instanceof IOException) {
+                            throw (IOException) t;
+                        } else {
+                            throw new IOException(t);
+                        }
+                    }
+
+                    // If current buffer is null, try to fetch a new one
+                    if (current == null) {
+                        if (completed.get() && deq.isEmpty()) {
+                            return -1; // End of stream when nothing left
+                        }
+                        try {
+                            current = deq.take(); // Blocks until a new ByteBuffer is available
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt(); // Preserve interrupt status
+                            throw new IOException("Interrupted while waiting for data", e);
+                        }
+                    }
+
+                    // If the current buffer is empty, mark it as done and try again
+                    if (!current.hasRemaining()) {
+                        current = null; // Reset to fetch new data
+                        return read(); // Recursive call to read more data
+                    }
+
+                    return current.get() & 0xFF; // Return the next byte from the current buffer
+                }
+            };
+
+            // Create the result CompletionStage
+            CompletableFuture<InputStream> result = CompletableFuture.completedFuture(is);
+
+            return new BodySubscriber<>() {
                 @Override
                 public void onSubscribe(Flow.Subscription subscription) {
                     subscription.request(Long.MAX_VALUE);
@@ -481,19 +520,20 @@ public interface J_N_H_HttpResponse<T> {
 
                 @Override
                 public void onNext(List<ByteBuffer> item) {
-                    item.forEach((b) -> {
-                        out.write(b.array(), b.arrayOffset() + b.position(), b.remaining());
-                    });
+                    for (ByteBuffer b : item) {
+                        deq.offer(b);
+                    }
                 }
 
                 @Override
                 public void onError(Throwable throwable) {
-                    result.completeExceptionally(throwable);
+                    exception.set(throwable);
                 }
 
                 @Override
                 public void onComplete() {
-                    result.complete(new ByteArrayInputStream(out.toByteArray()));
+                    completed.set(true);
+                    deq.add(ByteBuffer.allocate(0)); // ensure not stuck taking forever.
                 }
 
                 @Override

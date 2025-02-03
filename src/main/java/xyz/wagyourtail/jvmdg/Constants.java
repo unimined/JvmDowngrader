@@ -6,9 +6,10 @@ public class Constants {
 
     @Deprecated
     public static final String QUIET = "jvmdg.quiet";
+    public static final String CLASS_VERSION = "jvmdg.classVersion";
     public static final String LOG_ANSI_COLORS = "jvmdg.logAnsiColors";
     public static final String LOG_LEVEL = "jvmdg.logLevel";
-    public static final String JAVA_API = "jvmdg.java-api";
+    public static final String JAVA_API = "jvmdg.javaApi";
     public static final String ALLOW_MAVEN_LOOKUP = "jvmdg.maven";
 
     public static final String IGNORE_WARNINGS = "jvmdg.ignoreWarnings";
