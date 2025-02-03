@@ -9,7 +9,7 @@ public class TestPrintWriter {
 
 
     public static void main(String[] args) throws IOException {
-        PrintWriter out = new PrintWriter(System.out, false, StandardCharsets.UTF_8);
+        PrintWriter out = new PrintWriter(System.out, false, System.out.charset());
         out.println("Hello World!");
 
         var temp = Files.createTempFile("temp", "txt");
