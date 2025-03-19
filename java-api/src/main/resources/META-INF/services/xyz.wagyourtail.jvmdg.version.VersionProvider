@@ -14,3 +14,4 @@ xyz.wagyourtail.jvmdg.providers.Java20Downgrader
 xyz.wagyourtail.jvmdg.providers.Java21Downgrader
 xyz.wagyourtail.jvmdg.providers.Java22Downgrader
 xyz.wagyourtail.jvmdg.providers.Java23Downgrader
+xyz.wagyourtail.jvmdg.providers.Java24Downgrader
