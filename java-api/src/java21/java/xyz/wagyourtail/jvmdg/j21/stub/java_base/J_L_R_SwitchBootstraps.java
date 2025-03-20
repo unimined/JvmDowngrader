@@ -203,10 +203,12 @@ public class J_L_R_SwitchBootstraps {
                 // load enum value
                 smnode.visitLabel(caseLabels.afterTypeCheck);
                 smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-                smnode.visitFieldInsn(Opcodes.GETSTATIC, et.type.getInternalName(), et.value, et.type.getDescriptor());
+                smnode.visitLdcInsn(et.value);
                 smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                smnode.visitTypeInsn(Opcodes.CHECKCAST, et.type.getInternalName());
+                smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, et.type.getInternalName(), "name", "()Ljava/lang/String;", false);
                 // equals
-                smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false);
+                smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
                 // if true return index
                 smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);
                 smnode.visitLdcInsn(j);
