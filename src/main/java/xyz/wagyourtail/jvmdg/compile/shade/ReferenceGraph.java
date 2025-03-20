@@ -185,12 +185,13 @@ public class ReferenceGraph {
      */
     public Set<FullyQualifiedMemberNameAndDesc> getAllRefs(int version) {
         Set<FullyQualifiedMemberNameAndDesc> refs = new HashSet<>();
-        for (References value : references.get(version).values()) {
+        for (Map.Entry<Type, Map<Integer, References>> entry : references.entrySet()) {
+            References value = resolveVersioned(entry.getValue(), version);
             for (Type requiredInstance : value.requiredInstances) {
                 refs.add(FullyQualifiedMemberNameAndDesc.of(requiredInstance));
             }
-            for (Set<FullyQualifiedMemberNameAndDesc> requiredForMembers : value.requiredForMembers.values()) {
-                refs.addAll(requiredForMembers);
+            for (Map.Entry<MemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> entry2 : value.requiredForMembers.entrySet()) {
+                refs.addAll(entry2.getValue());
             }
         }
         return refs;
