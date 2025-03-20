@@ -135,7 +135,6 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_U_ServiceLoader.class);
         stub(J_U_ServiceLoader.Provider.class);
         stub(J_U_Set.class);
-        stub(J_U_C_A_AtomicReference.class);
         stub(J_U_C_CompletableFuture.class);
         stub(J_U_C_Flow.class);
         stub(J_U_C_Flow.Publisher.class);
@@ -147,13 +146,13 @@ public class Java9Downgrader extends VersionProvider {
         // ForkJoinTask
         // SubmissionPublisher
         stub(J_U_C_TimeUnit.class);
-        // AtomicBoolean
-        // AtomicInteger
-        // AtomicIntegerArray
-        // AtomicLong
-        // AtomicLongArray
-        // AtomicReference
-        // AtomicReferenceArray
+        stub(J_U_C_A_AtomicBoolean.class);
+        stub(J_U_C_A_AtomicInteger.class);
+        stub(J_U_C_A_AtomicIntegerArray.class);
+        stub(J_U_C_A_AtomicLong.class);
+        stub(J_U_C_A_AtomicLongArray.class);
+        stub(J_U_C_A_AtomicReference.class);
+        stub(J_U_C_A_AtomicReferenceArray.class);
         // Attributes
         // JarFile
         stub(J_U_R_Matcher.class);

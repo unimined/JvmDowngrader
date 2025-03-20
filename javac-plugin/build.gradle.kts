@@ -20,6 +20,8 @@ dependencies {
 }
 
 tasks.compileTestJava {
+    dependsOn(project(":java-api").tasks.named("testJar"))
+
     javaCompiler = javaToolchains.compilerFor {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
