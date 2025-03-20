@@ -198,7 +198,7 @@ public class UnixProcessHandle implements J_L_ProcessHandle {
             } catch (Throwable e) {
                 throw new RuntimeException(e);
             }
-            return this;
+            return new UnixProcessHandle(pid);
         });
     }
 

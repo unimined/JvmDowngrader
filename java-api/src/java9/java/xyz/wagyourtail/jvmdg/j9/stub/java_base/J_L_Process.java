@@ -17,11 +17,18 @@ public class J_L_Process {
     static {
         try {
             if (J_L_ProcessHandle.isUnix()) {
-                getPid = IMPL_LOOKUP.findGetter(Class.forName("java.lang.UNIXProcess"), "pid", int.class).asType(MethodType.methodType(long.class, Process.class));
+                MethodHandle gp;
+                try {
+                    gp = IMPL_LOOKUP.findGetter(Class.forName("java.lang.UNIXProcess"), "pid", int.class).asType(MethodType.methodType(long.class, Process.class));
+                } catch (ClassNotFoundException e) {
+                    // we are probably on java 9+
+                    gp = IMPL_LOOKUP.findVirtual(Process.class, "pid", MethodType.methodType(long.class));
+                }
+                getPid = gp;
             } else {
                 getPid = IMPL_LOOKUP.findGetter(Class.forName("java.lang.ProcessImpl"), "handle", long.class).asType(MethodType.methodType(long.class, Process.class));
             }
-        } catch (NoSuchFieldException | ClassNotFoundException | IllegalAccessException e) {
+        } catch (NoSuchFieldException | ClassNotFoundException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
