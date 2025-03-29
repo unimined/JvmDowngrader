@@ -37,7 +37,7 @@ public class ClassDowngrader implements Closeable {
     public final Logger logger;
     private final Map<Integer, VersionProvider> downgraders;
     private final DowngradingClassLoader classLoader;
-    protected int maxVersion = -1;
+    protected volatile int maxVersion = -1;
 
     protected ClassDowngrader(@NotNull Flags flags) {
         this.flags = flags;
