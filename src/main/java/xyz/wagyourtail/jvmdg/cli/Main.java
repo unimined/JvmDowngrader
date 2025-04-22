@@ -40,6 +40,7 @@ public class Main {
                 new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
                 new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
                 new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
+                new Arguments("--noSynthetic", "Do not add `synthetic` modifier to methods", new String[]{"-ns"}, null),
                 new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
             ),
             new Arguments("--disable-inlining", "Disables shade inlining api's that are only used in one class into that class", null, null),
@@ -194,6 +195,9 @@ public class Main {
                             flags.debugSkipStubs.add(Integer.parseInt(string));
                         }
                     }
+                    break;
+                case "--noSynthetic":
+                    flags.debugNoSynthetic = true;
                     break;
             }
         }

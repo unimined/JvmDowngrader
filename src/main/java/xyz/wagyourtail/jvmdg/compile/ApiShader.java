@@ -318,7 +318,7 @@ public class ApiShader {
                         if (method == null) {
                             throw new IllegalStateException("Method not found in class: " + entry.getKey());
                         }
-                        MethodNode copy = new MethodNode(method.access & ~Opcodes.ACC_PUBLIC | Opcodes.ACC_PRIVATE, "jvmdg$inlined$" + method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
+                        MethodNode copy = new MethodNode((method.access & ~Opcodes.ACC_PUBLIC) | Opcodes.ACC_PRIVATE | (flags.debugNoSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), "jvmdg$inlined$" + method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
                         method.accept(copy);
                         node.methods.add(copy);
                     }

@@ -17,7 +17,7 @@ import java.util.TreeSet;
 public class J_L_R_SwitchBootstraps {
 
     @Modify(ref = @Ref(value = "java/lang/runtime/SwitchBootstraps", member = "typeSwitch", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
-    public static void makeTypeSwitch(MethodNode mnode, int i, ClassNode cnode) {
+    public static void makeTypeSwitch(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         List<Object> types = new ArrayList<>();
         for (Object bsmArg : indy.bsmArgs) {
@@ -34,12 +34,12 @@ public class J_L_R_SwitchBootstraps {
                 types.add(bsmArg);
             }
         }
-        MethodInsnNode min = makeSwitchInternal(mnode.name, indy.desc, types, cnode);
+        MethodInsnNode min = makeSwitchInternal(mnode.name, indy.desc, types, cnode, noSynthetic);
         mnode.instructions.set(indy, min);
     }
 
     @Modify(ref = @Ref(value = "java/lang/runtime/SwitchBootstraps", member = "enumSwitch", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
-    public static void makeEnumSwitch(MethodNode mnode, int i, ClassNode cnode) {
+    public static void makeEnumSwitch(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         Type[] argTypes = Type.getArgumentTypes(indy.desc);
         List<Object> types = new ArrayList<>();
@@ -50,11 +50,11 @@ public class J_L_R_SwitchBootstraps {
                 types.add(bsmArg);
             }
         }
-        MethodInsnNode min = makeSwitchInternal(mnode.name, indy.desc, types, cnode);
+        MethodInsnNode min = makeSwitchInternal(mnode.name, indy.desc, types, cnode, noSynthetic);
         mnode.instructions.set(indy, min);
     }
 
-    public static MethodInsnNode makeSwitchInternal(String holdingMethod, String desc, List<Object> types, ClassNode cnode) {
+    public static MethodInsnNode makeSwitchInternal(String holdingMethod, String desc, List<Object> types, ClassNode cnode, boolean noSynthetic) {
         holdingMethod = holdingMethod.replace("<", "$").replace(">", "$");
         int i = 0;
         for (MethodNode mnode : cnode.methods) {
@@ -69,7 +69,7 @@ public class J_L_R_SwitchBootstraps {
         }
 
         String name = "jvmdowngrader$switch$" + holdingMethod + "$" + i;
-        SwitchMethodNode smnode = new SwitchMethodNode(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, name, desc, types);
+        SwitchMethodNode smnode = new SwitchMethodNode(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (noSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), name, desc, types);
         smnode.visitCode();
 
         // private static <name>(Object value, int start) {

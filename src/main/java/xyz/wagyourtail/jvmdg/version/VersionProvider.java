@@ -37,7 +37,7 @@ public abstract class VersionProvider {
      * lateinit
      * bound during ensureInit
      */
-    protected ClassDowngrader downgrader;
+    public ClassDowngrader downgrader;
     protected Logger logger;
 
     private volatile boolean initialized = false;
@@ -304,11 +304,14 @@ public abstract class VersionProvider {
                             MemberNameAndDesc member = target.toMemberNameAndDesc();
                             // ensure method parameters are valid
                             Class<?>[] params = method.getParameterTypes();
-                            for (int i = 0; i < params.length; i++) {
+                            for (int i = 0, j = 0; i < params.length; i++, j++) {
                                 if (i >= Modify.MODIFY_SIG.length) {
                                     throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " has too many parameters");
                                 }
-                                if (params[i] != Modify.MODIFY_SIG[i]) {
+                                while (j < Modify.MODIFY_SIG.length && params[i] != Modify.MODIFY_SIG[j]) {
+                                    ++j;
+                                }
+                                if (j >= Modify.MODIFY_SIG.length) {
                                     throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " parameter " + i + " must be of type " + Modify.MODIFY_SIG[i].getName());
                                 }
                             }
@@ -483,7 +486,7 @@ public abstract class VersionProvider {
                                 name = found.name;
                             } else {
                                 HandleMethodNode mv = new HandleMethodNode(method.name, handle, num);
-                                mv.access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC;
+                                mv.access = Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | (downgrader.flags.debugNoSynthetic ? 0 : Opcodes.ACC_SYNTHETIC);
                                 mv.desc = hStaticDesc.getDescriptor();
                                 mv.visitCode();
                                 Type returnType = hStaticDesc.getReturnType();
@@ -908,7 +911,7 @@ public abstract class VersionProvider {
                 }
             }
             if (contains) continue;
-            MethodVisitor mv = clazz.visitMethod(Opcodes.ACC_PUBLIC, member.getKey().getName(), member.getKey().getDesc().getDescriptor(), null, null);
+            MethodVisitor mv = clazz.visitMethod(Opcodes.ACC_PUBLIC | (downgrader.flags.debugNoSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), member.getKey().getName(), member.getKey().getDesc().getDescriptor(), null, null);
             mv.visitCode();
             mv.visitVarInsn(Opcodes.ALOAD, 0);
             Type[] params = member.getKey().getDesc().getArgumentTypes();

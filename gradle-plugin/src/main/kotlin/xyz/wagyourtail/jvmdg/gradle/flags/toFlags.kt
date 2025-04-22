@@ -16,6 +16,7 @@ fun DowngradeFlags.toFlags(): Flags {
     flags.debugSkipStubs = debugSkipStubs.getOrElse(emptySet()).map { it.toOpcode() }.toSet()
     ignoreWarningsIn.getOrElse(emptyList()).forEach { flags.addIgnore(it) }
     flags.debugDumpClasses = debugDumpClasses.getOrElse(false)
+    flags.debugNoSynthetic = debugNoSynthetic.getOrElse(false)
     flags.multiReleaseOriginal = multiReleaseOriginal.getOrElse(false)
     flags.multiReleaseVersions = multiReleaseVersions.getOrElse(emptySet()).map { it.toOpcode() }.toSet()
     flags.downgradeFromMultiReleases = downgradeFromMultiReleases.getOrElse(false)

@@ -19,7 +19,7 @@ import java.util.List;
 public class J_L_R_ObjectMethods {
 
     @Modify(ref = @Ref(value = "java/lang/runtime/ObjectMethods", member = "bootstrap", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"))
-    public static void bootstrap(MethodNode mnode, int i, ClassNode cnode) {
+    public static void bootstrap(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
         var indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         var recordClass = (Type) indy.bsmArgs[0];
         var fieldNames = (String) indy.bsmArgs[1];
@@ -30,9 +30,9 @@ public class J_L_R_ObjectMethods {
         var mname = "jvmdowngrader$" + mnode.name + "$" + indy.name;
         mname = mname.replace("<", "$").replace(">", "$");
         switch (indy.name) {
-            case "equals" -> makeEquals(cnode, mname, indy.desc, recordClass, getters);
-            case "hashCode" -> makeHashCode(cnode, mname, indy.desc, recordClass, getters);
-            case "toString" -> makeToString(cnode, mname, indy.desc, recordClass, fieldNames, getters);
+            case "equals" -> makeEquals(cnode, mname, indy.desc, recordClass, getters, noSynthetic);
+            case "hashCode" -> makeHashCode(cnode, mname, indy.desc, recordClass, getters, noSynthetic);
+            case "toString" -> makeToString(cnode, mname, indy.desc, recordClass, fieldNames, getters, noSynthetic);
         }
         mnode.instructions.insert(indy,
             new MethodInsnNode(
@@ -46,8 +46,8 @@ public class J_L_R_ObjectMethods {
         mnode.instructions.remove(indy);
     }
 
-    private static void makeEquals(ClassNode cnode, String mname, String desc, Type recordClass, ArrayList<Handle> getters) {
-        var visitor = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, mname, desc, null, null);
+    private static void makeEquals(ClassNode cnode, String mname, String desc, Type recordClass, ArrayList<Handle> getters, boolean noSynthetic) {
+        var visitor = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (noSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), mname, desc, null, null);
         visitor.visitCode();
         visitor.visitVarInsn(Opcodes.ALOAD, 0);
         visitor.visitVarInsn(Opcodes.ALOAD, 1);
@@ -119,8 +119,8 @@ public class J_L_R_ObjectMethods {
         visitor.visitEnd();
     }
 
-    private static void makeHashCode(ClassNode cnode, String mname, String desc, Type recordClass, ArrayList<Handle> getters) {
-        var visitor = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, mname, desc, null, null);
+    private static void makeHashCode(ClassNode cnode, String mname, String desc, Type recordClass, ArrayList<Handle> getters, boolean noSynthetic) {
+        var visitor = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (noSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), mname, desc, null, null);
         visitor.visitCode();
         visitor.visitLdcInsn(getters.size());
         visitor.visitTypeInsn(Opcodes.ANEWARRAY, "java/lang/Object");
@@ -149,8 +149,8 @@ public class J_L_R_ObjectMethods {
         visitor.visitEnd();
     }
 
-    private static void makeToString(ClassNode cnode, String mname, String desc, Type recordClass, String fieldNames, List<Handle> getters) {
-        var visitor = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, mname, desc, null, null);
+    private static void makeToString(ClassNode cnode, String mname, String desc, Type recordClass, String fieldNames, List<Handle> getters, boolean noSynthetic) {
+        var visitor = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (noSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), mname, desc, null, null);
         visitor.visitCode();
         visitor.visitVarInsn(Opcodes.ALOAD, 0);
         String last = recordClass.getInternalName();

@@ -13,7 +13,14 @@ import java.util.Set;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Modify {
 
-    Class<?>[] MODIFY_SIG = new Class<?>[]{MethodNode.class, int.class, ClassNode.class, Set.class};
+    /**
+     * MethodNode - current method
+     * int - current insn index
+     * ClassNode - current class
+     * Set&lt;ClassNode&gt; - extra classes
+     * boolean - if synthetic should be set on any generated methods
+     */
+    Class<?>[] MODIFY_SIG = new Class<?>[]{MethodNode.class, int.class, ClassNode.class, Set.class, boolean.class};
 
     Ref ref() default @Ref("");
 

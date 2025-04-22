@@ -159,9 +159,22 @@ public class ClassMapping {
             Pair<Method, Modify> m = getModifyFor(member, isStatic, warnings);
             if (m != null) {
                 try {
-                    List<Object> modifyArgs = Arrays.asList(method, index, classNode, extra);
-                    m.getFirst().invoke(null, modifyArgs.subList(0, m.getFirst().getParameterTypes().length).toArray());
-                    return;
+                    Object[] modifyArgs = new Object[] { method, index, classNode, extra, vp.downgrader.flags.debugNoSynthetic };
+                    List<Object> takeArgs = new ArrayList<>();
+                    Class<?>[] params = m.getFirst().getParameterTypes();
+                    for (int i = 0, j = 0; i < params.length; i++, j++) {
+                        if (i >= Modify.MODIFY_SIG.length) {
+                            throw new IllegalArgumentException("@Modify method " + m.getFirst() + " has too many parameters");
+                        }
+                        while (j < Modify.MODIFY_SIG.length && params[i] != Modify.MODIFY_SIG[j]) {
+                            ++j;
+                        }
+                        if (j >= Modify.MODIFY_SIG.length) {
+                            throw new IllegalArgumentException("@Modify method " + m.getFirst() + " parameter " + i + " must be of type " + Modify.MODIFY_SIG[i].getName());
+                        }
+                        takeArgs.add(modifyArgs[j]);
+                    }
+                    m.getFirst().invoke(null, takeArgs.subList(0, m.getFirst().getParameterTypes().length).toArray());
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
@@ -173,8 +186,22 @@ public class ClassMapping {
             Pair<Method, Modify> m = methodModify.get(member);
             if (m != null) {
                 try {
-                    List<Object> modifyArgs = Arrays.asList(method, index, classNode, extra);
-                    m.getFirst().invoke(null, modifyArgs.subList(0, m.getFirst().getParameterTypes().length).toArray());
+                    Object[] modifyArgs = new Object[] { method, index, classNode, extra, vp.downgrader.flags.debugNoSynthetic };
+                    List<Object> takeArgs = new ArrayList<>();
+                    Class<?>[] params = m.getFirst().getParameterTypes();
+                    for (int i = 0, j = 0; i < params.length; i++, j++) {
+                        if (i >= Modify.MODIFY_SIG.length) {
+                            throw new IllegalArgumentException("@Modify method " + m.getFirst() + " has too many parameters");
+                        }
+                        while (j < Modify.MODIFY_SIG.length && params[i] != Modify.MODIFY_SIG[j]) {
+                            ++j;
+                        }
+                        if (j >= Modify.MODIFY_SIG.length) {
+                            throw new IllegalArgumentException("@Modify method " + m.getFirst() + " parameter " + i + " must be of type " + Modify.MODIFY_SIG[i].getName());
+                        }
+                        takeArgs.add(modifyArgs[j]);
+                    }
+                    m.getFirst().invoke(null, takeArgs.subList(0, m.getFirst().getParameterTypes().length).toArray());
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
