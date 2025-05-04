@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.gradle.flags
 
 import org.gradle.api.JavaVersion
+import xyz.wagyourtail.jvmdg.ClassDowngrader.downgradeTo
 import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.logging.Logger
 import xyz.wagyourtail.jvmdg.util.toOpcode
@@ -45,4 +46,28 @@ fun DowngradeFlags.convention(target: DowngradeFlags) {
         shadeInlining.convention(target.shadeInlining)
         shadePath.convention(target.shadePath)
     }
+}
+
+interface FlagsConvention : DowngradeFlags {
+
+    fun convention(target: DowngradeFlags) {
+        apiJar.convention(target.apiJar)
+        quiet.convention(target.quiet)
+        logAnsiColors.convention(target.logAnsiColors)
+        logLevel.convention(target.logLevel)
+        debug.convention(target.debug)
+        downgradeTo.convention(target.downgradeTo)
+        debugSkipStub.convention(target.debugSkipStub)
+        debugSkipStubs.convention(target.debugSkipStubs)
+        ignoreWarningsIn.convention(target.ignoreWarningsIn)
+        debugDumpClasses.convention(target.debugDumpClasses)
+        multiReleaseOriginal.convention(target.multiReleaseOriginal)
+        multiReleaseVersions.convention(target.multiReleaseVersions)
+        downgradeFromMultiReleases.convention(target.downgradeFromMultiReleases)
+        if (this is ShadeFlags && target is ShadeFlags) {
+            shadeInlining.convention(target.shadeInlining)
+            shadePath.convention(target.shadePath)
+        }
+    }
+
 }

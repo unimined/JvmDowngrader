@@ -109,17 +109,20 @@ dependencies {
 }
 
 val downgradeFiles by tasks.creating(DowngradeFiles::class) {
+    convention(jvmdg)
     inputCollection = sourceSets.main.get().runtimeClasspath
     downgradeTo = JavaVersion.VERSION_1_8
 }
 
 val shadeFiles by tasks.creating(ShadeFiles::class) {
+    convention(jvmdg)
     dependsOn(downgradeFiles)
     inputCollection = downgradeFiles.outputCollection
     downgradeTo = JavaVersion.VERSION_1_8
 }
 
 val downgradeJar9 by tasks.creating(DowngradeJar::class) {
+    convention(jvmdg)
     inputFile.set(tasks.jar.get().archiveFile)
     archiveClassifier.set("downgraded-9")
     downgradeTo = JavaVersion.VERSION_1_9
@@ -128,6 +131,7 @@ val downgradeJar9 by tasks.creating(DowngradeJar::class) {
 }
 
 val shadeDowngradedApi9 by tasks.creating(ShadeJar::class) {
+    convention(jvmdg)
     inputFile.set(downgradeJar9.archiveFile)
     archiveClassifier.set("downgraded-shaded-9")
     downgradeTo = JavaVersion.VERSION_1_9
