@@ -77,6 +77,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         debugSkipStub.convention(emptySet()).finalizeValueOnRead()
         debugSkipStubs.convention(emptySet()).finalizeValueOnRead()
         debugDumpClasses.convention(false).finalizeValueOnRead()
+        debugNoSynthetic.convention(false).finalizeValueOnRead()
         shadePath.convention { it.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/" }
             .finalizeValueOnRead()
         shadeInlining.convention(true).finalizeValueOnRead()

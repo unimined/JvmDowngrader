@@ -26,7 +26,12 @@ public enum J_L_R_ClassFileFormatVersion {
     RELEASE_19(63),
     RELEASE_20(64),
     RELEASE_21(65),
-    RELEASE_22(66);
+    RELEASE_22(66),
+    RELEASE_23(67),
+    RELEASE_24(68),
+    RELEASE_25(69),
+    RELEASE_26(70),
+    RELEASE_27(71);
 
     private final int version;
 

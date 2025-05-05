@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 public class J_L_I_LambdaMetafactory {
 
     @Modify(ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "metafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
-    public static void makeLambdaInnerClass(MethodNode mnode, int i, ClassNode cnode, Set<ClassNode> extra) {
+    public static void makeLambdaInnerClass(MethodNode mnode, int i, ClassNode cnode, Set<ClassNode> extra, boolean noSynthetic) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         String ifName = indy.name;
         Type constructor = Type.getMethodType(indy.desc);
@@ -47,7 +47,7 @@ public class J_L_I_LambdaMetafactory {
         // add child as inner class
         cnode.innerClasses.add(new InnerClassNode(child.name, null, null, Opcodes.ACC_STATIC));
         // create method for constructing child
-        MethodVisitor mv = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, "jvmdowngrader$lambda$" + mnode.name.replace("<", "$").replace(">", "$") + "$" + nextAnonymous, constructor.getDescriptor(), null, null);
+        MethodVisitor mv = cnode.visitMethod(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (noSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), "jvmdowngrader$lambda$" + mnode.name.replace("<", "$").replace(">", "$") + "$" + nextAnonymous, constructor.getDescriptor(), null, null);
         mv.visitCode();
         mv.visitTypeInsn(Opcodes.NEW, child.name);
         mv.visitInsn(Opcodes.DUP);

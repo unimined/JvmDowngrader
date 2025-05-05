@@ -13,24 +13,24 @@ import java.util.LinkedList;
 public class J_L_I_StringConcatFactory {
 
     @Modify(ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcat", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
-    public static void makeConcat(MethodNode mnode, int i, ClassNode cnode) {
+    public static void makeConcat(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         Type[] args = Type.getArgumentTypes(indy.desc);
         char[] chars = new char[args.length];
         for (int j = 0; j < args.length; j++) {
             chars[j] = '\u0001';
         }
-        InsnList list = makeConcatInternal3(mnode.name, cnode, new String(chars), new LinkedList<>(Arrays.asList(args)));
+        InsnList list = makeConcatInternal3(mnode.name, cnode, new String(chars), new LinkedList<>(Arrays.asList(args)), noSynthetic);
         mnode.instructions.insertBefore(indy, list);
         mnode.instructions.remove(indy);
     }
 
     @Modify(ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcatWithConstants", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
-    public static void makeConcatWithConstants(MethodNode mnode, int i, ClassNode cnode) {
+    public static void makeConcatWithConstants(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         Type[] args = Type.getArgumentTypes(indy.desc);
         String chars = (String) indy.bsmArgs[0];
-        InsnList list = makeConcatInternal3(mnode.name, cnode, chars, new LinkedList<>(Arrays.asList(args)));
+        InsnList list = makeConcatInternal3(mnode.name, cnode, chars, new LinkedList<>(Arrays.asList(args)), noSynthetic);
         mnode.instructions.insertBefore(indy, list);
         mnode.instructions.remove(indy);
     }
@@ -439,7 +439,7 @@ public class J_L_I_StringConcatFactory {
         return list;
     }
 
-    public static InsnList makeConcatInternal3(String mname, ClassNode node, String args, Deque<Type> types) {
+    public static InsnList makeConcatInternal3(String mname, ClassNode node, String args, Deque<Type> types, boolean noSynthetic) {
         mname = mname.replace("<", "$").replace(">", "$");
         if (!args.contains("\u0001")) {
             // no args
@@ -472,7 +472,7 @@ public class J_L_I_StringConcatFactory {
             }
         }
         // create new
-        StringConcatMethodNode method = new StringConcatMethodNode(mname, args, types, count);
+        StringConcatMethodNode method = new StringConcatMethodNode(mname, args, types, count, noSynthetic);
         node.methods.add(method);
         InsnList list = new InsnList();
         list.add(new MethodInsnNode(
@@ -489,11 +489,11 @@ public class J_L_I_StringConcatFactory {
 
         public final String args;
 
-        public StringConcatMethodNode(String mname, String args, Deque<Type> types, int index) {
+        public StringConcatMethodNode(String mname, String args, Deque<Type> types, int index, boolean noSynthetic) {
             super(Opcodes.ASM9);
             this.args = args;
             this.name = "jvmdowngrader$concat$" + mname + "$" + index;
-            this.access = Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC;
+            this.access = Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (noSynthetic ? 0 : Opcodes.ACC_SYNTHETIC);
             this.desc = Type.getMethodDescriptor(Type.getType(String.class), types.toArray(new Type[0]));
             init(args, types);
         }

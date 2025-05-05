@@ -19,7 +19,7 @@ fun DowngradeFlags.toFlags(): Flags {
     flags.debugSkipStubs = debugSkipStubs.getOrElse(emptySet()).map { it.toOpcode() }.toSet()
     ignoreWarningsIn.getOrElse(flags.ignoreWarningsIn.map { it.key + "*".repeat(it.value.ordinal) }).forEach { flags.addIgnore(it) }
     flags.debugDumpClasses = debugDumpClasses.getOrElse(flags.debugDumpClasses)
-    flags.multiReleaseOriginal = multiReleaseOriginal.getOrElse(flags.multiReleaseOriginal)
+    flags.debugNoSynthetic = debugNoSynthetic.getOrElse(flags.debugNoSynthetic)
     flags.multiReleaseVersions = multiReleaseVersions.getOrElse(flags.multiReleaseVersions.map { JavaVersion.forClassVersion(it) }.toSet()).map { it.toOpcode() }.toSet()
     flags.downgradeFromMultiReleases = downgradeFromMultiReleases.getOrElse(flags.downgradeFromMultiReleases)
     if (this is ShadeFlags) {
@@ -39,6 +39,7 @@ fun DowngradeFlags.convention(target: DowngradeFlags) {
     debugSkipStubs.convention(target.debugSkipStubs)
     ignoreWarningsIn.convention(target.ignoreWarningsIn)
     debugDumpClasses.convention(target.debugDumpClasses)
+    debugNoSynthetic.convention(target.debugNoSynthetic)
     multiReleaseOriginal.convention(target.multiReleaseOriginal)
     multiReleaseVersions.convention(target.multiReleaseVersions)
     downgradeFromMultiReleases.convention(target.downgradeFromMultiReleases)
@@ -61,6 +62,7 @@ interface FlagsConvention : DowngradeFlags {
         debugSkipStubs.convention(target.debugSkipStubs)
         ignoreWarningsIn.convention(target.ignoreWarningsIn)
         debugDumpClasses.convention(target.debugDumpClasses)
+        debugNoSynthetic.convention(target.debugNoSynthetic)
         multiReleaseOriginal.convention(target.multiReleaseOriginal)
         multiReleaseVersions.convention(target.multiReleaseVersions)
         downgradeFromMultiReleases.convention(target.downgradeFromMultiReleases)

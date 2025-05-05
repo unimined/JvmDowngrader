@@ -361,7 +361,7 @@ public class Java8Downgrader extends VersionProvider {
                     if ((mnode.access & Opcodes.ACC_PUBLIC) != 0) {
                         // write back an abstract version
                         toAdd.add(new MethodNode(
-                            Opcodes.ACC_ABSTRACT | Opcodes.ACC_PUBLIC,
+                            Opcodes.ACC_ABSTRACT | Opcodes.ACC_PUBLIC | (downgrader.flags.debugNoSynthetic ? 0 : Opcodes.ACC_SYNTHETIC),
                             mnode.name,
                             mnode.desc,
                             mnode.signature,
@@ -509,7 +509,7 @@ public class Java8Downgrader extends VersionProvider {
             }
             // create method redirecting to static default
             MethodVisitor mn = clazz.visitMethod(
-                Opcodes.ACC_PUBLIC,
+                Opcodes.ACC_PUBLIC | (downgrader.flags.debugNoSynthetic ? 0 : Opcodes.ACC_SYNTHETIC),
                 member.getKey().getName(),
                 member.getKey().getDesc().getDescriptor(),
                 null,

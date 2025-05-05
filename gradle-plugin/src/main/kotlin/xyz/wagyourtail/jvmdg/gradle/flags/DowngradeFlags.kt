@@ -91,6 +91,14 @@ interface DowngradeFlags: TransformParameters {
     val debugDumpClasses: Property<Boolean>
 
     /**
+     * set generated methods to not be synthetic
+     * @since 1.2.3
+     */
+    @get:Input
+    @get:Optional
+    val debugNoSynthetic: Property<Boolean>
+
+    /**
      * sets if the original versions of classes should be retained in the output jar as a Multi-Release
      * @since 1.0.0
      */

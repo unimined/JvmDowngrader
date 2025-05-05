@@ -104,6 +104,12 @@ public class Flags {
     public Set<FullyQualifiedMemberNameAndDesc> debugSkipStub = new HashSet<>(getDebugSkipStub());
 
     /**
+     * set generated methods to not be synthetic
+     *
+     * @since 1.2.3
+     */
+    public boolean debugNoSynthetic = Boolean.getBoolean(Constants.DEBUG_NO_SYNTHETIC);
+    /**
      * if should move the original class file to the multi-release directory
      *
      * @since 1.0.0

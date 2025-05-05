@@ -292,7 +292,7 @@ public class Java11Downgrader extends VersionProvider {
                 } else {
 
                     // create new method to call private method
-                    MethodVisitor mv = clazz.visitMethod((isStatic ? Opcodes.ACC_STATIC : 0) | Opcodes.ACC_PUBLIC, "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$" + name, desc, null, null);
+                    MethodVisitor mv = clazz.visitMethod((isStatic ? Opcodes.ACC_STATIC : 0) | Opcodes.ACC_PUBLIC | (downgrader.flags.debugNoSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$" + name, desc, null, null);
                     mv.visitCode();
                     if (!isStatic) {
                         mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -327,7 +327,7 @@ public class Java11Downgrader extends VersionProvider {
                 }
 
                 // create new method to get field
-                MethodVisitor mv = clazz.visitMethod((isStatic ? Opcodes.ACC_STATIC : 0) | Opcodes.ACC_PUBLIC, "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$get$" + field, "()" + desc, null, null);
+                MethodVisitor mv = clazz.visitMethod((isStatic ? Opcodes.ACC_STATIC : 0) | Opcodes.ACC_PUBLIC | (downgrader.flags.debugNoSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$get$" + field, "()" + desc, null, null);
                 mv.visitCode();
                 if (!isStatic) {
                     mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -337,7 +337,7 @@ public class Java11Downgrader extends VersionProvider {
                 mv.visitEnd();
 
                 // create new method to set field
-                mv = clazz.visitMethod((isStatic ? Opcodes.ACC_STATIC : 0) | Opcodes.ACC_PUBLIC, "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$set$" + field, "(" + desc + ")V", null, null);
+                mv = clazz.visitMethod((isStatic ? Opcodes.ACC_STATIC : 0) | Opcodes.ACC_PUBLIC | (downgrader.flags.debugNoSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), "jvmdowngrader$nest$" + clazz.name.replace("/", "_") + "$set$" + field, "(" + desc + ")V", null, null);
                 mv.visitCode();
                 if (!isStatic) {
                     mv.visitVarInsn(Opcodes.ALOAD, 0);
