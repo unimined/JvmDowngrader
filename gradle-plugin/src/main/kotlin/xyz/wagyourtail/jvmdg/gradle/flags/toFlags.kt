@@ -28,7 +28,7 @@ fun DowngradeFlags.toFlags(): Flags {
     return flags
 }
 
-fun DowngradeFlags.convention(target: DowngradeFlags) {
+fun convention(self: DowngradeFlags, target: DowngradeFlags) = with(self) {
     apiJar.convention(target.apiJar)
     quiet.convention(target.quiet)
     logAnsiColors.convention(target.logAnsiColors)
@@ -49,27 +49,14 @@ fun DowngradeFlags.convention(target: DowngradeFlags) {
     }
 }
 
+fun DowngradeFlags.convention(target: DowngradeFlags) {
+    convention(this, target)
+}
+
 interface FlagsConvention : DowngradeFlags {
 
     fun convention(target: DowngradeFlags) {
-        apiJar.convention(target.apiJar)
-        quiet.convention(target.quiet)
-        logAnsiColors.convention(target.logAnsiColors)
-        logLevel.convention(target.logLevel)
-        debug.convention(target.debug)
-        downgradeTo.convention(target.downgradeTo)
-        debugSkipStub.convention(target.debugSkipStub)
-        debugSkipStubs.convention(target.debugSkipStubs)
-        ignoreWarningsIn.convention(target.ignoreWarningsIn)
-        debugDumpClasses.convention(target.debugDumpClasses)
-        debugNoSynthetic.convention(target.debugNoSynthetic)
-        multiReleaseOriginal.convention(target.multiReleaseOriginal)
-        multiReleaseVersions.convention(target.multiReleaseVersions)
-        downgradeFromMultiReleases.convention(target.downgradeFromMultiReleases)
-        if (this is ShadeFlags && target is ShadeFlags) {
-            shadeInlining.convention(target.shadeInlining)
-            shadePath.convention(target.shadePath)
-        }
+        convention(this, target)
     }
 
 }
