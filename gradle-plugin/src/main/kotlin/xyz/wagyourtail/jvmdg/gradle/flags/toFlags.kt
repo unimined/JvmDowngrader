@@ -28,6 +28,7 @@ fun DowngradeFlags.toFlags(): Flags {
     return flags
 }
 
+@JvmName("conventionImpl")
 fun convention(self: DowngradeFlags, target: DowngradeFlags) = with(self) {
     apiJar.convention(target.apiJar)
     quiet.convention(target.quiet)
