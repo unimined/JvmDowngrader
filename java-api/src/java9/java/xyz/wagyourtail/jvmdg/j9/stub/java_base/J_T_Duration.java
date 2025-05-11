@@ -36,6 +36,7 @@ public class J_T_Duration {
         return (int) (self.toHours() % 24);
     }
 
+    @Stub
     public static int toMinutesPart(Duration self) {
         return (int) (self.toMinutes() % 60);
     }
