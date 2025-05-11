@@ -7,6 +7,7 @@ import xyz.wagyourtail.jvmdg.compile.PathDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,11 +19,14 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class Main {
-    private static final Flags flags = new Flags();
-
-    private static Deque<File> tempFiles = new ArrayDeque<>();
+    protected final Flags flags = new Flags();
+    protected final Deque<File> tempFiles = new ArrayDeque<>();
 
     public static void main(String[] args) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        new Main().parseArgs(args);
+    }
+
+    protected Arguments buildArgumentList() {
         Arguments parser = new Arguments("JvmDowngrader", null, null, null);
         Arguments input = new Arguments("--target", "input to output\n  (required)\n  you can use - for a temp-file if you want to chain operations", new String[]{"-t"}, new String[]{"input jar|path", "output jar|path"});
         Arguments classpath = new Arguments("--classpath", "Classpath to use\n  (highly recommended)", new String[]{"-cp"}, new String[]{"classpath"});
@@ -36,8 +40,11 @@ public class Main {
             new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
             new Arguments("--multiReleaseOriginal", "Use the original class file for a Multi-Release jar", new String[]{"-mro"}, null),
             new Arguments("--multiRelease", "Use semi-downgraded files for a Multi-Release jar, versions as class version (ex. \"55\" for java 11)", new String[]{"-mr"}, new String[]{"version"}),
+            new Arguments("--noColor", "Disables ansi colors", new String[]{"-nc"}, null),
+            new Arguments("--multiReleaseInputs", "Use the Multi-Release files as inputs for downgrading when available, instead of the normal ones", new String[]{"-mri"}, null),
             new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
                 new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
+                new Arguments("--skipStub", "Skip a specific class/method, of form \"Lcom/example/ClassName;\" or \"Lcom/example/ClassName;methodName;()V\"", new String[] {"-ss"}, new String[] {"stub"}),
                 new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
                 new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
                 new Arguments("--noSynthetic", "Do not add `synthetic` modifier to methods", new String[]{"-ns"}, null),
@@ -59,6 +66,11 @@ public class Main {
                 new Arguments("", "Arguments for main run", new String[]{}, new String[]{"args..."})
             )
         );
+        return parser;
+    }
+
+    public void parseArgs(String[] args) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        Arguments parser = buildArgumentList();
 
         List<String> argList = new ArrayList<>(Arrays.asList(args));
         Map<String, List<String[]>> parsed = parser.read(argList, false);
@@ -150,8 +162,15 @@ public class Main {
                         }
                     }
                     flags.multiReleaseVersions = versions;
+                    break;
                 case "--disable-inlining":
                     flags.shadeInlining = false;
+                case "--noColor":
+                    flags.logAnsiColors = false;
+                    break;
+                case "--multiReleaseInputs":
+                    flags.downgradeFromMultiReleases = true;
+                    break;
                 default:
             }
         }
@@ -180,7 +199,7 @@ public class Main {
 
     }
 
-    public static void debug(Map<String, List<String[]>> args) throws IOException {
+    public void debug(Map<String, List<String[]>> args) throws IOException {
         for (Map.Entry<String, List<String[]>> entry : args.entrySet()) {
             switch (entry.getKey()) {
                 case "--print":
@@ -188,6 +207,13 @@ public class Main {
                     break;
                 case "--dumpClasses":
                     flags.debugDumpClasses = true;
+                    break;
+                case "--skipStub":
+                    for (String[] s : entry.getValue()) {
+                        for (String string : s) {
+                            flags.debugSkipStub.add(FullyQualifiedMemberNameAndDesc.of(string));
+                        }
+                    }
                     break;
                 case "--skipStubs":
                     for (String[] s : entry.getValue()) {
@@ -218,7 +244,7 @@ public class Main {
         }
     }
 
-    public static void getTargets(Map<String, List<String[]>> args, Map<Path, Path> targets, List<FileSystem> fileSystems) throws IOException {
+    public void getTargets(Map<String, List<String[]>> args, Map<Path, Path> targets, List<FileSystem> fileSystems) throws IOException {
         for (Map.Entry<String, List<String[]>> entry : args.entrySet()) {
             //noinspection SwitchStatementWithTooFewBranches
             switch (entry.getKey()) {
@@ -252,7 +278,8 @@ public class Main {
                         if (!Constants.DIR.exists() && !Constants.DIR.mkdirs()) {
                             throw new IOException("Failed to create directory: " + Constants.DIR);
                         }
-                        output = File.createTempFile(input.getName(), ".jar", Constants.DIR);
+                        output = File.createTempFile(input.getName(), ".jar", Constants.DIR).getAbsoluteFile();
+                        output.deleteOnExit();
                         tempFiles.add(output);
                     } else {
                         output = new File(target[1]);
@@ -279,7 +306,7 @@ public class Main {
         }
     }
 
-    public static Set<URL> getClasspath(Map<String, List<String[]>> args) throws MalformedURLException {
+    public Set<URL> getClasspath(Map<String, List<String[]>> args) throws MalformedURLException {
         Set<URL> classpath = new HashSet<>();
         if (args.containsKey("--classpath")) {
             for (String[] s : args.get("--classpath")) {
@@ -293,7 +320,7 @@ public class Main {
         return classpath;
     }
 
-    public static void downgrade(Map<String, List<String[]>> args) throws IOException {
+    public void downgrade(Map<String, List<String[]>> args) throws IOException {
         Map<Path, Path> targets = new HashMap<>();
         List<FileSystem> fileSystems = new ArrayList<>();
         try {
@@ -316,7 +343,7 @@ public class Main {
         }
     }
 
-    public static void shade(Map<String, List<String[]>> args) throws IOException {
+    public void shade(Map<String, List<String[]>> args) throws IOException {
         if (!args.containsKey("--prefix")) {
             throw new IllegalArgumentException("No prefix specified");
         }
@@ -365,7 +392,7 @@ public class Main {
         }
     }
 
-    public static void bootstrap(Map<String, List<String[]>> args) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public void bootstrap(Map<String, List<String[]>> args) throws IOException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         if (!args.containsKey("--main")) {
             throw new IllegalArgumentException("No main class specified");
         }

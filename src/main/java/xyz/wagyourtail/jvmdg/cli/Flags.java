@@ -9,6 +9,7 @@ import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Consumer;
 import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
 import java.beans.XMLDecoder;
 import java.io.File;
@@ -86,13 +87,22 @@ public class Flags {
      * {@link xyz.wagyourtail.jvmdg.version.VersionProvider#otherTransforms(ClassNode, Set, Function, Set)}
      * such as {@code INVOKE_INTERFACE} -> {@code INVOKE_SPECIAL} for private interface methods in java 9 -> 8
      */
-    public Set<Integer> debugSkipStubs = new HashSet<>(getDebugSkip());
+    public Set<Integer> debugSkipStubs = new HashSet<>(getDebugSkipStubs());
     /**
      * sets if classes should be dumped to the {@link Constants#DEBUG_DIR} directory
      *
      * @since 0.9.0
      */
     public boolean debugDumpClasses = Boolean.getBoolean(Constants.DEBUG_DUMP_CLASSES);
+
+    /**
+     * this skips applying specific stub classes/methods, for example to disable the JEP 400, you would put
+     * {@link xyz.wagyourtail.jvmdg.j18.stub.java_base.J_L_System} in.
+     *
+     * @since 1.3.0
+     */
+    public Set<FullyQualifiedMemberNameAndDesc> debugSkipStub = new HashSet<>(getDebugSkipStub());
+
     /**
      * set generated methods to not be synthetic
      *
@@ -133,6 +143,7 @@ public class Flags {
         flags.allowMaven = allowMaven;
         flags.ignoreWarningsIn = new TreeMap<>(ignoreWarningsIn);
         flags.printDebug = printDebug;
+        flags.debugSkipStub = new HashSet<>(debugSkipStub);
         flags.debugSkipStubs = new HashSet<>(debugSkipStubs);
         flags.debugDumpClasses = debugDumpClasses;
         flags.multiReleaseOriginal = multiReleaseOriginal;
@@ -293,7 +304,17 @@ public class Flags {
     }
 
     /* initialization methods */
-    private Set<Integer> getDebugSkip() {
+    private Set<FullyQualifiedMemberNameAndDesc> getDebugSkipStub() {
+        Set<FullyQualifiedMemberNameAndDesc> skip = new HashSet<>();
+        String skipStubs = System.getProperty(Constants.DEBUG_SKIP_STUB);
+        if (skipStubs == null) return skip;
+        for (String s : skipStubs.split("\\|")) {
+            skip.add(FullyQualifiedMemberNameAndDesc.of(s));
+        }
+        return skip;
+    }
+
+    private Set<Integer> getDebugSkipStubs() {
         Set<Integer> skip = new HashSet<>();
         String skipStubs = System.getProperty(Constants.DEBUG_SKIP_STUBS);
         if (skipStubs == null) return skip;
@@ -388,6 +409,77 @@ public class Flags {
         } catch (Exception e) {
             throw new RuntimeException("Failed to hash", e);
         }
+    }
+
+    public String serialize() {
+        List<String> args = new ArrayList<>();
+        if (classVersion != Opcodes.V1_8) {
+            args.add("--classVersion");
+            args.add(String.valueOf(classVersion));
+        }
+        if (quiet) args.add("--quiet");
+        if (!logAnsiColors) args.add("--noColor");
+        if (logLevel != Logger.Level.INFO) {
+            args.add("--logLevel");
+            args.add(logLevel.name());
+        }
+        for (Map.Entry<String, WildcardType> entry : ignoreWarningsIn.entrySet()) {
+            args.add("--ignoreWarningsIn");
+            String key = entry.getKey();
+            switch (entry.getValue()) {
+                case DOUBLE:
+                    key += "*";
+                case SINGLE:
+                    key += "*";
+                case NONE:
+            }
+            args.add(key);
+        }
+        if (multiReleaseOriginal) {
+            args.add("--multiReleaseOriginal");
+        }
+        for (Integer v : multiReleaseVersions) {
+            args.add("--multiRelease");
+            args.add(String.valueOf(v));
+        }
+        if (downgradeFromMultiReleases) {
+            args.add("--multiReleaseInputs");
+        }
+        if (!shadeInlining) {
+            args.add("--noInlining");
+        }
+        for (File a : api) {
+            args.add("--api");
+            // todo: escape spaces, but, how does that work with javac plugin args?
+            args.add(a.getAbsolutePath());
+        }
+        if (printDebug || !debugSkipStub.isEmpty() || !debugSkipStubs.isEmpty() || debugDumpClasses) {
+            args.add("debug");
+            if (printDebug) {
+                args.add("--print");
+            }
+            if (!debugSkipStub.isEmpty()) {
+                for (FullyQualifiedMemberNameAndDesc f : debugSkipStub) {
+                    args.add("--skipStub");
+                    args.add(f.toString());
+                }
+            }
+            if (!debugSkipStubs.isEmpty()) {
+                for (int i : debugSkipStubs) {
+                    args.add("--skipStubs");
+                    args.add(String.valueOf(i));
+                }
+            }
+            if (debugDumpClasses) {
+                args.add("--dumpClasses");
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String arg : args) {
+            sb.append(arg).append(" ");
+        }
+        if (!args.isEmpty()) sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
     }
 
     public enum WildcardType {

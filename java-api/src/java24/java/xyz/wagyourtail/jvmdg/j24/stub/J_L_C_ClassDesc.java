@@ -16,13 +16,4 @@ public class J_L_C_ClassDesc {
         return ClassDesc.ofDescriptor("[".repeat(dimensions) + self.descriptorString());
     }
 
-    @Stub
-    public static String displayName(ClassDesc self) {
-        try{
-            return self.displayName();
-        } catch (AbstractMethodError e) {
-            return ClassDesc.ofDescriptor(self.descriptorString()).displayName();
-        }
-    }
-
 }

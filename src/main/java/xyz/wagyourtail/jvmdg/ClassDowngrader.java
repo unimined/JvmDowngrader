@@ -37,7 +37,7 @@ public class ClassDowngrader implements Closeable {
     public final Logger logger;
     private final Map<Integer, VersionProvider> downgraders;
     private final DowngradingClassLoader classLoader;
-    protected int maxVersion = -1;
+    protected volatile int maxVersion = -1;
 
     protected ClassDowngrader(@NotNull Flags flags) {
         this.flags = flags;
@@ -356,16 +356,6 @@ public class ClassDowngrader implements Closeable {
             });
             boolean hasVersions = false;
             for (ClassNode c : extra) {
-                // TODO: uncomment with asm 9.8
-//                if (flags.debugDumpClasses) {
-//                    File f = new File(Constants.DEBUG_DIR, c.name + ".javasm");
-//                    f.getParentFile().mkdirs();
-//                    try (FileOutputStream fos = new FileOutputStream(f)) {
-//                        TraceClassVisitor tcv = new TraceClassVisitor(null, new Textifier(), new PrintWriter(fos));
-//                        c.accept(tcv);
-//                    } catch (IOException ignored) {
-//                    }
-//                }
                 byte[] cBytes = classNodeToBytes(c);
                 if (c.version > target) {
                     // write to multi-release location

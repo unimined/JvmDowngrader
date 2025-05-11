@@ -6,6 +6,7 @@ import xyz.wagyourtail.jvmdg.j15.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class Java15Downgrader extends VersionProvider {
     }
 
     @Override
-    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) throws IOException {
         super.otherTransforms(clazz, extra, getReadOnly);
         fixHandleAccessNests(clazz, getReadOnly);
         return clazz;

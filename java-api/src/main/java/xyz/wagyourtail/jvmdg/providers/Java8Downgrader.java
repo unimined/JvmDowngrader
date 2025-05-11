@@ -325,7 +325,7 @@ public class Java8Downgrader extends VersionProvider {
     }
 
     @Override
-    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings) throws IOException {
         List<ClassNode> classes = new ArrayList<>(extra);
         classes.add(clazz);
         for (ClassNode cls : classes) {

@@ -56,10 +56,6 @@ public class UnixProcessHandle implements J_L_ProcessHandle {
         cmdline = readCmdLine();
     }
 
-    public static boolean isUnix() {
-        return File.pathSeparatorChar == ':';
-    }
-
     /**
      * <a href="https://man7.org/linux/man-pages/man5/proc_pid_stat.5.html">/proc/&lt;pid&gt;/stat</a>
      */

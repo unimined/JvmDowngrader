@@ -5,8 +5,10 @@ import org.gradle.api.internal.ConventionTask
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
+import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ApiShader
-import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
+import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
+import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
@@ -18,12 +20,13 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 
-abstract class ShadeFiles: ConventionTask(), ShadeFlags {
+abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
 
     @get:Internal
-    protected val jvmdg by lazy {
-        project.extensions.getByType(JVMDowngraderExtension::class.java)
-    }
+    val version by FinalizeOnRead(ShadeFiles::class.java.`package`.implementationVersion ?: "0.7.0")
+
+    @get:Internal
+    val isRefreshDependencies = project.gradle.startParameter.isRefreshDependencies
 
     @get:InputFiles
     var inputCollection: FileCollection by FinalizeOnRead(MustSet())
@@ -46,10 +49,6 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags {
         outputs.files
     }
 
-    init {
-        jvmdg.convention(this)
-    }
-
 //    fun setShadePath(path: String) {
 //        shadePath.set { path }
 //    }
@@ -58,6 +57,19 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags {
     fun doDowngrade() {
         val toDowngrade = inputCollection.map { it.toPath() }.filter { it.exists() }
         val fileSystems = mutableSetOf<FileSystem>()
+
+
+        val downgradeApis = mutableSetOf<File>()
+        for (path in apiJar.get()) {
+            val downgraded = path.resolveSibling(path.nameWithoutExtension + "-downgraded-${version}.jar")
+            if (!downgraded.exists() || isRefreshDependencies) {
+                ClassDowngrader.downgradeTo(this.toFlags()).use {
+                    ZipDowngrader.downgradeZip(it, path.toPath(), emptySet(), downgraded.toPath())
+                }
+            }
+            downgradeApis.add(downgraded)
+        }
+        downgradeApis
 
         try {
 
@@ -86,7 +98,7 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags {
                     shadePath.get().invoke(toDowngrade[i].name),
                     toDowngradeFile,
                     downgradedFile,
-                    jvmdg.downgradedApis[downgradeTo.get()]
+                    downgradeApis
                 )
             }
         } finally {

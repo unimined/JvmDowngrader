@@ -1,3 +1,5 @@
+xyz.wagyourtail.jvmdg.providers.Java6Downgrader
+xyz.wagyourtail.jvmdg.providers.Java7Downgrader
 xyz.wagyourtail.jvmdg.providers.Java8Downgrader
 xyz.wagyourtail.jvmdg.providers.Java9Downgrader
 xyz.wagyourtail.jvmdg.providers.Java10Downgrader

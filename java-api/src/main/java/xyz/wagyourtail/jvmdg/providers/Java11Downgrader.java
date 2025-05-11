@@ -12,6 +12,7 @@ import xyz.wagyourtail.jvmdg.j11.stub.java_net_http.J_N_H_HttpResponse;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
+import java.io.IOException;
 import java.util.*;
 
 public class Java11Downgrader extends VersionProvider {
@@ -115,7 +116,7 @@ public class Java11Downgrader extends VersionProvider {
     }
 
     @Override
-    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) throws IOException {
         super.otherTransforms(clazz);
         if (clazz.name.equals("module-info")) {
             return null;

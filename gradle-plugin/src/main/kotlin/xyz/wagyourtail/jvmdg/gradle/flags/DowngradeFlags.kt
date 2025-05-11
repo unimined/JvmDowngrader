@@ -122,4 +122,17 @@ interface DowngradeFlags: TransformParameters {
     @get:Optional
     val downgradeFromMultiReleases: Property<Boolean>
 
+    /**
+     * this skips applying specific stub classes/methods, for example to disable the JEP 400, you would put
+     * {@link xyz.wagyourtail.jvmdg.j18.stub.java_base.J_L_System} in.
+     *
+     * To add to this list, add either classes with `Lpackage/to/ClassName;` or methods/fields like `Lpackage/to/ClassName;methodName;()V`.
+     * where each part is seperated by a `;` (with the first one pulling double-duty as the class descriptor terminator)
+     *
+     * @since 1.3.0
+     */
+    @get:Input
+    @get:Optional
+    val debugSkipStub: SetProperty<String>
+
 }

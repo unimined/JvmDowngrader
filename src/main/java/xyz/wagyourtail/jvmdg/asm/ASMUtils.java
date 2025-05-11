@@ -141,6 +141,8 @@ public class ASMUtils {
 
     public static Type getBoxFor(Type type) {
         switch (type.getSort()) {
+            case Type.VOID:
+                return Type.getObjectType("java/lang/Void");
             case Type.BOOLEAN:
                 return Type.getObjectType("java/lang/Boolean");
             case Type.BYTE:

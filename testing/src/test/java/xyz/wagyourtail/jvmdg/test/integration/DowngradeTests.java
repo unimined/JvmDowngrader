@@ -18,6 +18,7 @@ import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.test.JavaRunner;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -50,6 +51,11 @@ public class DowngradeTests extends BaseIntegrationTests {
         flags.logLevel = Logger.Level.FATAL;
 
         return Stream.of(
+//            new FlagsAndRunner(JavaRunner.JavaVersion.V1_8, flags.copy(e -> {
+//                e.classVersion = JavaRunner.JavaVersion.V1_5.toOpcode();
+//                e.shadeInlining = true;
+//                e.debugSkipStubs = Set.of(JavaRunner.JavaVersion.V1_8.toOpcode());
+//            })),
             new FlagsAndRunner(JavaRunner.JavaVersion.V1_8, flags.copy(e -> {
                 e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode();
                 e.shadeInlining = true;
@@ -308,7 +314,7 @@ public class DowngradeTests extends BaseIntegrationTests {
         System.out.println(original.getValue());
         System.out.println("Exit code: " + original.getKey());
 
-        Set<Path> classpathJars = new HashSet<>(Stream.of(System.getProperty("java.class.path").split(":"))
+        Set<Path> classpathJars = new HashSet<>(Stream.of(System.getProperty("java.class.path").split(File.pathSeparator))
             .map(Path::of)
             .toList());
 

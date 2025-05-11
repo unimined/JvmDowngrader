@@ -8,8 +8,8 @@ import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
-import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.LazyMutable
@@ -21,12 +21,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 
-abstract class DowngradeFiles: ConventionTask(), DowngradeFlags {
-
-    @get:Internal
-    protected val jvmdg by lazy {
-        project.extensions.getByType(JVMDowngraderExtension::class.java)
-    }
+abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention {
 
     private var _inputCollection: FileCollection by FinalizeOnRead(MustSet())
 
@@ -59,10 +54,6 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags {
     @get:Internal
     val outputCollection: FileCollection by lazy {
         outputs.files
-    }
-
-    init {
-        jvmdg.convention(this)
     }
 
     @TaskAction

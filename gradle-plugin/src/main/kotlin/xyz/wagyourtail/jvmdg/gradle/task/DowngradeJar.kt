@@ -2,27 +2,28 @@
 
 package xyz.wagyourtail.jvmdg.gradle.task
 
+import org.gradle.api.file.ArchiveOperations
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.bundling.Jar
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
-import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.LazyMutable
 import xyz.wagyourtail.jvmdg.util.deleteIfExists
 import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
 import java.nio.file.StandardOpenOption
+import javax.inject.Inject
 import kotlin.io.path.outputStream
 
-abstract class DowngradeJar: Jar(), DowngradeFlags {
+abstract class DowngradeJar: Jar(), DowngradeFlags, FlagsConvention {
 
-    private val jvmdg by lazy {
-        project.extensions.getByType(JVMDowngraderExtension::class.java)
-    }
+    @get:Inject
+    abstract val archive: ArchiveOperations
 
     @get:InputFiles
     @get:Optional
@@ -36,8 +37,6 @@ abstract class DowngradeJar: Jar(), DowngradeFlags {
     init {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
-
-        jvmdg.convention(this)
     }
 
     @TaskAction
@@ -65,7 +64,7 @@ abstract class DowngradeJar: Jar(), DowngradeFlags {
             }
         }
 
-        from(project.zipTree(tempOutput))
+        from(archive.zipTree(tempOutput))
         copy()
     }
 

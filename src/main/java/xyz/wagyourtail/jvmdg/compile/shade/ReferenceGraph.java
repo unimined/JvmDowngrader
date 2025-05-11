@@ -12,6 +12,8 @@ import xyz.wagyourtail.jvmdg.util.AsyncUtils;
 import xyz.wagyourtail.jvmdg.util.IOConsumer;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.ReflectionReferences;
 import xyz.wagyourtail.jvmdg.version.RequiresResource;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
@@ -481,6 +483,16 @@ public class ReferenceGraph {
                             try {
                                 RequiresResource resource = AnnotationUtils.createAnnotation(annotation);
                                 resourceList.put(methodMember, resource.value());
+                            } catch (ClassNotFoundException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        if (annotation.desc.equals(Type.getDescriptor(ReflectionReferences.class))) {
+                            try {
+                                ReflectionReferences refs = AnnotationUtils.createAnnotation(annotation);
+                                for (Ref ref : refs.value()) {
+                                    requiresMember(methodMember, FullyQualifiedMemberNameAndDesc.of(ref) , filter, null);
+                                }
                             } catch (ClassNotFoundException e) {
                                 throw new RuntimeException(e);
                             }

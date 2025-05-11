@@ -261,35 +261,39 @@ public abstract class VersionProvider {
     public void stub(Class<?> clazz) {
         Set<String> warnings = new LinkedHashSet<>();
         try {
-            if (clazz.isAnnotationPresent(Adapter.class)) {
-                Adapter stub = clazz.getAnnotation(Adapter.class);
-                if (stub.value().isEmpty()) {
-                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter must have a ref");
-                } else {
-                    Type value;
-                    if (stub.value().startsWith("L") && stub.value().endsWith(";")) {
-                        value = Type.getType(stub.value());
+            FullyQualifiedMemberNameAndDesc fqm = FullyQualifiedMemberNameAndDesc.of(clazz);
+            if (!downgrader.flags.debugSkipStub.contains(fqm)) {
+                if (clazz.isAnnotationPresent(Adapter.class)) {
+                    Adapter stub = clazz.getAnnotation(Adapter.class);
+                    if (stub.value().isEmpty()) {
+                        throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter must have a ref");
                     } else {
-                        value = Type.getObjectType(stub.value());
-                    }
-//                if (classStubs.containsKey(type)) {
-//                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter ref " + type.getInternalName() + " already exists");
-//                }
-                    Type target;
-                    if (stub.target().isEmpty()) {
-                        target = Type.getType(clazz);
-                    } else {
-                        if (stub.target().startsWith("L") && stub.target().endsWith(";")) {
-                            target = Type.getType(stub.target());
+                        Type value;
+                        if (stub.value().startsWith("L") && stub.value().endsWith(";")) {
+                            value = Type.getType(stub.value());
                         } else {
-                            target = Type.getObjectType(stub.target());
+                            value = Type.getObjectType(stub.value());
                         }
+    //                if (classStubs.containsKey(type)) {
+    //                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter ref " + type.getInternalName() + " already exists");
+    //                }
+                        Type target;
+                        if (stub.target().isEmpty()) {
+                            target = Type.getType(clazz);
+                        } else {
+                            if (stub.target().startsWith("L") && stub.target().endsWith(";")) {
+                                target = Type.getType(stub.target());
+                            } else {
+                                target = Type.getObjectType(stub.target());
+                            }
+                        }
+                        classStubs.put(value, new Pair<>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
                     }
-                    classStubs.put(value, new Pair<>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
                 }
             }
             try {
                 for (Method method : clazz.getDeclaredMethods()) {
+                    if (downgrader.flags.debugSkipStub.contains(FullyQualifiedMemberNameAndDesc.of(method))) continue;
                     try {
                         if (method.isAnnotationPresent(Stub.class)) {
                             Stub stub = method.getAnnotation(Stub.class);
@@ -318,7 +322,7 @@ public abstract class VersionProvider {
                             getStubMapper(owner, warnings).addModify(member, method, modify);
                         }
                     } catch (Throwable e) {
-                        logger.warn("failed to create stub for " + clazz.getName(), e);
+                        logger.warn("failed to create stub for " + clazz.getName() + ";" + method, e);
                     }
                 }
             } catch (Throwable e) {
@@ -401,7 +405,7 @@ public abstract class VersionProvider {
         }
     }
 
-    private Handle stubHandle(ClassNode owner, MethodNode method, Set<ClassNode> extra, Handle bsm, String indyDesc, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Set<String> warnings, Handle handle) throws IOException {
+    protected Handle stubHandle(ClassNode owner, MethodNode method, Set<ClassNode> extra, Handle bsm, String indyDesc, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Set<String> warnings, Handle handle) throws IOException {
         handle = new Handle(
             handle.getTag(),
             stubClass(Type.getObjectType(handle.getOwner()), warnings).getInternalName(),
@@ -422,7 +426,7 @@ public abstract class VersionProvider {
             case Opcodes.H_NEWINVOKESPECIAL:
             case Opcodes.H_INVOKEINTERFACE:
                 Type[] captured = null;
-                if (bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
+                if (bsm != null && bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
                     captured = Type.getMethodType(indyDesc).getArgumentTypes();
                 }
                 Type hOwner = Type.getObjectType(handle.getOwner());
@@ -862,7 +866,7 @@ public abstract class VersionProvider {
         clazz = stubWithExtras(clazz, extra, new IOFunction<ClassNode, ClassNode>() {
             @Override
             public ClassNode apply(ClassNode classNode) throws IOException {
-                return otherTransforms(classNode, extra, getReadOnly, warnings);
+                return otherTransforms(classNode, extra, getReadOnly, warnings, enableRuntime, getMembers, getSuperTypes);
             }
         });
         if (clazz == null) {
@@ -933,22 +937,27 @@ public abstract class VersionProvider {
         return clazz;
     }
 
-    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
+        clazz = otherTransforms(clazz, extra, getReadOnly, warnings);
+        return clazz;
+    }
+
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings) throws IOException {
         clazz = otherTransforms(clazz, extra, getReadOnly);
         return clazz;
     }
 
-    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) throws IOException {
         clazz = otherTransforms(clazz, extra);
         return clazz;
     }
 
-    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra) {
+    public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra) throws IOException {
         clazz = otherTransforms(clazz);
         return clazz;
     }
 
-    public ClassNode otherTransforms(ClassNode clazz) {
+    public ClassNode otherTransforms(ClassNode clazz) throws IOException {
         return clazz;
     }
 
