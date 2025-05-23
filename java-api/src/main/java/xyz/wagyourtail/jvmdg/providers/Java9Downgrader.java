@@ -76,7 +76,7 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_M_BigDecimal.class);
         stub(J_M_BigInteger.class);
         // MutableBigInteger
-        // Authenticator
+        stub(J_N_Authenticator.class);
         // DatagramSocket
         // DatagramSocketImpl
         // HttpUrlConnection
