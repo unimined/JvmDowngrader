@@ -17,14 +17,6 @@ public class J_N_Authenticator {
     private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
     private static final MethodHandle getTheAuthenticator;
 
-    // private String requestingHost;
-    // private InetAddress requestingSite;
-    // private int requestingPort;
-    // private String requestingProtocol;
-    // private String requestingPrompt;
-    // private String requestingScheme;
-    // private URL requestingURL;
-    // private RequestorType requestingAuthType;
     private static final MethodHandle setRequestingHost;
     private static final MethodHandle setRequestingSite;
     private static final MethodHandle setRequestingPort;
