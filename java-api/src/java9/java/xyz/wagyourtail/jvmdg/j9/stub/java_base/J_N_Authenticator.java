@@ -6,6 +6,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.net.Authenticator;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
@@ -16,10 +17,40 @@ public class J_N_Authenticator {
     private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
     private static final MethodHandle getTheAuthenticator;
 
+    // private String requestingHost;
+    // private InetAddress requestingSite;
+    // private int requestingPort;
+    // private String requestingProtocol;
+    // private String requestingPrompt;
+    // private String requestingScheme;
+    // private URL requestingURL;
+    // private RequestorType requestingAuthType;
+    private static final MethodHandle setRequestingHost;
+    private static final MethodHandle setRequestingSite;
+    private static final MethodHandle setRequestingPort;
+    private static final MethodHandle setRequestingProtocol;
+    private static final MethodHandle setRequestingPrompt;
+    private static final MethodHandle setRequestingScheme;
+    private static final MethodHandle setRequestingURL;
+    private static final MethodHandle setRequestingAuthType;
+
+    private static final MethodHandle getPasswordAuthentication;
+
     static {
         try {
             getTheAuthenticator = IMPL_LOOKUP.findStaticGetter(Authenticator.class, "theAuthenticator", Authenticator.class);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
+
+            setRequestingHost = IMPL_LOOKUP.findSetter(Authenticator.class, "requestingHost", String.class);
+            setRequestingSite = IMPL_LOOKUP.findSetter(Authenticator.class, "requestingSite", InetAddress.class);
+            setRequestingPort = IMPL_LOOKUP.findSetter(Authenticator.class, "requestingPort", int.class);
+            setRequestingProtocol = IMPL_LOOKUP.findSetter(Authenticator.class, "requestingProtocol", String.class);
+            setRequestingPrompt = IMPL_LOOKUP.findSetter(Authenticator.class, "requestingPrompt", String.class);
+            setRequestingScheme = IMPL_LOOKUP.findSetter(Authenticator.class, "requestingScheme", String.class);
+            setRequestingURL = IMPL_LOOKUP.findSetter(Authenticator.class, "requestingURL", URL.class);
+            setRequestingAuthType = IMPL_LOOKUP.findSetter(Authenticator.class, "requestingAuthType", Authenticator.RequestorType.class);
+
+            getPasswordAuthentication = IMPL_LOOKUP.findVirtual(Authenticator.class, "getPasswordAuthentication", MethodType.methodType(PasswordAuthentication.class));
+        } catch (NoSuchFieldException | IllegalAccessException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
     }
@@ -57,23 +88,16 @@ public class J_N_Authenticator {
         Authenticator.RequestorType reqType
     ) throws Throwable {
         synchronized (authenticator) {
-            Authenticator oldValue = getDefault();
+            setRequestingHost.invokeExact(authenticator, host);
+            setRequestingSite.invokeExact(authenticator, addr);
+            setRequestingPort.invokeExact(authenticator, port);
+            setRequestingProtocol.invokeExact(authenticator, protocol);
+            setRequestingPrompt.invokeExact(authenticator, prompt);
+            setRequestingScheme.invokeExact(authenticator, scheme);
+            setRequestingURL.invokeExact(authenticator, url);
+            setRequestingAuthType.invokeExact(authenticator, reqType);
 
-            try {
-                Authenticator.setDefault(authenticator);
-                return Authenticator.requestPasswordAuthentication(
-                    host,
-                    addr,
-                    port,
-                    protocol,
-                    prompt,
-                    scheme,
-                    url,
-                    reqType
-                );
-            } finally {
-                Authenticator.setDefault(oldValue);
-            }
+            return (PasswordAuthentication) getPasswordAuthentication.invokeExact(authenticator);
         }
     }
 
