@@ -25,7 +25,7 @@ import javax.inject.Inject
 val Project.jvmdg
     get() = project.extensions.getByType(JVMDowngraderExtension::class.java)
 
-abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val project: Project): ShadeFlags {
+abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val project: Project): ShadeFlags by project.gradle.sharedServices.registrations.getByName("jvmdgDefaultFlags").parameters as ShadeFlags {
     @get:Internal
     val version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.7.0")
 

@@ -111,7 +111,6 @@ assemble.dependsOn shadeDowngradedApi
 
 ```gradle
 task customDowngrade(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar) {
-    convention(jvmdg)
     inputFile = tasks.jar.archiveFile
     downgradeTo = JavaVersion.VERSION_1_8 // default
     classpath = sourceSets.main.compileClasspath // default
@@ -119,7 +118,6 @@ task customDowngrade(type: xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar) {
 }
 
 task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeJar) {
-    convention(jvmdg)
     inputFile = customDowngrade.archiveFile
     archiveClassifier = "downgraded-8-shaded"
 }
@@ -129,7 +127,6 @@ task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeJar) 
 
 ```gradle
 task downgradeFileCollection(type: xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles) {
-    convention(jvmdg)
     inputCollection = files("file1.jar", "file2.jar")
     downgradeTo = JavaVersion.VERSION_1_8 // default
     classpath = sourceSets.main.runtimeClasspath // default
@@ -139,7 +136,6 @@ task downgradeFileCollection(type: xyz.wagyourtail.jvmdg.gradle.task.files.Downg
 downgradeFileCollection.outputCollection
 
 task shadeFileCollection(type: xyz.wagyourtail.jvmdg.gradle.task.files.ShadeFiles) {
-    convention(jvmdg)
     inputCollection = downgradeFileCollection.outputCollection
     downgradeTo = JavaVersion.VERSION_1_8 // default
 }

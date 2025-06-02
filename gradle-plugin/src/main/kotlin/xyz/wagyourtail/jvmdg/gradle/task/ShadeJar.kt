@@ -4,6 +4,8 @@ package xyz.wagyourtail.jvmdg.gradle.task
 
 import org.gradle.api.file.ArchiveOperations
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
@@ -11,6 +13,7 @@ import org.gradle.api.tasks.bundling.Jar
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
+import xyz.wagyourtail.jvmdg.gradle.flags.DefaultFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
@@ -39,9 +42,13 @@ abstract class ShadeJar: Jar(), ShadeFlags, FlagsConvention {
     @get:InputFile
     abstract val inputFile: RegularFileProperty
 
+    @get:ServiceReference("jvmdgDefaultFlags")
+    abstract val defaultFlags: Property<DefaultFlags>
+
     init {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
+        convention(defaultFlags.get().parameters)
     }
 
     @TaskAction
