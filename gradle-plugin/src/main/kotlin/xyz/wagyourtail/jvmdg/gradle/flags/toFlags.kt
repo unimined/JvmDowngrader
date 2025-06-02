@@ -56,6 +56,7 @@ fun DowngradeFlags.convention(target: DowngradeFlags) {
 
 interface FlagsConvention : DowngradeFlags {
 
+    @Deprecated("convention(jvmdg) is no longer nececairy when specifying a custom task")
     fun convention(target: DowngradeFlags) {
         convention(this, target)
     }
