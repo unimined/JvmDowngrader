@@ -64,6 +64,18 @@ public class J_N_Authenticator {
         URL url,
         Authenticator.RequestorType reqType
     ) throws Throwable {
+        if (authenticator == null) {
+            return Authenticator.requestPasswordAuthentication(
+                host,
+                addr,
+                port,
+                protocol,
+                prompt,
+                scheme,
+                url,
+                reqType
+            );
+        }
         return requestPasswordAuthenticationInstance(authenticator, host, addr, port, protocol, prompt, scheme, url, reqType);
     }
 
