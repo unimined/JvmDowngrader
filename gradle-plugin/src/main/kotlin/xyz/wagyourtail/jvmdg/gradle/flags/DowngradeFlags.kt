@@ -10,7 +10,7 @@ import org.gradle.api.tasks.*
 import xyz.wagyourtail.jvmdg.logging.Logger
 import java.io.File
 
-interface DowngradeFlags: TransformParameters, BuildServiceParameters {
+interface DowngradeFlags {
 
     /**
      * sets the target class version to downgrade to,

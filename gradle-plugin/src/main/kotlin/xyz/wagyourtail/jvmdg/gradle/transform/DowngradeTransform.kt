@@ -13,7 +13,7 @@ import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 
 @CacheableTransform
-abstract class DowngradeTransform: TransformAction<DowngradeFlags> {
+abstract class DowngradeTransform: TransformAction<DowngradeTransform.DowngradeTransformFlags> {
 
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     @get:InputArtifact
@@ -39,5 +39,7 @@ abstract class DowngradeTransform: TransformAction<DowngradeFlags> {
             )
         }
     }
+
+    interface DowngradeTransformFlags : TransformParameters, DowngradeFlags {}
 
 }

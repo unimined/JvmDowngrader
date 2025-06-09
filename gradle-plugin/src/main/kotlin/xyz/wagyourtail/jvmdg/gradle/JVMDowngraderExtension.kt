@@ -34,7 +34,6 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
             val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
             it.inputFile.set(jar.archiveFile)
             it.archiveClassifier.set("downgraded")
-            it.convention(this@JVMDowngraderExtension)
         }
     }
 
@@ -43,7 +42,6 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         configure {
             it.inputFile.set(defaultTask.get().archiveFile)
             it.archiveClassifier.set("downgraded-shaded")
-            it.convention(this@JVMDowngraderExtension)
         }
     }
 

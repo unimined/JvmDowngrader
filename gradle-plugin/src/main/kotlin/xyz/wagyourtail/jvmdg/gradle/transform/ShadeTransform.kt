@@ -4,6 +4,7 @@ import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
 import org.gradle.api.artifacts.transform.TransformOutputs
+import org.gradle.api.artifacts.transform.TransformParameters
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.PathSensitive
@@ -13,7 +14,7 @@ import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 
 @CacheableTransform
-abstract class ShadeTransform: TransformAction<ShadeFlags> {
+abstract class ShadeTransform: TransformAction<ShadeTransform.ShadeTransformFlags> {
 
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     @get:InputArtifact
@@ -32,5 +33,7 @@ abstract class ShadeTransform: TransformAction<ShadeFlags> {
             flags.apiJar.get().toSet()
         )
     }
+
+    interface ShadeTransformFlags : TransformParameters, ShadeFlags
 
 }
