@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.gradle.flags
 
 import org.gradle.api.JavaVersion
-import xyz.wagyourtail.jvmdg.ClassDowngrader.downgradeTo
 import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.logging.Logger
 import xyz.wagyourtail.jvmdg.util.toOpcode

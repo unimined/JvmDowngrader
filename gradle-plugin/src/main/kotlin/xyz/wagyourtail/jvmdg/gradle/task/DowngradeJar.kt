@@ -33,13 +33,10 @@ abstract class DowngradeJar: Jar(), DowngradeFlags, FlagsConvention {
     @get:InputFile
     abstract val inputFile: RegularFileProperty
 
-    @get:ServiceReference("jvmdgDefaultFlags")
-    abstract val defaultFlags: Property<DefaultFlags>
-
     init {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
-        convention(defaultFlags.get().parameters)
+        convention(project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as DowngradeFlags)
         classpath = project.extensions.getByType(SourceSetContainer::class.java).getByName("main").compileClasspath
     }
 

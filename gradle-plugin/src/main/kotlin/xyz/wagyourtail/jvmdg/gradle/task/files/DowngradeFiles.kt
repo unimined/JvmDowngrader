@@ -56,12 +56,9 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention
         outputs.files
     }
 
-    @get:ServiceReference("jvmdgDefaultFlags")
-    abstract val defaultFlags: Property<DefaultFlags>
-
     init {
         group = "JVMDowngrader"
-        convention(defaultFlags.get().parameters)
+        convention(project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as DowngradeFlags)
         classpath = project.extensions.getByType(SourceSetContainer::class.java).getByName("main").runtimeClasspath
     }
 

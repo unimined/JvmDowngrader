@@ -11,6 +11,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.flags.DefaultFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
@@ -56,13 +57,9 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
 //        shadePath.set { path }
 //    }
 
-
-    @get:ServiceReference("jvmdgDefaultFlags")
-    abstract val defaultFlags: Property<DefaultFlags>
-
     init {
         group = "JVMDowngrader"
-        convention(defaultFlags.get().parameters)
+        convention(project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as ShadeFlags)
     }
 
     @TaskAction
