@@ -17,7 +17,6 @@ import xyz.wagyourtail.jvmdg.gradle.task.ShadeJar
 import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeTransform
 import xyz.wagyourtail.jvmdg.gradle.transform.ShadeTransform
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
-import xyz.wagyourtail.jvmdg.util.LazyMutable
 import xyz.wagyourtail.jvmdg.util.defaultedMapOf
 import java.io.File
 import javax.inject.Inject
@@ -48,27 +47,21 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         }
     }
 
-    /**
-     * the main api jar to use for downgrading
-     */
-    @get:Internal
-    var apiJarDefault by LazyMutable {
-        val apiJar = project.file(".gradle").resolve("jvmdg/java-api-${version}.jar")
-        if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
-            apiJar.parentFile.mkdirs()
-            JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar").use { stream ->
-                if (stream == null) throw IllegalStateException("java-api.jar not found in resources")
-                apiJar.outputStream().use { os ->
-                    stream.copyTo(os)
-                }
-            }
-        }
-        apiJar
-    }
-
     init {
         downgradeTo.convention(JavaVersion.VERSION_1_8).finalizeValueOnRead()
-        apiJar.convention(project.provider { setOf(apiJarDefault) }).finalizeValueOnRead()
+        apiJar.convention(project.provider {
+            val apiJar = project.file(".gradle").resolve("jvmdg/java-api-${version}.jar")
+            if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
+                apiJar.parentFile.mkdirs()
+                JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar").use { stream ->
+                    if (stream == null) throw IllegalStateException("java-api.jar not found in resources")
+                    apiJar.outputStream().use { os ->
+                        stream.copyTo(os)
+                    }
+                }
+            }
+            setOf(apiJar)
+        }).finalizeValueOnRead()
         quiet.convention(false).finalizeValueOnRead()
         logAnsiColors.convention(true).finalizeValueOnRead()
         logLevel.convention("INFO").finalizeValueOnRead()

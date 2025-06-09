@@ -25,6 +25,9 @@ public class TestRandom {
         random = new RandomGenImpl();
         System.out.println(random.nextInt());
 
+        RandomGenerator rng = () -> 0;
+        System.out.println(rng.nextInt());
+
         TestNotRandom tnr = new TestNotRandom() {
             @Override
             public int nextInt() {

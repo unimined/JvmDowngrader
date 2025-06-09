@@ -15,7 +15,6 @@ import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
-import xyz.wagyourtail.jvmdg.util.LazyMutable
 import xyz.wagyourtail.jvmdg.util.MustSet
 import xyz.wagyourtail.jvmdg.util.Utils
 import java.io.File
@@ -42,9 +41,7 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention
         }
 
     @get:InputFiles
-    var classpath: FileCollection by FinalizeOnRead(LazyMutable {
-        project.extensions.getByType(SourceSetContainer::class.java).getByName("main").runtimeClasspath
-    })
+    abstract var classpath: FileCollection
 
     @get:Internal
     val outputMap: Map<File, File>
@@ -65,6 +62,7 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention
     init {
         group = "JVMDowngrader"
         convention(defaultFlags.get().parameters)
+        classpath = project.extensions.getByType(SourceSetContainer::class.java).getByName("main").runtimeClasspath
     }
 
     @TaskAction

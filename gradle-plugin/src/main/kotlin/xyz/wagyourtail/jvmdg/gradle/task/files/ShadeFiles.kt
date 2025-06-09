@@ -32,7 +32,7 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
     val isRefreshDependencies = project.gradle.startParameter.isRefreshDependencies
 
     @get:InputFiles
-    var inputCollection: FileCollection by FinalizeOnRead(MustSet())
+    abstract var inputCollection: FileCollection
 
     @get:Internal
     val outputMap: Map<File, File>

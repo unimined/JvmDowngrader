@@ -15,8 +15,6 @@ import xyz.wagyourtail.jvmdg.gradle.flags.DefaultFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
-import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
-import xyz.wagyourtail.jvmdg.util.LazyMutable
 import xyz.wagyourtail.jvmdg.util.deleteIfExists
 import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
 import java.nio.file.StandardOpenOption
@@ -30,9 +28,7 @@ abstract class DowngradeJar: Jar(), DowngradeFlags, FlagsConvention {
 
     @get:InputFiles
     @get:Optional
-    var classpath: FileCollection by FinalizeOnRead(LazyMutable {
-        project.extensions.getByType(SourceSetContainer::class.java).getByName("main").compileClasspath
-    })
+    abstract var classpath: FileCollection
 
     @get:InputFile
     abstract val inputFile: RegularFileProperty
@@ -44,7 +40,10 @@ abstract class DowngradeJar: Jar(), DowngradeFlags, FlagsConvention {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
         convention(defaultFlags.get().parameters)
+        classpath = project.extensions.getByType(SourceSetContainer::class.java).getByName("main").compileClasspath
     }
+
+
 
     @TaskAction
     fun doDowngrade() {
