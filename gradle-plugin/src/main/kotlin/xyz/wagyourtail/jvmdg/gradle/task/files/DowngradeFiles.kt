@@ -2,15 +2,12 @@ package xyz.wagyourtail.jvmdg.gradle.task.files
 
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
-import org.gradle.api.provider.Property
-import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
-import xyz.wagyourtail.jvmdg.gradle.flags.DefaultFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags

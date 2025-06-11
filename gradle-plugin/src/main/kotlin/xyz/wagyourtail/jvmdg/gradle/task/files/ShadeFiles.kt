@@ -1,22 +1,20 @@
 package xyz.wagyourtail.jvmdg.gradle.task.files
 
+import groovy.lang.Closure
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
-import org.gradle.api.provider.Property
-import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
-import xyz.wagyourtail.jvmdg.gradle.flags.DefaultFlags
-import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
-import xyz.wagyourtail.jvmdg.util.MustSet
 import xyz.wagyourtail.jvmdg.util.Utils
 import java.io.File
 import java.nio.file.FileSystem
@@ -60,6 +58,20 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
     init {
         group = "JVMDowngrader"
         convention(project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as ShadeFlags)
+    }
+
+    override fun shadePath(
+        @ClosureParams(
+            value = SimpleType::class,
+            options = [
+                "java.lang.String"
+            ]
+        )
+        action: Closure<String>
+    ) {
+        shadePath.set {
+            action.call(it)
+        }
     }
 
     @TaskAction

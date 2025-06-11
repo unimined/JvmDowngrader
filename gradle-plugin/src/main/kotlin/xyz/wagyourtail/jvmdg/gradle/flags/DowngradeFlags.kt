@@ -1,11 +1,9 @@
 package xyz.wagyourtail.jvmdg.gradle.flags
 
 import org.gradle.api.JavaVersion
-import org.gradle.api.artifacts.transform.TransformParameters
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
-import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.tasks.*
 import xyz.wagyourtail.jvmdg.logging.Logger
 import java.io.File

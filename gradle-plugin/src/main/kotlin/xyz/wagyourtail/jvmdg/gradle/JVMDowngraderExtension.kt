@@ -1,5 +1,8 @@
 package xyz.wagyourtail.jvmdg.gradle
 
+import groovy.lang.Closure
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -94,6 +97,20 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
 
     @Deprecated("not compatibile with configuration cache for use in tasks")
     fun getDowngradedApi(version: JavaVersion): Set<File> = downgradedApis[version]
+
+    override fun shadePath(
+        @ClosureParams(
+            value = SimpleType ::class,
+            options = [
+                "java.lang.String"
+            ]
+        )
+        action: Closure<String>
+    ) {
+        shadePath.set {
+            action.call(it)
+        }
+    }
 
     @JvmOverloads
     fun dg(dep: Configuration, shade: Boolean = true, config: DowngradeFlags.() -> Unit = {}) {

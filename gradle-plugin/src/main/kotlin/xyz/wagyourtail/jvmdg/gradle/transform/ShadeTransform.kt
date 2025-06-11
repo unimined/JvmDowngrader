@@ -1,5 +1,8 @@
 package xyz.wagyourtail.jvmdg.gradle.transform
 
+import groovy.lang.Closure
+import groovy.transform.stc.ClosureParams
+import groovy.transform.stc.SimpleType
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -34,6 +37,23 @@ abstract class ShadeTransform: TransformAction<ShadeTransform.ShadeTransformFlag
         )
     }
 
-    interface ShadeTransformFlags : TransformParameters, ShadeFlags
+    abstract class ShadeTransformFlags : TransformParameters, ShadeFlags {
+
+
+        override fun shadePath(
+            @ClosureParams(
+                value = SimpleType::class,
+                options = [
+                    "java.lang.String"
+                ]
+            )
+            action: Closure<String>
+        ) {
+            shadePath.set {
+                action.call(it)
+            }
+        }
+
+    }
 
 }
