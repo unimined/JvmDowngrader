@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 
+import xyz.wagyourtail.jvmdg.j9.intl.ImmutableColAccess;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.ArrayList;
@@ -47,12 +48,11 @@ public class J_U_S_Stream {
 
     @Stub
     public static <T> List<T> toList(Stream<T> stream) {
-        List unsafeList = Arrays.asList(stream.toArray());
-        if (REF_PIPELINE.isAssignableFrom(stream.getClass())) {
-            return Collections.unmodifiableList(unsafeList);
-        } else {
-            return Collections.unmodifiableList(new ArrayList<>(unsafeList));
+        if (REF_PIPELINE.isInstance(stream)) {
+            return ImmutableColAccess.listNTrustedNullable(stream.toArray());
         }
+
+        return Collections.unmodifiableList(new ArrayList(Arrays.asList(stream.toArray())));
     }
 
     public static class MapMultiConsumer<T, R> implements Function<T, Stream<R>> {
