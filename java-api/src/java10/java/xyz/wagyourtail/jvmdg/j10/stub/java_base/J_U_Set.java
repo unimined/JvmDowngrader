@@ -11,7 +11,8 @@ public class J_U_Set {
 
     @Stub(ref = @Ref("Ljava/util/Set;"))
     public static <E> Set<E> copyOf(Collection<? extends E> coll) {
-        return (Set) Set.of(coll.toArray());
+        // strictly speaking this is not the "standard" approach, but it works
+        return (Set<E>) Set.of(coll.toArray());
     }
 
 }

@@ -1,7 +1,9 @@
 package xyz.wagyourtail.jvmdg.j9.intl;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static xyz.wagyourtail.jvmdg.j9.intl.ImmutableCollections.*;
 
@@ -37,5 +39,23 @@ public interface ImmutableColAccess {
 
     static <E> List<E> listNCopy(Collection<? extends E> coll) {
         return listCopy(coll);
+    }
+
+    static <E> Set<E> set0() {
+        return (Set<E>) EMPTY_SET;
+    }
+
+    static <E> Set<E> set1(E e1) {
+        return new Set12<>(e1);
+    }
+
+    static <E> Set<E> set2(E e1, E e2) {
+        return new Set12<>(e1, e2);
+    }
+
+    /// no "trusted" variant
+    @SafeVarargs
+    static <E> Set<E> setN(E... elements) {
+        return new SetN<>(elements);
     }
 }
