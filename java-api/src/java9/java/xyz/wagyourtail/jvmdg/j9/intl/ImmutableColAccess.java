@@ -1,9 +1,6 @@
 package xyz.wagyourtail.jvmdg.j9.intl;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static xyz.wagyourtail.jvmdg.j9.intl.ImmutableCollections.*;
 
@@ -57,5 +54,53 @@ public interface ImmutableColAccess {
     @SafeVarargs
     static <E> Set<E> setN(E... elements) {
         return new SetN<>(elements);
+    }
+
+    static <K, V> Map<K, V> map0() {
+        return (Map<K, V>) EMPTY_MAP;
+    }
+
+    static <K, V> Map<K, V> map1(K k, V v) {
+        return new Map1<>(k, v);
+    }
+
+    /// no "trusted" variant
+    static <K, V> Map<K, V> mapN(Object... input) {
+        return new MapN<>(input);
+    }
+
+    static <K, V> Map.Entry<K, V> mapEntry(K k, V v) {
+        // KeyValueHolder checks for nulls
+        return new KeyValueHolder<>(k, v);
+    }
+
+    @SafeVarargs
+    static <K, V> Map<K, V> mapNEntries(Map.Entry<? extends K, ? extends V>... entries) {
+        if (entries.length == 0) { // implicit null check of entries array
+            return map0();
+        } else if (entries.length == 1) {
+            // implicit null check of the array slot
+            Map.Entry<? extends K, ? extends V> entry = entries[0];
+            return map1(entry.getKey(), entry.getValue());
+        } else {
+            Object[] kva = new Object[entries.length << 1];
+            int a = 0;
+            for (Map.Entry<? extends K, ? extends V> entry : entries) {
+                // implicit null checks of each array slot
+                kva[a++] = entry.getKey();
+                kva[a++] = entry.getValue();
+            }
+            return mapN(kva);
+        }
+    }
+
+    static <K, V> Map<K, V> mapNCopy(Map<? extends K, ? extends V> map) {
+        if (map instanceof ImmutableCollections.AbstractImmutableMap) {
+            return (Map<K,V>)map;
+        } else if (map.isEmpty()) { // Implicit nullcheck of map
+            return map0();
+        } else {
+            return mapNEntries(map.entrySet().toArray(new Map.Entry[0]));
+        }
     }
 }
