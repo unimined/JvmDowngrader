@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j10.stub.java_base;
 
 
+import xyz.wagyourtail.jvmdg.j9.intl.ImmutableColAccess;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -11,7 +12,7 @@ public class J_U_List {
 
     @Stub(ref = @Ref("Ljava/util/List;"))
     public static <E> List<E> copyOf(Collection<? extends E> coll) {
-        return (List) List.of(coll.toArray());
+        return ImmutableColAccess.listNCopy(coll);
     }
 
 }
