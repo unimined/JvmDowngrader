@@ -11,6 +11,9 @@ public class J_U_List {
 
     @Stub(ref = @Ref("Ljava/util/List;"))
     public static <E> List<E> copyOf(Collection<? extends E> coll) {
+        if (coll.isEmpty()) { // implicit null check
+            return List.of();
+        }
         return (List) List.of(coll.toArray());
     }
 
