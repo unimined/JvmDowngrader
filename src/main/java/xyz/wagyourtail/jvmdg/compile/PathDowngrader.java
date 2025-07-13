@@ -107,6 +107,10 @@ public class PathDowngrader {
                                 if (downgrader.flags.downgradeFromMultiReleases) {
                                     relativized = relativized.subpath(3, relativized.getNameCount());
                                     outFile = out.resolve(relativized);
+                                } else if (downgrader.flags.multiReleaseOriginal) {
+                                    // copy original
+                                    Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
+                                    return;
                                 } else {
                                     return;
                                 }
