@@ -12,14 +12,6 @@ repositories {
 file("src/utils").deleteRecursively()
 file("../gradle-plugin/src/utils").copyRecursively(file("src/utils"))
 
-val asmVersion: String = project.properties["asm_version"]?.toString() ?: run {
-    projectDir.parentFile.resolve("gradle.properties").inputStream().use {
-        val props = Properties()
-        props.load(it)
-        props.getProperty("asm_version") as String
-    }
-}
-
 sourceSets.main {
     java.srcDirs("src/utils/java")
     kotlin.srcDirs("src/utils/kotlin")
@@ -44,10 +36,9 @@ tasks.withType<KotlinCompile> {
 dependencies {
     implementation(gradleApi())
 
-    // commons compress
-    implementation("org.apache.commons:commons-compress:1.26.1")
+    implementation(libs.apache.commons.compress)
 
-    implementation("org.ow2.asm:asm:${asmVersion}")
-    implementation("org.ow2.asm:asm-commons:${asmVersion}")
-    implementation("org.ow2.asm:asm-tree:${asmVersion}")
+    implementation(libs.asm)
+    implementation(libs.asm.commons)
+    implementation(libs.asm.tree)
 }

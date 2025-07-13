@@ -6,8 +6,8 @@ plugins {
     `java-gradle-plugin`
     `java-library`
     `maven-publish`
-    id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
-    id("com.gradle.plugin-publish") version "1.2.1"
+    alias(libs.plugins.gradle.metadata)
+    alias(libs.plugins.gradle.plugin.publish)
 }
 
 metadata {
@@ -28,19 +28,11 @@ sourceSets.main {
     kotlin.srcDirs("src/utils/kotlin")
 }
 
-val asmVersion: String = project.properties["asm_version"]?.toString() ?: run {
-    projectDir.parentFile.resolve("gradle.properties").inputStream().use {
-        val props = Properties()
-        props.load(it)
-        props.getProperty("asm_version") as String
-    }
-}
-
 dependencies {
     gradleApi()
 
     // commons compress
-    implementation("org.apache.commons:commons-compress:1.26.1")
+    implementation(libs.apache.commons.compress)
 
     api(project(":"))
     implementation(rootProject.sourceSets.getByName("shared").output)

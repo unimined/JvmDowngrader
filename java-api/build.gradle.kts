@@ -12,7 +12,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("org.ow2.asm:asm:${project.properties["asm_version"]}")
+        classpath(libs.asm)
     }
 }
 

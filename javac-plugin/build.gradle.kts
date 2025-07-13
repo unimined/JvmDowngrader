@@ -12,8 +12,8 @@ dependencies {
 
     implementation(files("${java8.metadata.installationPath}/lib/tools.jar"))
 
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 
     testAnnotationProcessor(sourceSets["main"].output)
     testAnnotationProcessor(rootProject.sourceSets["main"].runtimeClasspath)

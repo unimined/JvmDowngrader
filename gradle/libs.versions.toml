@@ -1,0 +1,49 @@
+[versions]
+asm = "9.8"
+kotlin = "2.1.21"
+
+jb_annotations = "26.0.2"
+jb_annotations5 = "24.1.0"
+
+gson = "2.10.1"
+apache_commons_compress = "1.27.1"
+java_diff_utils = "4.12"
+
+manifold = "2025.1.21"
+lombok = "1.18.38"
+
+junit = "5.13.0"
+
+gradle_metadata = "0.6.0"
+gradle_test_retry = "1.5.10"
+gradle_plugin_publish = "1.2.1"
+nmcp = "0.0.7"
+jmh = "0.7.2"
+
+[libraries]
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
+asm_commons = { module = "org.ow2.asm:asm-commons", version.ref = "asm" }
+asm_util = { module = "org.ow2.asm:asm-util", version.ref = "asm" }
+asm_analysis = { module = "org.ow2.asm:asm-analysis", version.ref = "asm" }
+asm_tree = { module = "org.ow2.asm:asm-tree", version.ref = "asm" }
+
+jetbrains_annotations = { module = "org.jetbrains:annotations", version.ref = "jb_annotations" }
+jetbrains_annotations_j5 = { module = "org.jetbrains:annotations-java5", version.ref = "jb_annotations5" }
+
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+apache_commons_compress = { module = "org.apache.commons:commons-compress", version.ref = "apache_commons_compress" }
+java_diff_utils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "java_diff_utils" }
+
+manifold_templates = { module = "systems.manifold:manifold-templates", version.ref = "manifold" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+
+junit_jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit_jupiter_params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit_platform_launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+[plugins]
+gradle_metadata = { id = "io.github.sgtsilvio.gradle.metadata", version.ref = "gradle_metadata" }
+gradle_test_retry = { id = "org.gradle.test-retry", version.ref = "gradle_test_retry" }
+gradle_plugin_publish = { id = "com.gradle.plugin-publish", version.ref = "gradle_plugin_publish" }
+nmcp = { id = "com.gradleup.nmcp", version.ref = "nmcp" }
+jmh = { id = "me.champeau.jmh", version.ref = "jmh" }

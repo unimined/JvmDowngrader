@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.ow2.asm:asm:9.7.1")
+    implementation(libs.asm)
 }
 
 val testVersion = JavaVersion.toVersion(project.properties["testVersion"] as String)

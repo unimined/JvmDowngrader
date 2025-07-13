@@ -2,7 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     java
-    id("me.champeau.jmh") version "0.7.2"
+    alias(libs.plugins.jmh)
 }
 
 val testVersion = JavaVersion.toVersion(project.properties["testVersion"] as String)
@@ -29,12 +29,12 @@ sourceSets {
 }
 
 dependencies {
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 
-    testImplementation("com.google.code.gson:gson:2.10")
-    testImplementation("org.apache.commons:commons-compress:1.26.1")
-    testImplementation("io.github.java-diff-utils:java-diff-utils:4.12")
+    testImplementation(libs.gson)
+    testImplementation(libs.apache.commons.compress)
+    testImplementation(libs.java.diff.utils)
 }
 
 val testTargetVersion = JavaVersion.toVersion(project.properties["testTargetVersion"] as String)

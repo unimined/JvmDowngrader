@@ -1,24 +1,24 @@
 import xyz.wagyourtail.gradle.shadow.ShadowJar
 
 plugins {
-    kotlin("jvm") version "1.9.22" apply false
+    kotlin("jvm") version libs.versions.kotlin apply false
     java
     `maven-publish`
     `java-library`
     signing
     application
-    id("io.github.sgtsilvio.gradle.metadata") version "0.5.0"
-    id("com.gradleup.nmcp") version "0.0.7"
-    id("org.gradle.test-retry") version "1.5.10"
+    alias(libs.plugins.gradle.metadata)
+    alias(libs.plugins.gradle.test.retry)
+    alias(libs.plugins.nmcp)
 }
 
 allprojects {
     apply(plugin = "java")
     apply(plugin = "signing")
     apply(plugin = "maven-publish")
-    apply(plugin = "io.github.sgtsilvio.gradle.metadata")
-    apply(plugin = "com.gradleup.nmcp")
-    apply(plugin = "org.gradle.test-retry")
+    apply(plugin = rootProject.libs.plugins.gradle.metadata.get().pluginId)
+    apply(plugin = rootProject.libs.plugins.gradle.test.retry.get().pluginId)
+    apply(plugin = rootProject.libs.plugins.nmcp.get().pluginId)
 
     metadata {
         url.set("https://github.com/unimined/JvmDowngrader")
@@ -67,7 +67,7 @@ allprojects {
     }
 
     dependencies {
-        compileOnly("org.jetbrains:annotations-java5:24.1.0")
+        compileOnly(rootProject.libs.jetbrains.annotations.j5)
     }
 
     tasks.jar {
@@ -131,10 +131,10 @@ sourceSets {
 dependencies {
     val api by configurations.getting
 
-    api("org.ow2.asm:asm:${project.properties["asm_version"]}")
-    api("org.ow2.asm:asm-tree:${project.properties["asm_version"]}")
-    api("org.ow2.asm:asm-commons:${project.properties["asm_version"]}")
-    api("org.ow2.asm:asm-util:${project.properties["asm_version"]}")
+    api(libs.asm)
+    api(libs.asm.tree)
+    api(libs.asm.commons)
+    api(libs.asm.util)
 }
 
 val mainVersion = project.properties["mainVersion"] as String
