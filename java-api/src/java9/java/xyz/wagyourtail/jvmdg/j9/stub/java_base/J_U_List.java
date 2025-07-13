@@ -18,6 +18,9 @@ public class J_U_List {
     @SafeVarargs
     @Stub(ref = @Ref("Ljava/util/List;"))
     public static <E> List<E> of(E... coll) {
+        if (coll.length == 0) {
+            return of();
+        }
         return Collections.unmodifiableList(Arrays.asList(coll));
     }
 

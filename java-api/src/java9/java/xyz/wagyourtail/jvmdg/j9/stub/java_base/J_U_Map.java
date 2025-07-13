@@ -20,7 +20,7 @@ public class J_U_Map {
 
     @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2) {
-        Map<K, V> map = new HashMap<>(2);
+        Map<K, V> map = new HashMap<>(toExpectedSize(2));
         map.put(k1, v1);
         map.put(k2, v2);
         return Collections.unmodifiableMap(map);
@@ -28,7 +28,7 @@ public class J_U_Map {
 
     @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
-        Map<K, V> map = new HashMap<>(3);
+        Map<K, V> map = new HashMap<>(toExpectedSize(3));
         map.put(k1, v1);
         map.put(k2, v2);
         map.put(k3, v3);
@@ -37,7 +37,7 @@ public class J_U_Map {
 
     @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
-        Map<K, V> map = new HashMap<>(4);
+        Map<K, V> map = new HashMap<>(toExpectedSize(4));
         map.put(k1, v1);
         map.put(k2, v2);
         map.put(k3, v3);
@@ -47,7 +47,7 @@ public class J_U_Map {
 
     @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
-        Map<K, V> map = new HashMap<>(5);
+        Map<K, V> map = new HashMap<>(toExpectedSize(5));
         map.put(k1, v1);
         map.put(k2, v2);
         map.put(k3, v3);
@@ -58,7 +58,7 @@ public class J_U_Map {
 
     @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
-        Map<K, V> map = new HashMap<>(6);
+        Map<K, V> map = new HashMap<>(toExpectedSize(6));
         map.put(k1, v1);
         map.put(k2, v2);
         map.put(k3, v3);
@@ -70,7 +70,7 @@ public class J_U_Map {
 
     @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7) {
-        Map<K, V> map = new HashMap<>(7);
+        Map<K, V> map = new HashMap<>(toExpectedSize(7));
         map.put(k1, v1);
         map.put(k2, v2);
         map.put(k3, v3);
@@ -83,7 +83,7 @@ public class J_U_Map {
 
     @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8) {
-        Map<K, V> map = new HashMap<>(8);
+        Map<K, V> map = new HashMap<>(toExpectedSize(8));
         map.put(k1, v1);
         map.put(k2, v2);
         map.put(k3, v3);
@@ -97,7 +97,7 @@ public class J_U_Map {
 
     @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
-        Map<K, V> map = new HashMap<>(9);
+        Map<K, V> map = new HashMap<>(toExpectedSize(9));
         map.put(k1, v1);
         map.put(k2, v2);
         map.put(k3, v3);
@@ -112,7 +112,7 @@ public class J_U_Map {
 
     @Stub(ref = @Ref("Ljava/util/Map;"))
     public static <K, V> Map<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
-        Map<K, V> map = new HashMap<>(10);
+        Map<K, V> map = new HashMap<>(toExpectedSize(10));
         map.put(k1, v1);
         map.put(k2, v2);
         map.put(k3, v3);
@@ -135,7 +135,7 @@ public class J_U_Map {
         if (entries.length == 1) {
             return Collections.singletonMap(entries[0].getKey(), entries[0].getValue());
         }
-        Map<K, V> map = new HashMap<>((int) (entries.length / 0.75f + 1));
+        Map<K, V> map = new HashMap<>(toExpectedSize(entries.length));
         for (Map.Entry<? extends K, ? extends V> entry : entries) {
             map.put(entry.getKey(), entry.getValue());
         }
@@ -147,4 +147,11 @@ public class J_U_Map {
         return new AbstractMap.SimpleImmutableEntry<>(Objects.requireNonNull(k), Objects.requireNonNull(v));
     }
 
+    /**
+     * @see HashMap#DEFAULT_LOAD_FACTOR
+     */
+    private static int toExpectedSize(int elementCount) {
+        assert elementCount >= 0;
+        return (int) (elementCount / 0.75f) + 1;
+    }
 }

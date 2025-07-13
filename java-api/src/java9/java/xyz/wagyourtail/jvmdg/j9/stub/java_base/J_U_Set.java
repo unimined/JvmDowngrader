@@ -69,6 +69,9 @@ public class J_U_Set {
     @SafeVarargs
     @Stub(ref = @Ref("Ljava/util/Set;"))
     public static <E> Set<E> of(E... elements) {
+        if (elements.length == 0) {
+            return of();
+        }
         return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(elements)));
     }
 
