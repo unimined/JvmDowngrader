@@ -19,6 +19,7 @@ fun DowngradeFlags.toFlags(): Flags {
     ignoreWarningsIn.getOrElse(flags.ignoreWarningsIn.map { it.key + "*".repeat(it.value.ordinal) }).forEach { flags.addIgnore(it) }
     flags.debugDumpClasses = debugDumpClasses.getOrElse(flags.debugDumpClasses)
     flags.debugNoSynthetic = debugNoSynthetic.getOrElse(flags.debugNoSynthetic)
+    flags.multiReleaseOriginal = multiReleaseOriginal.getOrElse(flags.multiReleaseOriginal)
     flags.multiReleaseVersions = multiReleaseVersions.getOrElse(flags.multiReleaseVersions.map { JavaVersion.forClassVersion(it) }.toSet()).map { it.toOpcode() }.toSet()
     flags.downgradeFromMultiReleases = downgradeFromMultiReleases.getOrElse(flags.downgradeFromMultiReleases)
     if (this is ShadeFlags) {
