@@ -262,7 +262,9 @@ public abstract class VersionProvider {
         Set<String> warnings = new LinkedHashSet<>();
         try {
             FullyQualifiedMemberNameAndDesc fqm = FullyQualifiedMemberNameAndDesc.of(clazz);
-            if (!downgrader.flags.debugSkipStub.contains(fqm)) {
+            if (downgrader.flags.debugSkipStub.contains(fqm)) {
+                return;
+            } else {
                 if (clazz.isAnnotationPresent(Adapter.class)) {
                     Adapter stub = clazz.getAnnotation(Adapter.class);
                     if (stub.value().isEmpty()) {
