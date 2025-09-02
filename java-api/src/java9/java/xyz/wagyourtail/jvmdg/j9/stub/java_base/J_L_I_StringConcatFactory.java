@@ -258,6 +258,7 @@ public class J_L_I_StringConcatFactory {
                 case Type.OBJECT:
                 case Type.ARRAY:
                     // last is object
+                    // stack = [...types, last, StringBuilder, StringBuilder]
                     if (!type.equals("Ljava/lang/String;")) {
                         list.add(new MethodInsnNode(
                             Opcodes.INVOKESPECIAL,
@@ -278,17 +279,21 @@ public class J_L_I_StringConcatFactory {
                         ));
                         // stack = [...types, StringBuilder]
                     } else {
-                        // stack = [...types, last, StringBuilder, StringBuilder]
-                        list.add(new InsnNode(Opcodes.DUP_X2));
-                        list.add(new InsnNode(Opcodes.POP));
-                        // stack = [...types, StringBuilder, last ,StringBuilder]
-                        list.add(new InsnNode(Opcodes.SWAP));
-                        // stack = [...types, StringBuilder, StringBuilder, last]
                         list.add(new MethodInsnNode(
                             Opcodes.INVOKESPECIAL,
                             "java/lang/StringBuilder",
                             "<init>",
-                            "(Ljava/lang/String;)V",
+                            "()V",
+                            false
+                        ));
+                        // stack = [...types, last, StringBuilder]
+                        list.add(new InsnNode(Opcodes.SWAP));
+                        // stack = [...types, StringBuilder, last]
+                        list.add(new MethodInsnNode(
+                            Opcodes.INVOKEVIRTUAL,
+                            "java/lang/StringBuilder",
+                            "append",
+                            "(Ljava/lang/String;)Ljava/lang/StringBuilder;",
                             false
                         ));
                         // stack = [...types, StringBuilder]
@@ -505,62 +510,13 @@ public class J_L_I_StringConcatFactory {
             if (args.isEmpty()) {
                 throw new IllegalArgumentException("args is empty");
             }
+            // stack = []
             visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
+            // stack = [StringBuilder]
             visitInsn(Opcodes.DUP);
-//            int firstTypeSize = 0;
-            if (args.charAt(index) == '\u0001') {
-                Type first = types.removeFirst();
-                String type = first.getDescriptor();
-                switch (first.getSort()) {
-                    case Type.OBJECT:
-                    case Type.ARRAY:
-                        if (type.equals("Ljava/lang/String;")) {
-                            // stack = [StringBuilder, StringBuilder]
-                            visitVarInsn(Opcodes.ALOAD, typesIndex);
-                            // stack = [StringBuilder, StringBuilder, String]
-                            visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false);
-                        } else {
-                            // stack = [StringBuilder, StringBuilder]
-                            visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
-                            // stack = [StringBuilder]
-                            visitVarInsn(Opcodes.ALOAD, typesIndex);
-                            // stack = [StringBuilder, Object]
-                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;", false);
-                        }
-                        break;
-                    case Type.BYTE:
-                    case Type.SHORT:
-                    case Type.INT:
-                        // stack = [StringBuilder, StringBuilder]
-                        visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
-                        // stack = [StringBuilder]
-                        visitVarInsn(Opcodes.ILOAD, 0);
-                        // stack = [StringBuilder, "int"]
-                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;", false);
-                        break;
-                    default:
-                        // stack = [StringBuilder, StringBuilder]
-                        visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
-                        // stack = [StringBuilder]
-                        visitVarInsn(first.getOpcode(Opcodes.ILOAD), 0);
-                        // stack = [StringBuilder, type]
-                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + type + ")Ljava/lang/StringBuilder;", false);
-                }
-                typesIndex += first.getSize();
-                index++;
-            } else {
-                // first is literal
-                int first = args.indexOf('\u0001');
-                if (first == -1) {
-                    throw new IllegalArgumentException("args is invalid");
-                }
-                String literal = args.substring(0, first);
-                // stack = [StringBuilder, StringBuilder]
-                visitLdcInsn(literal);
-                // stack = [StringBuilder, String]
-                visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V", false);
-                index = first;
-            }
+            // stack = [StringBuilder, StringBuilder]
+            visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
+            // stack = [StringBuilder]
             while (index < args.length()) {
                 if (args.charAt(index) == '\u0001') {
                     Type type = types.removeFirst();

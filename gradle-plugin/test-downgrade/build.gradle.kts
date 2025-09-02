@@ -18,7 +18,8 @@ buildscript {
     }
     dependencies {
         val props = projectDir.parentFile.parentFile.resolve("gradle.properties").inputStream().use {
-            val props = java.util.Properties()
+            @Suppress("UNRESOLVED_REFERENCE", "RemoveRedundantQualifierName") // lmao
+            val props: java.util.Properties = java.util.Properties()
             props.load(it)
             props
         }

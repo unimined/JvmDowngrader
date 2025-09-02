@@ -48,6 +48,9 @@ public class TestString {
         int in = 0b1010;
         long lo = 0b1010;
         System.out.println(by + " short: " + sh + " int: " + in + " long: " + lo);
+
+        String s = null;
+        System.out.println("" + s);
     }
 
 }
