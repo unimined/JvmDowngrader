@@ -87,7 +87,11 @@ allprojects {
     }
 
     signing {
-        useInMemoryPgpKeys(findProperty("signingKey") as String?, findProperty("signingPassword") as String?)
+        val signingKey = findProperty("signingKey") as String?
+        if (signingKey != null)
+            useInMemoryPgpKeys(signingKey, findProperty("signingPassword") as String?)
+        else
+            isRequired = false
     }
 }
 

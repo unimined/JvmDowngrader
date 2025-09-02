@@ -68,7 +68,7 @@ public class J_L_String {
                         case 't' -> c = '\t';
                         case '\'', '\"', '\\', '\n', '\r' -> c = d;
                         case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
-                            int limit = Math.min(d < '4' ? 2 : 1, chars.length);
+                            int limit = Math.min(d < '4' ? 2 : 1, chars.length - i);
                             int code = d - '0';
                             for (int k = 1; k < limit; k++) {
                                 char e = chars[i + 1];

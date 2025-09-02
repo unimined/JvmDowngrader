@@ -30,10 +30,13 @@ buildscript {
 
         classpath("org.apache.commons:commons-compress:1.26.1")
 
-        classpath("org.ow2.asm:asm:${props.getProperty("asm_version")}")
-        classpath("org.ow2.asm:asm-commons:${props.getProperty("asm_version")}")
-        classpath("org.ow2.asm:asm-tree:${props.getProperty("asm_version")}")
-        classpath("org.ow2.asm:asm-util:${props.getProperty("asm_version")}")
+        val asm_version = "9.8"
+
+
+        classpath(baseLibs.asm)
+        classpath(baseLibs.asm.commons)
+        classpath(baseLibs.asm.tree)
+        classpath(baseLibs.asm.util)
     }
 }
 
