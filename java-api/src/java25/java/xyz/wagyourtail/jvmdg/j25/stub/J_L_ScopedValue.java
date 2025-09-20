@@ -31,7 +31,7 @@ public class J_L_ScopedValue<T> {
         }
 
         public <T> Carrier where(J_L_ScopedValue<T> key, T value) {
-            Set<Map.Entry<J_L_ScopedValue<?>, Object>> newValues = values.entrySet();
+            List<Map.Entry<J_L_ScopedValue<?>, Object>> newValues = new ArrayList<>(values.entrySet());
             newValues.add(Map.entry(key, value));
             return new Carrier(Map.ofEntries(newValues.toArray(Map.Entry[]::new)));
         }
