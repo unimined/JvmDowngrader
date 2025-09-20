@@ -1,5 +1,7 @@
 package xyz.wagyourtail.downgradetest;
 
+import java.util.concurrent.Semaphore;
+
 public class TestScopedValue {
 
     static void main() {
@@ -21,6 +23,19 @@ public class TestScopedValue {
         scope.run(() -> {
             System.out.println(value1.orElse("4"));
             System.out.println(value2.orElse("4"));
+
+            Semaphore sem = new Semaphore(0);
+            new Thread(() -> {
+                System.out.println(value1.orElse("7"));
+                System.out.println(value2.orElse("7"));
+                sem.release();
+            }).start();
+            try {
+                sem.acquire();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
         });
 
         System.out.println(value1.orElse("6"));
