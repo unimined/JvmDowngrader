@@ -15,8 +15,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 
-    testAnnotationProcessor(sourceSets["main"].output)
-    testAnnotationProcessor(rootProject.sourceSets["main"].runtimeClasspath)
+    testAnnotationProcessor(project(":"))
 }
 
 tasks.compileTestJava {

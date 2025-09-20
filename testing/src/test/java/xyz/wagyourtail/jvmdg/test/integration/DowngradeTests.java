@@ -86,7 +86,12 @@ public class DowngradeTests extends BaseIntegrationTests {
                     ClassReader cr = new ClassReader(Files.readAllBytes(fs.getPath(e.replace(".", "/") + ".class")));
                     ClassNode cn = new ClassNode();
                     cr.accept(cn, ClassReader.SKIP_CODE);
-                    return cn.methods.stream().anyMatch(m -> m.name.equals("main") && m.desc.equals("([Ljava/lang/String;)V"));
+                    if (cn.invisibleAnnotations != null) {
+                        if (cn.invisibleAnnotations.stream().anyMatch(a -> a.desc.equals("Lxyz/wagyourtail/TestMain;"))) {
+                            return true;
+                        }
+                    }
+                    return cn.methods.stream().anyMatch(m -> m.name.equals("main"));
                 })
                 .unwrap().toList();
         }

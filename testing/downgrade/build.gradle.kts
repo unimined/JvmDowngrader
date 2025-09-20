@@ -14,6 +14,7 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":testing"))
     implementation(libs.asm)
 }
 
@@ -29,6 +30,10 @@ java {
 
 tasks.compileJava {
     options.encoding = "UTF-8"
+
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion.set(JavaLanguageVersion.of(testVersion.majorVersion))
+    }
 }
 
 val removeLibs by tasks.registering {
@@ -44,13 +49,13 @@ tasks.jar {
 
 tasks.annotationASMJar.configure {
     doLast {
-        exec {
-            commandLine(
-                "jarsigner",
-                "-keystore", file("test_app_sign.jks").absolutePath,
-                "-storepass", "changeit",
-                outputs.files.singleFile.absolutePath, "test_app_alias")
-        }.rethrowFailure().assertNormalExitValue()
+//        exec {
+//            commandLine(
+//                "jarsigner",
+//                "-keystore", file("test_app_sign.jks").absolutePath,
+//                "-storepass", "changeit",
+//                outputs.files.singleFile.absolutePath, "test_app_alias")
+//        }.rethrowFailure().assertNormalExitValue()
     }
 }
 

@@ -21,17 +21,12 @@ repositories {
     mavenCentral()
 }
 
-sourceSets {
-    test {
-        compileClasspath += rootProject.sourceSets.main.get().compileClasspath + rootProject.sourceSets.main.get().output
-        runtimeClasspath += rootProject.sourceSets.main.get().runtimeClasspath + rootProject.sourceSets.main.get().output
-    }
-}
-
 dependencies {
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 
+    testImplementation(project(":"))
+    testImplementation(rootProject.sourceSets["shared"].output)
     testImplementation(libs.gson)
     testImplementation(libs.apache.commons.compress)
     testImplementation(libs.java.diff.utils)

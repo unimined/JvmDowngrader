@@ -13,6 +13,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.jvm.toolchain.JavaToolchainSpec
+import org.gradle.jvm.toolchain.JvmVendorSpec
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.tree.ClassNode
 import xyz.wagyourtail.jvmdg.util.*
@@ -56,10 +57,11 @@ abstract class GenerateCtSymTask: ConventionTask() {
         closeArchiveEntry()
     }
 
-    private fun JavaToolchainService.getJavaHome(version: JavaVersion): Path {
+    private fun getJavaHome(version: JavaVersion): Path {
         val toolchain = project.extensions.getByType(JavaToolchainService::class.java)
         val compiler = toolchain.compilerFor { spec: JavaToolchainSpec ->
             spec.languageVersion.set(JavaLanguageVersion.of(version.majorVersion))
+            spec.vendor.set(JvmVendorSpec.AZUL) // make it more consistent, sorry ever
         }
         return compiler.get().metadata.installationPath.asFile.toPath()
     }
@@ -78,7 +80,7 @@ abstract class GenerateCtSymTask: ConventionTask() {
         ).use { zos ->
             val prevJava = mutableMapOf<String, ClassInfo>()
             for (java in (lowerVersion.get()..upperVersion.get()).reversed()) {
-                val home = toolchain.getJavaHome(java)
+                val home = getJavaHome(java)
                 project.logger.lifecycle("[ct.sym] Processing $java at $home")
                 for (path in home.walk()
                     .filter { it.exists() && it.isRegularFile() && it.extension in setOf("jar", "jmod") }) {

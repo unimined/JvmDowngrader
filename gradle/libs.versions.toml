@@ -1,6 +1,6 @@
 [versions]
 asm = "9.8"
-kotlin = "2.1.21"
+kotlin = "2.2.0"
 
 jb_annotations = "26.0.2"
 jb_annotations5 = "24.1.0"
@@ -12,10 +12,10 @@ java_diff_utils = "4.12"
 manifold = "2025.1.21"
 lombok = "1.18.38"
 
-junit = "5.13.0"
+junit = "5.13.4"
 
 gradle_metadata = "0.6.0"
-gradle_test_retry = "1.5.10"
+gradle_test_retry = "1.6.2"
 gradle_plugin_publish = "1.2.1"
 nmcp = "0.0.7"
 jmh = "0.7.2"

@@ -90,6 +90,8 @@ fun JavaVersion.toOpcode(): Int = when (this) {
     JavaVersion.VERSION_22 -> Opcodes.V22
     JavaVersion.VERSION_23 -> Opcodes.V23
     JavaVersion.VERSION_24 -> Opcodes.V24
+    JavaVersion.VERSION_25 -> Opcodes.V25
+//    JavaVersion.VERSION_26 -> Opcodes.V26
     else -> throw IllegalArgumentException("Unsupported Java Version: $this")
 }
 

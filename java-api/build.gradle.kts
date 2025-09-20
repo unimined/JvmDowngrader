@@ -129,7 +129,7 @@ tasks.compileTestJava {
 }
 
 tasks.getByName<JavaCompile>("compileCoverageJava") {
-    configCompile(testVersion)
+    configCompile(toVersion - 1)
 }
 
 val genCtSym by tasks.registering(GenerateCtSymTask::class) {
@@ -232,7 +232,7 @@ fun downgradeApi(version: JavaVersion): TaskProvider<Jar> {
         val rootMain = project(":").sourceSets.main.get()
 
         mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
-        classpath = files(rootMain.output, rootMain.runtimeClasspath)
+        classpath = configurations.runtimeClasspath.get()
         workingDir = project.layout.buildDirectory.get().asFile
         jvmArgs = listOf("-Djvmdg.javaApi=$apiJar")
         args = listOf(

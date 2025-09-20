@@ -17,6 +17,14 @@ metadata {
 
 java {
     withSourcesJar()
+
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+    }
+}
+
+kotlin {
+    jvmToolchain(8)
 }
 
 repositories {
@@ -38,14 +46,6 @@ dependencies {
     implementation(rootProject.sourceSets.getByName("shared").output)
 
     testImplementation(kotlin("test"))
-}
-
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
-}
-
-tasks.withType<JavaCompile> {
-    options.release = 8
 }
 
 tasks.jar {
@@ -87,6 +87,10 @@ tasks.getByName<Jar>("sourcesJar") {
 
 tasks.test {
     dependsOn(":java-api:testJar")
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
 }
 
 signing.isRequired = !project.hasProperty("is_local")

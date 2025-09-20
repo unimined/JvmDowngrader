@@ -8,7 +8,7 @@ plugins {
     signing
     application
     alias(libs.plugins.gradle.metadata)
-    alias(libs.plugins.gradle.test.retry)
+//    alias(libs.plugins.gradle.test.retry)
     alias(libs.plugins.nmcp)
 }
 
@@ -17,7 +17,7 @@ allprojects {
     apply(plugin = "signing")
     apply(plugin = "maven-publish")
     apply(plugin = rootProject.libs.plugins.gradle.metadata.get().pluginId)
-    apply(plugin = rootProject.libs.plugins.gradle.test.retry.get().pluginId)
+//    apply(plugin = rootProject.libs.plugins.gradle.test.retry.get().pluginId)
     apply(plugin = rootProject.libs.plugins.nmcp.get().pluginId)
 
     metadata {
@@ -80,11 +80,11 @@ allprojects {
         }
     }
 
-    tasks.test {
-        retry {
-            maxRetries = 3
-        }
-    }
+//    tasks.test {
+//        retry {
+//            maxRetries = 3
+//        }
+//    }
 
     signing {
         val signingKey = findProperty("signingKey") as String?

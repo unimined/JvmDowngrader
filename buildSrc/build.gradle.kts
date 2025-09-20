@@ -1,8 +1,5 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.util.*
-
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.2.0"
 }
 
 repositories {
@@ -18,19 +15,13 @@ sourceSets.main {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks.withType<JavaCompile> {
-    val targetVersion = 8
-    if (JavaVersion.current().isJava9Compatible) {
-        options.release.set(targetVersion)
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
     }
 }
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "1.8"
+kotlin {
+    jvmToolchain(8)
 }
 
 dependencies {

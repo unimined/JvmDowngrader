@@ -82,7 +82,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                 return retransformCodeSource(bytes);
             }
 
-            if (loader != null) {
+            if (loader != null && Bootstrap.flags.downgradeFromMultiReleases) {
                 for (Integer version : multiVersionsList) {
                     try (InputStream stream = loader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + className + ".class")) {
                         if (stream != null) {
@@ -112,10 +112,12 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                 @Override
                 public byte[] apply(String s) {
                     try {
-                        for (Integer version : multiVersionsList) {
-                            try (InputStream stream = loader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + s + ".class")) {
-                                if (stream != null) {
-                                    return Utils.readAllBytes(stream);
+                        if (Bootstrap.flags.downgradeFromMultiReleases) {
+                            for (Integer version : multiVersionsList) {
+                                try (InputStream stream = loader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + s + ".class")) {
+                                    if (stream != null) {
+                                        return Utils.readAllBytes(stream);
+                                    }
                                 }
                             }
                         }

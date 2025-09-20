@@ -16,7 +16,7 @@ class TestDowngrade {
     fun testDowngrade() {
         val result = GradleRunner.create()
             .withProjectDir(File("test-downgrade"))
-            .withArguments("clean", "build", "--stacktrace", "-PrunningTest", "--configuration-cache")
+            .withArguments("clean", "build", "--stacktrace", "-PrunningTest")
             .withPluginClasspath()
             .build()
 
