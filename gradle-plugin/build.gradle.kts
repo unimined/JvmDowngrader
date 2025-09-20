@@ -20,6 +20,7 @@ java {
 
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(8))
+        vendor.set(JvmVendorSpec.AZUL)
     }
 }
 
@@ -90,6 +91,7 @@ tasks.test {
 
     javaLauncher = javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(17))
+        vendor.set(JvmVendorSpec.AZUL)
     }
 }
 

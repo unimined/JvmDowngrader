@@ -12,6 +12,7 @@ java {
     targetCompatibility = testVersion
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(testVersion.majorVersion))
+        vendor.set(JvmVendorSpec.AZUL)
     }
 }
 
@@ -61,6 +62,7 @@ tasks.test {
     ).associateWith {
         javaToolchains.launcherFor {
             languageVersion.set(JavaLanguageVersion.of(it.majorVersion))
+            vendor.set(JvmVendorSpec.AZUL)
         }.get().executablePath.toString()
     }
 

@@ -1,6 +1,7 @@
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(8))
+        vendor.set(JvmVendorSpec.AZUL)
     }
 }
 
@@ -23,6 +24,7 @@ tasks.compileTestJava {
 
     javaCompiler = javaToolchains.compilerFor {
         languageVersion.set(JavaLanguageVersion.of(17))
+        vendor.set(JvmVendorSpec.AZUL)
     }
 
     val apiJar = project(":java-api").tasks.named("testJar").get().outputs.files.singleFile

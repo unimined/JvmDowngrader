@@ -14,6 +14,7 @@ java {
     targetCompatibility = testVersion
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(testVersion.majorVersion))
+        vendor.set(JvmVendorSpec.AZUL)
     }
 }
 

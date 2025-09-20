@@ -188,6 +188,7 @@ tasks.getByName<Jar>("sourcesJar") {
 tasks.javadoc {
     javadocTool = javaToolchains.javadocToolFor {
         languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
+        vendor.set(JvmVendorSpec.AZUL)
     }
     for (vers in fromVersion..toVersion) {
         source += sourceSets["java${vers.ordinal + 1}"].allJava
@@ -218,6 +219,7 @@ fun JavaCompile.configCompile(version: JavaVersion) {
 
     javaCompiler = javaToolchains.compilerFor {
         languageVersion = JavaLanguageVersion.of(version.majorVersion)
+        vendor.set(JvmVendorSpec.AZUL)
     }
 }
 
@@ -243,6 +245,7 @@ fun downgradeApi(version: JavaVersion): TaskProvider<Jar> {
 
         javaLauncher = javaToolchains.launcherFor {
             languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
+            vendor.set(JvmVendorSpec.AZUL)
         }
     }
 
