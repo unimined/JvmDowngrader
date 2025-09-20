@@ -36,6 +36,12 @@ public class J_L_ScopedValue<T> {
             return new Carrier(newValues);
         }
 
+        Carrier fallback(Carrier other) {
+            Map<J_L_ScopedValue<?>, Object> newValues = new HashMap<>(other.values);
+            newValues.putAll(values);
+            return new Carrier(newValues);
+        }
+
         @SuppressWarnings("unchecked")
         public <T> T get(J_L_ScopedValue<T> key) {
             if (!values.containsKey(key)) {
@@ -62,7 +68,7 @@ public class J_L_ScopedValue<T> {
 
         public <R, X extends Throwable> R call(CallableOp<? extends R, X> op) throws X {
             var prev = CURRENT.get();
-            CURRENT.set(this);
+            CURRENT.set(fallback(prev));
             try {
                 return op.call();
             } finally {
@@ -72,7 +78,7 @@ public class J_L_ScopedValue<T> {
 
         public void run(Runnable runnable) {
             var prev = CURRENT.get();
-            CURRENT.set(this);
+            CURRENT.set(fallback(prev));
             try {
                 runnable.run();
             } finally {
@@ -98,7 +104,7 @@ public class J_L_ScopedValue<T> {
     }
 
     public static <T> Carrier where(J_L_ScopedValue<T> key, T value) {
-        return Carrier.CURRENT.get().where(key, value);
+        return new Carrier(Map.of(key, value));
     }
 
     @FunctionalInterface
