@@ -60,6 +60,7 @@ public class Java8Downgrader extends VersionProvider {
         stub(J_L_Package.class);
         stub(J_L_Process.class);
         stub(J_L_Short.class);
+        stub(J_L_StrictMath.class);
         stub(J_L_String.class);
         // StringBuffer
         stub(J_L_ThreadLocal.class);

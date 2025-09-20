@@ -34,7 +34,9 @@ public class ApiCoverageChecker {
 
     private static final Set<String> excludedMods = Set.of(
         "jdk.internal.vm.compiler",
-        "jdk.internal.vm.compiler.management"
+        "jdk.internal.vm.compiler.management",
+        "com.azul.crs.client",
+        "com.azul.tooling"
     );
 
     public static void main(String[] args) throws IOException, URISyntaxException {
@@ -314,6 +316,7 @@ public class ApiCoverageChecker {
                         }
                         var cn = ASMUtils.bytesToClassNode(Files.readAllBytes(p), ClassReader.SKIP_CODE);
                         if (cn.name.startsWith("jdk/")) return;
+                        if (cn.name.startsWith("com/azul/")) return;
                         if (cn.name.startsWith("sun/")) {
                             if (!cn.name.equals("sun/misc/Unsafe")) return;
                         }
