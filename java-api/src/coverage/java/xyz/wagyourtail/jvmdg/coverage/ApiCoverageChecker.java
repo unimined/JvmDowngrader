@@ -34,10 +34,8 @@ public class ApiCoverageChecker {
 
     private static final Set<String> excludedMods = Set.of(
         "jdk.internal.vm.compiler",
-        "jdk.internal.vm.compiler.management",
-        "com.azul.crs.client",
-        "com.azul.tooling",
-        "javafx."
+        "com.azul.",
+        "javafx"
     );
 
     public static void main(String[] args) throws IOException, URISyntaxException {
