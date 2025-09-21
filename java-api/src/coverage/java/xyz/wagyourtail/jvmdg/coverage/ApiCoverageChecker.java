@@ -36,7 +36,8 @@ public class ApiCoverageChecker {
         "jdk.internal.vm.compiler",
         "jdk.internal.vm.compiler.management",
         "com.azul.crs.client",
-        "com.azul.tooling"
+        "com.azul.tooling",
+        "javafx."
     );
 
     public static void main(String[] args) throws IOException, URISyntaxException {
@@ -117,8 +118,8 @@ public class ApiCoverageChecker {
                             ).map(MemberNameAndDesc::fromMember)
                             .map(m -> m.toFullyQualified(e.getValue().getFirst()))
                     ).collect(Collectors.toSet());
-                var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(value ->
-                    Stream.of(value.getMethodStubMap().values().stream(), value.getMethodModifyMap().values().stream())
+                var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(val ->
+                    Stream.of(val.getMethodStubMap().values().stream(), val.getMethodModifyMap().values().stream())
                         .flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
 
                 try {
@@ -306,7 +307,7 @@ public class ApiCoverageChecker {
             }
             var modName = mod.getFileName().toString();
 
-            if (excludedMods.contains(modName)) return;
+            if (excludedMods.stream().anyMatch(e -> modName.startsWith(e))) return;
             try (var files = Files.find(mod, Integer.MAX_VALUE, (p, a) -> !a.isDirectory())) {
                 files.parallel().forEach(p -> {
                     try {

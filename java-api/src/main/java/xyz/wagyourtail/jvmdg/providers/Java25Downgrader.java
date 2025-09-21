@@ -8,6 +8,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.j25.stub.java_base.*;
+import xyz.wagyourtail.jvmdg.j25.stub.java_net_http.J_N_H_HttpResponse;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Pair;
@@ -37,6 +38,9 @@ public class Java25Downgrader extends VersionProvider {
         stub(J_U_TimeZone.class);
         stub(J_U_Z_Deflater.class);
         stub(J_U_Z_Inflater.class);
+
+        // -- java.net.http --
+        stub(J_N_H_HttpResponse.class);
 
     }
 
