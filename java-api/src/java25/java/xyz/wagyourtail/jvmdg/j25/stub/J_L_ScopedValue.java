@@ -21,6 +21,30 @@ public class J_L_ScopedValue<T> {
         return hash;
     }
 
+    public static <T> J_L_ScopedValue<T> newInstance() {
+        return new J_L_ScopedValue<>();
+    }
+
+    public T get() {
+        return Carrier.CURRENT.get().get(this);
+    }
+
+    public T orElse(T other) {
+        return Carrier.CURRENT.get().orElse(this, other);
+    }
+
+    public T orElseThrow(Supplier<Throwable> other) throws Throwable {
+        return Carrier.CURRENT.get().orElseThrow(this, other);
+    }
+
+    public static <T> Carrier where(J_L_ScopedValue<T> key, T value) {
+        return new Carrier(Map.of(key, value));
+    }
+
+    public boolean isBound() {
+        return Carrier.CURRENT.get().values.containsKey(this);
+    }
+
     @Adapter("java/lang/ScopedValue$Carrier")
     public static class Carrier {
         private static final ThreadLocal<Carrier> CURRENT = ThreadLocal.withInitial(() -> new Carrier(Map.of()));
@@ -85,26 +109,6 @@ public class J_L_ScopedValue<T> {
                 CURRENT.set(prev);
             }
         }
-    }
-
-    public static <T> J_L_ScopedValue<T> newInstance() {
-        return new J_L_ScopedValue<>();
-    }
-
-    public T get() {
-        return Carrier.CURRENT.get().get(this);
-    }
-
-    public T orElse(T other) {
-        return Carrier.CURRENT.get().orElse(this, other);
-    }
-
-    public T orElseThrow(Supplier<Throwable> other) throws Throwable {
-        return Carrier.CURRENT.get().orElseThrow(this, other);
-    }
-
-    public static <T> Carrier where(J_L_ScopedValue<T> key, T value) {
-        return new Carrier(Map.of(key, value));
     }
 
     @FunctionalInterface
