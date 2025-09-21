@@ -7,8 +7,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
-import xyz.wagyourtail.jvmdg.j25.stub.J_L_IO;
-import xyz.wagyourtail.jvmdg.j25.stub.J_L_ScopedValue;
+import xyz.wagyourtail.jvmdg.j25.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
 import xyz.wagyourtail.jvmdg.util.Pair;
@@ -29,8 +28,15 @@ public class Java25Downgrader extends VersionProvider {
     @Override
     public void init() {
         // -- java.base --
+        stub(J_I_Reader.class);
+        stub(J_L_CharSequence.class);
         stub(J_L_IO.class);
+        stub(J_L_R_AccessFlag.class);
         stub(J_L_ScopedValue.class);
+        stub(J_U_Currency.class);
+        stub(J_U_TimeZone.class);
+        stub(J_U_Z_Deflater.class);
+        stub(J_U_Z_Inflater.class);
 
     }
 

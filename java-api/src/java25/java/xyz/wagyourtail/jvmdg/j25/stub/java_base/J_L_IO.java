@@ -1,8 +1,6 @@
-package xyz.wagyourtail.jvmdg.j25.stub;
+package xyz.wagyourtail.jvmdg.j25.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Ref;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.io.BufferedReader;
 import java.io.IOError;

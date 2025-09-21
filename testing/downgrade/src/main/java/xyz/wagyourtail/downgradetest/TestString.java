@@ -51,6 +51,13 @@ public class TestString {
 
         String s = null;
         System.out.println("" + s);
+
+        char[] out = new char[3];
+        "abcde".getChars(0, 3, out, 0);
+        System.out.println(out);
+        StringBuilder sb = new StringBuilder("edcba");
+        sb.getChars(0, 3, out, 0);
+        System.out.println(out);
     }
 
 }

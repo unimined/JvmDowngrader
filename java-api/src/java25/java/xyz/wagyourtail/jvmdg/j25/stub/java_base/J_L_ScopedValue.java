@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.j25.stub;
+package xyz.wagyourtail.jvmdg.j25.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
 
