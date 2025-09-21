@@ -131,7 +131,7 @@ public class ApiCoverageChecker {
                         var modName = staticAndStub.module();
                         var stub = staticAndStub.fqm();
 
-                        if (stub.getName() != null) {
+                        if (stub.getName() != null && stub.getDesc().getSort() == Type.METHOD) {
                             Set<String> warnings = new HashSet<>();
                             var stubProvider = versionProvider.getStubMapper(stub.getOwner(), warnings);
                             if (!warnings.isEmpty()) {
@@ -333,7 +333,7 @@ public class ApiCoverageChecker {
                             // check to see what was "removed"
                             var old = currentVersion.get(cn.name);
                             var oldCls = old.getSecond();
-                            var methods = new HashSet<MemberInfo>();
+                            var members = new HashSet<MemberInfo>();
                             var ct = Type.getObjectType(cn.name);
                             outerA:
                             for (var m : oldCls.methods) {
@@ -350,7 +350,22 @@ public class ApiCoverageChecker {
                                 var isStatic = (m.access & Opcodes.ACC_STATIC) != 0;
                                 var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
                                 var fqn = new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc));
-                                methods.add(new MemberInfo(modName, fqn, isAbstract, isStatic));
+                                members.add(new MemberInfo(modName, fqn, isAbstract, isStatic));
+                            }
+                            outerA2:
+                            for (var f : oldCls.fields) {
+                                if ((f.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (f.access & Opcodes.ACC_SYNTHETIC) != 0)
+                                    continue;
+                                if (f.invisibleAnnotations != null) {
+                                    for (var a : f.invisibleAnnotations) {
+                                        if (a.desc.equals("Ljdk/internal/javac/PreviewFeature;") || a.desc.equals("Ljdk/internal/PreviewFeature;")) {
+                                            continue outerA2;
+                                        }
+                                    }
+                                }
+                                var isStatic = (f.access & Opcodes.ACC_STATIC) != 0;
+                                var fqn = new FullyQualifiedMemberNameAndDesc(ct, f.name, Type.getType(f.desc));
+                                members.add(new MemberInfo(modName, fqn, false, isStatic));
                             }
                             outerB:
                             for (var m : cn.methods) {
@@ -364,8 +379,21 @@ public class ApiCoverageChecker {
                                 }
                                 var isStatic = (m.access & Opcodes.ACC_STATIC) != 0;
                                 var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
-                                methods.remove(new MemberInfo(modName, new FullyQualifiedMemberNameAndDesc(
-                                    ct, m.name, Type.getMethodType(m.desc)), isAbstract, isStatic));
+                                var fqn = new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc));
+                                members.remove(new MemberInfo(modName, fqn, isAbstract, isStatic));
+                            }
+                            outerB2:
+                            for (var f : cn.fields) {
+                                if (f.invisibleAnnotations != null) {
+                                    for (var a : f.invisibleAnnotations) {
+                                        if (a.desc.equals("Ljdk/internal/javac/PreviewFeature;") || a.desc.equals("Ljdk/internal/PreviewFeature;")) {
+                                            continue outerB2;
+                                        }
+                                    }
+                                }
+                                var isStatic = (f.access & Opcodes.ACC_STATIC) != 0;
+                                var fqn = new FullyQualifiedMemberNameAndDesc(ct, f.name, Type.getType(f.desc));
+                                members.remove(new MemberInfo(modName, fqn, false, isStatic));
                             }
 
                             // check if method(s) still exist on parent (include interfaces in traversal)
@@ -391,7 +419,7 @@ public class ApiCoverageChecker {
                                     if (isStatic) continue;
                                     var isAbstract = (m.access & Opcodes.ACC_ABSTRACT) != 0;
                                     var fqn = new FullyQualifiedMemberNameAndDesc(ct, m.name, Type.getMethodType(m.desc));
-                                    methods.remove(new MemberInfo(modName, fqn, isAbstract, false));
+                                    members.remove(new MemberInfo(modName, fqn, isAbstract, false));
                                 }
                                 if (!superCls.name.equals("java/lang/Object")) {
                                     for (var iface : superCls.interfaces) {
@@ -406,7 +434,7 @@ public class ApiCoverageChecker {
                                     }
                                 }
                             }
-                            removedList.addAll(methods);
+                            removedList.addAll(members);
                         }
                     } catch (IOException e) {
                         throw new UncheckedIOException("Failed to read " + p.toAbsolutePath(), e);
@@ -444,6 +472,21 @@ public class ApiCoverageChecker {
                         var isStatic = (method.access & Opcodes.ACC_STATIC) != 0;
                         var isAbstract = (method.access & Opcodes.ACC_ABSTRACT) != 0;
                         removed.add(new MemberInfo(cls.getValue().getFirst(), new FullyQualifiedMemberNameAndDesc(Type.getObjectType(cls.getKey()), method.name, Type.getMethodType(method.desc)), isAbstract, isStatic));
+                    }
+                    // add all fields
+                    outer2:
+                    for (var field : oldCls.fields) {
+                        if ((field.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0 || (field.access & Opcodes.ACC_SYNTHETIC) != 0)
+                            continue;
+                        if (field.invisibleAnnotations != null) {
+                            for (var a : field.invisibleAnnotations) {
+                                if (a.desc.equals("Ljdk/internal/javac/PreviewFeature;") || a.desc.equals("Ljdk/internal/PreviewFeature;")) {
+                                    continue outer2;
+                                }
+                            }
+                        }
+                        var isStatic = (field.access & Opcodes.ACC_STATIC) != 0;
+                        removed.add(new MemberInfo(cls.getValue().getFirst(), new FullyQualifiedMemberNameAndDesc(Type.getObjectType(cls.getKey()), field.name, Type.getType(field.desc)), false, isStatic));
                     }
                 }
             }
