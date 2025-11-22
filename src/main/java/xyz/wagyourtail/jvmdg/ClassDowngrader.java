@@ -261,8 +261,9 @@ public class ClassDowngrader implements Closeable {
         Set<ClassNode> classes = new HashSet<>();
         Set<ClassNode> multiReleaseHolder = new HashSet<>();
         classes.add(clazz);
-        int version = clazz.version;
-        int originalVersion = clazz.version;
+        int version = Utils.normalizeVersion(clazz.version);
+        int originalVersion = version;
+        clazz.version = version;
         while (version > target) {
             if (flags.multiReleaseVersions.contains(version) || (version == originalVersion && flags.multiReleaseOriginal)) {
                 // copy to new class node
@@ -356,6 +357,7 @@ public class ClassDowngrader implements Closeable {
             });
             boolean hasVersions = false;
             for (ClassNode c : extra) {
+                c.version = Utils.normalizeVersion(c.version);
                 byte[] cBytes = classNodeToBytes(c);
                 if (c.version > target) {
                     // write to multi-release location
