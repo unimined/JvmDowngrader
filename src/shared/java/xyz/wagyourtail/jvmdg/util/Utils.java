@@ -138,9 +138,14 @@ public class Utils {
         throw new UnsupportedOperationException("Unable to determine current class version");
     }
 
+    public static int normalizeVersion(int version) {
+        if (version == Opcodes.V1_1) return version;
+        return version & 0xFFFF;
+    }
+
     public static int classVersionToMajorVersion(int version) {
         if (version == Opcodes.V1_1) return 1;
-        else return version - Opcodes.V1_2 + 2;
+        return (version & 0xFFFF) - Opcodes.V1_2 + 2;
     }
 
     public static int majorVersionToClassVersion(int version) {
