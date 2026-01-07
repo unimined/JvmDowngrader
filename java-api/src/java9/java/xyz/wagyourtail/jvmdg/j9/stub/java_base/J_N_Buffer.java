@@ -1,10 +1,10 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
+import xyz.wagyourtail.jvmdg.exc.PartialStubError;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
+import java.nio.*;
 
 public class J_N_Buffer {
 
@@ -13,7 +13,25 @@ public class J_N_Buffer {
         if (buffer instanceof ByteBuffer) {
             return ((ByteBuffer) buffer).slice();
         }
-        throw new UnsupportedOperationException("JVMDowngrader: Not implemented yet.");
+        if (buffer instanceof ShortBuffer) {
+            return ((ShortBuffer) buffer).slice();
+        }
+        if (buffer instanceof CharBuffer) {
+            return ((CharBuffer) buffer).slice();
+        }
+        if (buffer instanceof IntBuffer) {
+            return ((IntBuffer) buffer).slice();
+        }
+        if (buffer instanceof FloatBuffer) {
+            return ((FloatBuffer) buffer).slice();
+        }
+        if (buffer instanceof DoubleBuffer) {
+            return ((DoubleBuffer) buffer).slice();
+        }
+        if (buffer instanceof LongBuffer) {
+            return ((LongBuffer) buffer).slice();
+        }
+        throw PartialStubError.create();
     }
 
     @Stub
@@ -21,7 +39,25 @@ public class J_N_Buffer {
         if (buffer instanceof ByteBuffer) {
             return ((ByteBuffer) buffer).duplicate();
         }
-        throw new UnsupportedOperationException("JVMDowngrader: Not implemented yet.");
+        if (buffer instanceof ShortBuffer) {
+            return ((ShortBuffer) buffer).duplicate();
+        }
+        if (buffer instanceof CharBuffer) {
+            return ((CharBuffer) buffer).duplicate();
+        }
+        if (buffer instanceof IntBuffer) {
+            return ((IntBuffer) buffer).duplicate();
+        }
+        if (buffer instanceof FloatBuffer) {
+            return ((FloatBuffer) buffer).duplicate();
+        }
+        if (buffer instanceof DoubleBuffer) {
+            return ((DoubleBuffer) buffer).duplicate();
+        }
+        if (buffer instanceof LongBuffer) {
+            return ((LongBuffer) buffer).duplicate();
+        }
+        throw PartialStubError.create();
     }
 
     @Stub

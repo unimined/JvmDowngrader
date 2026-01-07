@@ -163,6 +163,15 @@ tasks.jar {
 
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true
+
+    manifest {
+        attributes(mapOf(
+            "Manifest-Version" to "1.0",
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version,
+            "Automatic-Module-Name" to "xyz.wagyourtail.jvmdg.java_api"
+        ))
+    }
 }
 
 val testJar by tasks.registering(Jar::class) {
@@ -254,6 +263,15 @@ fun downgradeApi(version: JavaVersion): TaskProvider<Jar> {
         dependsOn(downgradeJarExec)
         archiveClassifier.set("downgraded-${version.majorVersion}")
         from(zipTree(tempFile))
+
+        manifest {
+            attributes(mapOf(
+                "Manifest-Version" to "1.0",
+                "Implementation-Title" to project.name,
+                "Implementation-Version" to project.version,
+                "Automatic-Module-Name" to "xyz.wagyourtail.jvmdg.java_api"
+            ))
+        }
     }
 }
 

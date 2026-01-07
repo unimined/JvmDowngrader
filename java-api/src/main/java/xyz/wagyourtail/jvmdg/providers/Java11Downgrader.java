@@ -119,7 +119,7 @@ public class Java11Downgrader extends VersionProvider {
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly) throws IOException {
         super.otherTransforms(clazz);
         if (clazz.name.equals("module-info")) {
-            return null;
+            return clazz;
         }
         fixNests(clazz, getReadOnly);
         replaceCondy(clazz);
