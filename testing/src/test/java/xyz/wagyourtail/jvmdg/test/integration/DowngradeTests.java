@@ -117,7 +117,7 @@ public class DowngradeTests extends BaseIntegrationTests {
                 Path.of("."),
                 Map.of(),
                 true,
-                List.of(),
+                List.of("--enable-preview"),
                 launchersByVersion.get(originalVersion),
                 (String it) -> originalLog.append(it).append("\n"),
                 (String it) -> originalLog.append(it).append("\n")
