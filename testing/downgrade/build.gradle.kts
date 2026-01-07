@@ -38,10 +38,6 @@ tasks.compileJava {
     }
 }
 
-tasks.withType<JavaCompile>().configureEach {
-    options.compilerArgs.add("--enable-preview")
-}
-
 val removeLibs by tasks.registering {
     doLast {
         delete(fileTree("dir" to "build/libs", "include" to "**/*.jar"))
