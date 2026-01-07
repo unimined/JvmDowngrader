@@ -6,6 +6,7 @@ import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.all.RemovedInterfaces;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.IOFunction;
@@ -776,6 +777,24 @@ public abstract class VersionProvider {
         final Set<String> warnings = new LinkedHashSet<>();
 
         clazz.version = outputVersion;
+
+        if (clazz.name.equals("module-info")) {
+            if (clazz.module.requires == null) {
+                clazz.module.requires = new ArrayList<>();
+            } else {
+                boolean contains = true;
+                for (ModuleRequireNode node : clazz.module.requires) {
+                    if (node.module.equals("xyz.wagyourtail.jvmdg.java_api")) {
+                        contains = false;
+                        break;
+                    }
+                }
+                // else
+                if (contains) {
+                    clazz.module.requires.add(new ModuleRequireNode("xyz.wagyourtail.jvmdg.java_api", 0, Flags.jvmdgVersion));
+                }
+            }
+        }
 
         final IOFunction<Type, Set<MemberNameAndDesc>> getMembers = new IOFunction<Type, Set<MemberNameAndDesc>>() {
             @Override

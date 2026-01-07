@@ -46,6 +46,9 @@ public class Java25Downgrader extends VersionProvider {
 
     @Override
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
+        if (clazz.name.equals("module-info")) {
+            return clazz;
+        }
         addMissingMains(clazz, getReadOnly, superTypeResolver);
         renameInstanceMains(clazz);
         return super.otherTransforms(clazz);

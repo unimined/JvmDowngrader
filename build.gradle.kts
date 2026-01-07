@@ -171,6 +171,7 @@ tasks.jar {
             "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             "Can-Retransform-Classes" to "true",
+            "Automatic-Module-Name" to "xyz.wagyourtail.jvmdg"
         )
     }
 }
@@ -212,6 +213,7 @@ val shadowJar by tasks.registering(ShadowJar::class) {
             "Premain-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             "Agent-Class" to "xyz.wagyourtail.jvmdg.runtime.Bootstrap",
             "Can-Retransform-Classes" to "true",
+            "Automatic-Module-Name" to "xyz.wagyourtail.jvmdg"
         )
     }
 
