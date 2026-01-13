@@ -22,7 +22,7 @@ public class Java10Downgrader extends VersionProvider {
         stub(J_N_URLDecoder.class);
         stub(J_N_URLEncoder.class);
         // FileStore
-        // DateTimeFormatter
+        stub(J_T_F_DateTimeFormatter.class);
         // DoubleSummaryStatistics
         // IntSummaryStatistics
         stub(J_U_Formatter.class);
@@ -37,7 +37,7 @@ public class Java10Downgrader extends VersionProvider {
         stub(J_U_Scanner.class);
         stub(J_U_Set.class);
         stub(J_U_SplittableRandom.class);
-        // StampedLock
+        stub(J_U_C_L_StampedLock.class);
         // JarEntry
         // JarFile
         // LocaleNameProvider
