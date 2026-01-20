@@ -6,6 +6,7 @@ import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.SimpleRemapper;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.shade.ReferenceGraph;
 import xyz.wagyourtail.jvmdg.logging.Logger;
@@ -434,7 +435,7 @@ public class ApiShader {
                 AsyncUtils.waitForFutures(apiWrite, resourceWrite, shadeWrite).get();
             }
 
-            // write the resources in the class file
+            // step 7: write the resources in the class file
             AsyncUtils.visitPathsAsync(inputRoot, null, new IOConsumer<Path>() {
                 @Override
                 public void accept(Path path) throws IOException {
@@ -447,6 +448,21 @@ public class ApiShader {
                     Files.copy(path, outPath, StandardCopyOption.REPLACE_EXISTING);
                 }
             }).get();
+
+            // step 8: write module-info if present
+            Path modInfoInPath = inputRoot.resolve("module-info.class");
+            if (Files.exists(modInfoInPath)) {
+                ClassNode modInfo = ASMUtils.bytesToClassNode(Files.readAllBytes(modInfoInPath));
+                if (modInfo.module.requires != null) {
+                    for (ModuleRequireNode require : new ArrayList<>(modInfo.module.requires)) {
+                        if (require.module.equals("xyz.wagyourtail.jvmdg.java_api")) {
+                            modInfo.module.requires.remove(require);
+                        }
+                    }
+                }
+                Files.write(outputRoot.resolve("module-info.class"), ASMUtils.classNodeToBytes(modInfo), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            }
+
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }

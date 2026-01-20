@@ -1,7 +1,5 @@
 package xyz.wagyourtail.jvmdg.j7.stub;
 
-import xyz.wagyourtail.jvmdg.version.Modify;
-import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.*;

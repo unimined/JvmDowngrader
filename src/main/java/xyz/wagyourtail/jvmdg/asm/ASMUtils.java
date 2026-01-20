@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.asm;
 
+import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.ClassNode;
 
@@ -174,6 +175,18 @@ public class ASMUtils {
         ClassNode node = new ClassNode();
         new ClassReader(bytes).accept(node, flags);
         return node;
+    }
+
+    public static byte[] classNodeToBytes(@NotNull final ClassNode node) {
+        ClassWriter cw = new ClassWriter(0);
+        node.accept(cw);
+        return cw.toByteArray();
+    }
+
+    public static byte[] classNodeToBytes(@NotNull final ClassNode node, int flags) {
+        ClassWriter cw = new ClassWriter(flags);
+        node.accept(cw);
+        return cw.toByteArray();
     }
 
 }

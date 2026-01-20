@@ -60,7 +60,6 @@ public class Java7Downgrader extends VersionProvider {
                     if (insn.getType() == AbstractInsnNode.INVOKE_DYNAMIC_INSN) {
                         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
                         String name = indyToMethod(method, indy, clazz, addToClinit, callSiteType, handleType, lookupType, methodType, reflectionRefList);
-                        InsnList insns = new InsnList();
 
                         method.instructions.set(indy, new MethodInsnNode(
                             Opcodes.INVOKESTATIC,

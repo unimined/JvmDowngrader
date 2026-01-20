@@ -356,7 +356,7 @@ public class ClassDowngrader implements Closeable {
             });
             boolean hasVersions = false;
             for (ClassNode c : extra) {
-                byte[] cBytes = classNodeToBytes(c);
+                byte[] cBytes = ASMUtils.classNodeToBytes(c, ClassWriter.COMPUTE_MAXS);
                 if (c.version > target) {
                     // write to multi-release location
                     outputs.put("META-INF/versions/" + Utils.classVersionToMajorVersion(c.version) + "/" + c.name, cBytes);
@@ -429,12 +429,6 @@ public class ClassDowngrader implements Closeable {
             }
         }
         return outputs;
-    }
-
-    public byte[] classNodeToBytes(@NotNull final ClassNode node) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        node.accept(cw);
-        return cw.toByteArray();
     }
 
     public void writeBytesToDebug(@NotNull String name, byte[] bytes) {
