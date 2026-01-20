@@ -98,13 +98,15 @@ the current list of transforms is:
 * Java 17->16
     * Add a `@PermittedSubClasses` annotation to sealed classes
 * Java 16->15
-    * Remove ACC_RECORD
+    * Remove `ACC_RECORD`
 * Java 11->10
     * Add a `@NestHost` annotation to nest members
     * Add a `@NestMembers` annotation to nest hosts
     * Insert sythetic "bridge" methods so that private fields/methods can be called from nest members.
+    * Replace Constant Dynamic calls with `INVOKEDYNAMIC`
 * Java 9->8
     * Make private interface methods use `INVOKESPECIAL` instead of `INVOKEINTERFACE`.
 * Java 8->7
 * Move private/default methods in interfaces to a `$jvmdg$StaticDefaults` inner class.
+* replace INDY method calls with some *fun* `MethodHandle` stuff.
 
