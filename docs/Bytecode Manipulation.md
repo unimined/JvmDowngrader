@@ -93,11 +93,14 @@ already implement the stubbed method themselves, or in a super class.
 The `otherTransforms` method is used to apply wider scale transforms to the bytecode, such as replacing all references
 to a class with a different class.
 the current list of transforms is:
-
+* Java 25->24
+  * Create static main methods to call instance main methods.
 * Java 17->16
-  * Add a `@PermittedSubClasses` annotation to sealed classes
+  * Remove `ACC_SEALED` and add `@PermittedSubClasses` annotation
 * Java 16->15
-  * Remove `ACC_RECORD`
+  * Remove `ACC_RECORD` and add `@RecordComponents` annotation
+* Java 15->14
+  * Insert synthetic "bridge" methods for private access from handles in nestmates.
 * Java 11->10
   * Add a `@NestHost` annotation to nest members
   * Add a `@NestMembers` annotation to nest hosts
