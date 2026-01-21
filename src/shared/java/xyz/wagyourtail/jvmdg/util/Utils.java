@@ -140,7 +140,7 @@ public class Utils {
 
     public static int classVersionToMajorVersion(int version) {
         if (version == Opcodes.V1_1) return 1;
-        else return version - Opcodes.V1_2 + 2;
+        else return (version & 0xFFFF) - Opcodes.V1_2 + 2;
     }
 
     public static int majorVersionToClassVersion(int version) {

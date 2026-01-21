@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.test.integration;
+package xyz.wagyourtail.jvmdg.test.integration.impl;
 
 import org.apache.commons.io.function.IOStream;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,6 +16,8 @@ import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.test.JavaRunner;
+import xyz.wagyourtail.jvmdg.test.integration.BaseIntegrationTests;
+import xyz.wagyourtail.jvmdg.test.integration.FlagsAndRunner;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;

@@ -145,6 +145,7 @@ public class Flags {
         flags.printDebug = printDebug;
         flags.debugSkipStub = new HashSet<>(debugSkipStub);
         flags.debugSkipStubs = new HashSet<>(debugSkipStubs);
+        flags.debugNoSynthetic = debugNoSynthetic;
         flags.debugDumpClasses = debugDumpClasses;
         flags.multiReleaseOriginal = multiReleaseOriginal;
         flags.multiReleaseVersions = new HashSet<>(multiReleaseVersions);

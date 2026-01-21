@@ -33,6 +33,7 @@ public abstract class BaseIntegrationTests {
 
     static {
         flags.api = List.of(javaApi.toFile());
+        flags.debugNoSynthetic = true;
     }
 
     private static <T, U> Stream<Map.Entry<T, U>> zip(Stream<T> a, Stream<U> b) {
