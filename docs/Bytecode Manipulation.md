@@ -30,8 +30,7 @@ the bytecode by extending the
 
 ### Stubs
 
-To create a stub, a method must be `public static` and annotated with [
-`@Stub`](/src/shared/java/xyz/wagyourtail/jvmdg/version/Stub.java).
+To create a stub, a method must be `public static` and annotated with [`@Stub`](/src/shared/java/xyz/wagyourtail/jvmdg/version/Stub.java).
 the `@Stub` annotation by default will use the first argument of the method as the target class and treat it as a
 instance method replacement.
 If the method is static, the `@Stub` annotation must be provided with an `@Ref` argument that specifies the target
@@ -96,17 +95,19 @@ to a class with a different class.
 the current list of transforms is:
 
 * Java 17->16
-    * Add a `@PermittedSubClasses` annotation to sealed classes
+  * Add a `@PermittedSubClasses` annotation to sealed classes
 * Java 16->15
-    * Remove `ACC_RECORD`
+  * Remove `ACC_RECORD`
 * Java 11->10
-    * Add a `@NestHost` annotation to nest members
-    * Add a `@NestMembers` annotation to nest hosts
-    * Insert sythetic "bridge" methods so that private fields/methods can be called from nest members.
-    * Replace Constant Dynamic calls with `INVOKEDYNAMIC`
+  * Add a `@NestHost` annotation to nest members
+  * Add a `@NestMembers` annotation to nest hosts
+  * Insert synthetic "bridge" methods so that private fields/methods can be called from nest members.
+  * Replace Constant Dynamic calls with `INVOKEDYNAMIC`
 * Java 9->8
-    * Make private interface methods use `INVOKESPECIAL` instead of `INVOKEINTERFACE`.
+  * Make private interface methods use `INVOKESPECIAL` instead of `INVOKEINTERFACE`.
 * Java 8->7
-* Move private/default methods in interfaces to a `$jvmdg$StaticDefaults` inner class.
-* replace INDY method calls with some *fun* `MethodHandle` stuff.
-
+  * Move private/default methods in interfaces to a `$jvmdg$StaticDefaults` inner class.
+* Java 7->6
+  * replace INDY method calls with some *fun* `MethodHandle` stuff.
+* Java 6->5 
+  * remove frames
