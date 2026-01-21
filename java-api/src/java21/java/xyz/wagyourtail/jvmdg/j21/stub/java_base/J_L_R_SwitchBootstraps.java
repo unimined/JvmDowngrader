@@ -73,7 +73,7 @@ public class J_L_R_SwitchBootstraps {
         smnode.visitCode();
 
         // private static <name>(Object value, int start) {
-        //     Objects.checkIndex(start, types.size());
+        //     Objects.checkIndex(start, types.size() + 1);
         //     if (value == null) {
         //         return -1;
         //     }
@@ -95,7 +95,7 @@ public class J_L_R_SwitchBootstraps {
         smnode.visitJumpInsn(Opcodes.IFLT, l1);
         smnode.visitVarInsn(Opcodes.ILOAD, 1);
         // stack: start
-        smnode.visitLdcInsn(types.size());
+        smnode.visitLdcInsn(types.size() + 1);
         // stack: start, types.size()
         smnode.visitJumpInsn(Opcodes.IF_ICMPGE, l1);
         var l2 = new Label();
@@ -109,7 +109,7 @@ public class J_L_R_SwitchBootstraps {
         // string concat factory with constants
         smnode.visitVarInsn(Opcodes.ILOAD, 1);
         // stack: IOOBE, IOOBE, start
-        smnode.visitLdcInsn(types.size());
+        smnode.visitLdcInsn(types.size() + 1);
         // stack: IOOBE, IOOBE, start, types.size()
         smnode.visitInvokeDynamicInsn(
             "makeConcatWithConstants",
@@ -153,203 +153,206 @@ public class J_L_R_SwitchBootstraps {
         }
         Label def = new Label();
 
-        smnode.visitVarInsn(Opcodes.ILOAD, 1);
-        smnode.visitTableSwitchInsn(0, labels.size() - 1, def, startLabels.toArray(new Label[0]));
+        if (!labels.isEmpty()) {
+            smnode.visitVarInsn(Opcodes.ILOAD, 1);
+            smnode.visitTableSwitchInsn(0, labels.size() - 1, def, startLabels.toArray(new Label[0]));
 
-        for (int j = 0; j < types.size(); j++) {
-            var caseLabels = labels.get(j);
-            smnode.visitLabel(caseLabels.start);
-            smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-            var type = types.get(j);
-            if (type instanceof EnumType et) {
-                // lookahead if multiple EnumTypes in a row
-                int k = j + 1;
-                while (k < types.size() && types.get(k) instanceof EnumType ket && ket.type.equals(et.type)) {
-                    k++;
-                }
-                k--;
-                if (k != j) {
+            for (int j = 0; j < types.size(); j++) {
+                var caseLabels = labels.get(j);
+                smnode.visitLabel(caseLabels.start);
+                smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+                var type = types.get(j);
+                if (type instanceof EnumType et) {
+                    // lookahead if multiple EnumTypes in a row
+                    int k = j + 1;
+                    while (k < types.size() && types.get(k) instanceof EnumType ket && ket.type.equals(et.type)) {
+                        k++;
+                    }
+                    k--;
                     var lastCaseLabels = labels.get(k);
 
-                    Set<HashWithLabel> hashWithLabels = new TreeSet<>();
-                    for (int l = j; l <= k; l++) {
-                        EnumType ket = (EnumType) types.get(l);
-                        hashWithLabels.add(new HashWithLabel(ket.value.hashCode(), labels.get(l).afterTypeCheck));
-                    }
+                    // check if is of type
+                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                    smnode.visitTypeInsn(Opcodes.INSTANCEOF, et.type.getInternalName());
+                    smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
 
-                    if (hashWithLabels.size() > 1) {
-                        // check if is of type
-                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                        smnode.visitTypeInsn(Opcodes.INSTANCEOF, et.type.getInternalName());
-                        smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
-                        // cast
-                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                        smnode.visitTypeInsn(Opcodes.CHECKCAST, et.type.getInternalName());
-                        // get name
-                        smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, et.type.getInternalName(), "name", "()Ljava/lang/String;", false);
-                        // hashCode
-                        smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "hashCode", "()I", false);
-
-                        HashWithLabel[] hashWithLabelsArr = hashWithLabels.toArray(new HashWithLabel[0]);
-                        int[] hashCodes = new int[hashWithLabels.size()];
-                        Label[] tableLabels = new Label[hashWithLabels.size()];
-                        for (int l = 0; l < hashWithLabelsArr.length; l++) {
-                            hashCodes[l] = hashWithLabelsArr[l].hash;
-                            tableLabels[l] = hashWithLabelsArr[l].label;
-                        }
-                        smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
-                    }
-                }
-                // load enum value
-                smnode.visitLabel(caseLabels.afterTypeCheck);
-                smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-                smnode.visitLdcInsn(et.value);
-                smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                smnode.visitTypeInsn(Opcodes.CHECKCAST, et.type.getInternalName());
-                smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, et.type.getInternalName(), "name", "()Ljava/lang/String;", false);
-                // equals
-                smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-                // if true return index
-                smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);
-                smnode.visitLdcInsn(j);
-                smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
-            } else if (type instanceof String) {
-                // lookahead if multiple Strings in a row
-                int k = j + 1;
-                while (k < types.size() && types.get(k) instanceof String) {
-                    k++;
-                }
-                k--;
-                if (k != j) {
-                    var lastCaseLabels = labels.get(k);
-
-                    Set<HashWithLabel> hashWithLabels = new TreeSet<>();
-                    for (int l = j; l <= k; l++) {
-                        hashWithLabels.add(new HashWithLabel(types.get(l).hashCode(), labels.get(l).afterTypeCheck));
-                    }
-                    if (hashWithLabels.size() > 1) {
-
-                        // check if is of type
-                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                        smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/String");
-                        smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
-                        // hashCode
-                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                        smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
-
-                        HashWithLabel[] hashWithLabelsArr = hashWithLabels.toArray(new HashWithLabel[0]);
-                        int[] hashCodes = new int[hashWithLabels.size()];
-                        Label[] tableLabels = new Label[hashWithLabels.size()];
-                        for (int l = 0; l < hashWithLabelsArr.length; l++) {
-                            hashCodes[l] = hashWithLabelsArr[l].hash;
-                            tableLabels[l] = hashWithLabelsArr[l].label;
+                    if (k != j) {
+                        Set<HashWithLabel> hashWithLabels = new TreeSet<>();
+                        for (int l = j; l <= k; l++) {
+                            EnumType ket = (EnumType) types.get(l);
+                            hashWithLabels.add(new HashWithLabel(ket.value.hashCode(), labels.get(l).afterTypeCheck));
                         }
 
-                        smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
+                        if (hashWithLabels.size() > 1) {
+                            // cast
+                            smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                            smnode.visitTypeInsn(Opcodes.CHECKCAST, et.type.getInternalName());
+                            // get name
+                            smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, et.type.getInternalName(), "name", "()Ljava/lang/String;", false);
+                            // hashCode
+                            smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "hashCode", "()I", false);
+
+                            HashWithLabel[] hashWithLabelsArr = hashWithLabels.toArray(new HashWithLabel[0]);
+                            int[] hashCodes = new int[hashWithLabels.size()];
+                            Label[] tableLabels = new Label[hashWithLabels.size()];
+                            for (int l = 0; l < hashWithLabelsArr.length; l++) {
+                                hashCodes[l] = hashWithLabelsArr[l].hash;
+                                tableLabels[l] = hashWithLabelsArr[l].label;
+                            }
+                            smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
+                        }
                     }
-                }
-                smnode.visitLabel(caseLabels.afterTypeCheck);
-                smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-                // load string
-                smnode.visitLdcInsn(type);
-                smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                // equals
-                smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false);
-                // if true return index
-                smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);
-                smnode.visitLdcInsn(j);
-                smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
-            } else if (type instanceof Integer) {
-                // lookahead if multiple ints in a row
-                int k = j + 1;
-                while (k < types.size() && types.get(k) instanceof Integer) {
-                    k++;
-                }
-                k--;
-                if (k != j) {
-                    var lastCaseLabels = labels.get(k);
-
-                    Set<HashWithLabel> hashWithLabels = new TreeSet<>();
-                    for (int l = j; l <= k; l++) {
-                        hashWithLabels.add(new HashWithLabel(types.get(l).hashCode(), labels.get(l).afterTypeCheck));
+                    // load enum value
+                    smnode.visitLabel(caseLabels.afterTypeCheck);
+                    smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+                    smnode.visitLdcInsn(et.value);
+                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                    smnode.visitTypeInsn(Opcodes.CHECKCAST, et.type.getInternalName());
+                    smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, et.type.getInternalName(), "name", "()Ljava/lang/String;", false);
+                    // equals
+                    smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+                    // if true return index
+                    smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);
+                    smnode.visitLdcInsn(j);
+                    smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
+                } else if (type instanceof String) {
+                    // lookahead if multiple Strings in a row
+                    int k = j + 1;
+                    while (k < types.size() && types.get(k) instanceof String) {
+                        k++;
                     }
+                    k--;
+                    if (k != j) {
+                        var lastCaseLabels = labels.get(k);
 
-                    if (hashWithLabels.size() > 1) {
+                        Set<HashWithLabel> hashWithLabels = new TreeSet<>();
+                        for (int l = j; l <= k; l++) {
+                            hashWithLabels.add(new HashWithLabel(types.get(l).hashCode(), labels.get(l).afterTypeCheck));
+                        }
+                        if (hashWithLabels.size() > 1) {
 
-                        // check if is of type
-                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                        smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Number");
-                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                        smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Character");
-                        smnode.visitInsn(Opcodes.IOR);
-                        smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
-                        // hashCode
-                        smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                        smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
+                            // check if is of type
+                            smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                            smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/String");
+                            smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
+                            // hashCode
+                            smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                            smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
 
-                        HashWithLabel[] hashWithLabelsArr = hashWithLabels.toArray(new HashWithLabel[0]);
-                        int[] hashCodes = new int[hashWithLabels.size()];
-                        Label[] tableLabels = new Label[hashWithLabels.size()];
-                        for (int l = 0; l < hashWithLabelsArr.length; l++) {
-                            hashCodes[l] = hashWithLabelsArr[l].hash;
-                            tableLabels[l] = hashWithLabelsArr[l].label;
+                            HashWithLabel[] hashWithLabelsArr = hashWithLabels.toArray(new HashWithLabel[0]);
+                            int[] hashCodes = new int[hashWithLabels.size()];
+                            Label[] tableLabels = new Label[hashWithLabels.size()];
+                            for (int l = 0; l < hashWithLabelsArr.length; l++) {
+                                hashCodes[l] = hashWithLabelsArr[l].hash;
+                                tableLabels[l] = hashWithLabelsArr[l].label;
+                            }
+
+                            smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
+                        }
+                    }
+                    smnode.visitLabel(caseLabels.afterTypeCheck);
+                    smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+                    // load string
+                    smnode.visitLdcInsn(type);
+                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                    // equals
+                    smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "equals", "(Ljava/lang/Object;)Z", false);
+                    // if true return index
+                    smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);
+                    smnode.visitLdcInsn(j);
+                    smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
+                } else if (type instanceof Integer) {
+                    // lookahead if multiple ints in a row
+                    int k = j + 1;
+                    while (k < types.size() && types.get(k) instanceof Integer) {
+                        k++;
+                    }
+                    k--;
+                    if (k != j) {
+                        var lastCaseLabels = labels.get(k);
+
+                        Set<HashWithLabel> hashWithLabels = new TreeSet<>();
+                        for (int l = j; l <= k; l++) {
+                            hashWithLabels.add(new HashWithLabel(types.get(l).hashCode(), labels.get(l).afterTypeCheck));
                         }
 
-                        smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
-                    }
-                }
+                        if (hashWithLabels.size() > 1) {
 
-                smnode.visitLabel(caseLabels.afterTypeCheck);
+                            // check if is of type
+                            smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                            smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Number");
+                            smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                            smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Character");
+                            smnode.visitInsn(Opcodes.IOR);
+                            smnode.visitJumpInsn(Opcodes.IFEQ, lastCaseLabels.end);
+                            // hashCode
+                            smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                            smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Object", "hashCode", "()I", false);
+
+                            HashWithLabel[] hashWithLabelsArr = hashWithLabels.toArray(new HashWithLabel[0]);
+                            int[] hashCodes = new int[hashWithLabels.size()];
+                            Label[] tableLabels = new Label[hashWithLabels.size()];
+                            for (int l = 0; l < hashWithLabelsArr.length; l++) {
+                                hashCodes[l] = hashWithLabelsArr[l].hash;
+                                tableLabels[l] = hashWithLabelsArr[l].label;
+                            }
+
+                            smnode.visitLookupSwitchInsn(lastCaseLabels.end, hashCodes, tableLabels);
+                        }
+                    }
+
+                    smnode.visitLabel(caseLabels.afterTypeCheck);
+                    smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+                    // load int
+                    // if (value instanceof Number v && v.intValue() == type.intValue()) {
+                    //     return j;
+                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                    smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Number");
+                    var notnum = new Label();
+                    smnode.visitJumpInsn(Opcodes.IFEQ, notnum);
+                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                    smnode.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Number");
+                    smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "intValue", "()I", false);
+                    smnode.visitLdcInsn(type);
+                    smnode.visitJumpInsn(Opcodes.IF_ICMPEQ, notnum);
+                    smnode.visitLdcInsn(j);
+                    smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
+                    smnode.visitLabel(notnum);
+                    // } else if (value instanceof Character v && v.charValue() == type.intValue()) {
+                    //     return j;
+                    // }
+                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                    smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Character");
+                    smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);
+                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                    smnode.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Character");
+                    smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
+                    smnode.visitLdcInsn(type);
+                    smnode.visitJumpInsn(Opcodes.IF_ICMPEQ, caseLabels.end);
+                    smnode.visitLdcInsn(j);
+                    smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
+                } else if (type instanceof Type) {
+                    // if (value instanceof type) {
+                    //     return j;
+                    // }
+                    smnode.visitVarInsn(Opcodes.ALOAD, 0);
+                    smnode.visitTypeInsn(Opcodes.INSTANCEOF, ((Type) type).getInternalName());
+                    smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);
+                    smnode.visitLdcInsn(j);
+                    smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
+                } else {
+                    throw new IllegalStateException("Unknown type for switch: " + type);
+                }
+                smnode.visitLabel(caseLabels.end);
                 smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-                // load int
-                // if (value instanceof Number v && v.intValue() == type.intValue()) {
-                //     return j;
-                smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Number");
-                var notnum = new Label();
-                smnode.visitJumpInsn(Opcodes.IFEQ, notnum);
-                smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                smnode.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Number");
-                smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Number", "intValue", "()I", false);
-                smnode.visitLdcInsn(type);
-                smnode.visitJumpInsn(Opcodes.IF_ICMPEQ, notnum);
-                smnode.visitLdcInsn(j);
-                smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
-                smnode.visitLabel(notnum);
-                // } else if (value instanceof Character v && v.charValue() == type.intValue()) {
-                //     return j;
-                // }
-                smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                smnode.visitTypeInsn(Opcodes.INSTANCEOF, "java/lang/Character");
-                smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);
-                smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                smnode.visitTypeInsn(Opcodes.CHECKCAST, "java/lang/Character");
-                smnode.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false);
-                smnode.visitLdcInsn(type);
-                smnode.visitJumpInsn(Opcodes.IF_ICMPEQ, caseLabels.end);
-                smnode.visitLdcInsn(j);
-                smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
-            } else if (type instanceof Type) {
-                // if (value instanceof type) {
-                //     return j;
-                // }
-                smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                smnode.visitTypeInsn(Opcodes.INSTANCEOF, ((Type) type).getInternalName());
-                smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);
-                smnode.visitLdcInsn(j);
-                smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
-            } else {
-                throw new IllegalStateException("Unknown type for switch: " + type);
             }
-            smnode.visitLabel(caseLabels.end);
-            smnode.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
         }
+
         smnode.visitLabel(def);
         smnode.visitLdcInsn(types.size());
         smnode.visitLabel(retLabel);
         smnode.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[]{Opcodes.INTEGER});
         smnode.visitInsn(Opcodes.IRETURN);
-
 
         smnode.visitMaxs(0, 0);
         smnode.visitEnd();
