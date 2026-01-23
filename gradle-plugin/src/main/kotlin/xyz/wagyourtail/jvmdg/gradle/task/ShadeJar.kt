@@ -68,24 +68,12 @@ abstract class ShadeJar: Jar(), ShadeFlags, FlagsConvention {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
 
-        val downgradeApis = mutableSetOf<File>()
-        for (path in apiJar.get()) {
-            val downgraded = path.resolveSibling(path.nameWithoutExtension + "-downgraded-${version}.jar")
-            if (!downgraded.exists() || isRefreshDependencies) {
-                ClassDowngrader.downgradeTo(this.toFlags()).use {
-                    ZipDowngrader.downgradeZip(it, path.toPath(), emptySet(), downgraded.toPath())
-                }
-            }
-            downgradeApis.add(downgraded)
-        }
-        downgradeApis
-
         ApiShader.shadeApis(
             this.toFlags(),
             shadePath.get().invoke(archiveFileName.get()),
             inputFile.asFile.get(),
             tempOutput,
-            downgradeApis
+            apiJar.get().toSet()
         )
 
         inputFile.asFile.get().toPath().readZipInputStreamFor("META-INF/MANIFEST.MF", false) { inp ->

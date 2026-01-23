@@ -197,6 +197,7 @@ public class PathDowngrader {
                                 Attributes attr = manifest.getMainAttributes();
                                 if (Flags.jvmdgVersion != null) {
                                     attr.putValue("JvmDowngrader-Version", Flags.jvmdgVersion);
+                                    attr.putValue("JvmDowngrader-Downgrade-Target", String.valueOf(downgrader.flags.classVersion));
                                 }
                                 if (downgrader.flags.multiReleaseOriginal || !downgrader.flags.multiReleaseVersions.isEmpty()) {
                                     attr.putValue("Multi-Release", "true");

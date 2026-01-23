@@ -24,6 +24,8 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 public class ApiShader {
 
@@ -46,7 +48,7 @@ public class ApiShader {
         System.out.println("Shaded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
-    public static void shadeApis(Flags flags, String prefix, File input, File output, Set<File> downgradedApi) throws IOException {
+    public static void shadeApis(Flags flags, String prefix, File input, File output, Set<File> apiJars) throws IOException {
         if (output.exists()) {
             output.delete();
         }
@@ -55,8 +57,8 @@ public class ApiShader {
         }
         List<FileSystem> apiFs = new ArrayList<>();
         try {
-            for (File file : downgradedApi) {
-                apiFs.add(Utils.openZipFileSystem(file.toPath(), false));
+            for (Path file : resolveDowngradedApi(flags, apiJars)) {
+                apiFs.add(Utils.openZipFileSystem(file, false));
             }
 
             try (FileSystem inputFs = Utils.openZipFileSystem(input.toPath(), false)) {
@@ -76,17 +78,17 @@ public class ApiShader {
         }
     }
 
-    public static void shadeApis(Flags flags, String prefix, Path inputRoot, Path outputRoot, Set<File> downgradedApi) throws IOException {
-        shadeApis(flags, Collections.singletonList(prefix), Collections.singletonList(inputRoot), Collections.singletonList(outputRoot), downgradedApi);
+    public static void shadeApis(Flags flags, String prefix, Path inputRoot, Path outputRoot, Set<File> apiJars) throws IOException {
+        shadeApis(flags, Collections.singletonList(prefix), Collections.singletonList(inputRoot), Collections.singletonList(outputRoot), apiJars);
     }
 
-    public static void shadeApis(Flags flags, List<String> prefix, List<Path> inputRoots, List<Path> outputRoots, Set<File> downgradedApi) throws IOException {
+    public static void shadeApis(Flags flags, List<String> prefix, List<Path> inputRoots, List<Path> outputRoots, Set<File> apiJars) throws IOException {
         for (String p : prefix) {
             if (!p.endsWith("/")) {
                 throw new IllegalArgumentException("prefix \"" + p + "\" must end with /");
             }
         }
-        Set<Path> downgradedApiPath = resolveDowngradedApi(flags, downgradedApi);
+        Set<Path> downgradedApiPath = resolveDowngradedApi(flags, apiJars);
         List<FileSystem> apiFs = new ArrayList<>();
         try {
             for (Path file : downgradedApiPath) {
@@ -107,27 +109,32 @@ public class ApiShader {
         }
     }
 
-    public static Set<Path> resolveDowngradedApi(Flags flags, @Nullable Set<File> downgradedApi) throws IOException {
+    public static Set<Path> resolveDowngradedApi(Flags flags, @Nullable Set<File> apiJars) throws IOException {
         // step 1: downgrade the api to the target version
         Set<Path> downgradedApis = new HashSet<>();
-        if (downgradedApi == null) {
-            try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
-                for (File file : flags.findJavaApi()) {
-                    String name = file.getName();
-                    int idx = name.lastIndexOf('.');
-                    if (idx == -1) {
-                        throw new IllegalArgumentException("File has no extension: " + name);
+        try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
+            for (File file : apiJars == null ? flags.findJavaApi() : apiJars) {
+                // if file manifest has JvmDowngrader-Downgrade-Target of target or lower...
+                try (JarFile jf = new JarFile(file)) {
+                    Manifest mf = jf.getManifest();
+                    if (mf != null) {
+                        String target = mf.getMainAttributes().getValue("JvmDowngrader-Downgrade-Target");
+                        if (target != null && flags.classVersion >= Integer.parseInt(target)) {
+                            downgradedApis.add(file.toPath());
+                            continue;
+                        }
                     }
-                    String beforeExt = name.substring(0, idx);
-                    String ext = name.substring(idx);
-                    Path targetPath = file.toPath().resolveSibling(beforeExt + "-downgraded" + flags.classVersion + ext);
-                    ZipDowngrader.downgradeZip(downgrader, file.toPath(), new HashSet<URL>(), targetPath);
-                    downgradedApis.add(targetPath);
+                } catch (Throwable ignored) {}
+                String name = file.getName();
+                int idx = name.lastIndexOf('.');
+                if (idx == -1) {
+                    throw new IllegalArgumentException("File has no extension: " + name);
                 }
-            }
-        } else {
-            for (File file : downgradedApi) {
-                downgradedApis.add(file.toPath());
+                String beforeExt = name.substring(0, idx);
+                String ext = name.substring(idx);
+                Path targetPath = file.toPath().resolveSibling(beforeExt + "-downgraded" + flags.classVersion + ext);
+                ZipDowngrader.downgradeZip(downgrader, file.toPath(), new HashSet<URL>(), targetPath);
+                downgradedApis.add(targetPath);
             }
         }
         return downgradedApis;

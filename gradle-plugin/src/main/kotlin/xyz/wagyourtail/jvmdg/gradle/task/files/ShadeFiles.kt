@@ -79,19 +79,6 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
         val toDowngrade = inputCollection.map { it.toPath() }.filter { it.exists() }
         val fileSystems = mutableSetOf<FileSystem>()
 
-
-        val downgradeApis = mutableSetOf<File>()
-        for (path in apiJar.get()) {
-            val downgraded = path.resolveSibling(path.nameWithoutExtension + "-downgraded-${version}.jar")
-            if (!downgraded.exists() || isRefreshDependencies) {
-                ClassDowngrader.downgradeTo(this.toFlags()).use {
-                    ZipDowngrader.downgradeZip(it, path.toPath(), emptySet(), downgraded.toPath())
-                }
-            }
-            downgradeApis.add(downgraded)
-        }
-        downgradeApis
-
         try {
 
             outputs.files.forEach { it.deleteRecursively() }
@@ -119,7 +106,7 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
                     shadePath.get().invoke(toDowngrade[i].name),
                     toDowngradeFile,
                     downgradedFile,
-                    downgradeApis
+                    apiJar.get().toSet()
                 )
             }
         } finally {
