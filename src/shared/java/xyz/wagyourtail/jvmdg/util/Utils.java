@@ -5,6 +5,7 @@ import sun.misc.Unsafe;
 import sun.reflect.ReflectionFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
@@ -17,6 +18,8 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.zip.ZipOutputStream;
 
 public class Utils {
@@ -275,5 +278,35 @@ public class Utils {
         }
         return true;
     }
+
+    public static String getSha1(Path path) throws IOException, NoSuchAlgorithmException {
+        MessageDigest digestSha1 = MessageDigest.getInstance("SHA-1");
+        try (InputStream is = Files.newInputStream(path)) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = is.read(buffer)) != -1) {
+                digestSha1.update(buffer, 0, read);
+            }
+        }
+        byte[] hashBytes = digestSha1.digest();
+        StringBuilder hash = new StringBuilder();
+        for (byte b : hashBytes) {
+            hash.append(String.format("%02x", b));
+        }
+        return hash.toString();
+    }
+
+    public static String getSha1(File file) throws IOException, NoSuchAlgorithmException {
+        return getSha1(file.toPath());
+    }
+
+    public static String getShortSha1(Path path) throws IOException, NoSuchAlgorithmException {
+        return getSha1(path).substring(0, 7);
+    }
+
+    public static String getShortSha1(File file) throws IOException, NoSuchAlgorithmException {
+        return getSha1(file).substring(0, 7);
+    }
+
 
 }

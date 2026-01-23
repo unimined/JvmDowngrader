@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.*;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -132,10 +133,12 @@ public class ApiShader {
                 }
                 String beforeExt = name.substring(0, idx);
                 String ext = name.substring(idx);
-                Path targetPath = file.toPath().resolveSibling(beforeExt + "-downgraded" + flags.classVersion + ext);
+                Path targetPath = file.toPath().resolveSibling(beforeExt + "-" + Utils.getShortSha1(file) + "-downgraded-" + flags.classVersion + ext);
                 ZipDowngrader.downgradeZip(downgrader, file.toPath(), new HashSet<URL>(), targetPath);
                 downgradedApis.add(targetPath);
             }
+        } catch (NoSuchAlgorithmException nse) {
+            throw new IOException(nse);
         }
         return downgradedApis;
     }
