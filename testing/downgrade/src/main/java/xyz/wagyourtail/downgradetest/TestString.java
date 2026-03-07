@@ -58,6 +58,14 @@ public class TestString {
         StringBuilder sb = new StringBuilder("edcba");
         sb.getChars(0, 3, out, 0);
         System.out.println(out);
+
+        String name = Character.getName(' ');
+        System.out.println(name);
+        System.out.println(Character.codePointOf(name));
+
+        name = Character.getName('f');
+        System.out.println(name);
+        System.out.println(Character.codePointOf(name));
     }
 
 }
