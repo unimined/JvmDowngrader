@@ -7,8 +7,10 @@ import java.math.BigInteger;
 
 public class J_L_Long {
 
-    @Stub(ref = @Ref("java/lang/Long"))
-    public static final int BYTES = Long.SIZE / Byte.SIZE;
+    @Stub(ref = @Ref(value = "java/lang/Long", member = "BYTES", desc = "I"))
+    public static int getBytes() {
+        return Long.SIZE / Byte.SIZE;
+    }
 
     @Stub(ref = @Ref("java/lang/Long"))
     public static String toUnsignedString(long i, int radix) {

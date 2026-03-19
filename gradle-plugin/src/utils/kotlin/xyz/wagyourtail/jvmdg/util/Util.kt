@@ -65,35 +65,7 @@ fun InputStream.readClass(flags: Int = ClassReader.SKIP_CODE): ClassNode {
     }
 }
 
-fun JavaVersion.toOpcode(): Int = when (this) {
-    JavaVersion.VERSION_1_1 -> Opcodes.V1_1
-    JavaVersion.VERSION_1_2 -> Opcodes.V1_2
-    JavaVersion.VERSION_1_3 -> Opcodes.V1_3
-    JavaVersion.VERSION_1_4 -> Opcodes.V1_4
-    JavaVersion.VERSION_1_5 -> Opcodes.V1_5
-    JavaVersion.VERSION_1_6 -> Opcodes.V1_6
-    JavaVersion.VERSION_1_7 -> Opcodes.V1_7
-    JavaVersion.VERSION_1_8 -> Opcodes.V1_8
-    JavaVersion.VERSION_1_9 -> Opcodes.V9
-    JavaVersion.VERSION_1_10 -> Opcodes.V10
-    JavaVersion.VERSION_11 -> Opcodes.V11
-    JavaVersion.VERSION_12 -> Opcodes.V12
-    JavaVersion.VERSION_13 -> Opcodes.V13
-    JavaVersion.VERSION_14 -> Opcodes.V14
-    JavaVersion.VERSION_15 -> Opcodes.V15
-    JavaVersion.VERSION_16 -> Opcodes.V16
-    JavaVersion.VERSION_17 -> Opcodes.V17
-    JavaVersion.VERSION_18 -> Opcodes.V18
-    JavaVersion.VERSION_19 -> Opcodes.V19
-    JavaVersion.VERSION_20 -> Opcodes.V20
-    JavaVersion.VERSION_21 -> Opcodes.V21
-    JavaVersion.VERSION_22 -> Opcodes.V22
-    JavaVersion.VERSION_23 -> Opcodes.V23
-    JavaVersion.VERSION_24 -> Opcodes.V24
-    JavaVersion.VERSION_25 -> Opcodes.V25
-//    JavaVersion.VERSION_26 -> Opcodes.V26
-    else -> throw IllegalArgumentException("Unsupported Java Version: $this")
-}
+fun JavaVersion.toOpcode(): Int = if (this == JavaVersion.VERSION_1_1) Opcodes.V1_1 else Opcodes.V1_2 - 2 + this.majorVersion.toInt()
 
 operator fun JavaVersion.rangeTo(that: JavaVersion): Array<JavaVersion> {
     return JavaVersion.entries.toTypedArray().copyOfRange(this.ordinal, that.ordinal + 1)

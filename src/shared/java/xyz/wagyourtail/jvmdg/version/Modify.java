@@ -22,6 +22,6 @@ public @interface Modify {
      */
     Class<?>[] MODIFY_SIG = new Class<?>[]{MethodNode.class, int.class, ClassNode.class, Set.class, boolean.class};
 
-    Ref ref() default @Ref("");
+    Ref ref() default @Ref();
 
 }

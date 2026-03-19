@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Ref {
 
-    String value();
+    String value() default "";
 
     String member() default "";
 

@@ -112,6 +112,7 @@ public class Utils {
         }
         return null;
     }
+
     public static FileSystem openZipFileSystem(Path path, boolean create) throws IOException {
         if (create && !Files.exists(path)) {
             new ZipOutputStream(Files.newOutputStream(path)).close();
@@ -307,6 +308,5 @@ public class Utils {
     public static String getShortSha1(File file) throws IOException, NoSuchAlgorithmException {
         return getSha1(file).substring(0, 7);
     }
-
 
 }

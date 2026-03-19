@@ -131,7 +131,7 @@ public class ApiCoverageChecker {
                         var modName = staticAndStub.module();
                         var stub = staticAndStub.fqm();
 
-                        if (stub.getName() != null && stub.getDesc().getSort() == Type.METHOD) {
+                        if (stub.getName() != null) {
                             Set<String> warnings = new HashSet<>();
                             var stubProvider = versionProvider.getStubMapper(stub.getOwner(), warnings);
                             if (!warnings.isEmpty()) {
@@ -141,43 +141,60 @@ public class ApiCoverageChecker {
                             }
                             // map classes in desc
                             var desc = stub.getDesc();
-                            var descArgs = desc.getArgumentTypes();
-                            for (int i = 0; i < descArgs.length; i++) {
-                                var arg = descArgs[i];
-                                if (arg.getSort() == Type.OBJECT) {
-                                    var stubCls = stubClassTypes.get(arg);
-                                    if (stubCls != null) {
-                                        descArgs[i] = stubCls;
-                                    }
-                                } else if (arg.getSort() == Type.ARRAY) {
-                                    var dims = arg.getDimensions();
-                                    var elem = arg.getElementType();
-                                    if (elem.getSort() == Type.OBJECT) {
-                                        var stubCls = stubClassTypes.get(elem);
+                            if (desc.getSort() == Type.METHOD) {
+                                var descArgs = desc.getArgumentTypes();
+                                for (int i = 0; i < descArgs.length; i++) {
+                                    var arg = descArgs[i];
+                                    if (arg.getSort() == Type.OBJECT) {
+                                        var stubCls = stubClassTypes.get(arg);
                                         if (stubCls != null) {
-                                            descArgs[i] = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
+                                            descArgs[i] = stubCls;
+                                        }
+                                    } else if (arg.getSort() == Type.ARRAY) {
+                                        var dims = arg.getDimensions();
+                                        var elem = arg.getElementType();
+                                        if (elem.getSort() == Type.OBJECT) {
+                                            var stubCls = stubClassTypes.get(elem);
+                                            if (stubCls != null) {
+                                                descArgs[i] = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            var ret = desc.getReturnType();
-                            if (ret.getSort() == Type.OBJECT) {
-                                var stubCls = stubClassTypes.get(ret);
-                                if (stubCls != null) {
-                                    ret = stubCls;
+                                var ret = desc.getReturnType();
+                                if (ret.getSort() == Type.OBJECT) {
+                                    var stubCls = stubClassTypes.get(ret);
+                                    if (stubCls != null) {
+                                        ret = stubCls;
+                                    }
+                                } else if (ret.getSort() == Type.ARRAY) {
+                                    var dims = ret.getDimensions();
+                                    var elem = ret.getElementType();
+                                    if (elem.getSort() == Type.OBJECT) {
+                                        var stubCls = stubClassTypes.get(elem);
+                                        if (stubCls != null) {
+                                            ret = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
+                                        }
+                                    }
                                 }
-                            } else if (ret.getSort() == Type.ARRAY) {
-                                var dims = ret.getDimensions();
-                                var elem = ret.getElementType();
+                                desc = Type.getMethodType(ret, descArgs);
+                            } else if (desc.getSort() == Type.OBJECT) {
+                                var stubCls = stubClassTypes.get(desc);
+                                if (stubCls != null) {
+                                    desc = stubCls;
+                                }
+                            } else if (desc.getSort() == Type.ARRAY) {
+                                var dims = desc.getDimensions();
+                                var elem = desc.getElementType();
                                 if (elem.getSort() == Type.OBJECT) {
                                     var stubCls = stubClassTypes.get(elem);
                                     if (stubCls != null) {
-                                        ret = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
+                                        desc = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
                                     }
                                 }
                             }
-                            var member = new MemberNameAndDesc(stub.getName(), Type.getMethodType(ret, descArgs));
 
+                            var member = new MemberNameAndDesc(stub.getName(), desc);
                             if (stubClassTypes.containsKey(stub.getOwner())) {
                                 if (stubClassMethods.remove(member.toFullyQualified(stubClassTypes.get(stub.getOwner())))) {
                                     availableStubCount++;

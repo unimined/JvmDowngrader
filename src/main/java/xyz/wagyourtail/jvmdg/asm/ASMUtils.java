@@ -117,6 +117,56 @@ public class ASMUtils {
         }
     }
 
+    public static int toHandleTag(int opcode) {
+        switch (opcode) {
+            case Opcodes.GETFIELD:
+                return Opcodes.H_GETFIELD;
+            case Opcodes.GETSTATIC:
+                return Opcodes.H_GETSTATIC;
+            case Opcodes.PUTFIELD:
+                return Opcodes.H_PUTFIELD;
+            case Opcodes.PUTSTATIC:
+                return Opcodes.H_PUTSTATIC;
+
+            case Opcodes.INVOKEVIRTUAL:
+                return Opcodes.H_INVOKEVIRTUAL;
+            case Opcodes.INVOKESTATIC:
+                return Opcodes.H_INVOKESTATIC;
+            case Opcodes.INVOKESPECIAL:
+                return Opcodes.H_INVOKESPECIAL;
+            case Opcodes.INVOKEINTERFACE:
+                return Opcodes.H_INVOKEINTERFACE;
+        }
+        if (opcode >= Opcodes.H_GETFIELD && opcode <= Opcodes.H_INVOKEINTERFACE) {
+            return opcode;
+        }
+        throw new IllegalArgumentException("Not a valid opcode. " + opcode);
+    }
+
+    public static int fromHandleTag(int h_tag) {
+        switch (h_tag) {
+            case Opcodes.H_GETFIELD:
+                return Opcodes.GETFIELD;
+            case Opcodes.H_GETSTATIC:
+                return Opcodes.GETSTATIC;
+            case Opcodes.H_PUTFIELD:
+                return Opcodes.PUTFIELD;
+            case Opcodes.H_PUTSTATIC:
+                return Opcodes.PUTSTATIC;
+
+            case Opcodes.H_INVOKEVIRTUAL:
+                return Opcodes.INVOKEVIRTUAL;
+            case Opcodes.H_INVOKESTATIC:
+                return Opcodes.INVOKESTATIC;
+            case Opcodes.H_INVOKESPECIAL:
+            case Opcodes.H_NEWINVOKESPECIAL:
+                return Opcodes.INVOKESPECIAL;
+            case Opcodes.H_INVOKEINTERFACE:
+                return Opcodes.H_INVOKEINTERFACE;
+        }
+        throw new IllegalArgumentException("Not a valid handle tag. " + h_tag);
+    }
+
     public static Type getPrimitiveFor(Type type) {
         switch (type.getInternalName()) {
             case "java/lang/Boolean":

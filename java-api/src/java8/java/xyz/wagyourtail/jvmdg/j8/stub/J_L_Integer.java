@@ -5,8 +5,10 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Integer {
 
-    @Stub(ref = @Ref("java/lang/Integer"))
-    public static final int BYTES = Integer.SIZE / Byte.SIZE;
+    @Stub(ref = @Ref(value = "java/lang/Integer", member = "BYTES", desc = "I"))
+    public static int getBytes() {
+        return Integer.SIZE / Byte.SIZE;
+    }
 
     @Stub(ref = @Ref("java/lang/Integer"))
     public static String toUnsignedString(int i, int radix) {

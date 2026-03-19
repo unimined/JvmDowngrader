@@ -52,6 +52,14 @@ public class MemberNameAndDesc {
         return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
     }
 
+    public boolean isMethod() {
+        return desc.getSort() == Type.METHOD;
+    }
+
+    public  boolean isField() {
+        return desc.getSort() != Type.METHOD;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

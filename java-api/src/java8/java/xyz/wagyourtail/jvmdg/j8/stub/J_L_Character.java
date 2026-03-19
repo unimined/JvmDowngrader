@@ -5,8 +5,10 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Character {
 
-    @Stub(ref = @Ref("java/lang/Character"))
-    public static final int BYTES = Character.SIZE / Byte.SIZE;
+    @Stub(ref = @Ref(value = "java/lang/Character", member = "BYTES", desc = "I"))
+    public static int getBytes() {
+        return Character.SIZE / Byte.SIZE;
+    }
 
     @Stub(ref = @Ref("java/lang/Character"))
     public static int hashCode(char value) {

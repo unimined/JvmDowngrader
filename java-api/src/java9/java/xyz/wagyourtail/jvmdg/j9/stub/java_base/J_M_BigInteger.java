@@ -16,9 +16,12 @@ import java.math.BigInteger;
 public class J_M_BigInteger {
 
 
-    @Stub(ref = @Ref("java/lang/Integer"))
-    public static final BigInteger TWO = BigInteger.valueOf(2);
     static final long LONG_MASK = 0xffffffffL;
+
+    @Stub(ref = @Ref(value = "java/lang/Integer", member = "TWO", desc = "Ljava/math/BigInteger;"))
+    public static BigInteger getTwo() {
+        return BigInteger.valueOf(2);
+    }
 
     @Modify(ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>", desc = "([BII)V"))
     public static void init(MethodNode mnode, int i) {

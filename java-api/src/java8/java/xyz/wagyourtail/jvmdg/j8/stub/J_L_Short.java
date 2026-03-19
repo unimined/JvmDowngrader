@@ -5,8 +5,10 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Short {
 
-    @Stub(ref = @Ref("java/lang/Short"))
-    public static final int BYTES = Short.SIZE / Byte.SIZE;
+    @Stub(ref = @Ref(value = "java/lang/Short", member = "BYTES", desc = "I"))
+    public static int getBytes() {
+        return Short.SIZE / Byte.SIZE;
+    }
 
     @Stub(ref = @Ref("java/lang/Short"))
     public static int hashCode(short value) {

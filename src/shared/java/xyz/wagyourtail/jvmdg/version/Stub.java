@@ -6,14 +6,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target({ElementType.METHOD, ElementType.FIELD})
+@Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Stub {
 
     /**
      * reference to the stub target, if it can't be auto-resolved.
      */
-    Ref ref() default @Ref("");
+    Ref ref() default @Ref();
 
     /**
      * if the input version in the VersionProvider should be pushed onto the stack before the stub is called.

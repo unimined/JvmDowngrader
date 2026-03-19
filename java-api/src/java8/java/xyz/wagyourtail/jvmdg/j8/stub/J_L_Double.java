@@ -5,8 +5,10 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 public class J_L_Double {
 
-    @Stub(ref = @Ref("java/lang/Double"))
-    public static final int BYTES = Double.SIZE / Byte.SIZE;
+    @Stub(ref = @Ref(value = "java/lang/Double", member = "BYTES", desc = "I"))
+    public static int getBytes() {
+        return Double.SIZE / Byte.SIZE;
+    }
 
     @Stub(ref = @Ref("java/lang/Double"))
     public static boolean isFinite(double d) {

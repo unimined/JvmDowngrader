@@ -240,8 +240,6 @@ fun downgradeApi(version: JavaVersion): TaskProvider<Jar> {
         dependsOn(tasks.jar)
         val apiJar = tasks.jar.get().archiveFile.get().asFile.absolutePath
 
-        val rootMain = project(":").sourceSets.main.get()
-
         mainClass.set("xyz.wagyourtail.jvmdg.compile.ZipDowngrader")
         classpath = configurations.runtimeClasspath.get()
         workingDir = project.layout.buildDirectory.get().asFile
@@ -275,12 +273,14 @@ fun downgradeApi(version: JavaVersion): TaskProvider<Jar> {
     }
 }
 
+val downgradeJar25 = downgradeApi(JavaVersion.VERSION_25)
 val downgradeJar21 = downgradeApi(JavaVersion.VERSION_21)
 val downgradeJar17 = downgradeApi(JavaVersion.VERSION_17)
 val downgradeJar11 = downgradeApi(JavaVersion.VERSION_11)
 val downgradeJar8 = downgradeApi(JavaVersion.VERSION_1_8)
 
 tasks.assemble {
+    dependsOn(downgradeJar25)
     dependsOn(downgradeJar21)
     dependsOn(downgradeJar17)
     dependsOn(downgradeJar11)
@@ -310,6 +310,10 @@ publishing {
             version = rootProject.version as String
 
             from(components["java"])
+
+            artifact(downgradeJar25) {
+                classifier = "downgraded-25"
+            }
 
             artifact(downgradeJar21) {
                 classifier = "downgraded-21"

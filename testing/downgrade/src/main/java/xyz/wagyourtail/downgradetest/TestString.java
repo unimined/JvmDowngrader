@@ -66,6 +66,10 @@ public class TestString {
         name = Character.getName('f');
         System.out.println(name);
         System.out.println(Character.codePointOf(name));
+
+       String aa = "Fuß";
+       String bb = "FUSS";
+       System.out.println(String.UNICODE_CASEFOLD_ORDER.compare(aa, bb));
     }
 
 }

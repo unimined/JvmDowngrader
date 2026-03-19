@@ -235,7 +235,10 @@ public class ClassDowngrader implements Closeable {
             }
         }
         try (InputStream stream = classLoader.getResourceAsStream(type.getInternalName() + ".class")) {
-            if (stream == null) return null;
+            if (stream == null) {
+//                warnings.add("Failed to find class: " + type);
+                return null;
+            }
             ClassReader reader = new ClassReader(stream);
             return (reader.getAccess() & Opcodes.ACC_INTERFACE) != 0;
         }
