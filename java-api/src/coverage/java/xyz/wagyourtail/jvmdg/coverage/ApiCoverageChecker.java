@@ -117,7 +117,7 @@ public class ApiCoverageChecker {
                             .map(m -> m.toFullyQualified(e.getValue().getFirst()))
                     ).collect(Collectors.toSet());
                 var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(val ->
-                    Stream.of(val.getMethodStubMap().values().stream(), val.getMethodModifyMap().values().stream())
+                    Stream.of(val.getMethodStubMap().values().stream(), val.getFieldStubMap().values().stream().map(Pair::getFirst), val.getMethodModifyMap().values().stream())
                         .flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
 
                 try {
@@ -208,6 +208,12 @@ public class ApiCoverageChecker {
                                 continue;
                             }
 
+                            if (stubProvider.getFieldStubMap().containsKey(member)) {
+                                availableStubCount++;
+                                unmatchedStubs.remove(stubProvider.getFieldStubMap().get(member).getFirst().getFirst());
+                                continue;
+                            }
+
                             if (stubProvider.getMethodModifyMap().containsKey(member)) {
                                 availableStubCount++;
                                 unmatchedStubs.remove(stubProvider.getMethodModifyMap().get(member).getFirst());
@@ -220,6 +226,11 @@ public class ApiCoverageChecker {
                                 if (parent.getMethodStubMap().containsKey(member)) {
                                     onlyOnParentStubCount++;
                                     unmatchedStubs.remove(parent.getMethodStubMap().get(member).getFirst());
+                                    parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                                    continue outer;
+                                } else if (parent.getFieldStubMap().containsKey(member)) {
+                                    onlyOnParentStubCount++;
+                                    unmatchedStubs.remove(parent.getFieldStubMap().get(member).getFirst().getFirst());
                                     parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                     continue outer;
                                 } else if (parent.getMethodModifyMap().containsKey(member)) {

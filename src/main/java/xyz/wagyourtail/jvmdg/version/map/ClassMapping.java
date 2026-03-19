@@ -378,6 +378,10 @@ public class ClassMapping {
         return methodStub;
     }
 
+    public Map<MemberNameAndDesc, Pair<Pair<Method, Stub>, Pair<Method, Stub>>> getFieldStubMap() {
+        return fieldStub;
+    }
+
     public Map<MemberNameAndDesc, Pair<Method, Modify>> getMethodModifyMap() {
         return memberModify;
     }
