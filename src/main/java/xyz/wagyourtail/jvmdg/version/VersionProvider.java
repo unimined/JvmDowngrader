@@ -8,10 +8,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.all.RemovedInterfaces;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.logging.Logger;
-import xyz.wagyourtail.jvmdg.util.Function;
-import xyz.wagyourtail.jvmdg.util.IOFunction;
-import xyz.wagyourtail.jvmdg.util.Lazy;
-import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.util.*;
 import xyz.wagyourtail.jvmdg.version.all.stub.J_L_Class;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
@@ -175,11 +172,25 @@ public abstract class VersionProvider {
 
     public abstract void init();
 
-    public synchronized ClassMapping getStubMapper(Type type, Set<String> warnings) throws IOException {
-        return getStubMapper(type, downgrader.isInterface(outputVersion, type, warnings) == Boolean.TRUE, warnings);
+    public synchronized ClassMapping getStubMapper(final Type type, final Set<String> warnings) throws IOException {
+        return getStubMapper(type, new IOSupplier<Boolean>() {
+            @Override
+            public Boolean get() throws IOException {
+                return downgrader.isInterface(outputVersion, type, warnings) == Boolean.TRUE;
+            }
+        }, warnings);
     }
 
-    public synchronized ClassMapping getStubMapper(Type type, boolean isInterface, final Set<String> warnings) throws IOException {
+    public synchronized ClassMapping getStubMapper(Type type, final boolean isInterface, final Set<String> warnings) throws IOException {
+        return getStubMapper(type, new IOSupplier<Boolean>() {
+            @Override
+            public Boolean get() {
+                return isInterface;
+            }
+        }, warnings);
+    }
+
+    public synchronized ClassMapping getStubMapper(Type type, IOSupplier<Boolean> isInterface, final Set<String> warnings) throws IOException {
         return getStubMapper(type, isInterface, new IOFunction<Type, Set<MemberNameAndDesc>>() {
 
             @Override
@@ -191,6 +202,15 @@ public abstract class VersionProvider {
     }
 
     public synchronized ClassMapping getStubMapper(Type type, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final Set<String> warnings) throws IOException {
+        return getStubMapper(type, new IOSupplier<Boolean>() {
+            @Override
+            public Boolean get() {
+                return isInterface;
+            }
+        }, memberResolver, warnings);
+    }
+
+    public synchronized ClassMapping getStubMapper(Type type, final IOSupplier<Boolean> isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final Set<String> warnings) throws IOException {
         return getStubMapper(type, isInterface, memberResolver, new IOFunction<Type, List<Pair<Type, Boolean>>>() {
 
             @Override
@@ -202,6 +222,15 @@ public abstract class VersionProvider {
     }
 
     public synchronized ClassMapping getStubMapper(final Type type, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
+        return getStubMapper(type, new IOSupplier<Boolean>() {
+            @Override
+            public Boolean get() {
+                return isInterface;
+            }
+        }, memberResolver, superTypeResolver);
+    }
+
+    public synchronized ClassMapping getStubMapper(final Type type, final IOSupplier<Boolean> isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
         if (stubMappings.containsKey(type)) {
             return stubMappings.get(type);
         }
@@ -215,7 +244,7 @@ public abstract class VersionProvider {
                         throw new RuntimeException(e);
                     }
                 }
-            }, type, isInterface, memberResolver, this);
+            }, type, isInterface.get(), memberResolver, this);
         }
         if (type.getInternalName().equals("java/lang/Object")) {
             ClassMapping mapping = new ClassMapping(coverage, new Lazy<List<ClassMapping>>() {
@@ -245,7 +274,7 @@ public abstract class VersionProvider {
                     throw new RuntimeException(e);
                 }
             }
-        }, type, isInterface, memberResolver, this);
+        }, type, isInterface.get(), memberResolver, this);
         stubMappings.put(type, mapping);
         return mapping;
     }
@@ -441,10 +470,10 @@ public abstract class VersionProvider {
                     case Opcodes.H_INVOKESTATIC:
                         hStaticDesc = hDesc;
                         break;
-                    case Opcodes.H_INVOKEVIRTUAL:
-                    case Opcodes.H_INVOKESPECIAL:
                     case Opcodes.H_NEWINVOKESPECIAL:
                         warnings.add("@Stub should not be used for NEWINVOKESPECIAL in" + owner.name + ";" + method.name + ";" + method.desc + "; targetting " + handle.getOwner() + ";" + handle.getName() + ";" + handle.getDesc());
+                    case Opcodes.H_INVOKEVIRTUAL:
+                    case Opcodes.H_INVOKESPECIAL:
                     case Opcodes.H_INVOKEINTERFACE:
                         Type[] params = new Type[hDesc.getArgumentCount() + 1];
                         params[0] = hOwner;
@@ -674,7 +703,7 @@ public abstract class VersionProvider {
         return owner;
     }
 
-    public MethodNode stubMethod(MethodNode method, ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, final Function<String, ClassNode> getReadOnly, Set<String> warnings) throws IOException {
+    public MethodNode stubMethod(MethodNode method, ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, final Function<String, ClassNode> getReadOnly, final Set<String> warnings) throws IOException {
         for (int i = 0; i < method.instructions.size(); i++) {
             AbstractInsnNode insn = method.instructions.get(i);
             if (insn instanceof MethodInsnNode) {
@@ -686,11 +715,16 @@ public abstract class VersionProvider {
                         .transform(method, i, owner, extra, enableRuntime, warnings);
                 }
             } else if (insn instanceof FieldInsnNode) {
-                FieldInsnNode fin = (FieldInsnNode) insn;
+                final FieldInsnNode fin = (FieldInsnNode) insn;
                 fin.owner = stubClass(Type.getObjectType(fin.owner), warnings).getInternalName();
                 fin.desc = stubClass(Type.getType(fin.desc), warnings).getDescriptor();
                 if (!fin.owner.startsWith("[")) {
-                    getStubMapper(Type.getObjectType(fin.owner), downgrader.isInterface(outputVersion, Type.getObjectType(fin.owner), warnings) == Boolean.TRUE, memberResolver, superTypeResolver)
+                    getStubMapper(Type.getObjectType(fin.owner), new IOSupplier<Boolean>() {
+                        @Override
+                        public Boolean get() throws IOException {
+                            return downgrader.isInterface(outputVersion, Type.getObjectType(fin.owner), warnings) == Boolean.TRUE;
+                        }
+                    }, memberResolver, superTypeResolver)
                         .transform(method, i, owner, extra, enableRuntime, warnings);
                 }
             } else if (insn instanceof TypeInsnNode) {
