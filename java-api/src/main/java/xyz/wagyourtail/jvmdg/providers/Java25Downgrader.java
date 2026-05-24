@@ -32,8 +32,10 @@ public class Java25Downgrader extends VersionProvider {
         stub(J_I_Reader.class);
         stub(J_L_CharSequence.class);
         stub(J_L_IO.class);
+        stub(J_L_Math.class);
         stub(J_L_R_AccessFlag.class);
         stub(J_L_ScopedValue.class);
+        stub(J_L_StrictMath.class);
         stub(J_U_Currency.class);
         stub(J_U_TimeZone.class);
         stub(J_U_Z_Deflater.class);
