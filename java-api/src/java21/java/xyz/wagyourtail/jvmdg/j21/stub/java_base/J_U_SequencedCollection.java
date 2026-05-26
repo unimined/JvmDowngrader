@@ -14,11 +14,14 @@ public class J_U_SequencedCollection {
     }
 
     public static boolean jvmdg$instanceof(Object obj) {
-        return obj instanceof List<?> ||
+        if (obj instanceof List<?> ||
             obj instanceof LinkedHashSet<?> ||
             obj instanceof Deque<?> ||
             obj instanceof SortedSet<?> ||
-            obj instanceof ReverseCollection<?, ?>;
+            obj instanceof ReverseCollection<?, ?>) {
+            return true;
+        }
+        return obj.getClass().getDeclaringClass().isAssignableFrom(LinkedHashMap.class);
     }
 
     public static <E> Collection<E> jvmdg$checkcast(Object obj) {
