@@ -2,23 +2,22 @@ package xyz.wagyourtail.jvmdg.j21.impl;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j21.stub.java_base.J_U_SequencedCollection;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class ReverseMap<K, V> implements Map<K, V> {
-    public final Map<K, V> original;
+public class ReverseMap<K, V, T extends Map<K, V>> implements Map<K, V> {
+    public final T original;
 
-    public ReverseMap(Map<K, V> original) {
+    public ReverseMap(T original) {
         this.original = original;
     }
 
     @NotNull
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return new ReverseSet<>(original.entrySet());
+        return ReverseSet.create(original.entrySet());
     }
 
     @Override
@@ -70,13 +69,60 @@ public class ReverseMap<K, V> implements Map<K, V> {
     @NotNull
     @Override
     public Set<K> keySet() {
-        return new ReverseSet<>(original.keySet());
+        return ReverseSet.create(original.keySet());
     }
 
     @NotNull
     @Override
     public Collection<V> values() {
         return J_U_SequencedCollection.reversed(original.values());
+    }
+
+    public static <K, V> ReverseMap<K, V, ?> create(Map<K, V> map) {
+        if (map instanceof SortedMap) {
+            return new ReverseSortedMap<>((SortedMap<K, V>) map);
+        }
+        return new ReverseMap<>(map);
+    }
+
+    public static class ReverseSortedMap<K, V, T extends SortedMap<K, V>> extends ReverseMap<K, V, T> implements SortedMap<K, V> {
+        public ReverseSortedMap(T original) {
+            super(original);
+        }
+
+        @Override
+        public Comparator<? super K> comparator() {
+            return Collections.reverseOrder(original.comparator());
+        }
+
+        @NotNull
+        @Override
+        public SortedMap<K, V> subMap(K fromKey, K toKey) {
+            return this.tailMap(fromKey).headMap(toKey);
+        }
+
+        @NotNull
+        @Override
+        public SortedMap<K, V> headMap(K toKey) {
+            throw MissingStubError.create();
+        }
+
+        @NotNull
+        @Override
+        public SortedMap<K, V> tailMap(K fromKey) {
+            throw MissingStubError.create();
+        }
+
+        @Override
+        public K firstKey() {
+            return original.lastKey();
+        }
+
+        @Override
+        public K lastKey() {
+            return original.firstKey();
+        }
+
     }
 
 }

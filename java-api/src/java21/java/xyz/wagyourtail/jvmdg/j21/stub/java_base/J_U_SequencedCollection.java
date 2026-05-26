@@ -1,9 +1,7 @@
 package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.exc.PartialStubError;
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseCollection;
-import xyz.wagyourtail.jvmdg.j21.impl.ReverseDeque;
-import xyz.wagyourtail.jvmdg.j21.impl.ReverseList;
-import xyz.wagyourtail.jvmdg.j21.impl.ReverseSet;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -20,8 +18,7 @@ public class J_U_SequencedCollection {
             obj instanceof LinkedHashSet<?> ||
             obj instanceof Deque<?> ||
             obj instanceof SortedSet<?> ||
-            obj instanceof ReverseSet<?> ||
-            obj instanceof ReverseCollection<?>;
+            obj instanceof ReverseCollection<?, ?>;
     }
 
     public static <E> Collection<E> jvmdg$checkcast(Object obj) {
@@ -34,31 +31,26 @@ public class J_U_SequencedCollection {
     @Stub
     public static <E> Collection<E> reversed(Collection<E> self) {
         if (self instanceof List<E> list) {
-            if (list instanceof ReverseList<E> rl) {
-                return rl.original;
-            }
-            return new ReverseList<>(list);
+            return J_U_List.reversed(list);
         }
         if (self instanceof Deque<E> deque) {
-            if (deque instanceof ReverseDeque<E> rd) {
-                return rd.original;
-            }
-            return new ReverseDeque<>(deque);
+            return J_U_Deque.reversed(deque);
         }
         if (self instanceof Set<E> set) {
-            if (set instanceof ReverseSet<E> rs) {
-                return rs.original;
-            }
-            return new ReverseSet<>(set);
+            return J_U_SequencedSet.reversed(set);
         }
         if (self != null) {
             return new ReverseCollection<>(self);
         }
-        throw new NullPointerException();
+        throw PartialStubError.create();
     }
 
-    @Stub
+    @Stub(excludeChild = "java/util/Deque")
     public static <E> void addFirst(Collection<E> self, E e) {
+        if (self instanceof ReverseCollection<E, ?> rev) {
+            addLast(rev.original, e);
+            return;
+        }
         if (self instanceof List<E> list) {
             list.add(0, e);
             return;
@@ -66,19 +58,26 @@ public class J_U_SequencedCollection {
             deque.addFirst(e);
             return;
         }
-        throw new UnsupportedOperationException("java.util.SequencedCollection.addFirst not implemented for " + self.getClass().getName());
+        throw PartialStubError.create();
     }
 
     @Stub
     public static <E> void addLast(Collection<E> self, E e) {
+        if (self instanceof ReverseCollection<E, ?> rev) {
+            addFirst(rev.original, e);
+            return;
+        }
         if (self instanceof List<E> list) {
             list.add(e);
             return;
         } else if (self instanceof Deque<E> deque) {
             deque.addLast(e);
             return;
+        } else if (self instanceof LinkedHashSet<E>) {
+            self.add(e);
+            return;
         }
-        throw new UnsupportedOperationException("java.util.SequencedCollection.addLast not implemented for " + self.getClass().getName());
+        throw PartialStubError.create();
     }
 
     @Stub

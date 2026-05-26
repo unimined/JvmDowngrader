@@ -9,6 +9,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.work.DisableCachingByDefault
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.flags.DefaultFlags
@@ -21,6 +22,7 @@ import java.nio.file.StandardOpenOption
 import javax.inject.Inject
 import kotlin.io.path.outputStream
 
+@DisableCachingByDefault
 abstract class DowngradeJar: Jar(), DowngradeFlags, FlagsConvention {
 
     @get:Inject

@@ -15,7 +15,7 @@ public class J_U_SequencedMap {
     public static boolean jvmdg$instanceof(Object obj) {
         return obj instanceof LinkedHashMap<?, ?> ||
             obj instanceof SortedMap<?, ?> ||
-            obj instanceof ReverseMap<?, ?>;
+            obj instanceof ReverseMap<?, ?, ?>;
     }
 
     public static Map<?, ?> jvmdg$checkcast(Object obj) {
@@ -30,7 +30,10 @@ public class J_U_SequencedMap {
 
     @Stub
     public static <K, V> Map<K, V> reversed(Map<K, V> self) {
-        if (self instanceof ReverseMap<K, V> rs) {
+        if (self instanceof NavigableMap<K,V> navigableMap) {
+            return navigableMap.descendingMap();
+        }
+        if (self instanceof ReverseMap<K, V, ?> rs) {
             return rs.original;
         }
         return new ReverseMap<>(self);
@@ -64,11 +67,17 @@ public class J_U_SequencedMap {
 
     @Stub
     public static <K, V> V putFirst(Map<K, V> self, K key, V value) {
+        if (self instanceof ReverseMap<K,V,?> reverseMap && reverseMap.original instanceof LinkedHashMap<K, V> original) {
+            original.put(key, value);
+        }
         throw new UnsupportedOperationException();
     }
 
     @Stub
     public static <K, V> V putLast(Map<K, V> self, K key, V value) {
+        if (self instanceof LinkedHashMap<K,V>) {
+            self.put(key, value);
+        }
         throw new UnsupportedOperationException();
     }
 

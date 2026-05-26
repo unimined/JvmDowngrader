@@ -65,6 +65,18 @@ public class ClassMapping {
         this.vp = vp;
     }
 
+    public boolean isAssignableFrom(Type target) {
+        if (target.equals(current)) {
+            return true;
+        }
+        for (ClassMapping parent : parents.get()) {
+            if (parent.isAssignableFrom(target)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void addStub(MemberNameAndDesc member, Method method, Stub stub) {
         int modifiers = method.getModifiers();
         if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
@@ -249,7 +261,7 @@ public class ClassMapping {
                     if (child.startsWith("L") && child.endsWith(";")) {
                         child = child.substring(1, child.length() - 1);
                     }
-                    if (child.equals(current.getInternalName())) {
+                    if (isAssignableFrom(Type.getObjectType(child))) {
                         return null;
                     }
                 }

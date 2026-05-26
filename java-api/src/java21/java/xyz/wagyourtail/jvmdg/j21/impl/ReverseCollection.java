@@ -1,14 +1,16 @@
 package xyz.wagyourtail.jvmdg.j21.impl;
 
 import org.jetbrains.annotations.NotNull;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 
+import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class ReverseCollection<E> implements Collection<E> {
-    final Collection<E> original;
+public class ReverseCollection<E, T extends Collection<E>> extends AbstractCollection<E> implements Collection<E> {
+    public final T original;
 
-    public ReverseCollection(Collection<E> original) {
+    public ReverseCollection(T original) {
         this.original = original;
     }
 
@@ -57,12 +59,12 @@ public class ReverseCollection<E> implements Collection<E> {
 
     @Override
     public boolean add(E e) {
-        throw new UnsupportedOperationException("JVMDG.ReverseCollection cannot call add currently.");
+        return original.add(e);
     }
 
     @Override
     public boolean remove(Object o) {
-        throw new UnsupportedOperationException("JVMDG.ReverseCollection cannot call remove currently.");
+        return original.remove(o);
     }
 
     @Override
@@ -72,7 +74,7 @@ public class ReverseCollection<E> implements Collection<E> {
 
     @Override
     public boolean addAll(@NotNull Collection<? extends E> c) {
-        throw new UnsupportedOperationException("JVMDG.ReverseCollection cannot call addAll currently.");
+        return original.addAll(c);
     }
 
     @Override

@@ -4,13 +4,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class ReverseList<E> implements List<E> {
-    public final List<E> original;
+public class ReverseList<E> extends ReverseCollection<E, List<E>>implements List<E> {
 
     public ReverseList(List<E> original) {
-        this.original = original;
+        super(original);
     }
-
 
     @Override
     public int size() {

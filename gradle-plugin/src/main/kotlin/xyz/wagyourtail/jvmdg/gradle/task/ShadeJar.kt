@@ -11,6 +11,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.work.DisableCachingByDefault
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
@@ -25,6 +26,7 @@ import java.nio.file.StandardOpenOption
 import javax.inject.Inject
 import kotlin.io.path.outputStream
 
+@DisableCachingByDefault
 abstract class ShadeJar: Jar(), ShadeFlags, FlagsConvention {
 
     @get:Inject

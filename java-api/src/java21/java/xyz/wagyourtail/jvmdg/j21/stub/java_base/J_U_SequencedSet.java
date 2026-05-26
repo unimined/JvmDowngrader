@@ -4,9 +4,7 @@ import xyz.wagyourtail.jvmdg.j21.impl.ReverseSet;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.SortedSet;
+import java.util.*;
 
 @Adapter(value = "java/util/SequencedSet", target = "java/util/Set")
 public class J_U_SequencedSet {
@@ -17,7 +15,7 @@ public class J_U_SequencedSet {
     public static boolean jvmdg$instanceof(Object obj) {
         return obj instanceof LinkedHashSet<?> ||
             obj instanceof SortedSet<?> ||
-            obj instanceof ReverseSet<?>;
+            obj instanceof ReverseSet<?, ?>;
     }
 
     public static <E> Set<E> jvmdg$checkcast(Object obj) {
@@ -32,10 +30,13 @@ public class J_U_SequencedSet {
 
     @Stub
     public static <E> Set<E> reversed(Set<E> self) {
-        if (self instanceof ReverseSet<E> rs) {
+        if (self instanceof NavigableSet<E>) {
+            return ((NavigableSet<E>) self).descendingSet();
+        }
+        if (self instanceof ReverseSet<E, ?> rs) {
             return rs.original;
         }
-        return new ReverseSet<>(self);
+        return ReverseSet.create(self);
     }
 
 }

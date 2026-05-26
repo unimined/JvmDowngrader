@@ -15,18 +15,30 @@ public class TestCollection {
         set.add(2);
         set.add(3);
         System.out.println(set);
-        System.out.println(set.reversed());
+        Set<Integer> revSet = set.reversed();
+        System.out.println(revSet);
+        revSet.add(4);
+        System.out.println(set);
+        System.out.println(revSet);
 
-        List<Integer> list = List.of(1, 2, 3);
+        List<Integer> list = new ArrayList<>(List.of(1, 2, 3));
         System.out.println(list);
-        System.out.println(list.reversed());
+        List<Integer> revList = list.reversed();
+        System.out.println(revList);
+        revList.add(4);
+        System.out.println(list);
+        System.out.println(revList);
 
         Deque<Integer> deque = new ArrayDeque<>();
         deque.add(1);
         deque.add(2);
         deque.add(3);
         System.out.println(deque);
-        System.out.println(deque.reversed());
+        Deque<Integer> revDeque = deque.reversed();
+        System.out.println(revDeque);
+        revDeque.add(4);
+        System.out.println(deque);
+        System.out.println(revDeque);
     }
 
 }

@@ -1,55 +1,64 @@
 package xyz.wagyourtail.jvmdg.j21.impl;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 
-import java.util.AbstractSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
-public class ReverseSet<E> extends AbstractSet<E> {
-    public final Set<E> original;
+public class ReverseSet<E, T extends Set<E>> extends ReverseCollection<E, T> implements Set<E> {
 
-    public ReverseSet(Set<E> original) {
-        this.original = original;
+    private ReverseSet(T original) {
+        super(original);
     }
 
-    @Override
-    public boolean add(E e) {
-        throw new UnsupportedOperationException("JVMDG.ReverseSet cannot call add currently.");
+    public static <E> ReverseSet<E, ?> create(Set<E> set) {
+        if (set instanceof SortedSet<E>) {
+            return new ReverseSortedSet<>((SortedSet<E>) set);
+        }
+        return new ReverseSet<>(set);
     }
 
-    @Override
-    public boolean remove(Object o) {
-        return original.remove(o);
-    }
+    public static class ReverseSortedSet<E, T extends SortedSet<E>> extends ReverseSet<E, T> implements SortedSet<E> {
 
-    @NotNull
-    @Override
-    public Iterator<E> iterator() {
-        Object[] obj = original.toArray();
-        return new Iterator<>() {
-            int pos = original.size();
+        private ReverseSortedSet(T original) {
+            super(original);
+        }
 
-            @Override
-            public boolean hasNext() {
-                return pos >= 1;
-            }
+        @Nullable
+        @Override
+        public Comparator<? super E> comparator() {
+            return Collections.reverseOrder(original.comparator());
+        }
 
-            @Override
-            public void remove() {
-                original.remove(obj[pos]);
-            }
+        @NotNull
+        @Override
+        public SortedSet<E> subSet(E fromElement, E toElement) {
+            return this.tailSet(fromElement).headSet(toElement);
+        }
 
-            @Override
-            public E next() {
-                return (E) obj[--pos];
-            }
-        };
-    }
+        @NotNull
+        @Override
+        public SortedSet<E> headSet(E toElement) {
+            throw MissingStubError.create();
+        }
 
-    @Override
-    public int size() {
-        return original.size();
+        @NotNull
+        @Override
+        public SortedSet<E> tailSet(E fromElement) {
+            throw MissingStubError.create();
+        }
+
+        @Override
+        public E first() {
+            return original.last();
+        }
+
+        @Override
+        public E last() {
+            return original.first();
+        }
+
     }
 
 }

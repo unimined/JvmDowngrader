@@ -11,6 +11,9 @@ public class J_U_Collections {
 
     @Stub(ref = @Ref("Ljava/util/Collections;"))
     public static <E> Set<E> newSequencedSetFromMap(Map<E, Boolean> map) {
+        if (!map.isEmpty()) {
+            throw new IllegalArgumentException("map must be empty");
+        }
         return new SequencedSet<>(map);
     }
 

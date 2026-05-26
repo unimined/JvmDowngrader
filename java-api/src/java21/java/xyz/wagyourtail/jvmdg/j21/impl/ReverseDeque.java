@@ -4,11 +4,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class ReverseDeque<E> implements Deque<E> {
-    public final Deque<E> original;
+public class ReverseDeque<E> extends ReverseCollection<E, Deque<E>> implements Deque<E> {
 
     public ReverseDeque(Deque<E> original) {
-        this.original = original;
+        super(original);
     }
 
     @Override
