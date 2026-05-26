@@ -1,6 +1,6 @@
 [versions]
 asm = "9.9.1"
-kotlin = "2.2.0"
+kotlin = "2.3.21"
 
 jb_annotations = "26.0.2"
 jb_annotations5 = "24.1.0"
