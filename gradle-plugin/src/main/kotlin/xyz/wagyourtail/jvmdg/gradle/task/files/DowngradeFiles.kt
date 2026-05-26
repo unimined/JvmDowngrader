@@ -4,8 +4,11 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
@@ -20,11 +23,13 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 
+@DisableCachingByDefault
 abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention {
 
     private var _inputCollection: FileCollection by FinalizeOnRead(MustSet())
 
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
     var inputCollection: FileCollection
         get() = _inputCollection
         set(value) {
@@ -38,6 +43,7 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention
         }
 
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
     abstract var classpath: FileCollection
 
     @get:Internal

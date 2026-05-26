@@ -9,6 +9,8 @@ import org.gradle.api.file.ArchiveOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.work.DisableCachingByDefault
@@ -42,6 +44,7 @@ abstract class ShadeJar: Jar(), ShadeFlags, FlagsConvention {
      * must already be downgraded
      */
     @get:InputFile
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val inputFile: RegularFileProperty
 
     init {

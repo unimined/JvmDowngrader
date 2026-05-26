@@ -30,9 +30,11 @@ abstract class DowngradeJar: Jar(), DowngradeFlags, FlagsConvention {
 
     @get:InputFiles
     @get:Optional
+    @get:PathSensitive(PathSensitivity.NONE)
     abstract var classpath: FileCollection
 
     @get:InputFile
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract val inputFile: RegularFileProperty
 
     init {

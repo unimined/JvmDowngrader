@@ -7,7 +7,10 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
@@ -22,6 +25,7 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 
+@DisableCachingByDefault
 abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
 
     @get:Internal
@@ -31,6 +35,7 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
     val isRefreshDependencies = project.gradle.startParameter.isRefreshDependencies
 
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
     abstract var inputCollection: FileCollection
 
     @get:Internal
