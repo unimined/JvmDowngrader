@@ -61,7 +61,7 @@ public class J_U_SequencedCollection {
         throw PartialStubError.create();
     }
 
-    @Stub
+    @Stub(excludeChild = "java/util/Deque")
     public static <E> void addLast(Collection<E> self, E e) {
         if (self instanceof ReverseCollection<E, ?> rev) {
             addFirst(rev.original, e);
@@ -80,7 +80,7 @@ public class J_U_SequencedCollection {
         throw PartialStubError.create();
     }
 
-    @Stub
+    @Stub(excludeChild = "java/util/Deque")
     public static <E> E getFirst(Collection<E> self) {
         if (self instanceof List<E> list) {
             return list.get(0);
@@ -90,7 +90,7 @@ public class J_U_SequencedCollection {
         return self.iterator().next();
     }
 
-    @Stub
+    @Stub(excludeChild = "java/util/Deque")
     public static <E> E getLast(Collection<E> self) {
         if (self instanceof List<E> list) {
             return list.get(list.size() - 1);
@@ -100,7 +100,7 @@ public class J_U_SequencedCollection {
         return reversed(self).iterator().next();
     }
 
-    @Stub
+    @Stub(excludeChild = "java/util/Deque")
     public static <E> E removeFirst(Collection<E> self) {
         if (self instanceof List<E> list) {
             return list.remove(0);
@@ -113,7 +113,7 @@ public class J_U_SequencedCollection {
         return e;
     }
 
-    @Stub
+    @Stub(excludeChild = "java/util/Deque")
     public static <E> E removeLast(Collection<E> self) {
         if (self instanceof List<E> list) {
             return list.remove(list.size() - 1);
