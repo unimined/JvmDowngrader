@@ -14,6 +14,7 @@ public class Java26Downgrader extends VersionProvider {
     public void init() {
         stub(J_L_Process.class);
         stub(J_L_String.class);
+        stub(J_U_UUID.class);
     }
 
 }
