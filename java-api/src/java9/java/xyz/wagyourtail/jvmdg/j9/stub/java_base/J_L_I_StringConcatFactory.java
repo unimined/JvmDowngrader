@@ -6,6 +6,7 @@ import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
@@ -20,7 +21,7 @@ public class J_L_I_StringConcatFactory {
         for (int j = 0; j < args.length; j++) {
             chars[j] = '\u0001';
         }
-        InsnList list = makeConcatInternal3(mnode.name, cnode, new String(chars), new LinkedList<>(Arrays.asList(args)), noSynthetic);
+        InsnList list = makeConcatInternal3(mnode.name, cnode, new String(chars), new ArrayDeque<>(Arrays.asList(args)), new ArrayDeque<>(), noSynthetic);
         mnode.instructions.insertBefore(indy, list);
         mnode.instructions.remove(indy);
     }
@@ -29,8 +30,9 @@ public class J_L_I_StringConcatFactory {
     public static void makeConcatWithConstants(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
         Type[] args = Type.getArgumentTypes(indy.desc);
-        String chars = (String) indy.bsmArgs[0];
-        InsnList list = makeConcatInternal3(mnode.name, cnode, chars, new LinkedList<>(Arrays.asList(args)), noSynthetic);
+        Deque<Object> bsmArgs = new ArrayDeque<>(Arrays.asList(indy.bsmArgs));
+        String chars = (String) bsmArgs.removeFirst();
+        InsnList list = makeConcatInternal3(mnode.name, cnode, chars, new ArrayDeque<>(Arrays.asList(args)), bsmArgs, noSynthetic);
         mnode.instructions.insertBefore(indy, list);
         mnode.instructions.remove(indy);
     }
@@ -444,7 +446,7 @@ public class J_L_I_StringConcatFactory {
         return list;
     }
 
-    public static InsnList makeConcatInternal3(String mname, ClassNode node, String args, Deque<Type> types, boolean noSynthetic) {
+    public static InsnList makeConcatInternal3(String mname, ClassNode node, String args, Deque<Type> types, Deque<Object> bsmArgs, boolean noSynthetic) {
         mname = mname.replace("<", "$").replace(">", "$");
         if (!args.contains("\u0001")) {
             // no args
@@ -477,7 +479,7 @@ public class J_L_I_StringConcatFactory {
             }
         }
         // create new
-        StringConcatMethodNode method = new StringConcatMethodNode(mname, args, types, count, noSynthetic);
+        StringConcatMethodNode method = new StringConcatMethodNode(mname, args, types, bsmArgs, count, noSynthetic);
         node.methods.add(method);
         InsnList list = new InsnList();
         list.add(new MethodInsnNode(
@@ -494,16 +496,16 @@ public class J_L_I_StringConcatFactory {
 
         public final String args;
 
-        public StringConcatMethodNode(String mname, String args, Deque<Type> types, int index, boolean noSynthetic) {
+        public StringConcatMethodNode(String mname, String args, Deque<Type> types, Deque<Object> bsmArgs, int index, boolean noSynthetic) {
             super(Opcodes.ASM9);
             this.args = args;
             this.name = "jvmdowngrader$concat$" + mname + "$" + index;
             this.access = Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | (noSynthetic ? 0 : Opcodes.ACC_SYNTHETIC);
             this.desc = Type.getMethodDescriptor(Type.getType(String.class), types.toArray(new Type[0]));
-            init(args, types);
+            init(args, types, bsmArgs);
         }
 
-        private void init(String args, Deque<Type> types) {
+        private void init(String args, Deque<Type> types, Deque<Object> bsmArgs) {
             visitCode();
             int index = 0;
             int typesIndex = 0;
@@ -518,52 +520,67 @@ public class J_L_I_StringConcatFactory {
             visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "()V", false);
             // stack = [StringBuilder]
             while (index < args.length()) {
-                if (args.charAt(index) == '\u0001') {
-                    Type type = types.removeFirst();
-                    String desc = type.getDescriptor();
-                    switch (type.getSort()) {
-                        case Type.OBJECT:
-                        case Type.ARRAY:
-                            if (desc.equals("Ljava/lang/String;")) {
+                switch (args.charAt(index)) {
+                    case '\u0001':
+                        Type type = types.removeFirst();
+                        String desc = type.getDescriptor();
+                        switch (type.getSort()) {
+                            case Type.OBJECT:
+                            case Type.ARRAY:
+                                if (desc.equals("Ljava/lang/String;")) {
+                                    // stack = [StringBuilder]
+                                    visitVarInsn(Opcodes.ALOAD, typesIndex);
+                                    // stack = [StringBuilder, String]
+                                    visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+                                } else {
+                                    // stack = [StringBuilder]
+                                    visitVarInsn(Opcodes.ALOAD, typesIndex);
+                                    // stack = [StringBuilder, Object]
+                                    visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;", false);
+                                }
+                                break;
+                            case Type.BYTE:
+                            case Type.SHORT:
+                            case Type.INT:
                                 // stack = [StringBuilder]
-                                visitVarInsn(Opcodes.ALOAD, typesIndex);
-                                // stack = [StringBuilder, String]
-                                visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
-                            } else {
+                                visitVarInsn(Opcodes.ILOAD, typesIndex);
+                                // stack = [StringBuilder, "int"]
+                                visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;", false);
+                                break;
+                            default:
                                 // stack = [StringBuilder]
-                                visitVarInsn(Opcodes.ALOAD, typesIndex);
-                                // stack = [StringBuilder, Object]
-                                visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/Object;)Ljava/lang/StringBuilder;", false);
-                            }
-                            break;
-                        case Type.BYTE:
-                        case Type.SHORT:
-                        case Type.INT:
-                            // stack = [StringBuilder]
-                            visitVarInsn(Opcodes.ILOAD, typesIndex);
-                            // stack = [StringBuilder, "int"]
-                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(I)Ljava/lang/StringBuilder;", false);
-                            break;
-                        default:
-                            // stack = [StringBuilder]
-                            visitVarInsn(type.getOpcode(Opcodes.ILOAD), typesIndex);
-                            // stack = [StringBuilder, int]
-                            visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + desc + ")Ljava/lang/StringBuilder;", false);
-                            break;
-                    }
-                    typesIndex += type.getSize();
-                    index++;
-                } else {
-                    int next = args.indexOf('\u0001', index);
-                    if (next == -1) {
-                        next = args.length();
-                    }
-                    String literal = args.substring(index, next);
-                    // stack = [StringBuilder]
-                    visitLdcInsn(literal);
-                    // stack = [StringBuilder, String]
-                    visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
-                    index = next;
+                                visitVarInsn(type.getOpcode(Opcodes.ILOAD), typesIndex);
+                                // stack = [StringBuilder, int]
+                                visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + desc + ")Ljava/lang/StringBuilder;", false);
+                                break;
+                        }
+                        typesIndex += type.getSize();
+                        index++;
+                        break;
+                    case '\u0002':
+                        // stack = [StringBuilder]
+                        visitLdcInsn(bsmArgs.removeFirst());
+                        // stack = [StringBuilder, StringBuilder]
+                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+                        index++;
+                        break;
+                    default:
+                        int nextStack = args.indexOf('\u0001', index);
+                        if (nextStack == -1) {
+                            nextStack = args.length();
+                        }
+                        int nextArg = args.indexOf('\u0002', index);
+                        if (nextArg == -1) {
+                            nextArg = args.length();
+                        }
+                        int next = Math.min(nextStack, nextArg);
+                        String literal = args.substring(index, next);
+                        // stack = [StringBuilder]
+                        visitLdcInsn(literal);
+                        // stack = [StringBuilder, String]
+                        visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
+                        index = next;
+                        break;
                 }
             }
             if (!types.isEmpty()) {

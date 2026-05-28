@@ -70,6 +70,8 @@ public class TestString {
        String aa = "Fuß";
        String bb = "FUSS";
        System.out.println(String.UNICODE_CASEFOLD_ORDER.compare(aa, bb));
+
+        System.out.println(("\u0001test\u0002" + by + "test\u0001" + sh + "test2" + bb + "\u0002test").replace("\u0001", "\\u0001").replace("\u0002", "\\u0002"));
     }
 
 }
