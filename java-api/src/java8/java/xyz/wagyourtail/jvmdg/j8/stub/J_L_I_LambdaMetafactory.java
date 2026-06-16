@@ -3,6 +3,7 @@ package xyz.wagyourtail.jvmdg.j8.stub;
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -13,6 +14,7 @@ import java.lang.invoke.MethodType;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+@JEP(126)
 public class J_L_I_LambdaMetafactory {
 
     @Modify(ref = @Ref(value = "Ljava/lang/invoke/LambdaMetafactory;", member = "metafactory", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))

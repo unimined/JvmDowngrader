@@ -5,6 +5,7 @@ import xyz.wagyourtail.jvmdg.j17.impl.random.BasicRandomGeneratorImpl;
 import xyz.wagyourtail.jvmdg.j17.impl.random.SplittableRandomGeneratorImpl;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Coerce;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Random;
@@ -14,6 +15,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+@JEP(356)
 @Adapter(value = "java/util/random/RandomGenerator")
 public interface J_U_R_RandomGenerator {
 

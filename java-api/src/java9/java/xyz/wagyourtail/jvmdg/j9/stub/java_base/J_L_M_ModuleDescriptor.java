@@ -4,10 +4,12 @@ import org.jetbrains.annotations.NotNull;
 import xyz.wagyourtail.jvmdg.j9.intl.NameChecks;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.util.*;
 
 @Adapter("java/lang/module/ModuleDescriptor")
+@JEP(261)
 public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor> {
     private final String name;
     private final Version version;

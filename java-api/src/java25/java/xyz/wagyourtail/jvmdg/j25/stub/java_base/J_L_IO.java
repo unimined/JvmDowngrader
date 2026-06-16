@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j25.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.io.BufferedReader;
 import java.io.IOError;
@@ -8,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 
+@JEP(512)
 @Adapter("java/lang/IO")
 public class J_L_IO {
     private static volatile BufferedReader inputReader;

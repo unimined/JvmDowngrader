@@ -1,11 +1,13 @@
 package xyz.wagyourtail.jvmdg.j17.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.j17.impl.random.SplittableRandomGeneratorImpl;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.SplittableRandom;
 import java.util.stream.Stream;
 
+@JEP(356)
 public class J_U_SplittableRandom {
 
     @Stub

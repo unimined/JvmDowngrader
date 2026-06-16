@@ -3,6 +3,7 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
@@ -11,6 +12,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 
+@JEP(280)
 public class J_L_I_StringConcatFactory {
 
     @Modify(ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcat", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))

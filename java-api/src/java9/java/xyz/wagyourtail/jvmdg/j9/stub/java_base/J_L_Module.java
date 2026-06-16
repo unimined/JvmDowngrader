@@ -3,11 +3,13 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 import java.util.Set;
 
+@JEP(261)
 @Adapter("Ljava/lang/Module;")
 public class J_L_Module {
 

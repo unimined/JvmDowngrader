@@ -4,6 +4,7 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 import xyz.wagyourtail.jvmdg.j9.intl.LoggerFinderImpl;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -12,6 +13,7 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.function.Supplier;
 
+@JEP(264)
 public class J_L_System {
 
     @Stub(ref = @Ref("Ljava/lang/System;"))

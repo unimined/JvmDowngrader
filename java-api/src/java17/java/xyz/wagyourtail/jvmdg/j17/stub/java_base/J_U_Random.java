@@ -1,10 +1,12 @@
 package xyz.wagyourtail.jvmdg.j17.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.j17.impl.random.BasicRandomGeneratorImpl;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Random;
 
+@JEP(356)
 public class J_U_Random {
 
     @Stub

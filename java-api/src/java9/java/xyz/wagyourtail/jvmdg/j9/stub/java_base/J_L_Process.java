@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.invoke.MethodHandle;
@@ -9,6 +10,7 @@ import java.lang.invoke.MethodType;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
+@JEP(102)
 public class J_L_Process {
     private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
 

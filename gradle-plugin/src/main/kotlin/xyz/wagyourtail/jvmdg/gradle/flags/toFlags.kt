@@ -16,6 +16,7 @@ fun DowngradeFlags.toFlags(): Flags {
     flags.classVersion = downgradeTo.getOrElse(JavaVersion.forClassVersion(flags.classVersion)).toOpcode()
     flags.debugSkipStub = debugSkipStub.getOrElse(flags.debugSkipStub.map { it.toString() }.toSet()).map { FullyQualifiedMemberNameAndDesc.of(it) }.toSet()
     flags.debugSkipStubs = debugSkipStubs.getOrElse(emptySet()).map { it.toOpcode() }.toSet()
+    flags.debugSkipJeps = debugSkipJeps.getOrElse(flags.debugSkipJeps)
     ignoreWarningsIn.getOrElse(flags.ignoreWarningsIn.map { it.key + "*".repeat(it.value.ordinal) }).forEach { flags.addIgnore(it) }
     flags.debugDumpClasses = debugDumpClasses.getOrElse(flags.debugDumpClasses)
     flags.debugNoSynthetic = debugNoSynthetic.getOrElse(flags.debugNoSynthetic)
@@ -38,6 +39,7 @@ fun convention(self: DowngradeFlags, target: DowngradeFlags) = with(self) {
     downgradeTo.convention(target.downgradeTo)
     debugSkipStub.convention(target.debugSkipStub)
     debugSkipStubs.convention(target.debugSkipStubs)
+    debugSkipJeps.convention(target.debugSkipJeps)
     ignoreWarningsIn.convention(target.ignoreWarningsIn)
     debugDumpClasses.convention(target.debugDumpClasses)
     debugNoSynthetic.convention(target.debugNoSynthetic)

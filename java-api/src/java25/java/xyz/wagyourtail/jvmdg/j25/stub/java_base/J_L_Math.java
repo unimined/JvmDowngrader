@@ -82,7 +82,7 @@ public class J_L_Math {
         throw new ArithmeticException("unsigned long overflow");
     }
 
-    @Stub(ref = @Ref(("Ljava/lang/Math;")))
+    @Stub(ref = @Ref("Ljava/lang/Math;"))
     public static int unsignedPowExact(int x, int n) {
         if (n < 0) {
             throw new ArithmeticException("negative exponent");
@@ -104,7 +104,7 @@ public class J_L_Math {
         return unsignedMultiplyExact(p, x);
     }
 
-    @Stub(ref = @Ref(("Ljava/lang/Math;")))
+    @Stub(ref = @Ref("Ljava/lang/Math;"))
     public static long unsignedPowExact(long x, int n) {
         if (n < 0) {
             throw new ArithmeticException("negative exponent");

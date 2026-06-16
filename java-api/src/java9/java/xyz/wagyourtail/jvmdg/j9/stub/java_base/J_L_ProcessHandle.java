@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import xyz.wagyourtail.jvmdg.j9.intl.UnixProcessHandle;
 import xyz.wagyourtail.jvmdg.j9.intl.WindowsProcessHandle;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -22,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@JEP(102)
 @Adapter("java/lang/ProcessHandle")
 public interface J_L_ProcessHandle extends Comparable<J_L_ProcessHandle> {
     RuntimeMXBean bean = ManagementFactory.getRuntimeMXBean();

@@ -1,11 +1,13 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
 
+@JEP(261)
 @Adapter("java/lang/module/ModuleReference")
 public abstract class J_L_M_ModuleReference {
     private final J_L_M_ModuleDescriptor descriptor;

@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 
+@JEP(135)
 @Adapter("java/util/Base64")
 public class J_U_Base64 {
 

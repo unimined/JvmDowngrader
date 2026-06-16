@@ -10,6 +10,7 @@ import sun.misc.Unsafe;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+@JEP(193)
 @Adapter("java/lang/invoke/VarHandle")
 public class J_L_I_VarHandle {
     private static final Unsafe unsafe = Utils.getUnsafe();

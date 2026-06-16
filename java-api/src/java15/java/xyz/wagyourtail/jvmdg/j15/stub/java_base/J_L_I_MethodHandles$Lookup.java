@@ -6,6 +6,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.instrument.IllegalClassFormatException;
@@ -43,6 +44,7 @@ public class J_L_I_MethodHandles$Lookup {
         return c;
     }
 
+    @JEP(371)
     @Stub(requiresRuntime = true)
     public static Class<?> defineHiddenClass(MethodHandles.Lookup lookup, byte[] bytes, boolean initialize, ClassOption... options) throws IllegalClassFormatException {
         Objects.requireNonNull(bytes);

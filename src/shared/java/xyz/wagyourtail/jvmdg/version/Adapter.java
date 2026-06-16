@@ -14,6 +14,10 @@ public @interface Adapter {
 
     String target() default "";
 
+    /**
+     * if false, will completely remove interface, rather than remapping.
+     * if this is on an annotation, it will retain the original annotation.
+     */
     boolean keepInterface() default true;
 
 }

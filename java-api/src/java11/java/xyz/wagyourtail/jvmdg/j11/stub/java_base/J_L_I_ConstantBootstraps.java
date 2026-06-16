@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j11.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.invoke.*;
 import java.lang.reflect.Field;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@JEP(309)
 @Adapter("java/lang/invoke/ConstantBootstraps")
 public class J_L_I_ConstantBootstraps {
 

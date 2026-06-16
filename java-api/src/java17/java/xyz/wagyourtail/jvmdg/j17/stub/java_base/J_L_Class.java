@@ -2,8 +2,10 @@ package xyz.wagyourtail.jvmdg.j17.stub.java_base;
 
 
 import xyz.wagyourtail.jvmdg.j17.PermittedSubClasses;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
+@JEP(409)
 public class J_L_Class {
 
     @Stub

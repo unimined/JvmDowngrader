@@ -1,11 +1,13 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.*;
 
+@JEP(269)
 public class J_U_Map {
 
     @Stub(ref = @Ref("Ljava/util/Map;"))

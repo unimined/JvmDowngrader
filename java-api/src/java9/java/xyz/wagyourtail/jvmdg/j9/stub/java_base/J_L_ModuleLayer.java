@@ -3,9 +3,11 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 import xyz.wagyourtail.jvmdg.j9.intl.module.ModuleConstantHelper;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.util.*;
 
+@JEP(261)
 @Adapter("Ljava/lang/ModuleLayer;")
 public class J_L_ModuleLayer {
     static final J_L_ModuleLayer EMPTY_MODULE_LAYER =

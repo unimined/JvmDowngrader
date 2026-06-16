@@ -6,6 +6,7 @@ import xyz.wagyourtail.jvmdg.j8.stub.stream.J_U_S_DoubleStream;
 import xyz.wagyourtail.jvmdg.j8.stub.stream.J_U_S_IntStream;
 import xyz.wagyourtail.jvmdg.j8.stub.stream.J_U_S_LongStream;
 import xyz.wagyourtail.jvmdg.j8.stub.stream.J_U_S_Stream;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -13,156 +14,187 @@ import java.util.Comparator;
 
 public class J_U_Arrays {
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(byte[] a) {
         parallelSort(a, 0, a.length);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(byte[] a, int fromIndex, int toIndex) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(char[] a) {
         parallelSort(a, 0, a.length);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(char[] a, int fromIndex, int toIndex) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(short[] a) {
         parallelSort(a, 0, a.length);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(short[] a, int fromIndex, int toIndex) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(int[] a) {
         parallelSort(a, 0, a.length);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(int[] a, int fromIndex, int toIndex) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(long[] a) {
         parallelSort(a, 0, a.length);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(long[] a, int fromIndex, int toIndex) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(float[] a) {
         parallelSort(a, 0, a.length);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(float[] a, int fromIndex, int toIndex) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(double[] a) {
         parallelSort(a, 0, a.length);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSort(double[] a, int fromIndex, int toIndex) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static <T> void parallelSort(T[] a) {
         parallelSort(a, 0, a.length);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static <T> void parallelSort(T[] a, int fromIndex, int toIndex) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static <T> void parallelSort(T[] a, Comparator<? super T> cmp) {
         parallelSort(a, 0, a.length, cmp);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static <T> void parallelSort(T[] a, int fromIndex, int toIndex, Comparator<? super T> cmp) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static <T> void parallelPrefix(T[] array, J_U_F_BinaryOperator<T> op) {
         parallelPrefix(array, 0, array.length, op);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static <T> void parallelPrefix(T[] array, int fromIndex, int toIndex, J_U_F_BinaryOperator<T> op) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelPrefix(long[] array, J_U_F_LongBinaryOperator op) {
         parallelPrefix(array, 0, array.length, op);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelPrefix(long[] array, int fromIndex, int toIndex, J_U_F_LongBinaryOperator op) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelPrefix(double[] array, J_U_F_DoubleBinaryOperator op) {
         parallelPrefix(array, 0, array.length, op);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelPrefix(double[] array, int fromIndex, int toIndex, J_U_F_DoubleBinaryOperator op) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void setAll(int[] array, J_U_F_IntUnaryOperator generator) {
         setAll(array, 0, array.length, generator);
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void setAll(int[] array, int fromIndex, int toIndex, J_U_F_IntUnaryOperator generator) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static <T> void setAll(T[] array, J_U_F_IntFunction<? extends T> generator) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static <T> void parallelSetAll(T[] array, J_U_F_IntUnaryOperator generator) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSetAll(int[] array, J_U_F_IntUnaryOperator generator) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void setAll(long[] array, J_U_F_IntToLongFunction generator) {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSetAll(long[] array, J_U_F_IntToLongFunction generator) {
         throw MissingStubError.create();
@@ -173,6 +205,7 @@ public class J_U_Arrays {
         throw MissingStubError.create();
     }
 
+    @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
     public static void parallelSetAll(double[] array, J_U_F_IntToDoubleFunction generator) {
         throw MissingStubError.create();

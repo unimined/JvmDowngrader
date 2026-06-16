@@ -4,6 +4,7 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -44,6 +45,7 @@ public class J_L_I_MethodHandles {
     }
 
 
+    @JEP(193)
     @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
     public static J_L_I_VarHandle arrayElementVarHandle(Class<?> cls) {
         Objects.requireNonNull(cls);
@@ -74,6 +76,7 @@ public class J_L_I_MethodHandles {
         }
 
         @Stub
+        @JEP(193)
         public static J_L_I_VarHandle findVarHandle(MethodHandles.Lookup lookup, Class<?> owner, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             Objects.requireNonNull(owner);
             Objects.requireNonNull(name);
@@ -90,6 +93,7 @@ public class J_L_I_MethodHandles {
         }
 
         @Stub
+        @JEP(193)
         public static J_L_I_VarHandle findStaticVarHandle(MethodHandles.Lookup lookup, Class<?> owner, String name, Class<?> type) throws NoSuchFieldException, IllegalAccessException {
             Objects.requireNonNull(owner);
             Objects.requireNonNull(name);
@@ -106,6 +110,7 @@ public class J_L_I_MethodHandles {
         }
 
         @Stub
+        @JEP(193)
         public static J_L_I_VarHandle unreflectVarHandle(MethodHandles.Lookup lookup, Field field) {
             Objects.requireNonNull(field);
             return new J_L_I_VarHandle(field);

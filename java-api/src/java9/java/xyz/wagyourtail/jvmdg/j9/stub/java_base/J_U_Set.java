@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -9,6 +10,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+@JEP(269)
 public class J_U_Set {
 
     @Stub(ref = @Ref("Ljava/util/Set;"))

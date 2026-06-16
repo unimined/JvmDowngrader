@@ -1,11 +1,13 @@
 package xyz.wagyourtail.jvmdg.j25.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
 
+@JEP(506)
 @Adapter("java/lang/ScopedValue")
 public class J_L_ScopedValue<T> {
     // TODO: make this better

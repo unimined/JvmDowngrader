@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+@JEP(261)
 @Adapter("java/lang/module/ModuleReader")
 public interface J_L_M_ModuleReader extends Closeable {
     /**

@@ -2,10 +2,12 @@ package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseSet;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.*;
 
+@JEP(431)
 @Adapter(value = "java/util/SequencedSet", target = "java/util/Set")
 public class J_U_SequencedSet {
 

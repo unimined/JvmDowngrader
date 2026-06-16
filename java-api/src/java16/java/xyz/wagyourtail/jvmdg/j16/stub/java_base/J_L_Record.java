@@ -1,7 +1,9 @@
 package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
+@JEP(395)
 @Adapter("Ljava/lang/Record;")
 public abstract class J_L_Record {
 

@@ -134,4 +134,13 @@ interface DowngradeFlags {
     @get:Optional
     val debugSkipStub: SetProperty<String>
 
+    /**
+     * this skips applying specific jeps, for example to disable the JEP 400, you would put `400` in.
+     *
+     * @since 1.4.0
+     */
+    @get:Input
+    @get:Optional
+    val debugSkipJeps: SetProperty<Int>
+
 }

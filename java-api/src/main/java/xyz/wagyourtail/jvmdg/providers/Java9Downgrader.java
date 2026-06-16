@@ -29,7 +29,7 @@ public class Java9Downgrader extends VersionProvider {
         stub(J_L_Class.class);
         stub(J_L_ClassLoader.class);
         stub(J_L_Character.class);
-        // Deprecated
+        stub(J_L_Deprecated.class);
         stub(J_L_IllegalCallerException.class);
         stub(J_L_IndexOutOfBoundsException.class);
         stub(J_L_Integer.class);

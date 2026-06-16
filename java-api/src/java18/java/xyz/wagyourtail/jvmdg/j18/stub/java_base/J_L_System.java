@@ -1,13 +1,12 @@
 package xyz.wagyourtail.jvmdg.j18.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Properties;
 
-/**
- * JEP 400
- */
+@JEP(400)
 public class J_L_System {
 
     @Stub(ref = @Ref("java/lang/System"))

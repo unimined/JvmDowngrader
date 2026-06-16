@@ -46,6 +46,7 @@ public class Main {
                 new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
                 new Arguments("--skipStub", "Skip a specific class/method, of form \"Lcom/example/ClassName;\" or \"Lcom/example/ClassName;methodName;()V\"", new String[] {"-ss"}, new String[] {"stub"}),
                 new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
+                new Arguments("--skipJEP", "Skip JEP", new String[]{"-sj"}, new String[]{"jep"}),
                 new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
                 new Arguments("--noSynthetic", "Do not add `synthetic` modifier to methods", new String[]{"-ns"}, null),
                 new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
@@ -219,6 +220,13 @@ public class Main {
                     for (String[] s : entry.getValue()) {
                         for (String string : s) {
                             flags.debugSkipStubs.add(Integer.parseInt(string));
+                        }
+                    }
+                    break;
+                case "--skipJEP":
+                    for (String[] s : entry.getValue()) {
+                        for (String string : s) {
+                            flags.debugSkipJeps.add(Integer.parseInt(string));
                         }
                     }
                     break;

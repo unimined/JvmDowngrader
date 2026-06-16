@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+@JEP(102)
 public class J_L_ProcessBuilder {
 
     @Stub(ref = @Ref("java/lang/ProcessBuilder"))

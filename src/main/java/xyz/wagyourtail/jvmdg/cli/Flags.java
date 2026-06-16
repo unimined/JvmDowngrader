@@ -88,6 +88,15 @@ public class Flags {
      * such as {@code INVOKE_INTERFACE} -> {@code INVOKE_SPECIAL} for private interface methods in java 9 -> 8
      */
     public Set<Integer> debugSkipStubs = new HashSet<>(getDebugSkipStubs());
+
+    /**
+     * skip the specified JEPs stubs. this is only guarenteed to be present for methods that exist in both the source and target class versions,
+     * ie. if the behavior of the method changes, such as JEP 400 where native.encoding isn't set.
+     *
+     * @since 1.4.0
+     */
+    public Set<Integer> debugSkipJeps = new HashSet<>(getDebugSkipJeps());
+
     /**
      * sets if classes should be dumped to the {@link Constants#DEBUG_DIR} directory
      *
@@ -141,10 +150,12 @@ public class Flags {
         flags.logAnsiColors = logAnsiColors;
         flags.logLevel = logLevel;
         flags.allowMaven = allowMaven;
+        flags.shadeInlining = shadeInlining;
         flags.ignoreWarningsIn = new TreeMap<>(ignoreWarningsIn);
         flags.printDebug = printDebug;
         flags.debugSkipStub = new HashSet<>(debugSkipStub);
         flags.debugSkipStubs = new HashSet<>(debugSkipStubs);
+        flags.debugSkipJeps = new HashSet<>(debugSkipJeps);
         flags.debugNoSynthetic = debugNoSynthetic;
         flags.debugDumpClasses = debugDumpClasses;
         flags.multiReleaseOriginal = multiReleaseOriginal;
@@ -167,28 +178,31 @@ public class Flags {
             ", quiet=" + quiet +
             ", logAnsiColors=" + logAnsiColors +
             ", logLevel=" + logLevel +
-            ", ignoreWarningsIn=" + ignoreWarningsIn +
             ", allowMaven=" + allowMaven +
+            ", ignoreWarningsIn=" + ignoreWarningsIn +
             ", printDebug=" + printDebug +
-            ", shadeInlining=" + shadeInlining +
+            ", debugSkipStub=" + debugSkipStub +
             ", debugSkipStubs=" + debugSkipStubs +
+            ", debugSkipJeps=" + debugSkipJeps +
+            ", debugNoSynthetic=" + debugNoSynthetic +
             ", debugDumpClasses=" + debugDumpClasses +
             ", multiReleaseOriginal=" + multiReleaseOriginal +
             ", multiReleaseVersions=" + multiReleaseVersions +
+            ", downgradeFromMultiReleases=" + downgradeFromMultiReleases +
+            ", shadeInlining=" + shadeInlining +
             '}';
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Flags)) return false;
+        if (o == null || getClass() != o.getClass()) return false;
         Flags flags = (Flags) o;
-        return classVersion == flags.classVersion && quiet == flags.quiet && logAnsiColors == flags.logAnsiColors && allowMaven == flags.allowMaven && printDebug == flags.printDebug && shadeInlining == flags.shadeInlining && debugDumpClasses == flags.debugDumpClasses && multiReleaseOriginal == flags.multiReleaseOriginal && Objects.equals(api, flags.api) && logLevel == flags.logLevel && Objects.equals(ignoreWarningsIn, flags.ignoreWarningsIn) && Objects.equals(debugSkipStubs, flags.debugSkipStubs) && Objects.equals(multiReleaseVersions, flags.multiReleaseVersions);
+        return classVersion == flags.classVersion && quiet == flags.quiet && logAnsiColors == flags.logAnsiColors && allowMaven == flags.allowMaven && printDebug == flags.printDebug && shadeInlining == flags.shadeInlining && debugDumpClasses == flags.debugDumpClasses && debugNoSynthetic == flags.debugNoSynthetic && multiReleaseOriginal == flags.multiReleaseOriginal && downgradeFromMultiReleases == flags.downgradeFromMultiReleases && Objects.equals(api, flags.api) && logLevel == flags.logLevel && Objects.equals(ignoreWarningsIn, flags.ignoreWarningsIn) && Objects.equals(debugSkipStubs, flags.debugSkipStubs) && Objects.equals(debugSkipJeps, flags.debugSkipJeps) && Objects.equals(debugSkipStub, flags.debugSkipStub) && Objects.equals(multiReleaseVersions, flags.multiReleaseVersions);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(classVersion, api, quiet, logAnsiColors, logLevel, ignoreWarningsIn, allowMaven, printDebug, shadeInlining, debugSkipStubs, debugDumpClasses, multiReleaseOriginal, multiReleaseVersions);
+        return Objects.hash(classVersion, api, quiet, logAnsiColors, logLevel, ignoreWarningsIn, allowMaven, printDebug, shadeInlining, debugSkipStubs, debugSkipJeps, debugDumpClasses, debugSkipStub, debugNoSynthetic, multiReleaseOriginal, multiReleaseVersions, downgradeFromMultiReleases);
     }
 
     /* getters */
@@ -311,6 +325,16 @@ public class Flags {
         if (skipStubs == null) return skip;
         for (String s : skipStubs.split("\\|")) {
             skip.add(FullyQualifiedMemberNameAndDesc.of(s));
+        }
+        return skip;
+    }
+
+    private Set<Integer> getDebugSkipJeps() {
+        Set<Integer> skip = new HashSet<>();
+        String skipJeps = System.getProperty(Constants.DEBUG_SKIP_JEPS);
+        if (skipJeps == null) return skip;
+        for (String s : skipJeps.split(",")) {
+            skip.add(Integer.parseInt(s));
         }
         return skip;
     }

@@ -2,9 +2,34 @@ package xyz.wagyourtail.jvmdg.asm;
 
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.*;
-import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.*;
 
 public class ASMUtils {
+
+    public static  <E extends AnnotationNode> E copyAnnotation(E from) {
+        if (from.getClass() == LocalVariableAnnotationNode.class) {
+            LocalVariableAnnotationNode fromLv = (LocalVariableAnnotationNode) from;
+            int[] indexes = new int[fromLv.index.size()];
+            for (int i = 0; i < indexes.length; i++) {
+                indexes[i] = fromLv.index.get(i);
+            }
+            LocalVariableAnnotationNode toLv = new LocalVariableAnnotationNode(fromLv.typeRef, fromLv.typePath, fromLv.start.toArray(new LabelNode[0]), fromLv.end.toArray(new LabelNode[0]), indexes, fromLv.desc);
+            from.accept(toLv);
+            return (E) toLv;
+        }
+        if (from.getClass() == TypeAnnotationNode.class) {
+            TypeAnnotationNode fromT = (TypeAnnotationNode) from;
+            TypeAnnotationNode toT = new TypeAnnotationNode(fromT.typeRef, fromT.typePath, fromT.desc);
+            from.accept(toT);
+            return (E) toT;
+        }
+        if (from.getClass() == AnnotationNode.class) {
+            AnnotationNode toA = new AnnotationNode(from.desc);
+            from.accept(toA);
+            return (E) toA;
+        }
+        throw new RuntimeException("Unknown annotation type: " + from.getClass());
+    }
 
     public static Handle boxType(Type type) {
         Type box = getBoxFor(type);

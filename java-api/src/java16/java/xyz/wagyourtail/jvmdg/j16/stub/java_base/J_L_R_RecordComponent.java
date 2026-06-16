@@ -2,10 +2,12 @@ package xyz.wagyourtail.jvmdg.j16.stub.java_base;
 
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 
+@JEP(395)
 @Adapter("Ljava/lang/reflect/RecordComponent;")
 public class J_L_R_RecordComponent implements AnnotatedElement {
 

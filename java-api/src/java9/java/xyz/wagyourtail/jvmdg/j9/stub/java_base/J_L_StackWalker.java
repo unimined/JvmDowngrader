@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -12,6 +13,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+@JEP(259)
 @Adapter("java/lang/StackWalker")
 public class J_L_StackWalker {
 

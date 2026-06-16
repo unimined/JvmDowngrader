@@ -2,12 +2,14 @@ package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.j21.impl.FakeVirtualThread;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.function.Supplier;
 
+@JEP(444)
 public class J_L_Thread {
 
     @Stub(ref = @Ref("java/lang/Thread"))

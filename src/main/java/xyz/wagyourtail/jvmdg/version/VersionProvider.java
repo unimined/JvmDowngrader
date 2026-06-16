@@ -6,6 +6,7 @@ import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.all.RemovedInterfaces;
+import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.*;
@@ -283,7 +284,8 @@ public abstract class VersionProvider {
         Set<String> warnings = new LinkedHashSet<>();
         try {
             FullyQualifiedMemberNameAndDesc fqm = FullyQualifiedMemberNameAndDesc.of(clazz);
-            if (downgrader.flags.debugSkipStub.contains(fqm)) {
+            JEP jep = clazz.getAnnotation(JEP.class);
+            if (downgrader.flags.debugSkipStub.contains(fqm) || (jep != null && downgrader.flags.debugSkipJeps.contains(jep.value()))) {
                 return;
             } else {
                 if (clazz.isAnnotationPresent(Adapter.class)) {
@@ -317,6 +319,8 @@ public abstract class VersionProvider {
             try {
                 for (Method method : clazz.getDeclaredMethods()) {
                     if (downgrader.flags.debugSkipStub.contains(FullyQualifiedMemberNameAndDesc.of(method))) continue;
+                    jep = method.getAnnotation(JEP.class);
+                    if (jep != null && downgrader.flags.debugSkipJeps.contains(jep.value())) continue;
                     try {
                         if (method.isAnnotationPresent(Stub.class)) {
                             Stub stub = method.getAnnotation(Stub.class);
@@ -1031,14 +1035,12 @@ public abstract class VersionProvider {
             return clazz;
         }
 
-        // super
         Type type = Type.getObjectType(clazz.superName);
         if (classStubs.containsKey(type)) {
             clazz.superName = classStubs.get(type).getFirst().getInternalName();
         }
 
         List<String> removedInterfaces = new ArrayList<>();
-        // interface
         if (clazz.interfaces != null) {
             for (int i = 0; i < clazz.interfaces.size(); i++) {
                 type = Type.getObjectType(clazz.interfaces.get(i));
@@ -1047,14 +1049,12 @@ public abstract class VersionProvider {
                     if (stub.getSecond().getSecond().keepInterface()) {
                         clazz.interfaces.set(i, stub.getFirst().getInternalName());
                     } else {
-                        removedInterfaces.add(clazz.interfaces.remove(i));
-                        i--;
+                        removedInterfaces.add(clazz.interfaces.remove(i--));
                     }
                 }
             }
         }
 
-        // innerclass
         if (clazz.innerClasses != null) {
             for (InnerClassNode inner : clazz.innerClasses) {
                 type = Type.getObjectType(inner.name);
@@ -1094,12 +1094,15 @@ public abstract class VersionProvider {
             }
         }
 
-        // signature
         if (clazz.signature != null) {
             clazz.signature = transformSignature(clazz.signature, warnings);
         }
 
-        // field descriptor
+        transformAnnotations(clazz.visibleAnnotations, warnings);
+        transformAnnotations(clazz.invisibleAnnotations, warnings);
+        transformAnnotations(clazz.visibleTypeAnnotations, warnings);
+        transformAnnotations(clazz.invisibleTypeAnnotations, warnings);
+
         if (clazz.fields != null) {
             for (FieldNode field : clazz.fields) {
                 type = Type.getType(field.desc);
@@ -1107,10 +1110,14 @@ public abstract class VersionProvider {
                 if (field.signature != null) {
                     field.signature = transformSignature(field.signature, warnings);
                 }
+
+                transformAnnotations(field.visibleAnnotations, warnings);
+                transformAnnotations(field.invisibleAnnotations, warnings);
+                transformAnnotations(field.visibleTypeAnnotations, warnings);
+                transformAnnotations(field.invisibleTypeAnnotations, warnings);
             }
         }
 
-        // method descriptor
         if (clazz.methods != null) {
             for (MethodNode method : clazz.methods) {
                 type = Type.getMethodType(method.desc);
@@ -1135,9 +1142,85 @@ public abstract class VersionProvider {
                         }
                     }
                 }
+
+                transformAnnotations(method.visibleAnnotations, warnings);
+                transformAnnotations(method.invisibleAnnotations, warnings);
+                transformAnnotations(method.visibleTypeAnnotations, warnings);
+                transformAnnotations(method.invisibleTypeAnnotations, warnings);
+                transformAnnotations(method.visibleLocalVariableAnnotations, warnings);
+                transformAnnotations(method.invisibleLocalVariableAnnotations, warnings);
+
+                if (method.visibleParameterAnnotations != null) {
+                    for (List<AnnotationNode> annotationNodes : method.visibleParameterAnnotations) {
+                        transformAnnotations(annotationNodes, warnings);
+                    }
+                }
+
+                if (method.invisibleParameterAnnotations != null) {
+                    for (List<AnnotationNode> annotationNodes : method.invisibleParameterAnnotations) {
+                        transformAnnotations(annotationNodes, warnings);
+                    }
+                }
             }
         }
+
+        if (clazz.recordComponents != null) {
+            for (RecordComponentNode recordComponent : clazz.recordComponents) {
+                recordComponent.descriptor = stubClass(Type.getType(recordComponent.descriptor), warnings).getDescriptor();
+
+                if (recordComponent.signature != null) {
+                    recordComponent.signature = transformSignature(recordComponent.signature, warnings);
+                }
+
+                transformAnnotations(recordComponent.visibleAnnotations, warnings);
+                transformAnnotations(recordComponent.invisibleAnnotations, warnings);
+                transformAnnotations(recordComponent.visibleTypeAnnotations, warnings);
+                transformAnnotations(recordComponent.invisibleTypeAnnotations, warnings);
+            }
+        }
+
         return clazz;
+    }
+
+    public <E extends AnnotationNode> void transformAnnotations(List<E> annotations, final Set<String> warnings) {
+        if (annotations == null) return;
+        for (E annotation : new ArrayList<>(annotations)) {
+            Type annotationType = Type.getType(annotation.desc);
+            if (classStubs.containsKey(annotationType)) {
+                Pair<Type, Pair<Class<?>, Adapter>> stub = classStubs.get(annotationType);
+                if (stub.getSecond().getSecond().keepInterface()) {
+                    E newAnnotation = ASMUtils.copyAnnotation(annotation);
+                    transformAnnotation(newAnnotation, warnings);
+                    annotations.add(newAnnotation);
+                } else {
+                    transformAnnotation(annotation, warnings);
+                }
+            }
+        }
+    }
+
+    public void transformAnnotation(AnnotationNode node, final Set<String> warnings) {
+        node.desc = stubClass(Type.getType(node.desc), warnings).getDescriptor();
+        if (node.values != null) {
+            for (int i = 0; i < node.values.size(); i += 2) {
+                Object value = node.values.get(i + 1);
+                if (value instanceof Type) {
+                    node.values.set(i + 1, stubClass((Type) value, warnings));
+                } else if (value instanceof AnnotationNode) {
+                    transformAnnotation((AnnotationNode) value, warnings);
+                } else if (value instanceof List<?>) {
+                    List<Object> list = (List<Object>) value;
+                    for (int j = 0; j < list.size(); j++) {
+                        Object listValue = list.get(j);
+                        if (listValue instanceof Type) {
+                            list.set(j, stubClass((Type) listValue, warnings));
+                        } else if (listValue instanceof AnnotationNode) {
+                            transformAnnotation((AnnotationNode) listValue, warnings);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public String transformSignature(String signature, final Set<String> warnings) {
