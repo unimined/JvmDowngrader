@@ -73,6 +73,7 @@ public class Java9Downgrader extends VersionProvider {
         // AnnotatedType
         // AnnotatedTypeVariable
         // AnnotatedWildcardType
+        stub(J_L_R_AnnotatedElement.class);
         stub(J_L_R_InaccessibleObjectException.class);
         stub(J_M_BigDecimal.class);
         stub(J_M_BigInteger.class);
