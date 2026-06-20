@@ -104,8 +104,11 @@ public class J_L_R_AnnotatedElement {
                 dep_idx = annotations.size();
                 annotations.add(DEFAULT_DEP);
             }
-            if (a.annotationType() == J_L_Deprecated.class && dep_idx != -1) {
-                annotations.remove(dep_idx);
+            if (a.annotationType() == J_L_Deprecated.class) {
+                if (dep_idx != -1) {
+                    annotations.remove(dep_idx);
+                }
+                dep_idx = annotations.size();
             }
             annotations.add(a);
         }
@@ -121,8 +124,11 @@ public class J_L_R_AnnotatedElement {
                 dep_idx = annotations.size();
                 annotations.add(DEFAULT_DEP);
             }
-            if (a.annotationType() == J_L_Deprecated.class && dep_idx != -1) {
-                annotations.remove(dep_idx);
+            if (a.annotationType() == J_L_Deprecated.class) {
+                if (dep_idx != -1) {
+                    annotations.remove(dep_idx);
+                }
+                dep_idx = annotations.size();
             }
             annotations.add(a);
         }
