@@ -19,7 +19,7 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import java.io.IOException;
 import java.util.*;
 
-public class Java7Downgrader extends VersionProvider {
+public class Java7Downgrader extends AllVersionDowngrader {
 
     public Java7Downgrader() {
         super(Opcodes.V1_7, Opcodes.V1_6, 0);

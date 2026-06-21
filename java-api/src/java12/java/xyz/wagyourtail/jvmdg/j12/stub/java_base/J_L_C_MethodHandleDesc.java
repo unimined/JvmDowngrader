@@ -1,11 +1,13 @@
 package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+@JEP(334)
 @Adapter("java/lang/constant/MethodHandleDesc")
 public interface J_L_C_MethodHandleDesc extends J_L_C_ConstantDesc {
 

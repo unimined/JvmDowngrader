@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static java.util.Objects.requireNonNull;
+
 @JEP(309)
 @Adapter("java/lang/invoke/ConstantBootstraps")
 public class J_L_I_ConstantBootstraps {
@@ -81,6 +83,52 @@ public class J_L_I_ConstantBootstraps {
             handle = handle.asType(handle.type().changeReturnType(type)).withVarargs(handle.isVarargsCollector());
         }
         return handle.invokeWithArguments(args);
+    }
+
+    public static VarHandle fieldVarHandle(MethodHandles.Lookup lookup, String name, Class<VarHandle> type, Class<?> declaringClass, Class<?> fieldType) {
+        Objects.requireNonNull(lookup);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(declaringClass);
+        Objects.requireNonNull(fieldType);
+        if (type != VarHandle.class) {
+            throw new IllegalArgumentException();
+        }
+        try {
+            return lookup.findVarHandle(declaringClass, name, fieldType);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public static VarHandle staticFieldVarHandle(MethodHandles.Lookup lookup, String name, Class<VarHandle> type, Class<?> declaringClass, Class<?> fieldType) {
+        Objects.requireNonNull(lookup);
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(declaringClass);
+        Objects.requireNonNull(fieldType);
+        if (type != VarHandle.class) {
+            throw new IllegalArgumentException();
+        }
+        try {
+            return lookup.findStaticVarHandle(declaringClass, name, fieldType);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    public static VarHandle arrayVarHandle(MethodHandles.Lookup lookup, String name, Class<VarHandle> type, Class<?> arrayClass) {
+        requireNonNull(lookup);
+        requireNonNull(type);
+        requireNonNull(arrayClass);
+        if (type != VarHandle.class) {
+            throw new IllegalArgumentException();
+        }
+        try {
+            return MethodHandles.arrayElementVarHandle(lookup.accessClass(arrayClass));
+        } catch (IllegalAccessException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     /**

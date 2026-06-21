@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.j14.stub.java_base.J_L_StrictMath;
 import xyz.wagyourtail.jvmdg.j14.stub.java_base.J_U_C_L_LockSupport;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-public class Java14Downgrader extends VersionProvider {
+public class Java14Downgrader extends AllVersionDowngrader {
     public Java14Downgrader() {
         super(Opcodes.V14, Opcodes.V13, 0);
     }

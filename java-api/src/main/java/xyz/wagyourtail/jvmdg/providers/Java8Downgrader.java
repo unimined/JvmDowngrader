@@ -19,7 +19,7 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import java.io.IOException;
 import java.util.*;
 
-public class Java8Downgrader extends VersionProvider {
+public class Java8Downgrader extends AllVersionDowngrader {
 
 
     public Java8Downgrader() {

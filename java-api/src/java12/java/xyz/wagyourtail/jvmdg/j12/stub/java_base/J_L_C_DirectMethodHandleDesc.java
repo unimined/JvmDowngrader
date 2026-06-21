@@ -2,12 +2,14 @@ package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Objects;
 
+@JEP(334)
 @Adapter("java/lang/constant/DirectMethodHandleDesc")
 public interface J_L_C_DirectMethodHandleDesc extends J_L_C_MethodHandleDesc {
 

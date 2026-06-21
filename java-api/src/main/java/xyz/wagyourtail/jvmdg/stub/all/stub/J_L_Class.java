@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.version.all.stub;
+package xyz.wagyourtail.jvmdg.stub.all.stub;
 
 import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;

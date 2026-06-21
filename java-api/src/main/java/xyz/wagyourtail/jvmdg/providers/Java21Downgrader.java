@@ -5,7 +5,7 @@ import xyz.wagyourtail.jvmdg.j21.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.j21.stub.java_net_http.J_N_H_HttpClient;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-public class Java21Downgrader extends VersionProvider {
+public class Java21Downgrader extends AllVersionDowngrader {
     public Java21Downgrader() {
         super(Opcodes.V21, Opcodes.V20, 0);
     }

@@ -1,42 +1,24 @@
 package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 
 
+import xyz.wagyourtail.jvmdg.j12.impl.ClassConstable;
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.reflect.Array;
+import java.util.Optional;
 
+@JEP(334)
 public class J_L_Class {
 
     @Stub
+    public static Optional<J_L_C_ClassDesc> describeConstable(Class<?> clazz) {
+        return new ClassConstable(clazz).describeConstable();
+    }
+
+    @Stub
     public static String descriptorString(Class<?> clazz) {
-        if (clazz.isPrimitive()) {
-            switch (clazz.getName()) {
-                case "boolean":
-                    return "Z";
-                case "byte":
-                    return "B";
-                case "char":
-                    return "C";
-                case "short":
-                    return "S";
-                case "int":
-                    return "I";
-                case "long":
-                    return "J";
-                case "float":
-                    return "F";
-                case "double":
-                    return "D";
-                case "void":
-                    return "V";
-                default:
-                    throw new InternalError("Unknown primitive type: " + clazz.getName());
-            }
-        }
-        if (clazz.isArray()) {
-            return clazz.getName().replace('.', '/');
-        }
-        return "L" + clazz.getName().replace('.', '/') + ";";
+        return new ClassConstable(clazz).descriptorString();
     }
 
     @Stub

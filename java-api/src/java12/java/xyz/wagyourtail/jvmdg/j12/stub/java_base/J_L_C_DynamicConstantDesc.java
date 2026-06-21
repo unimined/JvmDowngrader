@@ -1,12 +1,14 @@
 package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.Objects;
 
+@JEP(334)
 @Adapter("java/lang/constant/DynamicConstantDesc")
 public abstract class J_L_C_DynamicConstantDesc<T> implements J_L_C_ConstantDesc {
     private final J_L_C_DirectMethodHandleDesc bsm;

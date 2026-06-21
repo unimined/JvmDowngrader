@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.j11.impl.CharReader;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -10,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+@JEP(334)
 @Adapter("java/lang/constant/MethodTypeDesc")
 public interface J_L_C_MethodTypeDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescriptor.OfMethod<J_L_C_ClassDesc, J_L_C_MethodTypeDesc> {
 

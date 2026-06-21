@@ -6,7 +6,7 @@ import xyz.wagyourtail.jvmdg.j23.stub.java_base.J_L_R_ExactConversionsSupport;
 import xyz.wagyourtail.jvmdg.j23.stub.java_base.J_T_Instant;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-public class Java23Downgrader extends VersionProvider {
+public class Java23Downgrader extends AllVersionDowngrader {
 
     public Java23Downgrader() {
         super(Opcodes.V23, Opcodes.V22, 0);

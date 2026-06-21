@@ -9,7 +9,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Java9Downgrader extends VersionProvider {
+public class Java9Downgrader extends AllVersionDowngrader {
 
 
     public Java9Downgrader() {

@@ -1,9 +1,11 @@
 package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.invoke.ConstantBootstraps;
 
+@JEP(334)
 @Adapter("java/lang/constant/ConstantDescs")
 public class J_L_C_ConstantDescs {
 
@@ -25,7 +27,7 @@ public class J_L_C_ConstantDescs {
     public static final J_L_C_ClassDesc CD_Throwable = J_L_C_ClassDesc.of("java.lang.Throwable");
     public static final J_L_C_ClassDesc CD_Exception = J_L_C_ClassDesc.of("java.lang.Exception");
     public static final J_L_C_ClassDesc CD_Enum = J_L_C_ClassDesc.of("java.lang.Enum");
-    //    public static final J_L_C_ClassDesc CD_VarHandle = J_L_C_ClassDesc.of("java.lang.VarHandle");
+    public static final J_L_C_ClassDesc CD_VarHandle = J_L_C_ClassDesc.of("java.lang.invoke.VarHandle");
     public static final J_L_C_ClassDesc CD_MethodHandles = J_L_C_ClassDesc.of("java.lang.MethodHandles");
     public static final J_L_C_ClassDesc CD_MethodHandles_Lookup = J_L_C_ClassDesc.of("java.lang.MethodHandles.Lookup");
     public static final J_L_C_ClassDesc CD_MethodHandle = J_L_C_ClassDesc.of("java.lang.MethodHandle");
@@ -37,11 +39,11 @@ public class J_L_C_ConstantDescs {
     public static final J_L_C_ClassDesc CD_Map = J_L_C_ClassDesc.of("java.lang.Map");
     public static final J_L_C_ClassDesc CD_ConstantDesc = J_L_C_ClassDesc.of(J_L_C_ConstantDesc.class.getName());
     public static final J_L_C_ClassDesc CD_ClassDesc = J_L_C_ClassDesc.of(J_L_C_ClassDesc.class.getName());
-    public static final J_L_C_ClassDesc CD_EnumDesc = J_L_C_ClassDesc.of(J_L_Enum$EnumDesc.class.getName());
+    public static final J_L_C_ClassDesc CD_EnumDesc = J_L_C_ClassDesc.of(J_L_Enum.EnumDesc.class.getName());
     public static final J_L_C_ClassDesc CD_MethodTypeDesc = J_L_C_ClassDesc.of(J_L_C_MethodTypeDesc.class.getName());
     public static final J_L_C_ClassDesc CD_MethodHandleDesc = J_L_C_ClassDesc.of(J_L_C_MethodHandleDesc.class.getName());
     public static final J_L_C_ClassDesc CD_DirectMethodHandleDesc = J_L_C_ClassDesc.of(J_L_C_DirectMethodHandleDesc.class.getName());
-    //    public static final J_L_C_ClassDesc CD_VarHandleDesc
+    public static final J_L_C_ClassDesc CD_VarHandleDesc = J_L_C_ClassDesc.of(J_L_I_VarHandle.VarHandleDesc.class.getName());
     public static final J_L_C_ClassDesc CD_MethodHandleDesc_Kind = CD_MethodHandleDesc.nested("Kind");
     public static final J_L_C_ClassDesc CD_DynamicConstantDesc = J_L_C_ClassDesc.of(J_L_C_DynamicConstantDesc.class.getName());
     //    public static final CD_DynamicCallSiteDesc
@@ -53,7 +55,6 @@ public class J_L_C_ConstantDescs {
     public static final J_L_C_ClassDesc CD_short = J_L_C_ClassDesc.ofDescriptor("S");
     public static final J_L_C_ClassDesc CD_byte = J_L_C_ClassDesc.ofDescriptor("B");
 
-//    public static final J_L_C_DirectMethodHandleDesc BSM_VARHANDLE_FIELD
     public static final J_L_C_ClassDesc CD_char = J_L_C_ClassDesc.ofDescriptor("C");
     public static final J_L_C_ClassDesc CD_boolean = J_L_C_ClassDesc.ofDescriptor("Z");
     public static final J_L_C_ClassDesc CD_void = J_L_C_ClassDesc.ofDescriptor("V");
@@ -96,6 +97,26 @@ public class J_L_C_ConstantDescs {
         "nullConstant",
         CD_Object
     );
+    public static final J_L_C_DirectMethodHandleDesc BSM_VARHANDLE_FIELD = ofConstantBootstrap(
+        CD_ConstantBootstraps,
+        "fieldVarHandle",
+        CD_VarHandle,
+        CD_Class,
+        CD_Class
+    );
+    public static final J_L_C_DirectMethodHandleDesc BSM_VARHANDLE_STATIC_FIELD = ofConstantBootstrap(
+        CD_ConstantBootstraps,
+        "staticFieldVarHandle",
+        CD_VarHandle,
+        CD_Class,
+        CD_Class
+    );
+    public static final J_L_C_DirectMethodHandleDesc BSM_VARHANDLE_ARRAY = ofConstantBootstrap(
+        CD_ConstantBootstraps,
+        "arrayVarHandle",
+        CD_VarHandle,
+        CD_Class
+    );
     public static final J_L_C_ConstantDesc NULL = J_L_C_DynamicConstantDesc.ofNamed(BSM_NULL_CONSTANT, "_", CD_Object);
     public static final J_L_C_DirectMethodHandleDesc BSM_INVOKE = ofConstantBootstrap(
         CD_ConstantBootstraps,
@@ -103,6 +124,12 @@ public class J_L_C_ConstantDescs {
         CD_Object,
         CD_MethodHandle,
         CD_Object.arrayType()
+    );
+    public static final J_L_C_DirectMethodHandleDesc BSM_EXPLICIT_CAST = ofConstantBootstrap(
+        CD_ConstantBootstraps,
+        "explicitCast",
+        CD_Object,
+        CD_Object
     );
 
     public static J_L_C_DirectMethodHandleDesc ofCallsiteBootstrap(

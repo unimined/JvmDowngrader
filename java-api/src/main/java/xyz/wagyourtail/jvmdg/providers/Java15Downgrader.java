@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class Java15Downgrader extends VersionProvider {
+public class Java15Downgrader extends AllVersionDowngrader {
     public Java15Downgrader() {
         super(Opcodes.V15, Opcodes.V14, 0);
     }

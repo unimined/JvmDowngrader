@@ -20,7 +20,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-public class Java25Downgrader extends VersionProvider {
+public class Java25Downgrader extends AllVersionDowngrader {
 
     public Java25Downgrader() {
         super(Opcodes.V25, Opcodes.V24, 0);

@@ -7,7 +7,7 @@ import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_L_Module;
 import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_N_F_Path;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-public class Java22Downgrader extends VersionProvider {
+public class Java22Downgrader extends AllVersionDowngrader {
 
     public Java22Downgrader() {
         super(Opcodes.V22, Opcodes.V21, 0);

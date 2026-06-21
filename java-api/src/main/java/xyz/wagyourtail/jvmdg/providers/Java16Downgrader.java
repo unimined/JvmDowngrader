@@ -11,7 +11,7 @@ import xyz.wagyourtail.jvmdg.j16.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.j16.stub.java_net_http.J_N_H_HttpRequest;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-public class Java16Downgrader extends VersionProvider {
+public class Java16Downgrader extends AllVersionDowngrader {
     public Java16Downgrader() {
         super(Opcodes.V16, Opcodes.V15, 0);
     }

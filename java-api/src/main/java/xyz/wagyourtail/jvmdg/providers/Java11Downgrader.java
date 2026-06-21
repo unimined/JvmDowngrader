@@ -15,7 +15,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import java.io.IOException;
 import java.util.*;
 
-public class Java11Downgrader extends VersionProvider {
+public class Java11Downgrader extends AllVersionDowngrader {
     public Java11Downgrader() {
         super(Opcodes.V11, Opcodes.V10, 0);
     }

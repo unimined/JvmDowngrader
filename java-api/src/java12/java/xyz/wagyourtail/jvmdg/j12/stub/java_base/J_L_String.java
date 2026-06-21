@@ -1,7 +1,10 @@
 package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
+import java.lang.invoke.MethodHandles;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,6 +41,18 @@ public class J_L_String {
     @Stub
     public static <R> R transform(String input, Function<? super String, ? extends R> func) {
         return func.apply(input);
+    }
+
+    @Stub
+    @JEP(334)
+    public static Optional<String> describeConstable(String self) {
+        return Optional.of(self);
+    }
+
+    @Stub
+    @JEP(334)
+    public static String resolveConstantDesc(String self, MethodHandles.Lookup lookup) {
+        return self;
     }
 
 }

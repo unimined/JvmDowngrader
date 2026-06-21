@@ -9,7 +9,7 @@ import xyz.wagyourtail.jvmdg.j17.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.j17.stub.jdk_httpserver.C_S_N_H_Filter;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-public class Java17Downgrader extends VersionProvider {
+public class Java17Downgrader extends AllVersionDowngrader {
     public Java17Downgrader() {
         super(Opcodes.V17, Opcodes.V16, 0);
     }

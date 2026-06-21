@@ -5,12 +5,11 @@ import org.objectweb.asm.signature.SignatureReader;
 import org.objectweb.asm.signature.SignatureWriter;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
-import xyz.wagyourtail.jvmdg.all.RemovedInterfaces;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.logging.Logger;
+import xyz.wagyourtail.jvmdg.stub.all.RemovedInterfaces;
 import xyz.wagyourtail.jvmdg.util.*;
-import xyz.wagyourtail.jvmdg.version.all.stub.J_L_Class;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
@@ -165,11 +164,7 @@ public abstract class VersionProvider {
         }
     }
 
-    public void preInit() {
-        // apply all version stubs
-        stub(J_L_Class.class);
-
-    }
+    public abstract void preInit();
 
     public abstract void init();
 
@@ -292,27 +287,30 @@ public abstract class VersionProvider {
                     Adapter stub = clazz.getAnnotation(Adapter.class);
                     if (stub.value().isEmpty()) {
                         throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter must have a ref");
+                    }
+
+                    Type value;
+                    if (stub.value().startsWith("L") && stub.value().endsWith(";")) {
+                        value = Type.getType(stub.value());
                     } else {
-                        Type value;
-                        if (stub.value().startsWith("L") && stub.value().endsWith(";")) {
-                            value = Type.getType(stub.value());
+                        value = Type.getObjectType(stub.value());
+                    }
+//                if (classStubs.containsKey(type)) {
+//                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter ref " + type.getInternalName() + " already exists");
+//                }
+                    Type target;
+                    if (stub.target().isEmpty()) {
+                        target = Type.getType(clazz);
+                    } else {
+                        if (stub.target().startsWith("L") && stub.target().endsWith(";")) {
+                            target = Type.getType(stub.target());
                         } else {
-                            value = Type.getObjectType(stub.value());
+                            target = Type.getObjectType(stub.target());
                         }
-    //                if (classStubs.containsKey(type)) {
-    //                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Adapter ref " + type.getInternalName() + " already exists");
-    //                }
-                        Type target;
-                        if (stub.target().isEmpty()) {
-                            target = Type.getType(clazz);
-                        } else {
-                            if (stub.target().startsWith("L") && stub.target().endsWith(";")) {
-                                target = Type.getType(stub.target());
-                            } else {
-                                target = Type.getObjectType(stub.target());
-                            }
-                        }
-                        classStubs.put(value, new Pair<>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
+                    }
+                    classStubs.put(value, new Pair<>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
+                    for (Class<?> targetClass : stub.implementors()) {
+                        getStubMapper(Type.getType(targetClass), warnings).addInterface(targetClass);
                     }
                 }
             }

@@ -4,7 +4,7 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j12.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-public class Java12Downgrader extends VersionProvider {
+public class Java12Downgrader extends AllVersionDowngrader {
     public Java12Downgrader() {
         super(Opcodes.V12, Opcodes.V11, 0);
     }
@@ -14,14 +14,15 @@ public class Java12Downgrader extends VersionProvider {
         stub(J_I_InputStream.class);
         // Character$UnicodeBlock (more unicode spaces);
         stub(J_L_C_ClassDesc.class);
+        stub(J_L_C_Constable.class);
         stub(J_L_C_ConstantDesc.class);
         stub(J_L_Class.class);
-        // Double
-        stub(J_L_Enum$EnumDesc.class);
-        // Float
+        stub(J_L_Double.class);
+        stub(J_L_Enum.class);
+        stub(J_L_Float.class);
         stub(J_L_I_TypeDescriptor.class);
-        // Integer
-        // Long
+        stub(J_L_Integer.class);
+        stub(J_L_Long.class);
         stub(J_L_String.class);
         stub(J_L_C_ConstantDescs.class);
         stub(J_L_C_DirectMethodHandleDesc.class);
@@ -29,10 +30,10 @@ public class Java12Downgrader extends VersionProvider {
         stub(J_L_C_DynamicConstantDesc.class);
         stub(J_L_C_MethodHandleDesc.class);
         stub(J_L_C_MethodTypeDesc.class);
-        // MethodHandle
-        // MethodType
-        // TypeDescriptor
-        // VarHandle
+        stub(J_L_I_MethodHandle.class);
+        stub(J_L_I_MethodType.class);
+        stub(J_L_I_TypeDescriptor.class);
+        stub(J_L_I_VarHandle.class);
         // SecureCacheResponse
         // ServerSocket
         stub(J_N_F_Files.class);

@@ -4,7 +4,7 @@ import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.j18.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-public class Java18Downgrader extends VersionProvider {
+public class Java18Downgrader extends AllVersionDowngrader {
     public Java18Downgrader() {
         super(Opcodes.V18, Opcodes.V17, 0);
     }

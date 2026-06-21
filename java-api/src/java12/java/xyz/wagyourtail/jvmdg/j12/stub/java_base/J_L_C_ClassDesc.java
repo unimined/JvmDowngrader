@@ -2,12 +2,14 @@ package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
+import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.invoke.MethodHandles;
 import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
+@JEP(334)
 @Adapter("java/lang/constant/ClassDesc")
 public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescriptor.OfField<J_L_C_ClassDesc> {
 
