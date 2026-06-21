@@ -309,9 +309,6 @@ public abstract class VersionProvider {
                         }
                     }
                     classStubs.put(value, new Pair<>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
-                    for (Class<?> targetClass : stub.implementors()) {
-                        getStubMapper(Type.getType(targetClass), warnings).addInterface(targetClass);
-                    }
                 }
             }
             try {
