@@ -168,7 +168,7 @@ public class Java9Downgrader extends AllVersionDowngrader {
         stub(J_U_S_Stream.class);
         // WhileOps
         stub(J_U_Z_Checksum.class);
-        // CRC32C
+        stub(J_U_Z_CRC32C.class);
         stub(J_U_Z_ZipEntry.class);
         // ExtendedSSLSession
         // SSLEngine
