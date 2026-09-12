@@ -10,7 +10,6 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
-import java.util.LinkedList;
 
 @JEP(280)
 public class J_L_I_StringConcatFactory {
@@ -561,8 +560,28 @@ public class J_L_I_StringConcatFactory {
                         break;
                     case '\u0002':
                         // stack = [StringBuilder]
-                        visitLdcInsn(bsmArgs.removeFirst());
-                        // stack = [StringBuilder, StringBuilder]
+                        Object constant = bsmArgs.removeFirst();
+
+                        // stack = [StringBuilder, ?]
+                        if (constant instanceof String) {
+                            visitLdcInsn(constant);
+                        } else if (constant instanceof Integer) {
+                            visitLdcInsn(constant);
+                            visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", "(I)Ljava/lang/String;", false);
+                        } else if (constant instanceof Long) {
+                            visitLdcInsn(constant);
+                            visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", "(J)Ljava/lang/String;", false);
+                        } else if (constant instanceof Float) {
+                            visitLdcInsn(constant);
+                            visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", "(F)Ljava/lang/String;", false);
+                        } else if (constant instanceof Double) {
+                            visitLdcInsn(constant);
+                            visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", "(D)Ljava/lang/String;", false);
+                        } else {
+                            visitLdcInsn(String.valueOf(constant));
+                        }
+
+                        // stack = [StringBuilder, String]
                         visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;", false);
                         index++;
                         break;
