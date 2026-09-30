@@ -141,7 +141,7 @@ public class J_L_Math {
     @Stub(ref = @Ref("java/lang/Math"))
     public static int floorMod(int x, int y) {
         int r = x % y;
-        if (((x ^ y) < 0) && (r < 0)) {
+        if (((x ^ y) < 0) && (r != 0)) {
             return r + y;
         }
         return r;
@@ -150,7 +150,7 @@ public class J_L_Math {
     @Stub(ref = @Ref("java/lang/Math"))
     public static long floorMod(long x, long y) {
         long r = x % y;
-        if (((x ^ y) < 0) && (r < 0)) {
+        if (((x ^ y) < 0) && (r != 0)) {
             return r + y;
         }
         return r;

@@ -47,7 +47,7 @@ public class J_L_StrictMath {
 
     @Stub(ref = @Ref("Ljava/lang/StrictMath;"))
     public static int floorDivExact(int x, int y) {
-        return J_L_Math.ceilDivExact(x, y);
+        return J_L_Math.floorDivExact(x, y);
     }
 
     @Stub(ref = @Ref("Ljava/lang/StrictMath;"))

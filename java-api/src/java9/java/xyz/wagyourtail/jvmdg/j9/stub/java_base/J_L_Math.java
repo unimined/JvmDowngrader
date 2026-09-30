@@ -64,7 +64,7 @@ public class J_L_Math {
                 return a * b + c; // Handled signed zero cases
             } else {
                 return (
-                    BigDecimal.valueOf((double) a * (double) b) // Exact multiply
+                    new BigDecimal((double) a * (double) b) // Exact multiply
                         .add(new BigDecimal(c))
                 )      // Exact sum
                     .floatValue();                            // One rounding
