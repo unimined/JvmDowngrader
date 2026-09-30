@@ -1,5 +1,7 @@
 package xyz.wagyourtail.downgradetest;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class TestString {
@@ -72,6 +74,14 @@ public class TestString {
        System.out.println(String.UNICODE_CASEFOLD_ORDER.compare(aa, bb));
 
         System.out.println(("\u0001test\u0002" + by + "test\u0001" + sh + "test2" + bb + "\u0002test").replace("\u0001", "\\u0001").replace("\u0002", "\\u0002"));
+
+        for (String s2 : new String[]{"", "abc", "é", "€", "\uD83D\uDE00", "\uD800", "a\uD800b", "\uDC00", "\uD800\uD800\uDC00"}) {
+            for (Charset cs : new Charset[]{StandardCharsets.UTF_8, StandardCharsets.US_ASCII,
+                    StandardCharsets.ISO_8859_1, StandardCharsets.UTF_16, StandardCharsets.UTF_16BE,
+                    StandardCharsets.UTF_16LE, Charset.forName("windows-1252")}) {
+                System.out.println(cs.name() + ": " + s2.encodedLength(cs));
+            }
+        }
     }
 
 }

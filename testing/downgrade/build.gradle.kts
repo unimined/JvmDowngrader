@@ -16,6 +16,7 @@ repositories {
 dependencies {
     implementation(project(":testing"))
     implementation(libs.asm)
+    implementation(libs.jetbrains.annotations.j5)
 }
 
 val testVersion = JavaVersion.toVersion(project.findProperty("testVersion") as String)
