@@ -1129,351 +1129,297 @@ public class J_L_I_VarHandle {
     public final Object getAcquire() {
         checkStatic(Object.class);
         Object obj = getVolatile();
-        unsafe.fullFence();
         return obj;
     }
 
     public final boolean getAcquireZ() {
         checkStatic(boolean.class);
         boolean v = unsafe.getBooleanVolatile(staticFieldBase, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAcquireB() {
         checkStatic(byte.class);
         byte v = unsafe.getByteVolatile(staticFieldBase, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAcquireC() {
         checkStatic(char.class);
         char v = unsafe.getCharVolatile(staticFieldBase, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAcquireS() {
         checkStatic(short.class);
         short v = unsafe.getShortVolatile(staticFieldBase, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAcquireI() {
         checkStatic(int.class);
         int v = unsafe.getIntVolatile(staticFieldBase, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAcquireJ() {
         checkStatic(long.class);
         long v = unsafe.getLongVolatile(staticFieldBase, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final float getAcquireF() {
         checkStatic(float.class);
         float v = unsafe.getFloatVolatile(staticFieldBase, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final double getAcquireD() {
         checkStatic(double.class);
         double v = unsafe.getDoubleVolatile(staticFieldBase, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final Object getAcquire(Object owner) {
         checkOwner(owner, Object.class);
         Object obj = getVolatile(owner);
-        unsafe.fullFence();
         return obj;
     }
 
     public final boolean getAcquireZ(Object owner) {
         checkOwner(owner, boolean.class);
         boolean v = unsafe.getBooleanVolatile(owner, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAcquireB(Object owner) {
         checkOwner(owner, byte.class);
         byte v = unsafe.getByteVolatile(owner, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAcquireC(Object owner) {
         checkOwner(owner, char.class);
         char v = unsafe.getCharVolatile(owner, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAcquireS(Object owner) {
         checkOwner(owner, short.class);
         short v = unsafe.getShortVolatile(owner, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAcquireI(Object owner) {
         checkOwner(owner, int.class);
         int v = unsafe.getIntVolatile(owner, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAcquireJ(Object owner) {
         checkOwner(owner, long.class);
         long v = unsafe.getLongVolatile(owner, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final float getAcquireF(Object owner) {
         checkOwner(owner, float.class);
         float v = unsafe.getFloatVolatile(owner, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final double getAcquireD(Object owner) {
         checkOwner(owner, double.class);
         double v = unsafe.getDoubleVolatile(owner, fieldOffset);
-        unsafe.fullFence();
         return v;
     }
 
     public final Object getAcquire(Object owner, int index) {
         checkArray(owner, index, Object.class);
         Object obj = getVolatile(owner, index);
-        unsafe.fullFence();
         return obj;
     }
 
     public final boolean getAcquireZ(Object owner, int index) {
         checkArray(owner, index, boolean.class);
         boolean v = unsafe.getBooleanVolatile(owner, fieldOffset + index * arrayIndexScale);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAcquireB(Object owner, int index) {
         checkArray(owner, index, byte.class);
         byte v = unsafe.getByteVolatile(owner, fieldOffset + index * arrayIndexScale);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAcquireC(Object owner, int index) {
         checkArray(owner, index, char.class);
         char v = unsafe.getCharVolatile(owner, fieldOffset + index * arrayIndexScale);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAcquireS(Object owner, int index) {
         checkArray(owner, index, short.class);
         short v = unsafe.getShortVolatile(owner, fieldOffset + index * arrayIndexScale);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAcquireI(Object owner, int index) {
         checkArray(owner, index, int.class);
         int v = unsafe.getIntVolatile(owner, fieldOffset + index * arrayIndexScale);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAcquireJ(Object owner, int index) {
         checkArray(owner, index, long.class);
         long v = unsafe.getLongVolatile(owner, fieldOffset + index * arrayIndexScale);
-        unsafe.fullFence();
         return v;
     }
 
     public final float getAcquireF(Object owner, int index) {
         checkArray(owner, index, float.class);
         float v = unsafe.getFloatVolatile(owner, fieldOffset + index * arrayIndexScale);
-        unsafe.fullFence();
         return v;
     }
 
     public final double getAcquireD(Object owner, int index) {
         checkArray(owner, index, double.class);
         double v = unsafe.getDoubleVolatile(owner, fieldOffset + index * arrayIndexScale);
-        unsafe.fullFence();
         return v;
     }
 
     public final void setRelease(Object value) {
         checkStatic(Object.class);
-        unsafe.fullFence();
         unsafe.putObjectVolatile(staticFieldBase, fieldOffset, value);
     }
 
     public final void setRelease(boolean value) {
         checkStatic(boolean.class);
-        unsafe.fullFence();
         unsafe.putBooleanVolatile(staticFieldBase, fieldOffset, value);
     }
 
     public final void setRelease(byte value) {
         checkStatic(byte.class);
-        unsafe.fullFence();
         unsafe.putByteVolatile(staticFieldBase, fieldOffset, value);
     }
 
     public final void setRelease(char value) {
         checkStatic(char.class);
-        unsafe.fullFence();
         unsafe.putCharVolatile(staticFieldBase, fieldOffset, value);
     }
 
     public final void setRelease(short value) {
         checkStatic(short.class);
-        unsafe.fullFence();
         unsafe.putShortVolatile(staticFieldBase, fieldOffset, value);
     }
 
     public final void setRelease(int value) {
         checkStatic(int.class);
-        unsafe.fullFence();
         unsafe.putIntVolatile(staticFieldBase, fieldOffset, value);
     }
 
     public final void setRelease(long value) {
         checkStatic(long.class);
-        unsafe.fullFence();
         unsafe.putLongVolatile(staticFieldBase, fieldOffset, value);
     }
 
     public final void setRelease(float value) {
         checkStatic(float.class);
-        unsafe.fullFence();
         unsafe.putFloatVolatile(staticFieldBase, fieldOffset, value);
     }
 
     public final void setRelease(double value) {
         checkStatic(double.class);
-        unsafe.fullFence();
         unsafe.putDoubleVolatile(staticFieldBase, fieldOffset, value);
     }
 
     public final void setRelease(Object owner, Object value) {
         checkOwner(owner, Object.class);
-        unsafe.fullFence();
         unsafe.putObjectVolatile(owner, fieldOffset, value);
     }
 
     public final void setRelease(Object owner, boolean value) {
         checkOwner(owner, boolean.class);
-        unsafe.fullFence();
         unsafe.putBooleanVolatile(owner, fieldOffset, value);
     }
 
     public final void setRelease(Object owner, byte value) {
         checkOwner(owner, byte.class);
-        unsafe.fullFence();
         unsafe.putByteVolatile(owner, fieldOffset, value);
     }
 
     public final void setRelease(Object owner, char value) {
         checkOwner(owner, char.class);
-        unsafe.fullFence();
         unsafe.putCharVolatile(owner, fieldOffset, value);
     }
 
     public final void setRelease(Object owner, short value) {
         checkOwner(owner, short.class);
-        unsafe.fullFence();
         unsafe.putShortVolatile(owner, fieldOffset, value);
     }
 
     public final void setRelease(Object owner, int value) {
         checkOwner(owner, int.class);
-        unsafe.fullFence();
         unsafe.putIntVolatile(owner, fieldOffset, value);
     }
 
     public final void setRelease(Object owner, long value) {
         checkOwner(owner, long.class);
-        unsafe.fullFence();
         unsafe.putLongVolatile(owner, fieldOffset, value);
     }
 
     public final void setRelease(Object owner, float value) {
         checkOwner(owner, float.class);
-        unsafe.fullFence();
         unsafe.putFloatVolatile(owner, fieldOffset, value);
     }
 
     public final void setRelease(Object owner, double value) {
         checkOwner(owner, double.class);
-        unsafe.fullFence();
         unsafe.putDoubleVolatile(owner, fieldOffset, value);
     }
 
     public final void setRelease(Object owner, int index, Object value) {
         checkArray(owner, index, Object.class);
-        unsafe.fullFence();
         unsafe.putObjectVolatile(owner, fieldOffset + index * arrayIndexScale, value);
     }
 
     public final void setRelease(Object owner, int index, boolean value) {
         checkArray(owner, index, boolean.class);
-        unsafe.fullFence();
         unsafe.putBooleanVolatile(owner, fieldOffset + index * arrayIndexScale, value);
     }
 
     public final void setRelease(Object owner, int index, byte value) {
         checkArray(owner, index, byte.class);
-        unsafe.fullFence();
         unsafe.putByteVolatile(owner, fieldOffset + index * arrayIndexScale, value);
     }
 
     public final void setRelease(Object owner, int index, char value) {
         checkArray(owner, index, char.class);
-        unsafe.fullFence();
         unsafe.putCharVolatile(owner, fieldOffset + index * arrayIndexScale, value);
     }
 
     public final void setRelease(Object owner, int index, short value) {
         checkArray(owner, index, short.class);
-        unsafe.fullFence();
         unsafe.putShortVolatile(owner, fieldOffset + index * arrayIndexScale, value);
     }
 
     public final void setRelease(Object owner, int index, int value) {
         checkArray(owner, index, int.class);
-        unsafe.fullFence();
         unsafe.putIntVolatile(owner, fieldOffset + index * arrayIndexScale, value);
     }
 
     public final void setRelease(Object owner, int index, long value) {
         checkArray(owner, index, long.class);
-        unsafe.fullFence();
         unsafe.putLongVolatile(owner, fieldOffset + index * arrayIndexScale, value);
     }
 
     public final void setRelease(Object owner, int index, float value) {
         checkArray(owner, index, float.class);
-        unsafe.fullFence();
         unsafe.putFloatVolatile(owner, fieldOffset + index * arrayIndexScale, value);
     }
 
     public final void setRelease(Object owner, int index, double value) {
         checkArray(owner, index, double.class);
-        unsafe.fullFence();
         unsafe.putDoubleVolatile(owner, fieldOffset + index * arrayIndexScale, value);
     }
 
@@ -1944,298 +1890,244 @@ public class J_L_I_VarHandle {
 
     public final Object compareAndExchangeAcquire(Object expected, Object newValue) {
         Object v = compareAndExchange(expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean compareAndExchangeAcquire(boolean expected, boolean newValue) {
         boolean v = compareAndExchange(expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte compareAndExchangeAcquire(byte expected, byte newValue) {
         byte v = compareAndExchange(expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final char compareAndExchangeAcquire(char expected, char newValue) {
         char v = compareAndExchange(expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final short compareAndExchangeAcquire(short expected, short newValue) {
         short v = compareAndExchange(expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final int compareAndExchangeAcquire(int expected, int newValue) {
         int v = compareAndExchange(expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final long compareAndExchangeAcquire(long expected, long newValue) {
         long v = compareAndExchange(expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final float compareAndExchangeAcquire(float expected, float newValue) {
         float v = compareAndExchange(expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final double compareAndExchangeAcquire(double expected, double newValue) {
         double v = compareAndExchange(expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final Object compareAndExchangeAcquire(Object owner, Object expected, Object newValue) {
         Object v = compareAndExchange(owner, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean compareAndExchangeAcquire(Object owner, boolean expected, boolean newValue) {
         boolean v = compareAndExchange(owner, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte compareAndExchangeAcquire(Object owner, byte expected, byte newValue) {
         byte v = compareAndExchange(owner, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final char compareAndExchangeAcquire(Object owner, char expected, char newValue) {
         char v = compareAndExchange(owner, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final short compareAndExchangeAcquire(Object owner, short expected, short newValue) {
         short v = compareAndExchange(owner, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final int compareAndExchangeAcquire(Object owner, int expected, int newValue) {
         int v = compareAndExchange(owner, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final long compareAndExchangeAcquire(Object owner, long expected, long newValue) {
         long v = compareAndExchange(owner, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final float compareAndExchangeAcquire(Object owner, float expected, float newValue) {
         float v = compareAndExchange(owner, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final double compareAndExchangeAcquire(Object owner, double expected, double newValue) {
         double v = compareAndExchange(owner, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final Object compareAndExchangeAcquire(Object owner, int index, Object expected, Object newValue) {
         Object v = compareAndExchange(owner, index, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean compareAndExchangeAcquire(Object owner, int index, boolean expected, boolean newValue) {
         boolean v = compareAndExchange(owner, index, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte compareAndExchangeAcquire(Object owner, int index, byte expected, byte newValue) {
         byte v = compareAndExchange(owner, index, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final char compareAndExchangeAcquire(Object owner, int index, char expected, char newValue) {
         char v = compareAndExchange(owner, index, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final short compareAndExchangeAcquire(Object owner, int index, short expected, short newValue) {
         short v = compareAndExchange(owner, index, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final int compareAndExchangeAcquire(Object owner, int index, int expected, int newValue) {
         int v = compareAndExchange(owner, index, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final long compareAndExchangeAcquire(Object owner, int index, long expected, long newValue) {
         long v = compareAndExchange(owner, index, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final float compareAndExchangeAcquire(Object owner, int index, float expected, float newValue) {
         float v = compareAndExchange(owner, index, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final double compareAndExchangeAcquire(Object owner, int index, double expected, double newValue) {
         double v = compareAndExchange(owner, index, expected, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final Object compareAndExchangeRelease(Object expected, Object newValue) {
-        unsafe.fullFence();
         return compareAndExchange(expected, newValue);
     }
 
     public final boolean compareAndExchangeRelease(boolean expected, boolean newValue) {
-        unsafe.fullFence();
         return compareAndExchange(expected, newValue);
     }
 
     public final byte compareAndExchangeRelease(byte expected, byte newValue) {
-        unsafe.fullFence();
         return compareAndExchange(expected, newValue);
     }
 
     public final char compareAndExchangeRelease(char expected, char newValue) {
-        unsafe.fullFence();
         return compareAndExchange(expected, newValue);
     }
 
     public final short compareAndExchangeRelease(short expected, short newValue) {
-        unsafe.fullFence();
         return compareAndExchange(expected, newValue);
     }
 
     public final int compareAndExchangeRelease(int expected, int newValue) {
-        unsafe.fullFence();
         return compareAndExchange(expected, newValue);
     }
 
     public final long compareAndExchangeRelease(long expected, long newValue) {
-        unsafe.fullFence();
         return compareAndExchange(expected, newValue);
     }
 
     public final float compareAndExchangeRelease(float expected, float newValue) {
-        unsafe.fullFence();
         return compareAndExchange(expected, newValue);
     }
 
     public final double compareAndExchangeRelease(double expected, double newValue) {
-        unsafe.fullFence();
         return compareAndExchange(expected, newValue);
     }
 
     public final Object compareAndExchangeRelease(Object owner, Object expected, Object newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, expected, newValue);
     }
 
     public final boolean compareAndExchangeRelease(Object owner, boolean expected, boolean newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, expected, newValue);
     }
 
     public final byte compareAndExchangeRelease(Object owner, byte expected, byte newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, expected, newValue);
     }
 
     public final char compareAndExchangeRelease(Object owner, char expected, char newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, expected, newValue);
     }
 
     public final short compareAndExchangeRelease(Object owner, short expected, short newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, expected, newValue);
     }
 
     public final int compareAndExchangeRelease(Object owner, int expected, int newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, expected, newValue);
     }
 
     public final long compareAndExchangeRelease(Object owner, long expected, long newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, expected, newValue);
     }
 
     public final float compareAndExchangeRelease(Object owner, float expected, float newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, expected, newValue);
     }
 
     public final double compareAndExchangeRelease(Object owner, double expected, double newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, expected, newValue);
     }
 
     public final Object compareAndExchangeRelease(Object owner, int index, Object expected, Object newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, index, expected, newValue);
     }
 
     public final boolean compareAndExchangeRelease(Object owner, int index, boolean expected, boolean newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, index, expected, newValue);
     }
 
     public final byte compareAndExchangeRelease(Object owner, int index, byte expected, byte newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, index, expected, newValue);
     }
 
     public final char compareAndExchangeRelease(Object owner, int index, char expected, char newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, index, expected, newValue);
     }
 
     public final short compareAndExchangeRelease(Object owner, int index, short expected, short newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, index, expected, newValue);
     }
 
     public final int compareAndExchangeRelease(Object owner, int index, int expected, int newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, index, expected, newValue);
     }
 
     public final long compareAndExchangeRelease(Object owner, int index, long expected, long newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, index, expected, newValue);
     }
 
     public final float compareAndExchangeRelease(Object owner, int index, float expected, float newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, index, expected, newValue);
     }
 
     public final double compareAndExchangeRelease(Object owner, int index, double expected, double newValue) {
-        unsafe.fullFence();
         return compareAndExchange(owner, index, expected, newValue);
     }
 
@@ -2457,298 +2349,244 @@ public class J_L_I_VarHandle {
 
     public final boolean weakCompareAndSetAcquire(Object expected, Object newValue) {
         boolean b = compareAndSet(expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(boolean expected, boolean newValue) {
         boolean b = compareAndSet(expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(byte expected, byte newValue) {
         boolean b = compareAndSet(expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(char expected, char newValue) {
         boolean b = compareAndSet(expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(short expected, short newValue) {
         boolean b = compareAndSet(expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(int expected, int newValue) {
         boolean b = compareAndSet(expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(long expected, long newValue) {
         boolean b = compareAndSet(expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(float expected, float newValue) {
         boolean b = compareAndSet(expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(double expected, double newValue) {
         boolean b = compareAndSet(expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, Object expected, Object newValue) {
         boolean b = compareAndSet(owner, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, boolean expected, boolean newValue) {
         boolean b = compareAndSet(owner, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, byte expected, byte newValue) {
         boolean b = compareAndSet(owner, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, char expected, char newValue) {
         boolean b = compareAndSet(owner, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, short expected, short newValue) {
         boolean b = compareAndSet(owner, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, int expected, int newValue) {
         boolean b = compareAndSet(owner, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, long expected, long newValue) {
         boolean b = compareAndSet(owner, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, float expected, float newValue) {
         boolean b = compareAndSet(owner, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, double expected, double newValue) {
         boolean b = compareAndSet(owner, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, int index, Object expected, Object newValue) {
         boolean b = compareAndSet(owner, index, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, int index, boolean expected, boolean newValue) {
         boolean b = compareAndSet(owner, index, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, int index, byte expected, byte newValue) {
         boolean b = compareAndSet(owner, index, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, int index, char expected, char newValue) {
         boolean b = compareAndSet(owner, index, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, int index, short expected, short newValue) {
         boolean b = compareAndSet(owner, index, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, int index, int expected, int newValue) {
         boolean b = compareAndSet(owner, index, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, int index, long expected, long newValue) {
         boolean b = compareAndSet(owner, index, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, int index, float expected, float newValue) {
         boolean b = compareAndSet(owner, index, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetAcquire(Object owner, int index, double expected, double newValue) {
         boolean b = compareAndSet(owner, index, expected, newValue);
-        unsafe.fullFence();
         return b;
     }
 
     public final boolean weakCompareAndSetRelease(Object expected, Object newValue) {
-        unsafe.fullFence();
         return compareAndSet(expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(boolean expected, boolean newValue) {
-        unsafe.fullFence();
         return compareAndSet(expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(byte expected, byte newValue) {
-        unsafe.fullFence();
         return compareAndSet(expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(char expected, char newValue) {
-        unsafe.fullFence();
         return compareAndSet(expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(short expected, short newValue) {
-        unsafe.fullFence();
         return compareAndSet(expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(int expected, int newValue) {
-        unsafe.fullFence();
         return compareAndSet(expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(long expected, long newValue) {
-        unsafe.fullFence();
         return compareAndSet(expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(float expected, float newValue) {
-        unsafe.fullFence();
         return compareAndSet(expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(double expected, double newValue) {
-        unsafe.fullFence();
         return compareAndSet(expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, Object expected, Object newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, boolean expected, boolean newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, byte expected, byte newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, char expected, char newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, short expected, short newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, int expected, int newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, long expected, long newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, float expected, float newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, double expected, double newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, int index, Object expected, Object newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, index, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, int index, boolean expected, boolean newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, index, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, int index, byte expected, byte newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, index, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, int index, char expected, char newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, index, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, int index, short expected, short newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, index, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, int index, int expected, int newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, index, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, int index, long expected, long newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, index, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, int index, float expected, float newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, index, expected, newValue);
     }
 
     public final boolean weakCompareAndSetRelease(Object owner, int index, double expected, double newValue) {
-        unsafe.fullFence();
         return compareAndSet(owner, index, expected, newValue);
     }
 
@@ -2889,298 +2727,244 @@ public class J_L_I_VarHandle {
 
     public final Object getAndSetAcquire(Object newValue) {
         Object v = getAndSet(newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean getAndSetAcquire(boolean newValue) {
         boolean v = getAndSet(newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndSetAcquire(byte newValue) {
         byte v = getAndSet(newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndSetAcquire(char newValue) {
         char v = getAndSet(newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndSetAcquire(short newValue) {
         short v = getAndSet(newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndSetAcquire(int newValue) {
         int v = getAndSet(newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndSetAcquire(long newValue) {
         long v = getAndSet(newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final float getAndSetAcquire(float newValue) {
         float v = getAndSet(newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final double getAndSetAcquire(double newValue) {
         double v = getAndSet(newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final Object getAndSetAcquire(Object owner, Object newValue) {
         Object v = getAndSet(owner, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean getAndSetAcquire(Object owner, boolean newValue) {
         boolean v = getAndSet(owner, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndSetAcquire(Object owner, byte newValue) {
         byte v = getAndSet(owner, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndSetAcquire(Object owner, char newValue) {
         char v = getAndSet(owner, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndSetAcquire(Object owner, short newValue) {
         short v = getAndSet(owner, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndSetAcquire(Object owner, int newValue) {
         int v = getAndSet(owner, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndSetAcquire(Object owner, long newValue) {
         long v = getAndSet(owner, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final float getAndSetAcquire(Object owner, float newValue) {
         float v = getAndSet(owner, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final double getAndSetAcquire(Object owner, double newValue) {
         double v = getAndSet(owner, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final Object getAndSetAcquire(Object owner, int index, Object newValue) {
         Object v = getAndSet(owner, index, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean getAndSetAcquire(Object owner, int index, boolean newValue) {
         boolean v = getAndSet(owner, index, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndSetAcquire(Object owner, int index, byte newValue) {
         byte v = getAndSet(owner, index, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndSetAcquire(Object owner, int index, char newValue) {
         char v = getAndSet(owner, index, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndSetAcquire(Object owner, int index, short newValue) {
         short v = getAndSet(owner, index, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndSetAcquire(Object owner, int index, int newValue) {
         int v = getAndSet(owner, index, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndSetAcquire(Object owner, int index, long newValue) {
         long v = getAndSet(owner, index, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final float getAndSetAcquire(Object owner, int index, float newValue) {
         float v = getAndSet(owner, index, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final double getAndSetAcquire(Object owner, int index, double newValue) {
         double v = getAndSet(owner, index, newValue);
-        unsafe.fullFence();
         return v;
     }
 
     public final Object getAndSetRelease(Object newValue) {
-        unsafe.fullFence();
         return getAndSet(newValue);
     }
 
     public final boolean getAndSetRelease(boolean newValue) {
-        unsafe.fullFence();
         return getAndSet(newValue);
     }
 
     public final byte getAndSetRelease(byte newValue) {
-        unsafe.fullFence();
         return getAndSet(newValue);
     }
 
     public final char getAndSetRelease(char newValue) {
-        unsafe.fullFence();
         return getAndSet(newValue);
     }
 
     public final short getAndSetRelease(short newValue) {
-        unsafe.fullFence();
         return getAndSet(newValue);
     }
 
     public final int getAndSetRelease(int newValue) {
-        unsafe.fullFence();
         return getAndSet(newValue);
     }
 
     public final long getAndSetRelease(long newValue) {
-        unsafe.fullFence();
         return getAndSet(newValue);
     }
 
     public final float getAndSetRelease(float newValue) {
-        unsafe.fullFence();
         return getAndSet(newValue);
     }
 
     public final double getAndSetRelease(double newValue) {
-        unsafe.fullFence();
         return getAndSet(newValue);
     }
 
     public final Object getAndSetRelease(Object owner, Object newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, newValue);
     }
 
     public final boolean getAndSetRelease(Object owner, boolean newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, newValue);
     }
 
     public final byte getAndSetRelease(Object owner, byte newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, newValue);
     }
 
     public final char getAndSetRelease(Object owner, char newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, newValue);
     }
 
     public final short getAndSetRelease(Object owner, short newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, newValue);
     }
 
     public final int getAndSetRelease(Object owner, int newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, newValue);
     }
 
     public final long getAndSetRelease(Object owner, long newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, newValue);
     }
 
     public final float getAndSetRelease(Object owner, float newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, newValue);
     }
 
     public final double getAndSetRelease(Object owner, double newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, newValue);
     }
 
     public final Object getAndSetRelease(Object owner, int index, Object newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, index, newValue);
     }
 
     public final boolean getAndSetRelease(Object owner, int index, boolean newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, index, newValue);
     }
 
     public final byte getAndSetRelease(Object owner, int index, byte newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, index, newValue);
     }
 
     public final char getAndSetRelease(Object owner, int index, char newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, index, newValue);
     }
 
     public final short getAndSetRelease(Object owner, int index, short newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, index, newValue);
     }
 
     public final int getAndSetRelease(Object owner, int index, int newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, index, newValue);
     }
 
     public final long getAndSetRelease(Object owner, int index, long newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, index, newValue);
     }
 
     public final float getAndSetRelease(Object owner, int index, float newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, index, newValue);
     }
 
     public final double getAndSetRelease(Object owner, int index, double newValue) {
-        unsafe.fullFence();
         return getAndSet(owner, index, newValue);
     }
 
@@ -3351,232 +3135,190 @@ public class J_L_I_VarHandle {
 
     public final byte getAndAddAcquire(byte value) {
         byte v = getAndAdd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndAddAcquire(char value) {
         char v = getAndAdd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndAddAcquire(short value) {
         short v = getAndAdd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndAddAcquire(int value) {
         int v = getAndAdd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndAddAcquire(long value) {
         long v = getAndAdd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final float getAndAddAcquire(float value) {
         float v = getAndAdd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final double getAndAddAcquire(double value) {
         double v = getAndAdd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndAddAcquire(Object owner, byte value) {
         byte v = getAndAdd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndAddAcquire(Object owner, char value) {
         char v = getAndAdd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndAddAcquire(Object owner, short value) {
         short v = getAndAdd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndAddAcquire(Object owner, int value) {
         int v = getAndAdd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndAddAcquire(Object owner, long value) {
         long v = getAndAdd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final float getAndAddAcquire(Object owner, float value) {
         float v = getAndAdd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final double getAndAddAcquire(Object owner, double value) {
         double v = getAndAdd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndAddAcquire(Object owner, int index, byte value) {
         byte v = getAndAdd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndAddAcquire(Object owner, int index, char value) {
         char v = getAndAdd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndAddAcquire(Object owner, int index, short value) {
         short v = getAndAdd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndAddAcquire(Object owner, int index, int value) {
         int v = getAndAdd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndAddAcquire(Object owner, int index, long value) {
         long v = getAndAdd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final float getAndAddAcquire(Object owner, int index, float value) {
         float v = getAndAdd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final double getAndAddAcquire(Object owner, int index, double value) {
         double v = getAndAdd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndAddRelease(byte value) {
-        unsafe.fullFence();
         return getAndAdd(value);
     }
 
     public final char getAndAddRelease(char value) {
-        unsafe.fullFence();
         return getAndAdd(value);
     }
 
     public final short getAndAddRelease(short value) {
-        unsafe.fullFence();
         return getAndAdd(value);
     }
 
     public final int getAndAddRelease(int value) {
-        unsafe.fullFence();
         return getAndAdd(value);
     }
 
     public final long getAndAddRelease(long value) {
-        unsafe.fullFence();
         return getAndAdd(value);
     }
 
     public final float getAndAddRelease(float value) {
-        unsafe.fullFence();
         return getAndAdd(value);
     }
 
     public final double getAndAddRelease(double value) {
-        unsafe.fullFence();
         return getAndAdd(value);
     }
 
     public final byte getAndAddRelease(Object owner, byte value) {
-        unsafe.fullFence();
         return getAndAdd(owner, value);
     }
 
     public final char getAndAddRelease(Object owner, char value) {
-        unsafe.fullFence();
         return getAndAdd(owner, value);
     }
 
     public final short getAndAddRelease(Object owner, short value) {
-        unsafe.fullFence();
         return getAndAdd(owner, value);
     }
 
     public final int getAndAddRelease(Object owner, int value) {
-        unsafe.fullFence();
         return getAndAdd(value);
     }
 
     public final long getAndAddRelease(Object owner, long value) {
-        unsafe.fullFence();
         return getAndAdd(value);
     }
 
     public final float getAndAddRelease(Object owner, float value) {
-        unsafe.fullFence();
         return getAndAdd(owner, value);
     }
 
     public final double getAndAddRelease(Object owner, double value) {
-        unsafe.fullFence();
         return getAndAdd(owner, value);
     }
 
     public final byte getAndAddRelease(Object owner, int index, byte value) {
-        unsafe.fullFence();
         return getAndAdd(owner, index, value);
     }
 
     public final char getAndAddRelease(Object owner, int index, char value) {
-        unsafe.fullFence();
         return getAndAdd(owner, index, value);
     }
 
     public final short getAndAddRelease(Object owner, int index, short value) {
-        unsafe.fullFence();
         return getAndAdd(owner, index, value);
     }
 
     public final int getAndAddRelease(Object owner, int index, int value) {
-        unsafe.fullFence();
         return getAndAdd(owner, index, value);
     }
 
     public final long getAndAddRelease(Object owner, int index, long value) {
-        unsafe.fullFence();
         return getAndAdd(owner, index, value);
     }
 
     public final float getAndAddRelease(Object owner, int index, float value) {
-        unsafe.fullFence();
         return getAndAdd(owner, index, value);
     }
 
     public final double getAndAddRelease(Object owner, int index, double value) {
-        unsafe.fullFence();
         return getAndAdd(owner, index, value);
     }
 
@@ -3746,199 +3488,163 @@ public class J_L_I_VarHandle {
 
     public final boolean getAndBitwiseOrAcquire(boolean value) {
         boolean v = getAndBitwiseOr(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndBitwiseOrAcquire(byte value) {
         byte v = getAndBitwiseOr(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndBitwiseOrAcquire(char value) {
         char v = getAndBitwiseOr(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndBitwiseOrAcquire(short value) {
         short v = getAndBitwiseOr(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndBitwiseOrAcquire(int value) {
         int v = getAndBitwiseOr(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndBitwiseOrAcquire(long value) {
         long v = getAndBitwiseOr(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean getAndBitwiseOrAcquire(Object owner, boolean value) {
         boolean v = getAndBitwiseOr(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndBitwiseOrAcquire(Object owner, byte value) {
         byte v = getAndBitwiseOr(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndBitwiseOrAcquire(Object owner, char value) {
         char v = getAndBitwiseOr(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndBitwiseOrAcquire(Object owner, short value) {
         short v = getAndBitwiseOr(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndBitwiseOrAcquire(Object owner, int value) {
         int v = getAndBitwiseOr(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndBitwiseOrAcquire(Object owner, long value) {
         long v = getAndBitwiseOr(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean getAndBitwiseOrAcquire(Object owner, int index, boolean value) {
         boolean v = getAndBitwiseOr(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndBitwiseOrAcquire(Object owner, int index, byte value) {
         byte v = getAndBitwiseOr(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndBitwiseOrAcquire(Object owner, int index, char value) {
         char v = getAndBitwiseOr(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndBitwiseOrAcquire(Object owner, int index, short value) {
         short v = getAndBitwiseOr(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndBitwiseOrAcquire(Object owner, int index, int value) {
         int v = getAndBitwiseOr(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndBitwiseOrAcquire(Object owner, int index, long value) {
         long v = getAndBitwiseOr(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean getAndBitwiseOrRelease(boolean value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(value);
     }
 
     public final byte getAndBitwiseOrRelease(byte value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(value);
     }
 
     public final short getAndBitwiseOrRelease(short value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(value);
     }
 
     public final char getAndBitwiseOrRelease(char value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(value);
     }
 
     public final int getAndBitwiseOrRelease(int value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(value);
     }
 
     public final long getAndBitwiseOrRelease(long value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(value);
     }
 
     public final boolean getAndBitwiseOrRelease(Object owner, boolean value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, value);
     }
 
     public final byte getAndBitwiseOrRelease(Object owner, byte value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, value);
     }
 
     public final char getAndBitwiseOrRelease(Object owner, char value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, value);
     }
 
     public final short getAndBitwiseOrRelease(Object owner, short value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, value);
     }
 
     public final int getAndBitwiseOrRelease(Object owner, int value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, value);
     }
 
     public final long getAndBitwiseOrRelease(Object owner, long value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, value);
     }
 
     public final boolean getAndBitwiseOrRelease(Object owner, int index, boolean value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, index, value);
     }
 
     public final byte getAndBitwiseOrRelease(Object owner, int index, byte value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, index, value);
     }
 
     public final char getAndBitwiseOrRelease(Object owner, int index, char value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, index, value);
     }
 
     public final short getAndBitwiseOrRelease(Object owner, int index, short value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, index, value);
     }
 
     public final int getAndBitwiseOrRelease(Object owner, int index, int value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, index, value);
     }
 
     public final long getAndBitwiseOrRelease(Object owner, int index, long value) {
-        unsafe.fullFence();
         return getAndBitwiseOr(owner, index, value);
     }
 
@@ -4106,199 +3812,163 @@ public class J_L_I_VarHandle {
 
     public final boolean getAndBitwiseAndAcquire(boolean value) {
         boolean v = getAndBitwiseAnd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndBitwiseAndAcquire(byte value) {
         byte v = getAndBitwiseAnd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndBitwiseAndAcquire(char value) {
         char v = getAndBitwiseAnd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndBitwiseAndAcquire(short value) {
         short v = getAndBitwiseAnd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndBitwiseAndAcquire(int value) {
         int v = getAndBitwiseAnd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndBitwiseAndAcquire(long value) {
         long v = getAndBitwiseAnd(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean getAndBitwiseAndAcquire(Object owner, boolean value) {
         boolean v = getAndBitwiseAnd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndBitwiseAndAcquire(Object owner, byte value) {
         byte v = getAndBitwiseAnd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndBitwiseAndAcquire(Object owner, char value) {
         char v = getAndBitwiseAnd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndBitwiseAndAcquire(Object owner, short value) {
         short v = getAndBitwiseAnd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndBitwiseAndAcquire(Object owner, int value) {
         int v = getAndBitwiseAnd(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndBitwiseAndAcquire(Object owner, long value) {
         long v = getAndBitwiseAnd(owner, value);
-        unsafe.fullFence();
         return v;
     }
     
     public final boolean getAndBitwiseAndAcquire(Object owner, int index, boolean value) {
         boolean v = getAndBitwiseAnd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
     
     public final byte getAndBitwiseAndAcquire(Object owner, int index, byte value) {
         byte v = getAndBitwiseAnd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
     
     public final char getAndBitwiseAndAcquire(Object owner, int index, char value) {
         char v = getAndBitwiseAnd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
     
     public final short getAndBitwiseAndAcquire(Object owner, int index, short value) {
         short v = getAndBitwiseAnd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
     
     public final int getAndBitwiseAndAcquire(Object owner, int index, int value) {
         int v = getAndBitwiseAnd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
     
     public final long getAndBitwiseAndAcquire(Object owner, int index, long value) {
         long v = getAndBitwiseAnd(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean getAndBitwiseAndRelease(boolean value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(value);
     }
 
     public final byte getAndBitwiseAndRelease(byte value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(value);
     }
 
     public final char getAndBitwiseAndRelease(char value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(value);
     }
 
     public final short getAndBitwiseAndRelease(short value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(value);
     }
 
     public final int getAndBitwiseAndRelease(int value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(value);
     }
 
     public final long getAndBitwiseAndRelease(long value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(value);
     }
 
     public final boolean getAndBitwiseAndRelease(Object owner, boolean value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, value);
     }
 
     public final byte getAndBitwiseAndRelease(Object owner, byte value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, value);
     }
 
     public final char getAndBitwiseAndRelease(Object owner, char value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, value);
     }
 
     public final short getAndBitwiseAndRelease(Object owner, short value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, value);
     }
 
     public final int getAndBitwiseAndRelease(Object owner, int value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, value);
     }
 
     public final long getAndBitwiseAndRelease(Object owner, long value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, value);
     }
 
     public final boolean getAndBitwiseAndRelease(Object owner, int index, boolean value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, index, value);
     }
 
     public final byte getAndBitwiseAndRelease(Object owner, int index, byte value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, index, value);
     }
 
     public final char getAndBitwiseAndRelease(Object owner, int index, char value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, index, value);
     }
 
     public final short getAndBitwiseAndRelease(Object owner, int index, short value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, index, value);
     }
 
     public final int getAndBitwiseAndRelease(Object owner, int index, int value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, index, value);
     }
 
     public final long getAndBitwiseAndRelease(Object owner, int index, long value) {
-        unsafe.fullFence();
         return getAndBitwiseAnd(owner, index, value);
     }
 
@@ -4468,199 +4138,163 @@ public class J_L_I_VarHandle {
 
     public final boolean getAndBitwiseXorAcquire(boolean value) {
         boolean v = getAndBitwiseXor(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndBitwiseXorAcquire(byte value) {
         byte v = getAndBitwiseXor(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndBitwiseXorAcquire(char value) {
         char v = getAndBitwiseXor(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndBitwiseXorAcquire(short value) {
         short v = getAndBitwiseXor(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndBitwiseXorAcquire(int value) {
         int v = getAndBitwiseXor(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndBitwiseXorAcquire(long value) {
         long v = getAndBitwiseXor(value);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean getAndBitwiseXorAcquire(Object owner, boolean value) {
         boolean v = getAndBitwiseXor(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndBitwiseXorAcquire(Object owner, byte value) {
         byte v = getAndBitwiseXor(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndBitwiseXorAcquire(Object owner, char value) {
         char v = getAndBitwiseXor(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndBitwiseXorAcquire(Object owner, short value) {
         short v = getAndBitwiseXor(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndBitwiseXorAcquire(Object owner, int value) {
         int v = getAndBitwiseXor(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndBitwiseXorAcquire(Object owner, long value) {
         long v = getAndBitwiseXor(owner, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final boolean getAndBitwiseXorAcquire(Object owner, int index, boolean value) {
         boolean v = getAndBitwiseXor(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final byte getAndBitwiseXorAcquire(Object owner, int index, byte value) {
         byte v = getAndBitwiseXor(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final char getAndBitwiseXorAcquire(Object owner, int index, char value) {
         char v = getAndBitwiseXor(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final short getAndBitwiseXorAcquire(Object owner, int index, short value) {
         short v = getAndBitwiseXor(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final int getAndBitwiseXorAcquire(Object owner, int index, int value) {
         int v = getAndBitwiseXor(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
     public final long getAndBitwiseXorAcquire(Object owner, int index, long value) {
         long v = getAndBitwiseXor(owner, index, value);
-        unsafe.fullFence();
         return v;
     }
 
      public final boolean getAndBitwiseXorRelease(boolean value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(value);
     }
 
     public final byte getAndBitwiseXorRelease(byte value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(value);
     }
 
     public final short getAndBitwiseXorRelease(short value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(value);
     }
 
     public final char getAndBitwiseXorRelease(char value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(value);
     }
 
     public final int getAndBitwiseXorRelease(int value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(value);
     }
 
     public final long getAndBitwiseXorRelease(long value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(value);
     }
 
     public final boolean getAndBitwiseXorRelease(Object owner, boolean value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, value);
     }
 
     public final byte getAndBitwiseXorRelease(Object owner, byte value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, value);
     }
 
     public final char getAndBitwiseXorRelease(Object owner, char value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, value);
     }
 
     public final short getAndBitwiseXorRelease(Object owner, short value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, value);
     }
 
     public final int getAndBitwiseXorRelease(Object owner, int value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, value);
     }
 
     public final long getAndBitwiseXorRelease(Object owner, long value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, value);
     }
 
     public final boolean getAndBitwiseXorRelease(Object owner, int index, boolean value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, index, value);
     }
 
     public final byte getAndBitwiseXorRelease(Object owner, int index, byte value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, index, value);
     }
 
     public final char getAndBitwiseXorRelease(Object owner, int index, char value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, index, value);
     }
 
     public final short getAndBitwiseXorRelease(Object owner, int index, short value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, index, value);
     }
 
     public final int getAndBitwiseXorRelease(Object owner, int index, int value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, index, value);
     }
 
     public final long getAndBitwiseXorRelease(Object owner, int index, long value) {
-        unsafe.fullFence();
         return getAndBitwiseXor(owner, index, value);
     }
 

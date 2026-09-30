@@ -1,14 +1,10 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
-import sun.misc.Unsafe;
-import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.concurrent.atomic.AtomicIntegerArray;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class J_U_C_A_AtomicIntegerArray {
-    private static final Unsafe unsafe = Utils.getUnsafe();
 
     @Stub
     public static int compareAndExchange(AtomicIntegerArray ref, int index, int expected, int newValue) {
@@ -22,22 +18,17 @@ public class J_U_C_A_AtomicIntegerArray {
 
     @Stub
     public static int compareAndExchangeAcquire(AtomicIntegerArray ref, int index, int expected, int newValue) {
-        int r = compareAndExchange(ref, index, expected, newValue);
-        unsafe.fullFence();
-        return r;
+        return compareAndExchange(ref, index, expected, newValue);
     }
 
     @Stub
     public static int compareAndExchangeRelease(AtomicIntegerArray ref, int index, int expected, int newValue) {
-        unsafe.fullFence();
         return compareAndExchange(ref, index, expected, newValue);
     }
 
     @Stub
     public static int getAcquire(AtomicIntegerArray ref, int index) {
-        int r = ref.get(index);
-        unsafe.fullFence();
-        return r;
+        return ref.get(index);
     }
 
     @Stub
@@ -62,15 +53,12 @@ public class J_U_C_A_AtomicIntegerArray {
 
     @Stub
     public static void setRelease(AtomicIntegerArray ref, int index, int newValue) {
-        unsafe.fullFence();
         ref.set(index, newValue);
     }
 
     @Stub
     public static boolean weakCompareAndSetAcquire(AtomicIntegerArray ref, int index, int expected, int newValue) {
-        boolean r = ref.weakCompareAndSet(index, expected, newValue);
-        unsafe.fullFence();
-        return r;
+        return ref.weakCompareAndSet(index, expected, newValue);
     }
 
     @Stub
@@ -80,7 +68,6 @@ public class J_U_C_A_AtomicIntegerArray {
 
     @Stub
     public static boolean weakCompareAndSetRelease(AtomicIntegerArray ref, int index, int expected, int newValue) {
-        unsafe.fullFence();
         return ref.weakCompareAndSet(index, expected, newValue);
     }
 
