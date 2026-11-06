@@ -87,11 +87,13 @@ public class J_L_R_ObjectMethods {
                     visitor.visitJumpInsn(Opcodes.IFNE, notEqual);
                 }
                 case Type.FLOAT -> {
-                    visitor.visitInsn(Opcodes.FCMPL);
+                    // Use compare over FCMPL to handle NaN and -0.0/0.0 correctly (which is what the real ObjectMethods does)
+                    visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Float", "compare", "(FF)I", false);
                     visitor.visitJumpInsn(Opcodes.IFNE, notEqual);
                 }
                 case Type.DOUBLE -> {
-                    visitor.visitInsn(Opcodes.DCMPL);
+                    // Same idea but for DCMPL
+                    visitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Double", "compare", "(DD)I", false);
                     visitor.visitJumpInsn(Opcodes.IFNE, notEqual);
                 }
                 case Type.ARRAY, Type.OBJECT -> {
@@ -209,11 +211,21 @@ public class J_L_R_ObjectMethods {
                     }
                     break;
                 default:
+                    // Widen primitives to fit 'append(...)' signature
+                    var appendDesc = switch (type.getSort()) {
+                        case Type.BOOLEAN -> "Z";
+                        case Type.CHAR -> "C";
+                        case Type.BYTE, Type.SHORT, Type.INT -> "I"; // no append for byte/short, widen to int
+                        case Type.LONG -> "J";
+                        case Type.FLOAT -> "F";
+                        case Type.DOUBLE -> "D";
+                        default -> tdesc;
+                    };
                     visitor.visitMethodInsn(
                         Opcodes.INVOKEVIRTUAL,
                         "java/lang/StringBuilder",
                         "append",
-                        "(" + tdesc + ")Ljava/lang/StringBuilder;",
+                        "(" + appendDesc + ")Ljava/lang/StringBuilder;",
                         false
                     );
                     break;
