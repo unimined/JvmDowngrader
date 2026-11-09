@@ -55,6 +55,24 @@ public class J_L_I_MethodHandles {
         return new J_L_I_VarHandle(cls);
     }
 
+    @JEP(193)
+    @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
+    public static J_L_I_VarHandle byteArrayViewVarHandle(Class<?> viewClass, ByteOrder byteOrder) {
+        if (!viewClass.isArray()) {
+            throw new IllegalArgumentException("not an array: " + viewClass);
+        }
+        return new J_L_I_VarHandle(viewClass, true, byteOrder != ByteOrder.nativeOrder());
+    }
+
+    @JEP(193)
+    @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
+    public static J_L_I_VarHandle byteBufferViewVarHandle(Class<?> viewClass, ByteOrder byteOrder) {
+        if (!viewClass.isArray()) {
+            throw new IllegalArgumentException("not an array: " + viewClass);
+        }
+        return new J_L_I_VarHandle(viewClass, true, byteOrder != ByteOrder.nativeOrder());
+    }
+
     @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
     public static MethodHandle arrayLength(Class<?> arrayClass) throws NoSuchMethodException, IllegalAccessException {
         Objects.requireNonNull(arrayClass);
