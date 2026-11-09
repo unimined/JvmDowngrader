@@ -58,8 +58,14 @@ public class J_L_I_MethodHandles {
     @JEP(193)
     @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
     public static J_L_I_VarHandle byteArrayViewVarHandle(Class<?> viewClass, ByteOrder byteOrder) {
+        Objects.requireNonNull(viewClass);
+        Objects.requireNonNull(byteOrder);
         if (!viewClass.isArray()) {
             throw new IllegalArgumentException("not an array: " + viewClass);
+        }
+        Class<?> componentType = viewClass.getComponentType();
+        if (!componentType.isPrimitive() || componentType == byte.class || componentType == boolean.class) {
+            throw new UnsupportedOperationException();
         }
         return new J_L_I_VarHandle(viewClass, true, byteOrder != ByteOrder.nativeOrder());
     }
@@ -67,8 +73,14 @@ public class J_L_I_MethodHandles {
     @JEP(193)
     @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
     public static J_L_I_VarHandle byteBufferViewVarHandle(Class<?> viewClass, ByteOrder byteOrder) {
+        Objects.requireNonNull(viewClass);
+        Objects.requireNonNull(byteOrder);
         if (!viewClass.isArray()) {
             throw new IllegalArgumentException("not an array: " + viewClass);
+        }
+        Class<?> componentType = viewClass.getComponentType();
+        if (!componentType.isPrimitive() || componentType == byte.class || componentType == boolean.class) {
+            throw new UnsupportedOperationException();
         }
         return new J_L_I_VarHandle(viewClass, true, byteOrder != ByteOrder.nativeOrder());
     }
