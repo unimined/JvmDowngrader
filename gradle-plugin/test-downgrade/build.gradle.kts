@@ -58,18 +58,18 @@ if (!project.hasProperty("runningTest")) {
     apply(plugin = "xyz.wagyourtail.jvmdowngrader")
 }
 
-val testVersion: JavaVersion = JavaVersion.toVersion(props.getProperty("testVersion") as String)
+val stubToVersion: JavaVersion = JavaVersion.toVersion(props.getProperty("stubToVersion") as String)
 
 java {
-    sourceCompatibility = testVersion
-    targetCompatibility = testVersion
+    sourceCompatibility = stubToVersion
+    targetCompatibility = stubToVersion
 }
 
 tasks.compileJava {
     options.encoding = "UTF-8"
 
     javaCompiler = javaToolchains.compilerFor {
-        languageVersion.set(JavaLanguageVersion.of(testVersion.majorVersion))
+        languageVersion.set(JavaLanguageVersion.of(stubToVersion.majorVersion))
         vendor.set(JvmVendorSpec.AZUL)
     }
 }

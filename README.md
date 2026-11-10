@@ -268,10 +268,9 @@ compiled test jar on every supported target JDK. The version matrix is
 configured in `gradle.properties`:
 
 ```properties
-testVersion=27          # highest JDK to run tests on (also compiles the test jars)
 testTargetVersion=8     # lowest JDK the downgraded output is verified on
 stubFromVersion=7       # lowest JDK java-api stubs cover
-stubToVersion=27        # highest JDK java-api stubs cover
+stubToVersion=27        # highest JDK java-api stubs cover (also the JDK tests run on)
 ```
 
 Gradle auto-provisions each Azul JDK in the matrix via the foojay toolchain

@@ -1,173 +1,171 @@
-# Stub parity accepted differences: <slug> <memberId>
-# slug = <targetClassVersion>-<mode> (e.g. 52-downgrade, 52-shade)
-# Every entry must be a genuine JDK-version behavior difference verified
-# against the native baseline — never a stub defect.
+# Stub parity accepted differences.
 #
-# m0067c Class.arrayType on void.class: j17 throws IllegalArgumentException
-#   while j21+ and the stub throw UnsupportedOperationException — version
-#   difference.
-61-downgrade m0067c
-61-shade m0067c
+# Format: <slug|all> <stable-ref> ==> <native-glob> ==> <downgraded-glob>
+#   slug        = <targetClassVersion>-<mode> (52-downgrade, 55-shade, ...)
+#                 or 'all' when the diff occurs on every config
+#   stable-ref  = index.txt identity: Lowner;name;desc@profile for generated
+#                 sites, Lpkg/Class;method;(Ljava/lang/String;)V for manual
+#   globs       = *-wildcard patterns over the whole RESULT:/EXC: value; the
+#                 left pins the native value, the right the downgraded one.
+#                 \xNN and \uXXXX escapes match control chars the corpus
+#                 prints raw (e.g. a \x00 boundary arg)
 #
-# m0069*/m0346* ClassDesc toString: JDK renamed the impl class
-#   (ClassOrInterfaceDesc vs ClassDesc) between 21 and 27 — version
-#   representation difference.
-61-downgrade m0069
-61-downgrade m0069b
-61-downgrade m0346b
-61-downgrade m0346c
-61-shade m0069
-61-shade m0069b
-61-shade m0346b
-61-shade m0346c
-65-downgrade m0069
-65-downgrade m0069b
-65-downgrade m0346b
-65-downgrade m0346c
-65-shade m0069
-65-shade m0069b
-65-shade m0346b
-65-shade m0346c
-#
-# m0081/m0081b Class.getNestMembers: the nestmate list of JDK classes
-#   (String, Integer) grows across releases; j8 has no nestmate support and
-#   the stub returns just the host class. Irreducible internals difference.
-52-downgrade m0081
-52-downgrade m0081b
-52-shade m0081
-52-shade m0081b
-55-downgrade m0081
-55-shade m0081
-61-downgrade m0081
-61-shade m0081
-65-downgrade m0081
-65-shade m0081
-#
-# m0092b/m0094b ClassLoader.getName/getUnnamedModule on the bootstrap
-#   loader: the receiver alias synthesizes String.class.getClassLoader()
-#   which is null — native invokevirtual NPEs on the null receiver while
-#   the rewritten static stub call reaches the impl, which deliberately
-#   answers for the bootstrap loader — semantic difference by design.
-52-downgrade m0092b
-52-downgrade m0094b
-52-shade m0092b
-52-shade m0094b
-#
-# m0161b/m0252b Math.atanh/StrictMath.atanh boundary probe: one-ulp
-#   difference between StrictMath's fdlibm port on different JDKs —
-#   irreducible floating-point last-bit difference.
-52-downgrade m0161b
-52-downgrade m0252b
-52-shade m0161b
-52-shade m0252b
-55-downgrade m0161b
-55-downgrade m0252b
-55-shade m0161b
-55-shade m0252b
-61-downgrade m0161b
-61-downgrade m0252b
-61-shade m0161b
-61-shade m0252b
-65-downgrade m0161b
-65-downgrade m0252b
-65-shade m0161b
-65-shade m0252b
-#
-# m0241b/m0241c StackTraceElement 7-arg ctor print: JDK9+ toString emits
-#   loader/module@version segments (a/a@#/a.a(a:1)). The j9 stub provides a
-#   toString impl, but the site prints via String.valueOf -> Object.toString
-#   virtual dispatch inside the JDK, which cannot be rewritten — so the real
-#   j8 StackTraceElement.toString runs. Irreducible.
-52-downgrade m0241b
-52-downgrade m0241c
-52-shade m0241b
-52-shade m0241c
-#
-# m0356/m0356b MethodHandles.privateLookupIn on JDK classes: j11's module
-#   checks return a lookup for unnamed-module callers; j27 throws
-#   IllegalAccessException — module-system strictness version difference.
-55-downgrade m0356
-55-downgrade m0356b
-55-shade m0356
-55-shade m0356b
-#
-# m0362 Lookup.unreflectVarHandle: j11's real VarHandle.toString is the
-#   Object default (normalized IMPL@#); JDK prints VarHandle[varType=...]
-#   from a later release — version representation difference.
-55-downgrade m0362
-55-shade m0362
-#
-# m0385b/m0388b getDeclaredAnnotations: the runtime-invisible ValueBased/
-#   nestmate annotations do not exist on early JDKs where the stub still
-#   runs — version annotation-surface difference.
-52-downgrade m0385b
-52-downgrade m0388b
-52-shade m0385b
-52-shade m0388b
-55-downgrade m0385b
-55-downgrade m0388b
-55-shade m0385b
-55-shade m0388b
-#
-# m0565* DateTimeFormatter.localizedBy: JDK22+ wraps ISO offset parsing in
-#   ParseStrict(false/true); older JDKs print the bare Offset section —
-#   version representation difference.
-52-downgrade m0565
-52-downgrade m0565b
-52-downgrade m0565c
-52-shade m0565
-52-shade m0565b
-52-shade m0565c
-55-downgrade m0565b
-55-downgrade m0565c
-55-shade m0565b
-55-shade m0565c
-61-downgrade m0565b
-61-downgrade m0565c
-61-shade m0565b
-61-shade m0565c
-65-downgrade m0565b
-65-downgrade m0565c
-65-shade m0565b
-65-shade m0565c
-#
-# m0827*/m0828* Scanner.toString: JDK8 renders the number-format NaN field
-#   as '�' where later JDKs print 'NaN' — version representation
-#   difference.
-52-downgrade m0827
-52-downgrade m0827b
-52-downgrade m0827c
-52-downgrade m0828
-52-downgrade m0828b
-52-downgrade m0828c
-52-shade m0827
-52-shade m0827b
-52-shade m0827c
-52-shade m0828
-52-shade m0828b
-52-shade m0828c
-#
-# m0830c/m1099c/m1100c Scanner.findAll/Pattern.asMatchPredicate/
-#   splitWithDelimiters with flag mask -1:
-#   JDK8 does not validate unknown flag bits; JDK9+ throws
-#   IllegalArgumentException — version behavior difference.
-52-downgrade m0830c
-52-downgrade m1099c
-52-downgrade m1100c
-52-shade m0830c
-52-shade m1099c
-52-shade m1100c
-#
-# m1183b/m1183c TypeDescriptor.OfMethod.insertParameterTypes with a raw
-#   Class[] arg: native erasure lets the bad array through until an
-#   ArrayStoreException inside; the downgraded bridge signature fails the
-#   array checkcast with ClassCastException first — an artifact of stub
-#   signature adaptation, not of user-visible semantics on valid args.
-52-downgrade m1183b
-52-downgrade m1183c
-52-shade m1183b
-52-shade m1183c
-55-downgrade m1183b
-55-downgrade m1183c
-55-shade m1183b
-55-shade m1183c
+# Every entry must sit under a rationale comment and be a genuine
+# JDK-version or structural difference verified against the native
+# baseline — never a stub defect. The ratchet asserts in both directions:
+# new diffs fail, diffs that start matching fail (remove the entry), and
+# diffs whose *shape* changes fail (update or investigate).
+
+# Class.arrayType on void.class: j17 throws IllegalArgumentException while
+# j21+ and the stub throw UnsupportedOperationException — version difference.
+61-downgrade Ljava/lang/Class;arrayType;()Ljava/lang/Class;@boundary ==> EXC:java.lang.UnsupportedOperationException ==> EXC:java.lang.IllegalArgumentException
+61-shade Ljava/lang/Class;arrayType;()Ljava/lang/Class;@boundary ==> EXC:java.lang.UnsupportedOperationException ==> EXC:java.lang.IllegalArgumentException
+
+# JDK renamed the ClassDesc impl class (ClassOrInterfaceDesc -> ClassDesc)
+# between 21 and 27 — version representation difference.
+61-downgrade Ljava/lang/Class;describeConstable;()Ljava/util/Optional;@trivial ==> RESULT:Optional[ClassOrInterfaceDesc[String]] ==> RESULT:Optional[ClassDesc[String]]
+61-shade Ljava/lang/Class;describeConstable;()Ljava/util/Optional;@trivial ==> RESULT:Optional[ClassOrInterfaceDesc[String]] ==> RESULT:Optional[ClassDesc[String]]
+61-downgrade Ljava/lang/Class;describeConstable;()Ljava/util/Optional;@meaningful ==> RESULT:Optional[ClassOrInterfaceDesc[Integer]] ==> RESULT:Optional[ClassDesc[Integer]]
+65-downgrade Ljava/lang/Class;describeConstable;()Ljava/util/Optional;@trivial ==> RESULT:Optional[ClassOrInterfaceDesc[String]] ==> RESULT:Optional[ClassDesc[String]]
+65-downgrade Ljava/lang/Class;describeConstable;()Ljava/util/Optional;@meaningful ==> RESULT:Optional[ClassOrInterfaceDesc[Integer]] ==> RESULT:Optional[ClassDesc[Integer]]
+61-shade Ljava/lang/Class;describeConstable;()Ljava/util/Optional;@meaningful ==> RESULT:Optional[ClassOrInterfaceDesc[Integer]] ==> RESULT:Optional[ClassDesc[Integer]]
+65-shade Ljava/lang/Class;describeConstable;()Ljava/util/Optional;@trivial ==> RESULT:Optional[ClassOrInterfaceDesc[String]] ==> RESULT:Optional[ClassDesc[String]]
+65-shade Ljava/lang/Class;describeConstable;()Ljava/util/Optional;@meaningful ==> RESULT:Optional[ClassOrInterfaceDesc[Integer]] ==> RESULT:Optional[ClassDesc[Integer]]
+61-downgrade Ljava/lang/constant/ClassDesc;ofInternalName;(Ljava/lang/String;)Ljava/lang/constant/ClassDesc;@meaningful ==> RESULT:ClassOrInterfaceDesc[a] ==> RESULT:ClassDesc[a]
+61-downgrade Ljava/lang/constant/ClassDesc;ofInternalName;(Ljava/lang/String;)Ljava/lang/constant/ClassDesc;@boundary ==> RESULT:ClassOrInterfaceDesc[\x00] ==> RESULT:ClassDesc[\x00]
+61-shade Ljava/lang/constant/ClassDesc;ofInternalName;(Ljava/lang/String;)Ljava/lang/constant/ClassDesc;@meaningful ==> RESULT:ClassOrInterfaceDesc[a] ==> RESULT:ClassDesc[a]
+61-shade Ljava/lang/constant/ClassDesc;ofInternalName;(Ljava/lang/String;)Ljava/lang/constant/ClassDesc;@boundary ==> RESULT:ClassOrInterfaceDesc[\x00] ==> RESULT:ClassDesc[\x00]
+65-downgrade Ljava/lang/constant/ClassDesc;ofInternalName;(Ljava/lang/String;)Ljava/lang/constant/ClassDesc;@meaningful ==> RESULT:ClassOrInterfaceDesc[a] ==> RESULT:ClassDesc[a]
+65-downgrade Ljava/lang/constant/ClassDesc;ofInternalName;(Ljava/lang/String;)Ljava/lang/constant/ClassDesc;@boundary ==> RESULT:ClassOrInterfaceDesc[\x00] ==> RESULT:ClassDesc[\x00]
+65-shade Ljava/lang/constant/ClassDesc;ofInternalName;(Ljava/lang/String;)Ljava/lang/constant/ClassDesc;@meaningful ==> RESULT:ClassOrInterfaceDesc[a] ==> RESULT:ClassDesc[a]
+65-shade Ljava/lang/constant/ClassDesc;ofInternalName;(Ljava/lang/String;)Ljava/lang/constant/ClassDesc;@boundary ==> RESULT:ClassOrInterfaceDesc[\x00] ==> RESULT:ClassDesc[\x00]
+
+# Class.getNestMembers on JDK classes (String, Integer receivers): the real
+# nestmate list lives in JDK class files and grows across releases —
+# the stub's annotation path cannot rewrite java.lang.String. On j8 there
+# is no nest support at all, so only the host class itself is returned;
+# on j9+ targets the real NestMembers attribute survives minus the members
+# whose nestmate status differs per release. Irreducible internals
+# difference — corpus-defined nests are covered by NestTests instead.
+52-downgrade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@trivial ==> RESULT:[class java.lang.String, class IMPL, class IMPL] ==> RESULT:[class java.lang.String]
+52-shade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@trivial ==> RESULT:[class java.lang.String, class IMPL, class IMPL] ==> RESULT:[class java.lang.String]
+52-downgrade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@meaningful ==> RESULT:[class java.lang.Integer, class IMPL] ==> RESULT:[class java.lang.Integer]
+52-shade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@meaningful ==> RESULT:[class java.lang.Integer, class IMPL] ==> RESULT:[class java.lang.Integer]
+55-downgrade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@trivial ==> RESULT:[class java.lang.String, class IMPL, class IMPL] ==> RESULT:[class java.lang.String, class IMPL]
+55-shade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@trivial ==> RESULT:[class java.lang.String, class IMPL, class IMPL] ==> RESULT:[class java.lang.String, class IMPL]
+61-downgrade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@trivial ==> RESULT:[class java.lang.String, class IMPL, class IMPL] ==> RESULT:[class java.lang.String, class IMPL]
+61-shade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@trivial ==> RESULT:[class java.lang.String, class IMPL, class IMPL] ==> RESULT:[class java.lang.String, class IMPL]
+65-downgrade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@trivial ==> RESULT:[class java.lang.String, class IMPL, class IMPL] ==> RESULT:[class java.lang.String, class IMPL]
+65-shade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@trivial ==> RESULT:[class java.lang.String, class IMPL, class IMPL] ==> RESULT:[class java.lang.String, class IMPL]
+
+# ClassLoader.getName/getUnnamedModule on the bootstrap loader: the receiver
+# alias synthesizes String.class.getClassLoader() which is null — native
+# invokevirtual NPEs on the null receiver while the rewritten static stub
+# call reaches the impl, which deliberately answers for the bootstrap
+# loader — semantic difference by design.
+52-downgrade Ljava/lang/ClassLoader;getName;()Ljava/lang/String;@meaningful ==> EXC:java.lang.NullPointerException ==> RESULT:bootstrap
+52-shade Ljava/lang/ClassLoader;getName;()Ljava/lang/String;@meaningful ==> EXC:java.lang.NullPointerException ==> RESULT:bootstrap
+52-downgrade Ljava/lang/ClassLoader;getUnnamedModule;()Ljava/lang/Module;@meaningful ==> EXC:java.lang.NullPointerException ==> RESULT:unnamed module @#
+52-shade Ljava/lang/ClassLoader;getUnnamedModule;()Ljava/lang/Module;@meaningful ==> EXC:java.lang.NullPointerException ==> RESULT:unnamed module @#
+
+# Math/StrictMath.atanh boundary probe: one-ulp difference between
+# StrictMath's fdlibm port on different JDKs — irreducible floating-point
+# last-bit difference.
+all Ljava/lang/Math;atanh;(D)D@meaningful ==> RESULT:0.5493061443340548 ==> RESULT:0.5493061443340549
+all Ljava/lang/StrictMath;atanh;(D)D@meaningful ==> RESULT:0.5493061443340548 ==> RESULT:0.5493061443340549
+
+# StackTraceElement 7-arg ctor print: JDK9+ toString emits loader/module@version
+# segments (a/a@#/a.a(a:1)). The j9 stub provides a toString impl, but the
+# site prints via String.valueOf -> Object.toString virtual dispatch inside
+# the JDK, which cannot be rewritten — so the real j8
+# StackTraceElement.toString runs. Irreducible.
+52-downgrade Ljava/lang/StackTraceElement;<init>;(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V@meaningful ==> RESULT:a/a@#/a.a(a:1) ==> RESULT:a.a(a:1)
+52-downgrade Ljava/lang/StackTraceElement;<init>;(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V@boundary ==> RESULT:\x00/\x00@\x00/\x00.\x00(\x00) ==> RESULT:\x00.\x00(\x00)
+52-shade Ljava/lang/StackTraceElement;<init>;(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V@meaningful ==> RESULT:a/a@#/a.a(a:1) ==> RESULT:a.a(a:1)
+52-shade Ljava/lang/StackTraceElement;<init>;(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V@boundary ==> RESULT:\x00/\x00@\x00/\x00.\x00(\x00) ==> RESULT:\x00.\x00(\x00)
+
+# MethodHandles.privateLookupIn on JDK classes: j11's module checks return
+# a lookup for unnamed-module callers; j27 throws IllegalAccessException —
+# module-system strictness version difference.
+55-downgrade Ljava/lang/invoke/MethodHandles;privateLookupIn;(Ljava/lang/Class;Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodHandles$Lookup;@trivial ==> EXC:java.lang.IllegalAccessException ==> RESULT:java.lang.String
+55-downgrade Ljava/lang/invoke/MethodHandles;privateLookupIn;(Ljava/lang/Class;Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodHandles$Lookup;@meaningful ==> EXC:java.lang.IllegalAccessException ==> RESULT:java.lang.Integer
+55-shade Ljava/lang/invoke/MethodHandles;privateLookupIn;(Ljava/lang/Class;Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodHandles$Lookup;@trivial ==> EXC:java.lang.IllegalAccessException ==> RESULT:java.lang.String
+55-shade Ljava/lang/invoke/MethodHandles;privateLookupIn;(Ljava/lang/Class;Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodHandles$Lookup;@meaningful ==> EXC:java.lang.IllegalAccessException ==> RESULT:java.lang.Integer
+
+# Lookup.unreflectVarHandle: j11's real VarHandle.toString is the Object
+# default (normalized IMPL@#); JDK prints VarHandle[varType=...] from a
+# later release — version representation difference.
+55-downgrade Ljava/lang/invoke/MethodHandles$Lookup;unreflectVarHandle;(Ljava/lang/reflect/Field;)Ljava/lang/invoke/VarHandle;@trivial ==> RESULT:VarHandle[varType=java.util.Comparator, coord=[]] ==> RESULT:IMPL@#
+55-shade Ljava/lang/invoke/MethodHandles$Lookup;unreflectVarHandle;(Ljava/lang/reflect/Field;)Ljava/lang/invoke/VarHandle;@trivial ==> RESULT:VarHandle[varType=java.util.Comparator, coord=[]] ==> RESULT:IMPL@#
+
+# getAnnotations/getDeclaredAnnotations: the runtime-invisible ValueBased
+# annotation does not exist on early JDKs where the stub still runs —
+# version annotation-surface difference.
+52-downgrade Ljava/lang/reflect/AnnotatedElement;getAnnotations;()[Ljava/lang/annotation/Annotation;@meaningful ==> RESULT:[@IMPL()] ==> RESULT:[]
+52-shade Ljava/lang/reflect/AnnotatedElement;getAnnotations;()[Ljava/lang/annotation/Annotation;@meaningful ==> RESULT:[@IMPL()] ==> RESULT:[]
+55-downgrade Ljava/lang/reflect/AnnotatedElement;getAnnotations;()[Ljava/lang/annotation/Annotation;@meaningful ==> RESULT:[@IMPL()] ==> RESULT:[]
+55-shade Ljava/lang/reflect/AnnotatedElement;getAnnotations;()[Ljava/lang/annotation/Annotation;@meaningful ==> RESULT:[@IMPL()] ==> RESULT:[]
+52-downgrade Ljava/lang/reflect/AnnotatedElement;getDeclaredAnnotations;()[Ljava/lang/annotation/Annotation;@meaningful ==> RESULT:[@IMPL()] ==> RESULT:[]
+52-shade Ljava/lang/reflect/AnnotatedElement;getDeclaredAnnotations;()[Ljava/lang/annotation/Annotation;@meaningful ==> RESULT:[@IMPL()] ==> RESULT:[]
+55-downgrade Ljava/lang/reflect/AnnotatedElement;getDeclaredAnnotations;()[Ljava/lang/annotation/Annotation;@meaningful ==> RESULT:[@IMPL()] ==> RESULT:[]
+55-shade Ljava/lang/reflect/AnnotatedElement;getDeclaredAnnotations;()[Ljava/lang/annotation/Annotation;@meaningful ==> RESULT:[@IMPL()] ==> RESULT:[]
+
+# DateTimeFormatter.localizedBy: JDK22+ wraps ISO offset parsing in
+# ParseStrict(false/true); older JDKs print the bare Offset section —
+# version representation difference.
+all Ljava/time/format/DateTimeFormatter;localizedBy;(Ljava/util/Locale;)Ljava/time/format/DateTimeFormatter;@meaningful ==> RESULT:ParseCaseSensitive(false)(Value(Year,4,10,EXCEEDS_PAD)'-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2))[ParseStrict(false)Offset(+HH:MM:ss,'Z')ParseStrict(true)] ==> RESULT:ParseCaseSensitive(false)(Value(Year,4,10,EXCEEDS_PAD)'-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2))[Offset(+HH:MM:ss,'Z')]
+all Ljava/time/format/DateTimeFormatter;localizedBy;(Ljava/util/Locale;)Ljava/time/format/DateTimeFormatter;@boundary ==> RESULT:(ParseCaseSensitive(false)(Value(Year,4,10,EXCEEDS_PAD)'-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2))'T'(Value(HourOfDay,2)':'Value(MinuteOfHour,2)[':'Value(SecondOfMinute,2)[Fraction(NanoOfSecond,0,9,DecimalPoint)]]))[ParseStrict(false)Offset(+HH:MM:ss,'Z')ParseStrict(true)['['ParseCaseSensitive(true)ZoneRegionId()']']] ==> RESULT:(ParseCaseSensitive(false)(Value(Year,4,10,EXCEEDS_PAD)'-'Value(MonthOfYear,2)'-'Value(DayOfMonth,2))'T'(Value(HourOfDay,2)':'Value(MinuteOfHour,2)[':'Value(SecondOfMinute,2)[Fraction(NanoOfSecond,0,9,DecimalPoint)]]))[Offset(+HH:MM:ss,'Z')['['ParseCaseSensitive(true)ZoneRegionId()']']]
+52-downgrade Ljava/time/format/DateTimeFormatter;localizedBy;(Ljava/util/Locale;)Ljava/time/format/DateTimeFormatter;@trivial ==> RESULT:ParseCaseSensitive(false)Value(Year,4)Value(MonthOfYear,2)Value(DayOfMonth,2)[ParseStrict(false)Offset(+HHMMss,'Z')ParseStrict(true)] ==> RESULT:ParseCaseSensitive(false)Value(Year,4)Value(MonthOfYear,2)Value(DayOfMonth,2)[Offset(+HHMMss,'Z')]
+52-shade Ljava/time/format/DateTimeFormatter;localizedBy;(Ljava/util/Locale;)Ljava/time/format/DateTimeFormatter;@trivial ==> RESULT:ParseCaseSensitive(false)Value(Year,4)Value(MonthOfYear,2)Value(DayOfMonth,2)[ParseStrict(false)Offset(+HHMMss,'Z')ParseStrict(true)] ==> RESULT:ParseCaseSensitive(false)Value(Year,4)Value(MonthOfYear,2)Value(DayOfMonth,2)[Offset(+HHMMss,'Z')]
+
+# Scanner.toString: JDK8 renders the number-format NaN field as '�' where
+# later JDKs print 'NaN' — version representation difference. Globbed on
+# the constant Scanner prefix/suffix; the pinned part is the NaN field.
+52-downgrade Ljava/util/Scanner;<init>;(Ljava/io/InputStream;Ljava/nio/charset/Charset;)V@trivial ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-downgrade Ljava/util/Scanner;<init>;(Ljava/io/InputStream;Ljava/nio/charset/Charset;)V@meaningful ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-downgrade Ljava/util/Scanner;<init>;(Ljava/io/InputStream;Ljava/nio/charset/Charset;)V@boundary ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-shade Ljava/util/Scanner;<init>;(Ljava/io/InputStream;Ljava/nio/charset/Charset;)V@trivial ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-shade Ljava/util/Scanner;<init>;(Ljava/io/InputStream;Ljava/nio/charset/Charset;)V@meaningful ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-shade Ljava/util/Scanner;<init>;(Ljava/io/InputStream;Ljava/nio/charset/Charset;)V@boundary ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-downgrade Ljava/util/Scanner;<init>;(Ljava/nio/channels/ReadableByteChannel;Ljava/nio/charset/Charset;)V@trivial ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-downgrade Ljava/util/Scanner;<init>;(Ljava/nio/channels/ReadableByteChannel;Ljava/nio/charset/Charset;)V@meaningful ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-downgrade Ljava/util/Scanner;<init>;(Ljava/nio/channels/ReadableByteChannel;Ljava/nio/charset/Charset;)V@boundary ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-shade Ljava/util/Scanner;<init>;(Ljava/nio/channels/ReadableByteChannel;Ljava/nio/charset/Charset;)V@trivial ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-shade Ljava/util/Scanner;<init>;(Ljava/nio/channels/ReadableByteChannel;Ljava/nio/charset/Charset;)V@meaningful ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+52-shade Ljava/util/Scanner;<init>;(Ljava/nio/channels/ReadableByteChannel;Ljava/nio/charset/Charset;)V@boundary ==> RESULT:java.util.Scanner[*[NaN string=\QNaN\E]*] ==> RESULT:java.util.Scanner[*[NaN string=\Q�\E]*]
+
+# TypeDescriptor.OfMethod.insertParameterTypes with a raw OfField[] arg:
+# native erasure lets the bad array through until an ArrayStoreException
+# inside; the downgraded bridge signature fails the array checkcast with
+# ClassCastException first — an artifact of stub signature adaptation, not
+# of user-visible semantics on valid args.
+52-downgrade Lxyz/wagyourtail/jvmdg/j12/stub/java_base/J_L_I_TypeDescriptor$OfMethod;insertParameterTypes;(I[Ljava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod;@meaningful ==> EXC:java.lang.ClassCastException ==> EXC:java.lang.ArrayStoreException
+52-downgrade Lxyz/wagyourtail/jvmdg/j12/stub/java_base/J_L_I_TypeDescriptor$OfMethod;insertParameterTypes;(I[Ljava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod;@boundary ==> EXC:java.lang.ClassCastException ==> EXC:java.lang.ArrayStoreException
+52-shade Lxyz/wagyourtail/jvmdg/j12/stub/java_base/J_L_I_TypeDescriptor$OfMethod;insertParameterTypes;(I[Ljava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod;@meaningful ==> EXC:java.lang.ClassCastException ==> EXC:java.lang.ArrayStoreException
+52-shade Lxyz/wagyourtail/jvmdg/j12/stub/java_base/J_L_I_TypeDescriptor$OfMethod;insertParameterTypes;(I[Ljava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod;@boundary ==> EXC:java.lang.ClassCastException ==> EXC:java.lang.ArrayStoreException
+55-downgrade Lxyz/wagyourtail/jvmdg/j12/stub/java_base/J_L_I_TypeDescriptor$OfMethod;insertParameterTypes;(I[Ljava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod;@meaningful ==> EXC:java.lang.ClassCastException ==> EXC:java.lang.ArrayStoreException
+55-downgrade Lxyz/wagyourtail/jvmdg/j12/stub/java_base/J_L_I_TypeDescriptor$OfMethod;insertParameterTypes;(I[Ljava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod;@boundary ==> EXC:java.lang.ClassCastException ==> EXC:java.lang.ArrayStoreException
+55-shade Lxyz/wagyourtail/jvmdg/j12/stub/java_base/J_L_I_TypeDescriptor$OfMethod;insertParameterTypes;(I[Ljava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod;@meaningful ==> EXC:java.lang.ClassCastException ==> EXC:java.lang.ArrayStoreException
+55-shade Lxyz/wagyourtail/jvmdg/j12/stub/java_base/J_L_I_TypeDescriptor$OfMethod;insertParameterTypes;(I[Ljava/lang/invoke/TypeDescriptor$OfField;)Ljava/lang/invoke/TypeDescriptor$OfMethod;@boundary ==> EXC:java.lang.ClassCastException ==> EXC:java.lang.ArrayStoreException
+
+# RandomGenerator.SplittableGenerator.split/split(source): native returns a
+# real java.util.SplittableRandom; the fake-interface return type can only
+# be an adapter impl — a real SplittableRandom can never implement the fake
+# interface on the downgraded classpath. Structural limitation, not a
+# behavioral defect.
+52-downgrade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;()Ljava/util/random/RandomGenerator$SplittableGenerator;@trivial ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+52-downgrade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;()Ljava/util/random/RandomGenerator$SplittableGenerator;@meaningful ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+52-shade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;()Ljava/util/random/RandomGenerator$SplittableGenerator;@trivial ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+52-shade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;()Ljava/util/random/RandomGenerator$SplittableGenerator;@meaningful ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+55-downgrade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;()Ljava/util/random/RandomGenerator$SplittableGenerator;@trivial ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+55-downgrade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;()Ljava/util/random/RandomGenerator$SplittableGenerator;@meaningful ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+55-shade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;()Ljava/util/random/RandomGenerator$SplittableGenerator;@trivial ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+55-shade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;()Ljava/util/random/RandomGenerator$SplittableGenerator;@meaningful ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+52-downgrade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@trivial ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+52-downgrade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@meaningful ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+52-shade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@trivial ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+52-shade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@meaningful ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+55-downgrade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@trivial ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+55-downgrade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@meaningful ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+55-shade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@trivial ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+55-shade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@meaningful ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#

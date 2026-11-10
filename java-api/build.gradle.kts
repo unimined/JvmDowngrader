@@ -122,10 +122,8 @@ tasks.compileJava {
     configCompile(mainVersion)
 }
 
-val testVersion = JavaVersion.toVersion(project.findProperty("testVersion")!!)
-
 tasks.compileTestJava {
-    configCompile(testVersion)
+    configCompile(toVersion - 1)
 }
 
 tasks.getByName<JavaCompile>("compileCoverageJava") {

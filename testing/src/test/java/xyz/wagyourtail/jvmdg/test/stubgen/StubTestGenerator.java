@@ -74,7 +74,9 @@ public class StubTestGenerator {
         DENIED_OWNERS.add("java/lang/ProcessBuilder");
         DENIED_OWNERS.add("java/lang/Shutdown");
         DENIED_OWNERS.add("java/lang/SecurityManager");
-        DENIED_OWNERS.add("java/util/Random");
+        // Random/SplittableRandom are NOT owner-denied: ALIASES synthesizes
+        // seeded receivers so every next*/split site is deterministic.
+        // (SecureRandom and ThreadLocalRandom stay denied — unseedable.)
         DENIED_OWNERS.add("java/security/SecureRandom");
         DENIED_OWNERS.add("java/util/concurrent/ThreadLocalRandom");
         DENIED_OWNERS.add("java/util/Timer"); // ctor spawns a non-daemon thread
@@ -99,7 +101,8 @@ public class StubTestGenerator {
         DENIED_NAMES.add("loadLibrary");
         DENIED_NAMES.add("runFinalization");
         DENIED_NAMES.add("gc");
-        DENIED_NAMES.add("join");
+        // join is scoped per-owner below (Thread/ForkJoinTask block); the
+        // blanket name deny would also kill pure members like String.join
         // quietlyJoin on an unforked ForkJoinTask parks forever (unlike get(),
         // it never submits the task to the common pool)
         DENIED_NAMES.add("quietlyJoin");
@@ -116,14 +119,9 @@ public class StubTestGenerator {
         DENIED_NAMES.add("identityHashCode");
         DENIED_NAMES.add("random");
         DENIED_NAMES.add("randomUUID");
-        DENIED_NAMES.add("nextInt");
-        DENIED_NAMES.add("nextLong");
-        DENIED_NAMES.add("nextFloat");
-        DENIED_NAMES.add("nextDouble");
-        DENIED_NAMES.add("nextBoolean");
-        DENIED_NAMES.add("nextBytes");
-        DENIED_NAMES.add("nextGaussian");
-        DENIED_NAMES.add("nextExponential");
+        // next* names are no longer denied: every owner that exposes them and
+        // isn't whole-owner denied gets a seeded receiver via ALIASES, so the
+        // sequence printed by the site is reproducible on both sides
         // process handle ids are per-process
         DENIED_NAMES.add("pid");
     }
@@ -131,6 +129,9 @@ public class StubTestGenerator {
     // name denies scoped to an owner prefix: blocking on synthesized instances
     private static final Map<String, Set<String>> DENIED_BY_OWNER = new HashMap<>();
     static {
+        // blocking joins (global `join` deny would also hit pure String.join)
+        denyOn("java/lang/Thread", "join");
+        denyOn("java/util/concurrent/ForkJoinTask", "join");
         denyOn("java/util/concurrent/CompletableFuture", "get", "join", "obtrudeValue", "obtrudeException");
         denyOn("java/util/concurrent/FutureTask", "get", "join", "run");
         // *Async returns a future that completes off-thread — its printed state
@@ -168,10 +169,12 @@ public class StubTestGenerator {
         denyOn("java/io/PipedWriter", "connect");
         // invokedynamic bootstrap factories: their @Modify handlers rewrite the
         // indy instruction, so a direct INVOKESTATIC call site is not valid
-        // coverage (juggling expects InvokeDynamicInsnNode context)
+        // coverage (juggling expects InvokeDynamicInsnNode context). Coverage
+        // comes from manual @StubTest claims exercising the indy path.
+        // ConstantBootstraps is NOT denied: its only registered member,
+        // explicitCast, is a [method-stub] — a direct call site is valid.
         denyOn("java/lang/invoke/StringConcatFactory");
         denyOn("java/lang/invoke/LambdaMetafactory");
-        denyOn("java/lang/invoke/ConstantBootstraps");
         denyOn("java/lang/runtime/SwitchBootstraps");
         denyOn("java/lang/runtime/ObjectMethods");
         // MXBean values are per-JVM/per-moment (pid, uptime, memory)
@@ -191,49 +194,53 @@ public class StubTestGenerator {
     // exact-member denies: nondeterministic or thread-id dependent
     private static final Set<String> DENIED_MEMBERS = new HashSet<>();
     static {
-        DENIED_MEMBERS.add("java/lang/Object hashCode ()I");
-        DENIED_MEMBERS.add("java/lang/Thread currentThread ()Ljava/lang/Thread;");
-        DENIED_MEMBERS.add("java/lang/Thread getId ()J");
-        DENIED_MEMBERS.add("java/lang/Thread getName ()Ljava/lang/String;");
+        denyMember("java/lang/Object", "hashCode", "()I");
+        denyMember("java/lang/Thread", "currentThread", "()Ljava/lang/Thread;");
+        denyMember("java/lang/Thread", "getId", "()J");
+        denyMember("java/lang/Thread", "getName", "()Ljava/lang/String;");
         // monotonic ids / environment contents are stable in shape only
-        DENIED_MEMBERS.add("java/lang/Thread threadId ()J");
-        DENIED_MEMBERS.add("java/util/logging/LogRecord getLongThreadID ()J");
-        DENIED_MEMBERS.add("java/lang/System getProperties ()Ljava/util/Properties;");
+        denyMember("java/lang/Thread", "threadId", "()J");
+        denyMember("java/util/logging/LogRecord", "getLongThreadID", "()J");
+        denyMember("java/lang/System", "getProperties", "()Ljava/util/Properties;");
         // getMethods order is spec-unspecified — differs across runtimes
-        DENIED_MEMBERS.add("java/lang/Class getMethods ()[Ljava/lang/reflect/Method;");
-        DENIED_MEMBERS.add("java/lang/System getenv ()Ljava/util/Map;");
-        DENIED_MEMBERS.add("java/lang/System getenv (Ljava/lang/String;)Ljava/lang/String;");
+        denyMember("java/lang/Class", "getMethods", "()[Ljava/lang/reflect/Method;");
+        denyMember("java/lang/System", "getenv", "()Ljava/util/Map;");
+        denyMember("java/lang/System", "getenv", "(Ljava/lang/String;)Ljava/lang/String;");
         // async/scheduled completion state races with the executor/delayer —
         // even a zero-delay timeout may not have fired when the result prints
-        DENIED_MEMBERS.add("java/util/concurrent/CompletableFuture completeOnTimeout (Ljava/lang/Object;JLjava/util/concurrent/TimeUnit;)Ljava/util/concurrent/CompletableFuture;");
-        DENIED_MEMBERS.add("java/util/concurrent/CompletableFuture orTimeout (JLjava/util/concurrent/TimeUnit;)Ljava/util/concurrent/CompletableFuture;");
-        DENIED_MEMBERS.add("java/util/concurrent/CompletableFuture completeAsync (Ljava/util/function/Supplier;)Ljava/util/concurrent/CompletableFuture;");
-        DENIED_MEMBERS.add("java/util/concurrent/CompletableFuture completeAsync (Ljava/util/function/Supplier;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;");
-        DENIED_MEMBERS.add("java/util/concurrent/CompletionStage exceptionallyAsync (Ljava/util/function/Function;)Ljava/util/concurrent/CompletionStage;");
-        DENIED_MEMBERS.add("java/util/concurrent/CompletionStage exceptionallyAsync (Ljava/util/function/Function;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletionStage;");
-        DENIED_MEMBERS.add("java/util/concurrent/CompletionStage exceptionallyComposeAsync (Ljava/util/function/Function;)Ljava/util/concurrent/CompletionStage;");
-        DENIED_MEMBERS.add("java/util/concurrent/CompletionStage exceptionallyComposeAsync (Ljava/util/function/Function;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletionStage;");
+        denyMember("java/util/concurrent/CompletableFuture", "completeOnTimeout", "(Ljava/lang/Object;JLjava/util/concurrent/TimeUnit;)Ljava/util/concurrent/CompletableFuture;");
+        denyMember("java/util/concurrent/CompletableFuture", "orTimeout", "(JLjava/util/concurrent/TimeUnit;)Ljava/util/concurrent/CompletableFuture;");
+        denyMember("java/util/concurrent/CompletableFuture", "completeAsync", "(Ljava/util/function/Supplier;)Ljava/util/concurrent/CompletableFuture;");
+        denyMember("java/util/concurrent/CompletableFuture", "completeAsync", "(Ljava/util/function/Supplier;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;");
+        denyMember("java/util/concurrent/CompletionStage", "exceptionallyAsync", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletionStage;");
+        denyMember("java/util/concurrent/CompletionStage", "exceptionallyAsync", "(Ljava/util/function/Function;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletionStage;");
+        denyMember("java/util/concurrent/CompletionStage", "exceptionallyComposeAsync", "(Ljava/util/function/Function;)Ljava/util/concurrent/CompletionStage;");
+        denyMember("java/util/concurrent/CompletionStage", "exceptionallyComposeAsync", "(Ljava/util/function/Function;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletionStage;");
         // receivers synthesized with wall-clock state make these per-run values
-        DENIED_MEMBERS.add("java/util/logging/LogRecord getInstant ()Ljava/time/Instant;");
-        DENIED_MEMBERS.add("java/util/Date toInstant ()Ljava/time/Instant;");
-        DENIED_MEMBERS.add("java/util/Calendar toInstant ()Ljava/time/Instant;");
-        DENIED_MEMBERS.add("java/util/GregorianCalendar toZonedDateTime ()Ljava/time/ZonedDateTime;");
+        denyMember("java/util/logging/LogRecord", "getInstant", "()Ljava/time/Instant;");
+        denyMember("java/util/Date", "toInstant", "()Ljava/time/Instant;");
+        denyMember("java/util/Calendar", "toInstant", "()Ljava/time/Instant;");
+        denyMember("java/util/GregorianCalendar", "toZonedDateTime", "()Ljava/time/ZonedDateTime;");
         // probes that open/create real files are environment-dependent:
         // FileWriter("a") actually writes, and reads depend on cwd contents
-        DENIED_MEMBERS.add("java/io/FileReader <init> (Ljava/io/File;Ljava/nio/charset/Charset;)V");
-        DENIED_MEMBERS.add("java/io/FileReader <init> (Ljava/lang/String;Ljava/nio/charset/Charset;)V");
-        DENIED_MEMBERS.add("java/io/FileWriter <init> (Ljava/io/File;Ljava/nio/charset/Charset;)V");
-        DENIED_MEMBERS.add("java/io/FileWriter <init> (Ljava/io/File;Ljava/nio/charset/Charset;Z)V");
-        DENIED_MEMBERS.add("java/io/FileWriter <init> (Ljava/lang/String;Ljava/nio/charset/Charset;)V");
-        DENIED_MEMBERS.add("java/io/FileWriter <init> (Ljava/lang/String;Ljava/nio/charset/Charset;Z)V");
-        DENIED_MEMBERS.add("java/io/PrintStream <init> (Ljava/io/File;Ljava/nio/charset/Charset;)V");
-        DENIED_MEMBERS.add("java/io/PrintStream <init> (Ljava/lang/String;Ljava/nio/charset/Charset;)V");
-        DENIED_MEMBERS.add("java/io/PrintWriter <init> (Ljava/io/File;Ljava/nio/charset/Charset;)V");
-        DENIED_MEMBERS.add("java/io/PrintWriter <init> (Ljava/lang/String;Ljava/nio/charset/Charset;)V");
-        DENIED_MEMBERS.add("java/util/Formatter <init> (Ljava/io/File;Ljava/nio/charset/Charset;Ljava/util/Locale;)V");
+        denyMember("java/io/FileReader", "<init>", "(Ljava/io/File;Ljava/nio/charset/Charset;)V");
+        denyMember("java/io/FileReader", "<init>", "(Ljava/lang/String;Ljava/nio/charset/Charset;)V");
+        denyMember("java/io/FileWriter", "<init>", "(Ljava/io/File;Ljava/nio/charset/Charset;)V");
+        denyMember("java/io/FileWriter", "<init>", "(Ljava/io/File;Ljava/nio/charset/Charset;Z)V");
+        denyMember("java/io/FileWriter", "<init>", "(Ljava/lang/String;Ljava/nio/charset/Charset;)V");
+        denyMember("java/io/FileWriter", "<init>", "(Ljava/lang/String;Ljava/nio/charset/Charset;Z)V");
+        denyMember("java/io/PrintStream", "<init>", "(Ljava/io/File;Ljava/nio/charset/Charset;)V");
+        denyMember("java/io/PrintStream", "<init>", "(Ljava/lang/String;Ljava/nio/charset/Charset;)V");
+        denyMember("java/io/PrintWriter", "<init>", "(Ljava/io/File;Ljava/nio/charset/Charset;)V");
+        denyMember("java/io/PrintWriter", "<init>", "(Ljava/lang/String;Ljava/nio/charset/Charset;)V");
+        denyMember("java/util/Formatter", "<init>", "(Ljava/io/File;Ljava/nio/charset/Charset;Ljava/util/Locale;)V");
         // String-arg Formatter writes a file literally named by the arg
-        DENIED_MEMBERS.add("java/util/Formatter <init> (Ljava/lang/String;Ljava/nio/charset/Charset;Ljava/util/Locale;)V");
-        DENIED_MEMBERS.add("java/util/Scanner <init> (Ljava/io/File;Ljava/nio/charset/Charset;)V");
+        denyMember("java/util/Formatter", "<init>", "(Ljava/lang/String;Ljava/nio/charset/Charset;Ljava/util/Locale;)V");
+        denyMember("java/util/Scanner", "<init>", "(Ljava/io/File;Ljava/nio/charset/Charset;)V");
+    }
+
+    private static void denyMember(String owner, String name, String desc) {
+        DENIED_MEMBERS.add(fqmn(owner, name, desc));
     }
 
     // concrete defaults for interface/abstract params and receivers. Each entry
@@ -347,6 +354,24 @@ public class StubTestGenerator {
             "java.util.Collections.enumeration(java.util.Arrays.asList(\"a\", \"b\"))");
         al("java.util.Spliterator", "java.util.Spliterators.emptySpliterator()",
             "java.util.Arrays.asList(\"a\", \"b\").spliterator()");
+        al("java.util.Spliterator$OfPrimitive",
+            "java.util.stream.IntStream.of(1).spliterator()");
+        al("java.util.Spliterator$OfInt",
+            "java.util.stream.IntStream.of(1).spliterator()");
+        al("java.util.Spliterator$OfLong",
+            "java.util.stream.LongStream.of(1L).spliterator()");
+        al("java.util.Spliterator$OfDouble",
+            "java.util.stream.DoubleStream.of(1.0).spliterator()");
+        // seeded instances so next*/split output is reproducible on both sides;
+        // distinct seeds per profile so probes don't collapse after dedup
+        al("java.util.Random", "new java.util.Random(0x5EED)",
+            "new java.util.Random(1)", "new java.util.Random(-1)");
+        al("java.util.SplittableRandom", "new java.util.SplittableRandom(0x5EED)",
+            "new java.util.SplittableRandom(1)", "new java.util.SplittableRandom(-1)");
+        al("java.util.random.RandomGenerator", "new java.util.Random(0x5EED)",
+            "new java.util.SplittableRandom(1)");
+        al("java.util.random.RandomGenerator$SplittableGenerator",
+            "new java.util.SplittableRandom(0x5EED)", "new java.util.SplittableRandom(1)");
         al("java.util.concurrent.Callable", "() -> null", "() -> \"a\"",
             "() -> { throw new java.io.IOException(); }");
         al("java.util.BitSet", "new java.util.BitSet()",
@@ -484,6 +509,12 @@ public class StubTestGenerator {
             "java.nio.file.Paths.get(\"x\")", "java.nio.file.Paths.get(\"a\", \"b\")");
         al("java.nio.file.spi.FileSystemProvider",
             "java.nio.file.FileSystems.getDefault().provider()");
+        // flags-free receivers only: Pattern.compile(String,int) flag
+        // validation changed across releases (j8 accepts -1, later JDKs throw)
+        // so a boundary flags arg would test the JDK, not the stub
+        al("java.util.regex.Pattern", "java.util.regex.Pattern.compile(\"\")",
+            "java.util.regex.Pattern.compile(\"a\")",
+            "java.util.regex.Pattern.compile(\"\\\\u0000\")");
         al("java.util.regex.Matcher", "java.util.regex.Pattern.compile(\"\").matcher(\"\")",
             "java.util.regex.Pattern.compile(\"a\").matcher(\"a\")",
             "java.util.regex.Pattern.compile(\"(.*)\").matcher(\"x\")");
@@ -771,8 +802,15 @@ public class StubTestGenerator {
             this.kind = kind;
         }
 
+        /**
+         * Canonical {@link FullyQualifiedMemberNameAndDesc} form
+         * ({@code Lowner;name;desc}) — the member identity used in
+         * {@code index.txt}, {@code untestable.txt}, {@code deferred.txt},
+         * {@code inventory.txt} and known-diff references.
+         */
         String key() {
-            return owner + " " + name + " " + desc;
+            return new FullyQualifiedMemberNameAndDesc(
+                Type.getObjectType(owner), name, Type.getType(desc)).toString();
         }
 
         @Override
@@ -783,6 +821,33 @@ public class StubTestGenerator {
 
     // value-ladder step names, surfaced in index.txt for debugging
     private static final String[] PROFILES = {"trivial", "meaningful", "boundary"};
+
+    /**
+     * Registered members whose implementations only activate on targets
+     * below the tested matrix — the java 8->7 (and lower) scope deferred to
+     * the low-target parity PR. They land in {@code deferred.txt} rather
+     * than {@code untestable.txt}: consciously out-of-scope, not a coverage
+     * gap. Remove entries as that work lands; a key that stops matching an
+     * untestable member is warned about (stale map).
+     */
+    private static final Map<String, String> DEFERRED = new HashMap<>();
+    static {
+        DEFERRED.put(fqmn("java/lang/invoke/LambdaMetafactory", "metafactory",
+            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;"
+            + "Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;"
+            + "Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)"
+            + "Ljava/lang/invoke/CallSite;"), "java8-to-7");
+        DEFERRED.put(fqmn("java/lang/invoke/LambdaMetafactory", "altMetafactory",
+            "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;"
+            + "Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"),
+            "java8-to-7");
+    }
+
+    /** Canonical {@link FullyQualifiedMemberNameAndDesc} string for a member triple. */
+    private static String fqmn(String owner, String name, String desc) {
+        return new FullyQualifiedMemberNameAndDesc(
+            Type.getObjectType(owner), name, Type.getType(desc)).toString();
+    }
     // id suffix per emitted site within one member — the first stays bare so
     // bare m#### ids match the member across regenerations
     private static final String[] SITE_SUFFIX = {"", "b", "c"};
@@ -828,11 +893,15 @@ public class StubTestGenerator {
             if (!m.member.isEmpty()) {
                 manualByMember.putIfAbsent(m.member, m.id);
             }
-            index.add(m.id + " " + m.className + "." + m.method + " [manual]"
+            index.add(m.id + " " + fqmn(m.className.replace('.', '/'), m.method,
+                "(Ljava/lang/String;)V") + " [manual]"
                 + (m.member.isEmpty() ? "" : " member=" + m.member));
         }
+        // claimed members leave untestable.txt entirely — they are covered by
+        // the manual corpus; the claim -> test mapping lives in index.txt
         int manualClaimed = 0;
-        for (int i = 0; i < untestable.size(); i++) {
+        List<String> deferred = new ArrayList<>();
+        for (int i = untestable.size() - 1; i >= 0; i--) {
             String line = untestable.get(i);
             String claimed = null;
             for (Map.Entry<String, String> mm : manualByMember.entrySet()) {
@@ -842,16 +911,57 @@ public class StubTestGenerator {
                 }
             }
             if (claimed != null) {
-                untestable.set(i, line + " [manual:" + claimed + "]");
+                untestable.remove(i);
                 manualClaimed++;
+                continue;
+            }
+            for (Map.Entry<String, String> dm : DEFERRED.entrySet()) {
+                if (line.startsWith(dm.getKey() + " ")) {
+                    deferred.add(line + " [" + dm.getValue() + "]");
+                    untestable.remove(i);
+                    break;
+                }
+            }
+        }
+        // stale-deferred hygiene: a key with no untestable match is either
+        // newly covered (remove it) or no longer registered (fix the key)
+        for (Map.Entry<String, String> dm : DEFERRED.entrySet()) {
+            String key = dm.getKey() + " ";
+            boolean inUntestable = false;
+            for (String line : deferred) {
+                if (line.startsWith(key)) {
+                    inUntestable = true;
+                    break;
+                }
+            }
+            if (!inUntestable) {
+                System.out.println("stub test corpus: WARNING deferred member "
+                    + dm.getKey() + " matched nothing — stale DEFERRED entry?");
             }
         }
 
         try (Writer w = Files.newBufferedWriter(reportDir.resolve("untestable.txt"), StandardCharsets.UTF_8)) {
-            w.write("# stub members with no synthesizable call site\n");
+            w.write("# stub members with no coverage path (synthesized or claimed)\n");
             for (String line : untestable) {
                 w.write(line);
                 w.write('\n');
+            }
+        }
+        try (Writer w = Files.newBufferedWriter(reportDir.resolve("deferred.txt"), StandardCharsets.UTF_8)) {
+            w.write("# registered members deferred to the low-target parity PR\n");
+            w.write("# (impls only activate below the tested matrix — java 8->7 and lower)\n");
+            for (String line : deferred) {
+                w.write(line);
+                w.write('\n');
+            }
+        }
+        // full registry dump for "is X registered?" debugging — same shape as
+        // the old repo-root unexercised.txt, kept with the other reports
+        try (Writer w = Files.newBufferedWriter(reportDir.resolve("inventory.txt"), StandardCharsets.UTF_8)) {
+            w.write("# registered stub members (full inventory)\n");
+            w.write("# format: L<owner>;<name>;<desc> [<kind>] (canonical member key, deduped across providers)\n");
+            for (Entry e : members) {
+                w.write(e.key() + " [" + e.kind + "]\n");
             }
         }
         try (Writer w = Files.newBufferedWriter(reportDir.resolve("index.txt"), StandardCharsets.UTF_8)) {
@@ -869,24 +979,47 @@ public class StubTestGenerator {
         }
         try (Writer w = Files.newBufferedWriter(reportDir.resolve("coverage.txt"), StandardCharsets.UTF_8)) {
             w.write("# stub call-site coverage\n");
-            int total = coveredMembers + untestable.size();
+            int total = members.size();
+            int covered = coveredMembers + manualClaimed;
             w.write(String.format("covered %d / %d (%.1f%%) sites=%d%n",
-                coveredMembers, total, total == 0 ? 0d : coveredMembers * 100.0 / total,
+                covered, total, total == 0 ? 0d : covered * 100.0 / total,
                 index.size() - manual.size()));
+            w.write("generated " + coveredMembers + ", manual-claimed " + manualClaimed
+                + ", deferred " + deferred.size() + ", uncovered " + untestable.size()
+                + " of " + total + "\n");
             for (Map.Entry<String, Integer> e : reasonCounts.entrySet()) {
                 w.write("untestable[" + e.getKey() + "] " + e.getValue() + "\n");
             }
-            w.write("manual " + manual.size() + " tests, claiming " + manualClaimed
-                + " untestable members\n");
+            w.write("manual " + manual.size() + " tests\n");
         }
         System.out.println("stub test corpus: " + (index.size() - manual.size()) + " call sites for "
             + coveredMembers + " members in " + files.size() + " classes, " + untestable.size()
-            + " untestable (" + manualClaimed + " manual-claimed), " + manual.size()
-            + " manual -> " + pkgDir);
+            + " untestable, " + manualClaimed + " manual-claimed, " + deferred.size()
+            + " deferred, " + manual.size() + " manual -> " + pkgDir);
     }
 
     /** fake type internal name -> real JDK type internal name (via {@code classStubs} adapters) */
     private static final Map<String, String> fakeToReal = new HashMap<>();
+    static {
+        // @Coerce dispatchers register under the fake owner but are reached
+        // through calls on the real type (java.util.Random implements
+        // RandomGenerator, so random.rngs() dispatches to the J_U_Random
+        // coerce adapter). split/splits on the same owner stay untestable:
+        // Random is never a SplittableGenerator, so those coerces are dead.
+        fakeToReal.put("xyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_Random",
+            "java/util/Random");
+        // nested adapter interfaces aren't collected into classStubs, so their
+        // receiver-in-arg0 lookups can't reach the real type without a manual
+        // mapping (needed for Spliterator$Of*.forEachRemaining)
+        fakeToReal.put("xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterator$OfPrimitive",
+            "java/util/Spliterator$OfPrimitive");
+        fakeToReal.put("xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterator$OfInt",
+            "java/util/Spliterator$OfInt");
+        fakeToReal.put("xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterator$OfLong",
+            "java/util/Spliterator$OfLong");
+        fakeToReal.put("xyz/wagyourtail/jvmdg/j8/stub/J_U_Spliterator$OfDouble",
+            "java/util/Spliterator$OfDouble");
+    }
 
     private static List<Entry> collect() throws IOException {
         Map<String, Entry> members = new TreeMap<>();
@@ -981,7 +1114,7 @@ public class StubTestGenerator {
      */
     private static boolean emit(Entry e, String baseId, Map<String, List<String>> files,
                                 List<String> index, List<String> untestable) {
-        String memberKey = e.owner + "." + e.name + e.desc + " [" + e.kind + "]";
+        String memberKey = e.key() + " [" + e.kind + "]";
         // provider stand-in classes (e.g. J_U_R_RandomGenerator) map back to
         // the real JDK type so call sites compile against real signatures.
         // Only jvmdg-internal fakes may remap: real java owner types like
@@ -1122,6 +1255,17 @@ public class StubTestGenerator {
                 // static-stub registrations carry the receiver as arg0 —
                 // interpret the remainder as the real instance signature
                 Class<?> recvType = params[0];
+                // adapter stand-ins (J_U_Spliterator$OfPrimitive) resolve to
+                // their real JDK type so member lookup and receiver synthesis
+                // work against the public surface
+                String rtMapped = fakeToReal.get(recvType.getName().replace('.', '/'));
+                if (rtMapped != null) {
+                    try {
+                        recvType = Class.forName(rtMapped.replace('/', '.'), false,
+                            StubTestGenerator.class.getClassLoader());
+                    } catch (Throwable ignored) {
+                    }
+                }
                 try {
                     method = recvType.getMethod(e.name,
                         Arrays.copyOfRange(params, 1, params.length));
@@ -1321,11 +1465,11 @@ public class StubTestGenerator {
     }
 
     /**
-     * Returns the canonical {@code <owner>.<name><desc>} key for
-     * {@code @StubTest.member}, or null when not annotated. The annotation
-     * carries a {@link Ref} triple; canonicalizing through
-     * {@link FullyQualifiedMemberNameAndDesc} accepts both
-     * {@code Ljava/lang/X;} and {@code java/lang/X} owner forms.
+     * Returns the canonical {@link FullyQualifiedMemberNameAndDesc} key
+     * ({@code Lowner;name;desc}) for {@code @StubTest.member}, or null when
+     * not annotated. The annotation carries a {@link Ref} triple;
+     * canonicalizing accepts both {@code Ljava/lang/X;} and
+     * {@code java/lang/X} owner forms.
      */
     private static String stubTestMember(Method m) {
         for (java.lang.annotation.Annotation a : m.getDeclaredAnnotations()) {
@@ -1339,7 +1483,7 @@ public class StubTestGenerator {
                     if (f.getName() == null) {
                         return "";
                     }
-                    return f.getOwner().getInternalName() + "." + f.getName() + f.getDesc().getDescriptor();
+                    return f.toString();
                 } catch (Exception ex) {
                     throw new IllegalStateException(
                         "malformed @StubTest member on " + m.getDeclaringClass().getName() + "." + m.getName(), ex);
