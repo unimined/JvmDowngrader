@@ -142,6 +142,31 @@ public abstract class VersionProvider {
         }
 
         Type ret = Type.getReturnType(method);
+        {
+            // walk arrays to the component, as with params: an adapter
+            // (fake) return type must register as the real JDK type so the
+            // member desc matches pre-transform call sites
+            int dims = 0;
+            Class<?> r = method.getReturnType();
+            while (r.isArray()) {
+                r = r.getComponentType();
+                dims++;
+            }
+            Adapter a = r.getAnnotation(Adapter.class);
+            if (a != null) {
+                String aRef = a.value();
+                Type t;
+                if (aRef.startsWith("L") && aRef.endsWith(";")) {
+                    t = Type.getType(aRef);
+                } else {
+                    t = Type.getObjectType(aRef);
+                }
+                for (int d = 0; d < dims; d++) {
+                    t = Type.getType("[" + t.getDescriptor());
+                }
+                ret = t;
+            }
+        }
         if (ref.value().isEmpty()) {
             owner = params.remove(0);
         } else {

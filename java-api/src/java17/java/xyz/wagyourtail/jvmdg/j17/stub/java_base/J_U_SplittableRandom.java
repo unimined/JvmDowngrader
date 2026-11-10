@@ -10,17 +10,14 @@ import java.util.stream.Stream;
 @JEP(356)
 public class J_U_SplittableRandom {
 
-    // the real member is covariant: SplittableRandom.split() returns a
-    // SplittableRandom, not the generator interface, so callers can keep
-    // chaining SplittableRandom members without an adapter round-trip
+    // split() (no-arg) is intentionally unstubbed: SplittableRandom.split()
+    // exists since Java 8, so calls resolve natively on all targets.
+    // split(source) below IS needed — but the real member is covariant:
+    // javac emits invoke* SplittableRandom.split(SG)SplittableRandom, not the
+    // (SG)SplittableGenerator bridge, so the stub must return SplittableRandom.
     @Stub
-    public static SplittableRandom split(SplittableRandom random) {
-        return random.split();
-    }
-
-    @Stub
-    public static J_U_R_RandomGenerator.SplittableGenerator split(SplittableRandom random, J_U_R_RandomGenerator.SplittableGenerator source) {
-        return new SplittableRandomGeneratorImpl(random).split(source);
+    public static SplittableRandom split(SplittableRandom random, J_U_R_RandomGenerator.SplittableGenerator source) {
+        return SplittableRandomGeneratorImpl.splitToSplittableRandom(source);
     }
 
     @Stub

@@ -316,25 +316,34 @@ public interface J_U_R_RandomGenerator {
     }
 
     default float nextFloat(float bound) {
-        if (bound <= 0) {
-            throw new IllegalArgumentException("bound must be positive");
+        // RandomSupport.checkBound: must be finite and positive (rejects NaN)
+        if (!(bound > 0.0f && bound < Float.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException("bound must be finite and positive");
         }
 
         float r = nextFloat();
         r = r * bound;
-        if (r >= bound) {
+        if (!(r < bound)) {
             r = Math.nextDown(bound);
         }
         return r;
     }
 
     default float nextFloat(float origin, float bound) {
-        if (origin >= bound) {
+        // RandomSupport.checkRange: also rejects a non-finite range width
+        if (!(origin < bound && (bound - origin) < Float.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException("bound must be greater than origin");
         }
         float r = nextFloat();
-        r = r * (bound - origin) + origin;
-        if (r >= bound) {
+        if (bound - origin < Float.POSITIVE_INFINITY) {
+            r = r * (bound - origin) + origin;
+        } else {
+            // matches jdk.internal.util.random.RandomSupport.boundedNextFloat:
+            // avoids overflowing (bound - origin) for extreme ranges
+            float halfOrigin = 0.5f * origin;
+            r = (r * (0.5f * bound - halfOrigin) + halfOrigin) * 2.0f;
+        }
+        if (!(r < bound)) {
             r = Math.nextDown(bound);
         }
         return r;
@@ -345,25 +354,31 @@ public interface J_U_R_RandomGenerator {
     }
 
     default double nextDouble(double bound) {
-        if (bound <= 0) {
-            throw new IllegalArgumentException("bound must be positive");
+        if (!(bound > 0.0 && bound < Double.POSITIVE_INFINITY)) {
+            throw new IllegalArgumentException("bound must be finite and positive");
         }
 
         double r = nextDouble();
         r = r * bound;
-        if (r >= bound) {
+        if (!(r < bound)) {
             r = Math.nextDown(bound);
         }
         return r;
     }
 
     default double nextDouble(double origin, double bound) {
-        if (origin >= bound) {
+        if (!(origin < bound && (bound - origin) < Double.POSITIVE_INFINITY)) {
             throw new IllegalArgumentException("bound must be greater than origin");
         }
         double r = nextDouble();
-        r = r * (bound - origin) + origin;
-        if (r >= bound) {
+        if (bound - origin < Double.POSITIVE_INFINITY) {
+            r = r * (bound - origin) + origin;
+        } else {
+            // avoids overflowing (bound - origin) for extreme ranges
+            double halfOrigin = 0.5 * origin;
+            r = (r * (0.5 * bound - halfOrigin) + halfOrigin) * 2.0;
+        }
+        if (!(r < bound)) {
             r = Math.nextDown(bound);
         }
         return r;
@@ -391,6 +406,9 @@ public interface J_U_R_RandomGenerator {
     }
 
     default int nextInt(int origin, int bound) {
+        if (!(origin < bound)) {
+            throw new IllegalArgumentException("bound must be greater than origin");
+        }
         int r = nextInt();
 
         if (origin < bound) {
@@ -461,21 +479,25 @@ public interface J_U_R_RandomGenerator {
     }
 
     default double nextGaussian() {
-        // Box-Muller: a correct standard-normal sample, matching the contract
-        // of RandomGenerator.nextGaussian (the JDK uses a ziggurat generator)
-        double r = nextDouble();
-        double a = nextDouble();
-        return Math.sqrt(-2.0 * Math.log(1.0 - r)) * Math.cos(2.0 * Math.PI * a);
+        // the JDK default draws via RandomSupport.computeNextGaussian
+        // (McFarland ziggurat) on nextLong() bits — match it exactly so
+        // seeded generators reproduce the native sequence
+        return xyz.wagyourtail.jvmdg.j17.impl.random.RandomSupport.computeNextGaussian(this);
     }
 
     default double nextGaussian(double mean, double stdDev) {
-        return mean + stdDev * nextGaussian();
+        if (stdDev < 0) {
+            throw new IllegalArgumentException("standard deviation must be non-negative");
+        }
+        // the JDK default calls computeNextGaussian(this) directly — not the
+        // overridable nextGaussian() — so overrides like Random's polar
+        // sampler are bypassed here
+        return mean + stdDev * xyz.wagyourtail.jvmdg.j17.impl.random.RandomSupport.computeNextGaussian(this);
     }
 
     default double nextExponential() {
-        // inverse-CDF on a uniform(0,1): -ln(1-U), matching the contract of
-        // RandomGenerator.nextExponential
-        return -Math.log(1.0 - nextDouble());
+        // RandomSupport.computeNextExponential, as above
+        return xyz.wagyourtail.jvmdg.j17.impl.random.RandomSupport.computeNextExponential(this);
     }
 
     @Adapter(value = "java/util/random/RandomGenerator$StreamableGenerator")
@@ -500,13 +522,18 @@ public interface J_U_R_RandomGenerator {
             throw new IllegalArgumentException("Unknown implementation: " + name);
         }
 
+        // invokeinterface dispatch: call owners are remapped to the fake
+        // type before stub lookup, so coerce param0 to the adapter type
+        // itself (Object keeps the signature distinct from the instance
+        // methods); receivers may arrive unwrapped (javac elides provable
+        // checkcasts) so always re-coerce before delegating
         @Stub(noSpecial = true)
-        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj) {
+        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(StreamableGenerator.class) Object obj) {
             return jvmdg$checkcast(obj).rngs();
         }
 
         @Stub(noSpecial = true)
-        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj, long limit) {
+        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(StreamableGenerator.class) Object obj, long limit) {
             return jvmdg$checkcast(obj).rngs(limit);
         }
 
@@ -544,42 +571,42 @@ public interface J_U_R_RandomGenerator {
         }
 
         @Stub(noSpecial = true)
-        static SplittableGenerator split(@Coerce(J_U_Random.class) Object obj) {
+        static SplittableGenerator split(@Coerce(SplittableGenerator.class) Object obj) {
             return jvmdg$checkcast(obj).split();
         }
 
         @Stub(noSpecial = true)
-        static SplittableGenerator split(@Coerce(J_U_Random.class) Object obj, SplittableGenerator source) {
+        static SplittableGenerator split(@Coerce(SplittableGenerator.class) Object obj, SplittableGenerator source) {
             return jvmdg$checkcast(obj).split(source);
         }
 
         @Stub(noSpecial = true)
-        static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj) {
+        static Stream<SplittableGenerator> splits(@Coerce(SplittableGenerator.class) Object obj) {
             return jvmdg$checkcast(obj).splits();
         }
 
         @Stub(noSpecial = true)
-        static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj, long size) {
+        static Stream<SplittableGenerator> splits(@Coerce(SplittableGenerator.class) Object obj, long size) {
             return jvmdg$checkcast(obj).splits(size);
         }
 
         @Stub(noSpecial = true)
-        static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj, SplittableGenerator source) {
+        static Stream<SplittableGenerator> splits(@Coerce(SplittableGenerator.class) Object obj, SplittableGenerator source) {
             return jvmdg$checkcast(obj).splits(source);
         }
 
         @Stub(noSpecial = true)
-        static Stream<SplittableGenerator> splits(@Coerce(J_U_Random.class) Object obj, long size, SplittableGenerator source) {
+        static Stream<SplittableGenerator> splits(@Coerce(SplittableGenerator.class) Object obj, long size, SplittableGenerator source) {
             return jvmdg$checkcast(obj).splits(size, source);
         }
 
         @Stub(noSpecial = true)
-        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj) {
+        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(SplittableGenerator.class) Object obj) {
             return jvmdg$checkcast(obj).rngs();
         }
 
         @Stub(noSpecial = true)
-        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(J_U_Random.class) Object obj, long limit) {
+        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(SplittableGenerator.class) Object obj, long limit) {
             return jvmdg$checkcast(obj).rngs(limit);
         }
 
