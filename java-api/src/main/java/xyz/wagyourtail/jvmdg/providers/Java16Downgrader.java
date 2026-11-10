@@ -11,9 +11,21 @@ import xyz.wagyourtail.jvmdg.j16.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.j16.stub.java_net_http.J_N_H_HttpRequest;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
 public class Java16Downgrader extends AllVersionDowngrader {
     public Java16Downgrader() {
         super(Opcodes.V16, Opcodes.V15, 0);
+    }
+
+    @Override
+    public Map<Type, Set<String>> enumExtensions() {
+        return Collections.singletonMap(
+            Type.getObjectType("java/net/StandardProtocolFamily"),
+            Collections.singleton("UNIX")
+        );
     }
 
     public void init() {

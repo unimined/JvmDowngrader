@@ -170,6 +170,16 @@ public abstract class VersionProvider {
 
     public abstract void init();
 
+    /**
+     * enum constants this provider wants injected eagerly — {@code Bootstrap}
+     * iterates loaded providers at premain (before any consumer code can
+     * observe the un-extended universe) and injects each declared constant.
+     * Keys are the real enum {@link Type}, values the constant names.
+     */
+    public Map<Type, Set<String>> enumExtensions() {
+        return Collections.emptyMap();
+    }
+
     public synchronized ClassMapping getStubMapper(final Type type, final Set<String> warnings) throws IOException {
         return getStubMapper(type, new IOSupplier<Boolean>() {
             @Override

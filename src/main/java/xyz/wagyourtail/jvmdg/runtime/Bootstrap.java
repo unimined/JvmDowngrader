@@ -1,12 +1,14 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
+import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
-import xyz.wagyourtail.jvmdg.stub.EnumExtension;
+import xyz.wagyourtail.jvmdg.stub.EnumExtender;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +24,9 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.jar.JarFile;
 
 public class Bootstrap {
@@ -107,11 +111,16 @@ public class Bootstrap {
         }
         // eagerly inject enum extensions (e.g. StandardProtocolFamily.UNIX)
         // before any consumer bytecode can observe the un-extended universe
-        for (EnumExtension extension : ServiceLoader.load(EnumExtension.class)) {
+        for (VersionProvider provider : ServiceLoader.load(VersionProvider.class)) {
             try {
-                extension.extend();
+                for (Map.Entry<Type, Set<String>> entry : provider.enumExtensions().entrySet()) {
+                    Class<?> enumClass = Class.forName(entry.getKey().getClassName());
+                    for (String member : entry.getValue()) {
+                        EnumExtender.extend(enumClass.asSubclass(Enum.class), member);
+                    }
+                }
             } catch (Throwable t) {
-                LOGGER.warn("failed to apply enum extension " + extension.getClass().getName(), t);
+                LOGGER.warn("failed to apply enum extensions for " + provider.getClass().getName(), t);
             }
         }
         LOGGER.info("JVMDowngrader Bootstrap agent loaded.");
