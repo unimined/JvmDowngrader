@@ -47,6 +47,9 @@ Stubs have several other fields that change their behavior:
   references to this method will not be replaced with the stub, and are handled specially as described below.
 * `requiresRuntime` indicates if the stub requires the JVMDowngrader runtime in order to work as intended,
   mostly for things like reflection and runtime class definition.
+* `excludeWithRuntime` is the inverse — the stub is *not* applied when the runtime agent is present. Used for
+  stubs that only exist to guarantee ordering under static/no-agent downgrades (e.g. the enum universe-reader
+  shadows below) where the agent has already fixed the underlying state eagerly.
 * `noSpecial` indicates that the stub should not be used for `INVOKESPECIAL` calls.
 * `downgradeVersion` adds an extra argument to the stub for the original version of the class, this is useful for
   multi-version stubs, such as reflection.
@@ -69,6 +72,52 @@ The `@Adapter` annotation is used to replace all references to a class with a di
 By default, it replaces the `value` class with the one it's annotated on, but it can be provided with a `target` class.
 there is also a `keepInterface` field, if the stub is an interface, it can optionally be completely removed from classes
 referencing it.
+
+### Enum Extension
+
+Some APIs add constants to *existing* JDK enums (e.g. JEP 380's `StandardProtocolFamily.UNIX`). A provider
+declares these by overriding `enumExtensions()`:
+
+```java
+@Override
+public Map<Class<? extends Enum<?>>, Set<String>> enumExtensions() {
+    Map<Class<? extends Enum<?>>, Set<String>> extensions = new LinkedHashMap<>();
+    extensions.put(StandardProtocolFamily.class, Collections.singleton("UNIX"));
+    return extensions;
+}
+```
+
+That single declaration drives everything — no stub class needs to be written:
+
+* `Bootstrap` premain eagerly calls `EnumExtender.extend` for each declared constant, injecting a **real**
+  enum constant into the universe (`values()`, `valueOf`, `switch`, `instanceof`, `EnumSet`/`EnumMap` and
+  serialization all behave natively).
+* A synthesized field stub rewrites `GETSTATIC enum.CONSTANT` to
+  `EnumExtender.extendAndGet(enumClass, member)` + a `checkcast` to the enum type (applied on every path —
+  injection adds the constant to the *universe*, not a static field, so the access must always be rewritten).
+* Synthesized `excludeWithRuntime` shadows of the universe readers (`values`, `valueOf`, `Enum.valueOf`,
+  `Class.getEnumConstants`, `EnumSet.noneOf`/`allOf`, `EnumMap.<init>`) inject before delegating, so static /
+  no-agent consumers can't observe a stale universe. Under the agent these emit the real calls since premain
+  already injected.
+
+For stub code that needs the constant, call `EnumExtender.extendAndGet(StandardProtocolFamily.class, "UNIX")`
+and cast — injection failure throws `UnsupportedOperationException` rather than returning a fake. For stub
+code that only needs to *recognize* a family/constant passed in, compare `name()` (see
+`UnixChannels.isUnixFamily`) — it works for the injected constant without touching the enum type.
+
+Known limits: `Class.getField("UNIX")` and `findStaticGetter` cannot see the constant (there is no field to
+reflect over), and JDK-internal enum materialization that happens before any covered entry point
+(deserialization, annotation parsing) may observe the stale universe.
+
+### Optional Dependencies
+
+A stub may delegate to a library that is only *optionally* on the consumer's classpath (e.g. junixsocket
+providing the AF_UNIX backend). The delegate class is annotated
+`@OptionalDependency(probes = {...}, name = ..., maven = "group:artifact")` and implements the delegate
+interface; `OptionalDelegate.get(name, Class)`/`get(Class)` returns the cached singleton or `null`, probing
+the named classes and instantiating under `catch(Throwable)` so a missing or broken library counts as absent.
+The api jar compiles delegates against `compileOnly` dependencies — the library is never shipped. Call sites
+should throw `UnsupportedOperationException` including the `maven` coordinate when the delegate is absent.
 
 ### RequiresResource
 
