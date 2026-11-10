@@ -23,8 +23,8 @@ allprojects {
     metadata {
         url.set("https://github.com/unimined/JvmDowngrader")
         license {
-            shortName.set("LGPL-2.1")
-            fullName.set("GNU Lesser General Public License v2.1")
+            shortName.set("LGPL-2.1-or-later")
+            fullName.set("GNU Lesser General Public License v2.1 or later")
             url.set("https://www.gnu.org/licenses/lgpl-2.1.html")
         }
         organization {

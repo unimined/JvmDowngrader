@@ -263,7 +263,8 @@ loader.addDelegate(new URL[]{new File("jarname.jar").toURI().toURL()});
 
 ## License
 
-JvmDowngrader is licensed under the [GNU Lesser General Public License v2.1](LICENSE.md).
+JvmDowngrader is licensed under the [GNU Lesser General Public License v2.1](LICENSE.md) or
+(at your option) any later version.
 
 ### LGPLv2.1 License Concerns
 
