@@ -231,8 +231,6 @@ public class PathDowngrader {
                         Files.copy(copies.get(rel), p, StandardCopyOption.REPLACE_EXISTING);
                     }
                 }
-                OutputUtils.pinTimestamps(out);
-
                 // inputs without a manifest still need one when multi-release
                 // output was requested, or the JVM ignores META-INF/versions
                 if (ManifestUtils.needsMultiRelease(downgrader.flags)) {
@@ -247,9 +245,12 @@ public class PathDowngrader {
                         try (OutputStream os = Files.newOutputStream(mfPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
                             manifest.write(os);
                         }
-                        Files.setLastModifiedTime(mfPath, OutputUtils.FIXED_TIME);
                     }
                 }
+
+                // pin after every write — including the synthesized manifest
+                // and its META-INF dir above — so no entry keeps wall-clock time
+                OutputUtils.pinTimestamps(out);
             }
         } catch (ExecutionException | InterruptedException | URISyntaxException e) {
             throw new RuntimeException(e);

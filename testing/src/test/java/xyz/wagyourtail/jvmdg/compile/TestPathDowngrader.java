@@ -142,6 +142,10 @@ public class TestPathDowngrader {
 
         byte[][] hashes = new byte[2][];
         for (int i = 0; i < 2; i++) {
+            // straddle the 2s DOS-time granularity so an unpinned timestamp
+            // (mtime/atime/ctime) in any output entry fails deterministically
+            // instead of only when the two writes happen to cross a boundary
+            if (i == 1) Thread.sleep(3000);
             Path out = dir.resolve("out" + i + ".jar");
             Flags f = flags();
             try (ClassDowngrader d = ClassDowngrader.downgradeTo(f);

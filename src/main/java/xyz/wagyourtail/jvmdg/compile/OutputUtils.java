@@ -5,6 +5,7 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 
@@ -32,7 +33,7 @@ public final class OutputUtils {
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                Files.setLastModifiedTime(file, FIXED_TIME);
+                pinTimestamp(file);
                 return FileVisitResult.CONTINUE;
             }
 
@@ -40,10 +41,25 @@ public final class OutputUtils {
             public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
                 if (exc != null) throw exc;
                 if (dir.getNameCount() == 0) return FileVisitResult.CONTINUE; // zipfs root has no entry
-                Files.setLastModifiedTime(dir, FIXED_TIME);
+                pinTimestamp(dir);
                 return FileVisitResult.CONTINUE;
             }
 
         });
+    }
+
+    /**
+     * Pins all three timestamps of {@code path} to {@link #FIXED_TIME}.
+     * {@code mtime} alone is insufficient — zipfs also emits {@code atime}
+     * and {@code ctime} in entry extra fields, so a single
+     * {@link Files#setLastModifiedTime} still leaks wall-clock time into
+     * the output zip's bytes.
+     *
+     * @param path entry to pin
+     * @throws IOException if a timestamp cannot be set
+     */
+    public static void pinTimestamp(Path path) throws IOException {
+        Files.getFileAttributeView(path, BasicFileAttributeView.class)
+            .setTimes(FIXED_TIME, FIXED_TIME, FIXED_TIME);
     }
 }
