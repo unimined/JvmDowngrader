@@ -69,6 +69,10 @@ dependencies {
     implementation(project(":"))
 
     implementation(rootProject.sourceSets.getByName("shared").output)
+
+    // "when present" backends — compile-only so the api jar stays dependency-free;
+    // runtime availability is probed via @OptionalDependency/OptionalDelegate
+    compileOnly(libs.junixsocket.core)
 }
 
 for (vers in fromVersion..toVersion) {

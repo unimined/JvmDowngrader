@@ -31,6 +31,7 @@ public class Java15Downgrader extends AllVersionDowngrader {
         stub(J_L_I_ConstantBootstraps.class);
         stub(J_L_I_MethodHandles$Lookup.class);
         stub(J_L_I_MethodHandles$Lookup.ClassOption.class);
+        stub(J_N_C_S_SelectorProvider.class);
         stub(J_N_C_ServerSocketChannel.class);
         stub(J_N_C_SocketChannel.class);
         // EdECKey

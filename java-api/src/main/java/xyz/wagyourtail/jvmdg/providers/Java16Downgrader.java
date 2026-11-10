@@ -29,8 +29,10 @@ public class Java16Downgrader extends AllVersionDowngrader {
         stub(J_L_R_RecordComponent.class);
         stub(J_N_ByteBuffer.class);
         stub(J_L_R_ObjectMethods.class);
-        // StandardProtocolFamily
-        // UnixDomainSocketAddress
+        stub(J_N_C_DatagramChannel.class);
+        stub(J_N_C_S_SelectorProvider.class);
+        stub(J_N_StandardProtocolFamily.class);
+        stub(J_N_UnixDomainSocketAddress.class);
         // MGF1ParameterSpec
         // DateTimeFormatterBuilder
         // IllegalFormatArgumentIndexException
