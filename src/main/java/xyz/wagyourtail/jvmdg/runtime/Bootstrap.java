@@ -5,6 +5,7 @@ import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
+import xyz.wagyourtail.jvmdg.stub.EnumExtension;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
@@ -21,6 +22,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.jar.JarFile;
 
 public class Bootstrap {
@@ -102,6 +104,15 @@ public class Bootstrap {
         } else {
             LOGGER.info("CodeSource is modifiable, attempting to retransform it to fix code signing.");
             instrumentation.retransformClasses(CodeSource.class);
+        }
+        // eagerly inject enum extensions (e.g. StandardProtocolFamily.UNIX)
+        // before any consumer bytecode can observe the un-extended universe
+        for (EnumExtension extension : ServiceLoader.load(EnumExtension.class)) {
+            try {
+                extension.extend();
+            } catch (Throwable t) {
+                LOGGER.warn("failed to apply enum extension " + extension.getClass().getName(), t);
+            }
         }
         LOGGER.info("JVMDowngrader Bootstrap agent loaded.");
     }

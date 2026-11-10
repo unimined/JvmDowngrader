@@ -208,6 +208,11 @@ public class ClassMapping {
                 if (newMin.getSecond().downgradeVersion()) {
                     insnList.add(new LdcInsnNode(vp.inputVersion));
                 }
+                if (!newMin.getSecond().extendEnum().isEmpty()) {
+                    // push the extended enum Class + constant name as trailing args
+                    insnList.add(new LdcInsnNode(Type.getType(newMin.getSecond().extendEnum())));
+                    insnList.add(new LdcInsnNode(newMin.getSecond().extendEnumMember()));
+                }
                 Method m = newMin.getFirst();
                 insnList.add(new MethodInsnNode(
                     Opcodes.INVOKESTATIC,
@@ -328,6 +333,9 @@ public class ClassMapping {
                 }
             }
             Method m = pair.getFirst();
+            if (runtimeAvailable && pair.getSecond().excludeWithRuntime()) {
+                return null;
+            }
             if (!runtimeAvailable && pair.getSecond().requiresRuntime()) {
                 warnings.add(m + " requires runtime transformation but runtime is not available...");
             }

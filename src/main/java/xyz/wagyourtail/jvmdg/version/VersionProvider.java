@@ -8,6 +8,7 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.asm.AnnotationUtils;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.logging.Logger;
+import xyz.wagyourtail.jvmdg.stub.EnumExtender;
 import xyz.wagyourtail.jvmdg.stub.all.RemovedInterfaces;
 import xyz.wagyourtail.jvmdg.util.*;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 public abstract class VersionProvider {
@@ -351,6 +353,14 @@ public abstract class VersionProvider {
                 logger.warn("failed to resolve methods for " + clazz.getName(), e);
             }
             try {
+                ExtendEnum extendEnum = clazz.getAnnotation(ExtendEnum.class);
+                if (extendEnum != null) {
+                    registerEnumExtension(clazz, extendEnum, warnings);
+                }
+            } catch (Throwable e) {
+                logger.warn("failed to create enum extension stub for " + clazz.getName(), e);
+            }
+            try {
                 // inner classes
                 for (Class<?> inner : clazz.getDeclaredClasses()) {
                     stub(inner);
@@ -369,6 +379,138 @@ public abstract class VersionProvider {
             }
             logger.warn("Warnings for " + clazz.getName() + " (" + warnings.size() + ") : \n" + sb);
         }
+    }
+
+    /**
+     * Wire an {@link ExtendEnum}-annotated fake enum: a field stub for the
+     * missing constant (dispatched to the convention getter on the class) plus
+     * inject-then-delegate shadows for the enum-universe readers, synthesized
+     * as {@code excludeWithRuntime} stubs on {@link EnumExtender}'s generic
+     * helpers (the transformer pushes the enum class + constant name).
+     */
+    private void registerEnumExtension(Class<?> clazz, ExtendEnum extendEnum, Set<String> warnings) throws Exception {
+        Ref ref = extendEnum.value();
+        Type enumType = Type.getType(ref.value());
+        String enumDesc = enumType.getDescriptor();
+        String member = ref.member();
+
+        // field stub — convention: static method named lowercase(member)
+        String getterName = member.toLowerCase(Locale.ROOT);
+        Method getter = null;
+        for (Method m : clazz.getDeclaredMethods()) {
+            if (m.getName().equals(getterName) && Modifier.isStatic(m.getModifiers())) {
+                getter = m;
+                break;
+            }
+        }
+        if (getter == null) {
+            throw new IllegalStateException("@ExtendEnum class " + clazz.getName()
+                + " declares no static getter method " + getterName + "()");
+        }
+        getStubMapper(enumType, warnings).addStub(
+            new MemberNameAndDesc(member, Type.getType(ref.desc())), getter, synthStub("", "", false));
+
+        // universe-reader shadows — inject before delegate; skipped under the
+        // runtime agent (premain already extended the enum)
+        Stub readerStub = synthStub(enumDesc, member, true);
+        Class<?> ext = EnumExtender.class;
+        getStubMapper(enumType, warnings).addStub(
+            new MemberNameAndDesc("values", Type.getMethodType("()[" + enumDesc)),
+            ext.getDeclaredMethod("values", Class.class, String.class), readerStub);
+        getStubMapper(enumType, warnings).addStub(
+            new MemberNameAndDesc("valueOf", Type.getMethodType("(Ljava/lang/String;)" + enumDesc)),
+            ext.getDeclaredMethod("valueOf", String.class, Class.class, String.class), readerStub);
+        getStubMapper(Type.getObjectType("java/lang/Enum"), warnings).addStub(
+            new MemberNameAndDesc("valueOf", Type.getMethodType("(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Enum;")),
+            ext.getDeclaredMethod("enumValueOf", Class.class, String.class, Class.class, String.class), readerStub);
+        getStubMapper(Type.getObjectType("java/lang/Class"), warnings).addStub(
+            new MemberNameAndDesc("getEnumConstants", Type.getMethodType("()[Ljava/lang/Object;")),
+            ext.getDeclaredMethod("getEnumConstants", Class.class, Class.class, String.class), readerStub);
+        getStubMapper(Type.getObjectType("java/util/EnumSet"), warnings).addStub(
+            new MemberNameAndDesc("noneOf", Type.getMethodType("(Ljava/lang/Class;)Ljava/util/EnumSet;")),
+            ext.getDeclaredMethod("enumSetNoneOf", Class.class, Class.class, String.class), readerStub);
+        getStubMapper(Type.getObjectType("java/util/EnumSet"), warnings).addStub(
+            new MemberNameAndDesc("allOf", Type.getMethodType("(Ljava/lang/Class;)Ljava/util/EnumSet;")),
+            ext.getDeclaredMethod("enumSetAllOf", Class.class, Class.class, String.class), readerStub);
+        getStubMapper(Type.getObjectType("java/util/EnumMap"), warnings).addStub(
+            new MemberNameAndDesc("<init>", Type.getMethodType("(Ljava/lang/Class;)V")),
+            ext.getDeclaredMethod("enumMap", Class.class, Class.class, String.class), readerStub);
+    }
+
+    private static final Ref EMPTY_REF = new Ref() {
+        @Override
+        public Class<? extends java.lang.annotation.Annotation> annotationType() {
+            return Ref.class;
+        }
+
+        @Override
+        public String value() {
+            return "";
+        }
+
+        @Override
+        public String member() {
+            return "";
+        }
+
+        @Override
+        public String desc() {
+            return "";
+        }
+    };
+
+    private static Stub synthStub(final String extendEnum, final String extendEnumMember, final boolean excludeWithRuntime) {
+        return new Stub() {
+            @Override
+            public Class<? extends java.lang.annotation.Annotation> annotationType() {
+                return Stub.class;
+            }
+
+            @Override
+            public Ref ref() {
+                return EMPTY_REF;
+            }
+
+            @Override
+            public boolean downgradeVersion() {
+                return false;
+            }
+
+            @Override
+            public boolean requiresRuntime() {
+                return false;
+            }
+
+            @Override
+            public boolean excludeWithRuntime() {
+                return excludeWithRuntime;
+            }
+
+            @Override
+            public String extendEnum() {
+                return extendEnum;
+            }
+
+            @Override
+            public String extendEnumMember() {
+                return extendEnumMember;
+            }
+
+            @Override
+            public boolean abstractDefault() {
+                return false;
+            }
+
+            @Override
+            public boolean noSpecial() {
+                return false;
+            }
+
+            @Override
+            public String[] excludeChild() {
+                return new String[0];
+            }
+        };
     }
 
     public MethodInsnNode stubTypeInsnNode(TypeInsnNode insn, Set<String> warnings) {
