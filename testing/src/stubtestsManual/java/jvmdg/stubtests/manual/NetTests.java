@@ -2,6 +2,7 @@ package jvmdg.stubtests.manual;
 
 import jvmdg.stubtests.StubTest;
 import jvmdg.stubtests.Support;
+import xyz.wagyourtail.jvmdg.version.Ref;
 
 /** Hand-written parity tests for members the generator cannot synthesize. */
 public final class NetTests {
@@ -10,7 +11,8 @@ public final class NetTests {
     }
 
     /** URLStreamHandler is an abstract class — no lambda or alias synthesis. */
-    @StubTest(member = "java/net/URL.of(Ljava/net/URI;Ljava/net/URLStreamHandler;)Ljava/net/URL;")
+    @StubTest(member = @Ref(value = "java/net/URL", member = "of",
+        desc = "(Ljava/net/URI;Ljava/net/URLStreamHandler;)Ljava/net/URL;"))
     public static void urlOf(String id) {
         try {
             java.net.URL u = java.net.URL.of(java.net.URI.create("http://localhost/a"),
@@ -27,8 +29,9 @@ public final class NetTests {
     }
 
     /** [modify]-kind ctor whose factory arg is unsynthesizable. */
-    @StubTest(member = "java/net/URLClassLoader.<init>(Ljava/lang/String;[Ljava/net/URL;"
-        + "Ljava/lang/ClassLoader;Ljava/net/URLStreamHandlerFactory;)V")
+    @StubTest(member = @Ref(value = "java/net/URLClassLoader", member = "<init>",
+        desc = "(Ljava/lang/String;[Ljava/net/URL;Ljava/lang/ClassLoader;"
+            + "Ljava/net/URLStreamHandlerFactory;)V"))
     public static void urlClassLoader(String id) {
         try {
             java.net.URLClassLoader cl = new java.net.URLClassLoader("x", new java.net.URL[0],
@@ -41,7 +44,8 @@ public final class NetTests {
     }
 
     /** HttpResponse has no synthesizable receiver — fabricate one anonymously. */
-    @StubTest(member = "java/net/http/HttpResponse.connectionLabel()Ljava/util/Optional;")
+    @StubTest(member = @Ref(value = "java/net/http/HttpResponse",
+        member = "connectionLabel", desc = "()Ljava/util/Optional;"))
     public static void connectionLabel(String id) {
         try {
             java.net.http.HttpResponse<Object> r = new java.net.http.HttpResponse<Object>() {

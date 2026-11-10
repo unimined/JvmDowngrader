@@ -2,6 +2,7 @@ package jvmdg.stubtests.manual;
 
 import jvmdg.stubtests.StubTest;
 import jvmdg.stubtests.Support;
+import xyz.wagyourtail.jvmdg.version.Ref;
 
 /** Parity tests for module-descriptor members with no reachable receiver. */
 public final class ModuleTests {
@@ -10,7 +11,8 @@ public final class ModuleTests {
     }
 
     /** Exports instances only exist inside a built ModuleDescriptor. */
-    @StubTest(member = "java/lang/module/ModuleDescriptor$Exports.accessFlags()Ljava/util/Set;")
+    @StubTest(member = @Ref(value = "java/lang/module/ModuleDescriptor$Exports",
+        member = "accessFlags", desc = "()Ljava/util/Set;"))
     public static void exportsAccessFlags(String id) {
         try {
             java.lang.module.ModuleDescriptor.Exports e =
@@ -23,7 +25,8 @@ public final class ModuleTests {
     }
 
     /** The implicit java.base Requires is always present on a built module. */
-    @StubTest(member = "java/lang/module/ModuleDescriptor$Requires.accessFlags()Ljava/util/Set;")
+    @StubTest(member = @Ref(value = "java/lang/module/ModuleDescriptor$Requires",
+        member = "accessFlags", desc = "()Ljava/util/Set;"))
     public static void requiresAccessFlags(String id) {
         try {
             java.lang.module.ModuleDescriptor.Requires r =

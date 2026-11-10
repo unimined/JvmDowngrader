@@ -583,6 +583,20 @@ public class Main {
     // package-private: private would force a synthetic nestmate accessor on
     // downgraded jars, leaking an extra frame into stack walks
     void invokeMain(Class<?> clazz, String[] bootstrapArgs) throws Throwable {
+        // match `java -cp` semantics: the TCCL of the thread running main is
+        // the app's classloader, so ServiceLoader.load / resource lookups see
+        // the downgraded classpath (a plain launcher sets it to the app loader)
+        Thread thread = Thread.currentThread();
+        ClassLoader prevTccl = thread.getContextClassLoader();
+        thread.setContextClassLoader(clazz.getClassLoader());
+        try {
+            invokeMainImpl(clazz, bootstrapArgs);
+        } finally {
+            thread.setContextClassLoader(prevTccl);
+        }
+    }
+
+    void invokeMainImpl(Class<?> clazz, String[] bootstrapArgs) throws Throwable {
 //        0. A public static void main(String[] args) method
 //        1. A static void main(String[] args) method of non-private access (i.e., public, protected or package) declared in the launched class,
 //        2. A static void main() method of non-private access declared in the launched class,

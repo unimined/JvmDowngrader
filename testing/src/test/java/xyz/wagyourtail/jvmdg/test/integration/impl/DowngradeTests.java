@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class DowngradeTests extends BaseIntegrationTests {
     private static final String DOWNGRADE_PATH = "jvmdg.test.downgradePath";
     private static final Path original = Path.of(System.getProperty(DOWNGRADE_PATH));
-    private static final String BATCH_MAIN = "xyz.wagyourtail.downgradetest.BatchMain";
+    private static final String BATCH_MAIN = "jvmdg.featuretests.BatchMain";
     private static final Map<String, Map.Entry<Integer, String>> originalResults = new ConcurrentHashMap<>();
     private static final String[] args = new String[]{
         "arg1",
@@ -144,7 +144,7 @@ public class DowngradeTests extends BaseIntegrationTests {
     // run on the driver thread before the parallel phase — see "++" in
     // BatchMain and --seqmain in cli.Main
     private static final Set<String> SEQUENTIAL_MAINS = Set.of(
-        "xyz.wagyourtail.downgradetest.TestProcessHandle"
+        "jvmdg.featuretests.manual.ProcessTests"
     );
 
     private static String[] batchArgs(List<String> mains) {
@@ -157,7 +157,11 @@ public class DowngradeTests extends BaseIntegrationTests {
         if (!all.isEmpty()) {
             all.add("++");
         }
-        all.addAll(mains);
+        for (String main : mains) {
+            if (!SEQUENTIAL_MAINS.contains(main)) {
+                all.add(main);
+            }
+        }
         all.add("--");
         Collections.addAll(all, args);
         return all.toArray(new String[0]);
@@ -294,7 +298,7 @@ public class DowngradeTests extends BaseIntegrationTests {
                 Path target = getShadedPath(flags);
                 ApiShader.shadeApis(
                     flags.flags(),
-                    "downgradetest",
+                    "featuretests",
                     getDowngradedJar(flags).toFile(),
                     target.toFile(),
                     Set.of(getApiJar(flags).toFile())

@@ -1,6 +1,4 @@
-import com.sun.imageio.plugins.jpeg.JPEG.vendor
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import sun.jvmstat.monitor.MonitoredVmUtil.jvmArgs
 import xyz.wagyourtail.jvmdg.util.rangeTo
 
 plugins {
@@ -41,6 +39,94 @@ dependencies {
 
 val testTargetVersion = JavaVersion.toVersion(project.findProperty("testTargetVersion") as String)
 
+sourceSets {
+    // checked-in manual stub-parity corpus: Support/StubTest +
+    // jvmdg.stubtests.manual.* tests. Compiles ahead of generation so the
+    // generator can reflect @StubTest methods into the emitted Index, and
+    // lands in stubtests.jar alongside generated code.
+    create("stubtestsManual")
+    // real-program fixture corpus (jvmdg.featuretests.*): whole programs with
+    // real main() entry points, downgraded + shaded end-to-end and diffed
+    // against native runs. Modular — module-info exercises module handling.
+    // Compiles at full testVersion since it exercises newest javac features.
+    create("featuretests")
+    // multi-release fixture: version-gated mains (*J<N>) run on launchers >= N
+    // for multiReleaseOriginal/multiReleaseVersions/downgradeFromMultiReleases
+    // flag coverage. Kept out of the corpus jar since those mains are
+    // intentionally broken below their version.
+    create("multiVersion")
+}
+
+val stubtestsManual = sourceSets["stubtestsManual"]
+
+// manual corpus references @Ref (src/shared) for stub-member keys
+stubtestsManual.compileClasspath += files(rootProject.sourceSets["shared"].output)
+stubtestsManual.runtimeClasspath += files(rootProject.sourceSets["shared"].output)
+
+val featuretests = sourceSets["featuretests"]
+val multiVersion = sourceSets["multiVersion"]
+
+// module-info requires xyz.wagyourtail.jvmdg.testing.main (testing's own main
+// output, for @TestMain discovery) on the module path
+featuretests.compileClasspath += files(sourceSets["main"].output)
+featuretests.runtimeClasspath += files(sourceSets["main"].output)
+
+// woven fixture classes javac can't emit (ldc condy, nested condy in bsmArgs)
+// are generated as .class files and put on the featuretests compile classpath
+// so javac resolves CondyWoven references; they land in featuretests.jar too
+val featureClassesDir = layout.buildDirectory.dir("generated/featureClasses")
+
+val generateFeatureClasses = tasks.register<JavaExec>("generateFeatureClasses") {
+    group = "verification"
+    description = "Emits woven feature-corpus classes (condy) as .class files"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("xyz.wagyourtail.jvmdg.test.corpusgen.FeatureCorpusGenerator")
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(testVersion.majorVersion))
+        vendor.set(JvmVendorSpec.AZUL)
+    })
+    args(featureClassesDir.get().asFile.absolutePath, testVersion.majorVersion)
+    outputs.dir(featureClassesDir)
+}
+
+tasks.named<JavaCompile>("compileFeaturetestsJava") {
+    dependsOn(generateFeatureClasses)
+    options.release.set(testVersion.majorVersion.toInt())
+    options.encoding = "UTF-8"
+    options.compilerArgs.addAll(listOf(
+        "-nowarn",
+        // graft generated woven classes (CondyWoven) into this module —
+        // classpath entries are unreadable when compiling module-info
+        "--patch-module=xyz.wagyourtail.jvmdg.testing.downgrade.main=${featureClassesDir.get().asFile.absolutePath}"
+    ))
+}
+
+tasks.named<JavaCompile>("compileMultiVersionJava") {
+    options.release.set(testVersion.majorVersion.toInt())
+    options.encoding = "UTF-8"
+    options.compilerArgs.add("-nowarn")
+}
+
+val featureJar = tasks.register<Jar>("featureJar") {
+    group = "verification"
+    description = "Packages the real-program feature-corpus fixture jar"
+    dependsOn("compileFeaturetestsJava")
+    from(featuretests.output)
+    from(featureClassesDir)
+    archiveFileName.set("featuretests.jar")
+    destinationDirectory.set(layout.buildDirectory.dir("libs"))
+}
+
+val multiVersionJar = tasks.register<Jar>("multiVersionJar") {
+    group = "verification"
+    description = "Packages the multi-release fixture jar"
+    dependsOn("compileMultiVersionJava")
+    from(multiVersion.output)
+    archiveFileName.set("multi-version.jar")
+    destinationDirectory.set(layout.buildDirectory.dir("libs"))
+}
+
 // stub-parity corpus: enumerate registered stub members and emit real call
 // sites. Generation parses the running JVM's runtime classes through ASM, and
 // generated sources must compile at the same release they were enumerated on,
@@ -48,24 +134,9 @@ val testTargetVersion = JavaVersion.toVersion(project.findProperty("testTargetVe
 val stubSourceMajor = minOf(testVersion.majorVersion.toInt(), 28)
 val stubtestsSrcDir = layout.buildDirectory.dir("generated/stubtests")
 val stubtestsClasses = layout.buildDirectory.dir("classes/stubtests")
-val stubtestsManualClasses = layout.buildDirectory.dir("classes/stubtests-manual")
 val stubtestsReports = layout.buildDirectory.dir("reports/stubtests")
 
-// checked-in manual corpus: Support/StubTest + jvmdg.stubtests.manual.* tests.
-// Compiles ahead of generation so the generator can reflect @StubTest methods
-// into the emitted Index, and lands in stubtests.jar alongside generated code.
-val compileStubTestsManual = tasks.register<JavaCompile>("compileStubTestsManual") {
-    group = "verification"
-    description = "Compiles checked-in stub-parity support and manual tests"
-    source = fileTree("src/stubtestsManual/java") {
-        include("**/*.java")
-    }
-    classpath = files()
-    destinationDirectory.set(stubtestsManualClasses)
-    javaCompiler.set(javaToolchains.compilerFor {
-        languageVersion.set(JavaLanguageVersion.of(stubSourceMajor))
-        vendor.set(JvmVendorSpec.AZUL)
-    })
+tasks.named<JavaCompile>("compileStubtestsManualJava") {
     options.release.set(stubSourceMajor)
     options.encoding = "UTF-8"
     options.compilerArgs.add("-nowarn")
@@ -74,8 +145,8 @@ val compileStubTestsManual = tasks.register<JavaCompile>("compileStubTestsManual
 val generateStubTests = tasks.register<JavaExec>("generateStubTests") {
     group = "verification"
     description = "Enumerates registered stub members and emits per-owner call sites + Index"
-    dependsOn(tasks.testClasses, compileStubTestsManual)
-    classpath = sourceSets["test"].runtimeClasspath + files(stubtestsManualClasses)
+    dependsOn(tasks.testClasses, "compileStubtestsManualJava")
+    classpath = sourceSets["test"].runtimeClasspath + stubtestsManual.output
     mainClass.set("xyz.wagyourtail.jvmdg.test.stubgen.StubTestGenerator")
     javaLauncher.set(javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of(stubSourceMajor))
@@ -84,7 +155,7 @@ val generateStubTests = tasks.register<JavaExec>("generateStubTests") {
     args(
         stubtestsSrcDir.get().asFile.absolutePath,
         stubtestsReports.get().asFile.absolutePath,
-        stubtestsManualClasses.get().asFile.absolutePath
+        stubtestsManual.output.classesDirs.singleFile.absolutePath
     )
     outputs.dir(stubtestsSrcDir)
     outputs.dir(stubtestsReports)
@@ -107,11 +178,11 @@ val generateStubTests = tasks.register<JavaExec>("generateStubTests") {
 val compileStubTests = tasks.register<JavaCompile>("compileStubTests") {
     group = "verification"
     description = "Compiles the generated stub-parity call sites"
-    dependsOn(generateStubTests, compileStubTestsManual)
+    dependsOn(generateStubTests, "compileStubtestsManualJava")
     source = fileTree(stubtestsSrcDir) {
         include("**/*.java")
     }
-    classpath = files(stubtestsManualClasses)
+    classpath = files(stubtestsManual.output)
     destinationDirectory.set(stubtestsClasses)
     javaCompiler.set(javaToolchains.compilerFor {
         languageVersion.set(JavaLanguageVersion.of(stubSourceMajor))
@@ -127,7 +198,7 @@ val stubtestsJar = tasks.register<Jar>("stubtestsJar") {
     description = "Packages the stub-parity corpus jar"
     dependsOn(compileStubTests)
     from(stubtestsClasses)
-    from(stubtestsManualClasses)
+    from(stubtestsManual.output)
     archiveFileName.set("stubtests.jar")
     destinationDirectory.set(layout.buildDirectory.dir("libs"))
 }
@@ -145,8 +216,8 @@ tasks.test {
     useJUnitPlatform()
 
     dependsOn(
-        project(":testing:downgrade").tasks.build,
-        project(":testing:multi-version").tasks.build,
+        featureJar,
+        multiVersionJar,
         project(":java-api").tasks.named("testJar"),
         rootProject.tasks.named("shadowJar"), // -all agent jar for -javaagent tests
         stubtestsJar
@@ -166,10 +237,8 @@ tasks.test {
             "-Djvmdg.test.javaVersion=${versions.keys.joinToString(File.pathSeparator) { it.majorVersion }}",
             "-Djvmdg.test.launcher=${versions.values.joinToString(File.pathSeparator)}",
             "-Djvmdg.test.downgradeClasspath=${rootProject.sourceSets["shared"].compileClasspath.joinToString(File.pathSeparator) { it.absolutePath }}",
-            "-Djvmdg.test.downgradePath=${
-                project(":testing:downgrade").tasks.named("annotationASMJar").get().outputs.files.singleFile.absolutePath
-            }",
-            "-Djvmdg.test.multiVersionPath=${project(":testing:multi-version").tasks.jar.get().outputs.files.singleFile.absolutePath}",
+            "-Djvmdg.test.downgradePath=${featureJar.get().archiveFile.get().asFile.absolutePath}",
+            "-Djvmdg.test.multiVersionPath=${multiVersionJar.get().archiveFile.get().asFile.absolutePath}",
             "-Djvmdg.test.stubPath=${stubtestsJar.get().archiveFile.get().asFile.absolutePath}",
             "-Djvmdg.test.javaApiPath=${
                 project(":java-api").tasks.named("testJar").get().outputs.files.singleFile.absolutePath

@@ -1,5 +1,7 @@
 package jvmdg.stubtests;
 
+import xyz.wagyourtail.jvmdg.version.Ref;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -21,10 +23,14 @@ import java.lang.annotation.Target;
 public @interface StubTest {
 
     /**
-     * Registered stub-member key this test covers, in {@code index.txt} format:
-     * {@code <internal-owner>.<name><desc>}, e.g.
-     * {@code java/lang/Runtime.version()Ljava/lang/Runtime$Version;}.
-     * Empty when the test covers cross-cutting behavior rather than one member.
+     * Registered stub member this test covers, as a {@link Ref} triple —
+     * {@code value} is the internal owner name, {@code member} the member
+     * name, {@code desc} the descriptor — e.g.
+     * {@code @Ref(value = "java/lang/Runtime", member = "version", desc = "()Ljava/lang/Runtime$Version;")}.
+     * This is the same shape {@code @Stub}/{@code @Adapter} use and parses
+     * through {@code FullyQualifiedMemberNameAndDesc.of(Ref)}. The default
+     * (all-empty) {@code @Ref} means the test covers cross-cutting behavior
+     * rather than one member.
      */
-    String member() default "";
+    Ref member() default @Ref;
 }

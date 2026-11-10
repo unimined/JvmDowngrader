@@ -24,7 +24,9 @@ public class J_L_Thread {
 
     @Stub(ref = @Ref("java/lang/Thread"))
     public static Thread startVirtualThread(Runnable runnable) {
-        return new FakeVirtualThread(runnable, new Thread().getName(), true);
+        FakeVirtualThread thread = new FakeVirtualThread(runnable, new Thread().getName(), true);
+        thread.start();
+        return thread;
     }
 
     @Stub

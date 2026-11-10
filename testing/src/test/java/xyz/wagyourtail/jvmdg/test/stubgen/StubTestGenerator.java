@@ -5,8 +5,10 @@ import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
+import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.File;
@@ -1318,14 +1320,29 @@ public class StubTestGenerator {
         return out;
     }
 
-    /** returns the {@code @StubTest.member} value, or null when not annotated */
+    /**
+     * Returns the canonical {@code <owner>.<name><desc>} key for
+     * {@code @StubTest.member}, or null when not annotated. The annotation
+     * carries a {@link Ref} triple; canonicalizing through
+     * {@link FullyQualifiedMemberNameAndDesc} accepts both
+     * {@code Ljava/lang/X;} and {@code java/lang/X} owner forms.
+     */
     private static String stubTestMember(Method m) {
         for (java.lang.annotation.Annotation a : m.getDeclaredAnnotations()) {
             if (a.annotationType().getName().equals("jvmdg.stubtests.StubTest")) {
                 try {
-                    return (String) a.annotationType().getMethod("member").invoke(a);
+                    Ref ref = (Ref) a.annotationType().getMethod("member").invoke(a);
+                    if (ref.value().isEmpty()) {
+                        return "";
+                    }
+                    FullyQualifiedMemberNameAndDesc f = FullyQualifiedMemberNameAndDesc.of(ref);
+                    if (f.getName() == null) {
+                        return "";
+                    }
+                    return f.getOwner().getInternalName() + "." + f.getName() + f.getDesc().getDescriptor();
                 } catch (Exception ex) {
-                    return "";
+                    throw new IllegalStateException(
+                        "malformed @StubTest member on " + m.getDeclaringClass().getName() + "." + m.getName(), ex);
                 }
             }
         }

@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.runtime;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
@@ -42,14 +43,22 @@ public class Bootstrap {
         for (int i = 0; i < classpath.length; i++) {
             cp[i] = new File(classpath[i]).toURI().toURL();
         }
-        currentVersionDowngrader.getClassLoader().addDelegate(cp);
+        DowngradingClassLoader appLoader = currentVersionDowngrader.getClassLoader();
+        appLoader.addDelegate(cp);
+        // match `java -cp` semantics: TCCL is the loader that loads the app,
+        // so ServiceLoader.load / resource lookups see the downgraded classpath
+        Thread thread = Thread.currentThread();
+        ClassLoader prevTccl = thread.getContextClassLoader();
+        thread.setContextClassLoader(appLoader);
         try {
-            Class.forName(mainClass, false, currentVersionDowngrader.getClassLoader()).getMethod("main", String[].class).invoke(
+            Class.forName(mainClass, false, appLoader).getMethod("main", String[].class).invoke(
                 null,
                 (Object) newArgs
             );
         } catch (InvocationTargetException e) {
             throw e.getCause() != null ? e.getCause() : e;
+        } finally {
+            thread.setContextClassLoader(prevTccl);
         }
     }
 

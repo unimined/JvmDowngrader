@@ -2,6 +2,7 @@ package jvmdg.stubtests.manual;
 
 import jvmdg.stubtests.StubTest;
 import jvmdg.stubtests.Support;
+import xyz.wagyourtail.jvmdg.version.Ref;
 
 /** Parity tests needing multi-step receiver construction the generator can't do. */
 public final class NioTests {
@@ -10,7 +11,8 @@ public final class NioTests {
     }
 
     /** SelectionKey only exists via channel registration on an open selector. */
-    @StubTest(member = "java/nio/channels/SelectionKey.interestOpsOr(I)I")
+    @StubTest(member = @Ref(value = "java/nio/channels/SelectionKey",
+        member = "interestOpsOr", desc = "(I)I"))
     public static void interestOpsOr(String id) throws Exception {
         java.nio.channels.Selector sel = java.nio.channels.Selector.open();
         java.nio.channels.Pipe.SourceChannel src = java.nio.channels.Pipe.open().source();
@@ -26,8 +28,9 @@ public final class NioTests {
     }
 
     /** WatchService arg is unsynthesizable; register exercises the key path. */
-    @StubTest(member = "java/nio/file/Path.register(Ljava/nio/file/WatchService;"
-        + "[Ljava/nio/file/WatchEvent$Kind;)Ljava/nio/file/WatchKey;")
+    @StubTest(member = @Ref(value = "java/nio/file/Path", member = "register",
+        desc = "(Ljava/nio/file/WatchService;[Ljava/nio/file/WatchEvent$Kind;)"
+            + "Ljava/nio/file/WatchKey;"))
     public static void pathRegister(String id) throws Exception {
         java.nio.file.WatchService ws = java.nio.file.FileSystems.getDefault().newWatchService();
         try {
