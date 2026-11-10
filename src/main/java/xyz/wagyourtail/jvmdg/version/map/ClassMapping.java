@@ -223,8 +223,13 @@ public class ClassMapping {
                 ));
                 method.instructions.insertBefore(insn, insnList);
                 if (!returnType.equals(Type.getReturnType(m))) {
-                    // add cast
-                    method.instructions.insertBefore(insn, new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName()));
+                    if (returnType.getSort() == Type.VOID) {
+                        // e.g. <init> stubs whose impl produces a value — discard it
+                        method.instructions.insertBefore(insn, new InsnNode(Opcodes.POP));
+                    } else {
+                        // add cast
+                        method.instructions.insertBefore(insn, new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName()));
+                    }
                 }
                 method.instructions.remove(insn);
                 return;

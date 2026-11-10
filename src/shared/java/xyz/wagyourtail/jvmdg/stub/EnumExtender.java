@@ -47,6 +47,22 @@ public final class EnumExtender {
     }
 
     /**
+     * {@code <enum>.<CONSTANT>} field-access impl: inject then return the
+     * constant. Wired for every declared {@code enumExtensions()} pair so the
+     * {@code GETSTATIC} rewrite always reaches a real (or cleanly failing)
+     * constant — the transformer appends a {@code checkcast} to the enum type.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static Enum<?> extendAndGet(Class<?> target, String member) {
+        Enum<?> constant = extend((Class) target, member);
+        if (constant == null) {
+            throw new UnsupportedOperationException(
+                "failed to extend enum " + target.getName() + " with constant " + member);
+        }
+        return constant;
+    }
+
+    /**
      * Inject {@code name} into {@code enumClass}'s universe at {@code ordinal}.
      * Idempotent — returns the existing constant if already present.
      */
@@ -209,7 +225,7 @@ public final class EnumExtender {
     }
 
     // ---- generic inject-then-delegate universe readers ---------------------
-    // Wired by @ExtendEnum registration as excludeWithRuntime stubs: they
+    // Wired by enumExtensions() registration as excludeWithRuntime stubs: they
     // shadow the real universe readers so the target enum is extended before
     // the consumer can observe a stale universe on the non-agent path. The
     // trailing (Class, String) params are pushed by the transformer.

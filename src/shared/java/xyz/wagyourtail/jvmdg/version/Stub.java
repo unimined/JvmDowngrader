@@ -37,8 +37,8 @@ public @interface Stub {
      * enum descriptor (e.g. {@code "Ljava/net/StandardProtocolFamily;"}) for
      * enum-extension reader stubs — when non-empty, the enum {@link Class}
      * and {@link #extendEnumMember()} name are pushed as trailing args before
-     * the stub call. Set by stubs synthesized for {@link ExtendEnum}; not
-     * intended for hand-written stubs.
+     * the stub call. Set by stubs synthesized for {@code enumExtensions()};
+     * not intended for hand-written stubs.
      */
     String extendEnum() default "";
 

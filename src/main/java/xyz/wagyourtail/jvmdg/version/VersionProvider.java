@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.*;
 
 public abstract class VersionProvider {
@@ -363,14 +362,6 @@ public abstract class VersionProvider {
                 logger.warn("failed to resolve methods for " + clazz.getName(), e);
             }
             try {
-                ExtendEnum extendEnum = clazz.getAnnotation(ExtendEnum.class);
-                if (extendEnum != null) {
-                    registerEnumExtension(clazz, extendEnum, warnings);
-                }
-            } catch (Throwable e) {
-                logger.warn("failed to create enum extension stub for " + clazz.getName(), e);
-            }
-            try {
                 // inner classes
                 for (Class<?> inner : clazz.getDeclaredClasses()) {
                     stub(inner);
@@ -392,59 +383,60 @@ public abstract class VersionProvider {
     }
 
     /**
-     * Wire an {@link ExtendEnum}-annotated fake enum: a field stub for the
-     * missing constant (dispatched to the convention getter on the class) plus
+     * Wire every constant declared by {@link #enumExtensions()}: a field stub
+     * mapping {@code GETSTATIC enum.CONSTANT} onto
+     * {@link EnumExtender#extendAndGet} (the transformer pushes the enum class
+     * + constant name and appends a {@code checkcast} to the enum type) plus
      * inject-then-delegate shadows for the enum-universe readers, synthesized
      * as {@code excludeWithRuntime} stubs on {@link EnumExtender}'s generic
-     * helpers (the transformer pushes the enum class + constant name).
+     * helpers.
      */
-    private void registerEnumExtension(Class<?> clazz, ExtendEnum extendEnum, Set<String> warnings) throws Exception {
-        Ref ref = extendEnum.value();
-        Type enumType = Type.getType(ref.value());
-        String enumDesc = enumType.getDescriptor();
-        String member = ref.member();
+    private void registerEnumExtensions() {
+        Set<String> warnings = new LinkedHashSet<>();
+        for (Map.Entry<Type, Set<String>> entry : enumExtensions().entrySet()) {
+            Type enumType = entry.getKey();
+            String enumDesc = enumType.getDescriptor();
+            for (String member : entry.getValue()) {
+                try {
+                    Class<?> ext = EnumExtender.class;
 
-        // field stub — convention: static method named lowercase(member)
-        String getterName = member.toLowerCase(Locale.ROOT);
-        Method getter = null;
-        for (Method m : clazz.getDeclaredMethods()) {
-            if (m.getName().equals(getterName) && Modifier.isStatic(m.getModifiers())) {
-                getter = m;
-                break;
+                    // field stub — must rewrite on every path: injection adds
+                    // the constant to the enum's universe, not a static field
+                    getStubMapper(enumType, warnings).addStub(
+                        new MemberNameAndDesc(member, enumType),
+                        ext.getDeclaredMethod("extendAndGet", Class.class, String.class),
+                        synthStub(enumDesc, member, false));
+
+                    // universe-reader shadows — inject before delegate; skipped
+                    // under the runtime agent (premain already extended it)
+                    Stub readerStub = synthStub(enumDesc, member, true);
+                    getStubMapper(enumType, warnings).addStub(
+                        new MemberNameAndDesc("values", Type.getMethodType("()[" + enumDesc)),
+                        ext.getDeclaredMethod("values", Class.class, String.class), readerStub);
+                    getStubMapper(enumType, warnings).addStub(
+                        new MemberNameAndDesc("valueOf", Type.getMethodType("(Ljava/lang/String;)" + enumDesc)),
+                        ext.getDeclaredMethod("valueOf", String.class, Class.class, String.class), readerStub);
+                    getStubMapper(Type.getObjectType("java/lang/Enum"), warnings).addStub(
+                        new MemberNameAndDesc("valueOf", Type.getMethodType("(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Enum;")),
+                        ext.getDeclaredMethod("enumValueOf", Class.class, String.class, Class.class, String.class), readerStub);
+                    getStubMapper(Type.getObjectType("java/lang/Class"), warnings).addStub(
+                        new MemberNameAndDesc("getEnumConstants", Type.getMethodType("()[Ljava/lang/Object;")),
+                        ext.getDeclaredMethod("getEnumConstants", Class.class, Class.class, String.class), readerStub);
+                    getStubMapper(Type.getObjectType("java/util/EnumSet"), warnings).addStub(
+                        new MemberNameAndDesc("noneOf", Type.getMethodType("(Ljava/lang/Class;)Ljava/util/EnumSet;")),
+                        ext.getDeclaredMethod("enumSetNoneOf", Class.class, Class.class, String.class), readerStub);
+                    getStubMapper(Type.getObjectType("java/util/EnumSet"), warnings).addStub(
+                        new MemberNameAndDesc("allOf", Type.getMethodType("(Ljava/lang/Class;)Ljava/util/EnumSet;")),
+                        ext.getDeclaredMethod("enumSetAllOf", Class.class, Class.class, String.class), readerStub);
+                    getStubMapper(Type.getObjectType("java/util/EnumMap"), warnings).addStub(
+                        new MemberNameAndDesc("<init>", Type.getMethodType("(Ljava/lang/Class;)V")),
+                        ext.getDeclaredMethod("enumMap", Class.class, Class.class, String.class), readerStub);
+                } catch (Throwable e) {
+                    logger.warn("failed to create enum extension stubs for "
+                        + enumType.getClassName() + "." + member, e);
+                }
             }
         }
-        if (getter == null) {
-            throw new IllegalStateException("@ExtendEnum class " + clazz.getName()
-                + " declares no static getter method " + getterName + "()");
-        }
-        getStubMapper(enumType, warnings).addStub(
-            new MemberNameAndDesc(member, Type.getType(ref.desc())), getter, synthStub("", "", false));
-
-        // universe-reader shadows — inject before delegate; skipped under the
-        // runtime agent (premain already extended the enum)
-        Stub readerStub = synthStub(enumDesc, member, true);
-        Class<?> ext = EnumExtender.class;
-        getStubMapper(enumType, warnings).addStub(
-            new MemberNameAndDesc("values", Type.getMethodType("()[" + enumDesc)),
-            ext.getDeclaredMethod("values", Class.class, String.class), readerStub);
-        getStubMapper(enumType, warnings).addStub(
-            new MemberNameAndDesc("valueOf", Type.getMethodType("(Ljava/lang/String;)" + enumDesc)),
-            ext.getDeclaredMethod("valueOf", String.class, Class.class, String.class), readerStub);
-        getStubMapper(Type.getObjectType("java/lang/Enum"), warnings).addStub(
-            new MemberNameAndDesc("valueOf", Type.getMethodType("(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Enum;")),
-            ext.getDeclaredMethod("enumValueOf", Class.class, String.class, Class.class, String.class), readerStub);
-        getStubMapper(Type.getObjectType("java/lang/Class"), warnings).addStub(
-            new MemberNameAndDesc("getEnumConstants", Type.getMethodType("()[Ljava/lang/Object;")),
-            ext.getDeclaredMethod("getEnumConstants", Class.class, Class.class, String.class), readerStub);
-        getStubMapper(Type.getObjectType("java/util/EnumSet"), warnings).addStub(
-            new MemberNameAndDesc("noneOf", Type.getMethodType("(Ljava/lang/Class;)Ljava/util/EnumSet;")),
-            ext.getDeclaredMethod("enumSetNoneOf", Class.class, Class.class, String.class), readerStub);
-        getStubMapper(Type.getObjectType("java/util/EnumSet"), warnings).addStub(
-            new MemberNameAndDesc("allOf", Type.getMethodType("(Ljava/lang/Class;)Ljava/util/EnumSet;")),
-            ext.getDeclaredMethod("enumSetAllOf", Class.class, Class.class, String.class), readerStub);
-        getStubMapper(Type.getObjectType("java/util/EnumMap"), warnings).addStub(
-            new MemberNameAndDesc("<init>", Type.getMethodType("(Ljava/lang/Class;)V")),
-            ext.getDeclaredMethod("enumMap", Class.class, Class.class, String.class), readerStub);
     }
 
     private static final Ref EMPTY_REF = new Ref() {
@@ -943,6 +935,7 @@ public abstract class VersionProvider {
                     }
                     preInit();
                     init();
+                    registerEnumExtensions();
                     afterInit();
                     initialized = true;
                 }
