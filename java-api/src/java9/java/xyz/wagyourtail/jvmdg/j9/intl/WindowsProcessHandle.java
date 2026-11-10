@@ -47,9 +47,16 @@ public class WindowsProcessHandle implements J_L_ProcessHandle {
     private final String[] commandLine;
 
     public WindowsProcessHandle(long pid) {
+        this(pid, null);
+    }
+
+    // fallbackCmdline is used only when the wmic query finds no cmdline —
+    // current() passes sun.java.command so self-args still resolve
+    public WindowsProcessHandle(long pid, String[] fallbackCmdline) {
         this.pid = pid;
         this.info = readInfo();
-        this.commandLine = parseCommandLine();
+        String[] cl = parseCommandLine();
+        this.commandLine = cl != null && cl.length > 0 ? cl : fallbackCmdline;
     }
 
     public Map<String, String> readInfo() {

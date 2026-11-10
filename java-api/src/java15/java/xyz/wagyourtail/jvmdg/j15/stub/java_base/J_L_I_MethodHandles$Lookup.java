@@ -45,7 +45,7 @@ public class J_L_I_MethodHandles$Lookup {
     }
 
     @JEP(371)
-    @Stub(requiresRuntime = true)
+    @Stub
     public static Class<?> defineHiddenClass(MethodHandles.Lookup lookup, byte[] bytes, boolean initialize, ClassOption... options) throws IllegalClassFormatException {
         Objects.requireNonNull(bytes);
         Objects.requireNonNull(options);

@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.runtime;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
+import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -28,24 +30,35 @@ public class Bootstrap {
     static final ClassDowngrader currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(flags);
     static final Logger LOGGER = new Logger("JVMDowngrader", flags.getLogLevel(), flags.logAnsiColors, System.out);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Throwable {
         LOGGER.info("Starting JVMDowngrader Bootstrap in standalone mode.");
+        if (args.length < 2) {
+            throw new IllegalArgumentException("Usage: Bootstrap <classpath> <main class> [args...]");
+        }
+        String[] newArgs = new String[args.length - 2];
+        String[] classpath = args[0].split(File.pathSeparator);
+        String mainClass = args[1];
+        System.arraycopy(args, 2, newArgs, 0, args.length - 2);
+        URL[] cp = new URL[classpath.length];
+        for (int i = 0; i < classpath.length; i++) {
+            cp[i] = new File(classpath[i]).toURI().toURL();
+        }
+        DowngradingClassLoader appLoader = currentVersionDowngrader.getClassLoader();
+        appLoader.addDelegate(cp);
+        // match `java -cp` semantics: TCCL is the loader that loads the app,
+        // so ServiceLoader.load / resource lookups see the downgraded classpath
+        Thread thread = Thread.currentThread();
+        ClassLoader prevTccl = thread.getContextClassLoader();
+        thread.setContextClassLoader(appLoader);
         try {
-            String[] newArgs = new String[args.length - 2];
-            String[] classpath = args[0].split(File.pathSeparator);
-            String mainClass = args[1];
-            System.arraycopy(args, 2, newArgs, 0, args.length - 2);
-            URL[] cp = new URL[classpath.length];
-            for (int i = 0; i < classpath.length; i++) {
-                cp[i] = new File(classpath[i]).toURI().toURL();
-            }
-            currentVersionDowngrader.getClassLoader().addDelegate(cp);
-            Class.forName(mainClass, false, currentVersionDowngrader.getClassLoader()).getMethod("main", String[].class).invoke(
+            Class.forName(mainClass, false, appLoader).getMethod("main", String[].class).invoke(
                 null,
                 (Object) newArgs
             );
-        } catch (Throwable t) {
-            t.printStackTrace(System.err);
+        } catch (InvocationTargetException e) {
+            throw e.getCause() != null ? e.getCause() : e;
+        } finally {
+            thread.setContextClassLoader(prevTccl);
         }
     }
 

@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.exc.PartialStubError;
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseCollection;
+import xyz.wagyourtail.jvmdg.j21.impl.UnmodifiableSequencedCollection;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -16,12 +17,14 @@ public class J_U_SequencedCollection {
     }
 
     public static boolean jvmdg$instanceof(Object obj) {
+        Class<?> declaringClass = obj.getClass().getDeclaringClass();
         return obj instanceof List<?> ||
             obj instanceof LinkedHashSet<?> ||
             obj instanceof Deque<?> ||
             obj instanceof SortedSet<?> ||
             obj instanceof ReverseCollection<?, ?> ||
-            obj.getClass().getDeclaringClass().isAssignableFrom(LinkedHashMap.class);
+            obj instanceof UnmodifiableSequencedCollection<?, ?> ||
+            (declaringClass != null && declaringClass.isAssignableFrom(LinkedHashMap.class));
     }
 
     public static <E> Collection<E> jvmdg$checkcast(Object obj) {
@@ -85,6 +88,9 @@ public class J_U_SequencedCollection {
 
     @Stub(excludeChild = "java/util/Deque")
     public static <E> E getFirst(Collection<E> self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException();
+        }
         if (self instanceof List<E> list) {
             return list.get(0);
         } else if (self instanceof Deque<E> deque) {
@@ -95,6 +101,9 @@ public class J_U_SequencedCollection {
 
     @Stub(excludeChild = "java/util/Deque")
     public static <E> E getLast(Collection<E> self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException();
+        }
         if (self instanceof List<E> list) {
             return list.get(list.size() - 1);
         } else if (self instanceof Deque<E> deque) {
@@ -103,8 +112,26 @@ public class J_U_SequencedCollection {
         return reversed(self).iterator().next();
     }
 
+    /**
+     * immutable collections ({@code List.of} family —
+     * {@code java.util.ImmutableCollections} on newer runtimes, our
+     * {@code ImmutableList} stand-in elsewhere) override the mutating
+     * sequenced operations to throw unconditionally; everything else throws
+     * {@link NoSuchElementException} when empty.
+     */
+    public static void checkEmptyRemovable(Collection<?> self) {
+        if (self.isEmpty()) {
+            if (self instanceof xyz.wagyourtail.jvmdg.j9.intl.ImmutableList
+                || self.getClass().getName().startsWith("java.util.ImmutableCollections")) {
+                throw new UnsupportedOperationException();
+            }
+            throw new NoSuchElementException();
+        }
+    }
+
     @Stub(excludeChild = "java/util/Deque")
     public static <E> E removeFirst(Collection<E> self) {
+        checkEmptyRemovable(self);
         if (self instanceof List<E> list) {
             return list.remove(0);
         } else if (self instanceof Deque<E> deque) {
@@ -118,6 +145,7 @@ public class J_U_SequencedCollection {
 
     @Stub(excludeChild = "java/util/Deque")
     public static <E> E removeLast(Collection<E> self) {
+        checkEmptyRemovable(self);
         if (self instanceof List<E> list) {
             return list.remove(list.size() - 1);
         } else if (self instanceof Deque<E> deque) {

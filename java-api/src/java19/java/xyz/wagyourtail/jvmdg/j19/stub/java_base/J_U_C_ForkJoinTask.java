@@ -1,7 +1,9 @@
 package xyz.wagyourtail.jvmdg.j19.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +40,11 @@ public class J_U_C_ForkJoinTask {
             Thread.currentThread().interrupt();
         }
         return true;
+    }
+
+    @Stub(ref = @Ref("Ljava/util/concurrent/ForkJoinTask;"))
+    public static <T> ForkJoinTask<T> adaptInterruptible(Callable<? extends T> callable) {
+        return ForkJoinTask.adapt(callable);
     }
 
 }

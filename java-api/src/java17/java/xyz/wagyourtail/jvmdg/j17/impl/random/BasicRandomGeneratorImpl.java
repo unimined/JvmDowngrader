@@ -147,6 +147,9 @@ public class BasicRandomGeneratorImpl implements J_U_R_RandomGenerator {
 
     @Override
     public double nextGaussian() {
+        // Random overrides nextGaussian() with its polar sampler, so a
+        // RandomGenerator-typed call dispatches to it natively (and uses
+        // Random's cached-second-gaussian state) — mirror that dispatch
         return random.nextGaussian();
     }
 

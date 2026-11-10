@@ -28,6 +28,9 @@ public class J_L_Class {
 
     @Stub
     public static Class<?> arrayType(Class<?> clazz) {
+        if (clazz == void.class) {
+            throw new UnsupportedOperationException();
+        }
         return Array.newInstance(clazz, 0).getClass();
     }
 

@@ -42,17 +42,19 @@ public class J_N_SocketException {
         MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: SocketException, Throwable
+        // Throwable(Throwable) sets detailMessage = cause == null ? null : cause.toString()
         list.add(new InsnNode(Opcodes.DUP2));
         // stack: SocketException, Throwable, SocketException, Throwable
-        list.add(new InsnNode(Opcodes.POP));
-        // stack: SocketException, Throwable, SocketException
-        // call init
-        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/net/SocketException", "<init>", "()V", false));
+        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "xyz/wagyourtail/jvmdg/j8/intl/ExceptionHelper", "causeMessage", "(Ljava/lang/Throwable;)Ljava/lang/String;", false));
+        // stack: SocketException, Throwable, SocketException, String
+        // call init(String)
+        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/net/SocketException", "<init>", "(Ljava/lang/String;)V", false));
         // stack: SocketException, Throwable
         // call initCause
         list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/net/SocketException", "initCause", "(Ljava/lang/Throwable;)Ljava/lang/Throwable;", false));
-        // stack: SocketException
+        // stack: SocketException, SocketException (initCause returns this)
         list.add(new InsnNode(Opcodes.POP));
+        // stack: SocketException
 
         mnode.instructions.insert(node, list);
         mnode.instructions.remove(node);

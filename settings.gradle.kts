@@ -16,8 +16,6 @@ include("site")
 include("javac-plugin")
 
 include("testing")
-include("testing:downgrade")
-include("testing:multi-version")
 
 rootProject.name = "JvmDowngrader"
 

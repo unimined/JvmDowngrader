@@ -70,7 +70,22 @@ public class J_L_ClassLoader {
     @Stub
     public static String getName(ClassLoader classLoader) {
         // TODO: check if subclass actually overrides this method
-        return nameMap.get(classLoader);
+        String name = nameMap.get(classLoader);
+        if (name != null) {
+            return name;
+        }
+        // the builtin loaders have fixed names
+        if (classLoader == null) {
+            return "bootstrap";
+        }
+        ClassLoader sys = ClassLoader.getSystemClassLoader();
+        if (classLoader == sys) {
+            return "app";
+        }
+        if (classLoader == sys.getParent()) {
+            return "platform";
+        }
+        return null;
     }
 
     @Stub
@@ -80,7 +95,9 @@ public class J_L_ClassLoader {
 
     @Stub(ref = @Ref("Ljava/lang/ClassLoader;"))
     public static ClassLoader getPlatformClassLoader() {
-        return ClassLoader.getSystemClassLoader();
+        // the system loader's parent is the closest analogue to the
+        // platform loader (bootstrap's direct child)
+        return ClassLoader.getSystemClassLoader().getParent();
     }
 
     @Stub

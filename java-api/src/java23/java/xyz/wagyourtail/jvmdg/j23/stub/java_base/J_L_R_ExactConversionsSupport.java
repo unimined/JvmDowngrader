@@ -17,7 +17,8 @@ public class J_L_R_ExactConversionsSupport {
 
     @Stub(ref = @Ref("java/lang/runtime/ExactConversionsSupport"))
     public static boolean isDoubleToFloatExact(double value) {
-        return value == (float) value && isNotNegativeZero(value);
+        // float preserves -0.0 exactly, unlike the integral targets, and NaN/infinities are "exact" too
+        return !Double.isFinite(value) || value == (float) value;
     }
 
     @Stub(ref = @Ref("java/lang/runtime/ExactConversionsSupport"))

@@ -14,6 +14,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -23,7 +24,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
     public static final boolean DUMP_CLASSES = Boolean.parseBoolean(System.getProperty("jvmdg.dump", "false"));
     private static final Logger LOGGER = Bootstrap.LOGGER.subLogger("Agent");
     private static final int currentVersion;
-    static final List<Integer> multiVersionsList = new ArrayList<>();
+    private static volatile List<Integer> multiVersions;
 
     static {
         Method md;
@@ -33,9 +34,27 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        for (int i = Bootstrap.currentVersionDowngrader.maxVersion(); i > Bootstrap.currentVersionDowngrader.target; i--) {
-            multiVersionsList.add(i);
+    }
+
+    /**
+     * computed lazily: {@link ClassDowngrader#maxVersion()} is -1 until the
+     * version providers initialize, so snapshotting at class init can leave
+     * this permanently empty.
+     */
+    protected List<Integer> multiVersions() {
+        List<Integer> versions = multiVersions;
+        int max = Bootstrap.currentVersionDowngrader.maxVersion();
+        if (versions == null || (!versions.isEmpty() && max > versions.get(0))) {
+            if (max == -1) {
+                return Collections.emptyList(); // providers not initialized yet; retry next call
+            }
+            versions = new ArrayList<>();
+            for (int i = max; i > Bootstrap.currentVersionDowngrader.target; i--) {
+                versions.add(i);
+            }
+            multiVersions = versions;
         }
+        return versions;
     }
 
     static {
@@ -82,8 +101,8 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                 return retransformCodeSource(bytes);
             }
 
-            if (loader != null && Bootstrap.flags.downgradeFromMultiReleases) {
-                for (Integer version : multiVersionsList) {
+            if (loader != null && className != null && Bootstrap.flags.downgradeFromMultiReleases) {
+                for (Integer version : multiVersions()) {
                     try (InputStream stream = loader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + className + ".class")) {
                         if (stream != null) {
                             bytes = Utils.readAllBytes(stream);
@@ -94,7 +113,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             }
 
             // check magic
-            if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
+            if (bytes.length < 8 || bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
                 bytes[3] != (byte) 0xBE) {
                 throw new IllegalClassFormatException(className);
             }
@@ -108,12 +127,13 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             }
             LOGGER.trace("Transforming " + className + " from " + version + " to " + currentVersion);
 //        if (loader instanceof DowngradingClassLoader) return bytes; // already handled
-            Map<String, byte[]> outputs = Bootstrap.currentVersionDowngrader.downgrade(new AtomicReference<>(className), bytes, true, new Function<String, byte[]>() {
+            final AtomicReference<String> resolvedName = new AtomicReference<>(className);
+            Map<String, byte[]> outputs = Bootstrap.currentVersionDowngrader.downgrade(resolvedName, bytes, true, new Function<String, byte[]>() {
                 @Override
                 public byte[] apply(String s) {
                     try {
                         if (Bootstrap.flags.downgradeFromMultiReleases) {
-                            for (Integer version : multiVersionsList) {
+                            for (Integer version : multiVersions()) {
                                 try (InputStream stream = loader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + s + ".class")) {
                                     if (stream != null) {
                                         return Utils.readAllBytes(stream);
@@ -132,19 +152,22 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                     }
                 }
             });
-            LOGGER.trace("transform size for " + className + ": " + (outputs == null ? null : outputs.size()));
+            LOGGER.trace("transform size for " + resolvedName.get() + ": " + (outputs == null ? null : outputs.size()));
             if (outputs == null) return bytes;
+            // downgrade() resolves a null name from the class bytes, so this is non-null here
+            String name = resolvedName.get();
             bytes = null;
             for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                 LOGGER.trace("Loading " + entry.getKey() + " into " + loader);
                 if (DUMP_CLASSES) {
                     Bootstrap.currentVersionDowngrader.writeBytesToDebug(entry.getKey(), entry.getValue());
                 }
-                if (entry.getKey().equals(className)) {
+                if (entry.getKey().equals(name)) {
                     bytes = entry.getValue();
                     continue;
                 }
                 if (entry.getKey().startsWith("META-INF/versions")) continue; // skip the versioned classes
+                if (loader == null) continue; // extras for bootstrap-loaded classes resolve via the classpath
                 try {
                     defineClass.bindTo(loader).invoke(entry.getKey().replace('/', '.'), entry.getValue(), 0, entry.getValue().length);
                 } catch (Throwable throwable) {
@@ -152,12 +175,15 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                 }
             }
             return bytes;
+        } catch (IllegalClassFormatException e) {
+            throw e;
         } catch (Throwable t) {
-            System.err.println("Failed to transform " + className);
-            t.printStackTrace(System.err);
-            System.err.flush();
-            System.exit(42);
-            return null;
+            // a transformer must never kill the host jvm; report the failure and
+            // let the vm fall back to the original class bytes
+            LOGGER.error("Failed to transform " + className, t);
+            IllegalClassFormatException e = new IllegalClassFormatException(className);
+            e.initCause(t);
+            throw e;
         }
     }
 

@@ -4,6 +4,7 @@ package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,7 +12,10 @@ import java.nio.file.Path;
 public class J_N_F_Files {
 
     @Stub(ref = @Ref("Ljava/nio/file/Files;"))
-    public static long mismatch(Path p1, Path p2) {
+    public static long mismatch(Path p1, Path p2) throws IOException {
+        if (p1.equals(p2)) {
+            return -1;
+        }
         try (InputStream f1 = Files.newInputStream(p1); InputStream f2 = Files.newInputStream(p2)) {
             long pos = 0;
             int b1, b2;
@@ -25,8 +29,6 @@ public class J_N_F_Files {
                 return -1;
             }
             return pos;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 

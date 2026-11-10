@@ -129,9 +129,14 @@ public class J_L_Module {
 //        // TODO
 //    }
 //
-//    @Override
-//    public String toString() {
-//        // TODO
-//    }
+
+    @Override
+    public String toString() {
+        // mirrors java.lang.Module: "module <name>" or "unnamed module@<hash>"
+        if (isNamed()) {
+            return "module " + name;
+        }
+        return "unnamed module @" + Integer.toHexString(hashCode());
+    }
 
 }

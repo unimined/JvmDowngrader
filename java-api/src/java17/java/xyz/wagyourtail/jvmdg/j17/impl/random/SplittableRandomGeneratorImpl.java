@@ -14,13 +14,15 @@ import java.util.stream.Stream;
 
 public class SplittableRandomGeneratorImpl implements J_U_R_RandomGenerator.SplittableGenerator {
     private static final MethodHandles.Lookup IMPL_LOOKUP = Utils.getImplLookup();
-    private static final MethodHandle CTOR;
+    // private SplittableRandom(long,long) ctor, when reachable: keeps the
+    // mixing behavior of the real SplittableGenerator.split(source)
+    private static final MethodHandle CTOR = resolveSplitCtor();
 
-    static {
+    private static MethodHandle resolveSplitCtor() {
         try {
-            CTOR = IMPL_LOOKUP.findConstructor(SplittableRandom.class, MethodType.methodType(void.class, long.class, long.class));
-        } catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            return IMPL_LOOKUP.findConstructor(SplittableRandom.class, MethodType.methodType(void.class, long.class, long.class));
+        } catch (Throwable t) {
+            return null;
         }
     }
 
@@ -45,12 +47,30 @@ public class SplittableRandomGeneratorImpl implements J_U_R_RandomGenerator.Spli
 
     @Override
     public SplittableGenerator split(SplittableGenerator source) {
-        try {
-            return new SplittableRandomGeneratorImpl((SplittableRandom) CTOR.invoke(source.nextLong(), mixGamma(source.nextLong())));
-        } catch (Throwable e) {
-            Utils.sneakyThrow(e);
+        return new SplittableRandomGeneratorImpl(splitToSplittableRandom(source));
+    }
+
+    /**
+     * The raw {@link SplittableRandom} produced by {@link #split(SplittableGenerator)}
+     * before wrapping — the covariant {@code SplittableRandom.split(SplittableGenerator)}
+     * stub needs the concrete type, not the interface.
+     */
+    public static SplittableRandom splitToSplittableRandom(SplittableGenerator source) {
+        // javac emits no checkcast for args it can prove implement the
+        // interface, so source may be a raw SplittableRandom that does not
+        // implement this fake interface — coerce first or the nextLong()
+        // invokeinterface below throws IncompatibleClassChangeError
+        SplittableGenerator src = SplittableGenerator.jvmdg$checkcast(source);
+        if (CTOR != null) {
+            try {
+                return (SplittableRandom) CTOR.invoke(src.nextLong(), mixGamma(src.nextLong()));
+            } catch (Throwable ignored) {
+                // fall through to the public-seed path below
+            }
         }
-        throw new RuntimeException("Unreachable");
+        // private SplittableRandom(long,long) ctor unavailable -> public seed
+        // ctor; still a fresh generator seeded from source
+        return new SplittableRandom(src.nextLong());
     }
 
     @Override
@@ -75,7 +95,7 @@ public class SplittableRandomGeneratorImpl implements J_U_R_RandomGenerator.Spli
 
     @Override
     public Stream<J_U_R_RandomGenerator> rngs() {
-        return SplittableGenerator.super.rngs();
+        return Stream.generate(() -> (J_U_R_RandomGenerator) split());
     }
 
     @Override

@@ -4,6 +4,7 @@ import xyz.wagyourtail.jvmdg.j21.impl.ReverseList;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 public class J_U_List {
 
@@ -27,21 +28,29 @@ public class J_U_List {
 
     @Stub
     public static <E> E getFirst(List<E> self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException();
+        }
         return self.get(0);
     }
 
     @Stub
     public static <E> E getLast(List<E> self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException();
+        }
         return self.get(self.size() - 1);
     }
 
     @Stub
     public static <E> E removeFirst(List<E> self) {
+        J_U_SequencedCollection.checkEmptyRemovable(self);
         return self.remove(0);
     }
 
     @Stub
     public static <E> E removeLast(List<E> self) {
+        J_U_SequencedCollection.checkEmptyRemovable(self);
         return self.remove(self.size() - 1);
     }
 

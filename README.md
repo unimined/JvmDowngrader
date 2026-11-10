@@ -261,6 +261,49 @@ DowngradingClassLoader loader = new DowngradingClassLoader(ClassDowngrader.getCu
 loader.addDelegate(new URL[]{new File("jarname.jar").toURI().toURL()});
 ```
 
+## Testing
+
+The `testing` module runs unit tests plus an end-to-end suite that downgrades a
+compiled test jar on every supported target JDK. The version matrix is
+configured in `gradle.properties`:
+
+```properties
+testTargetVersion=8     # lowest JDK the downgraded output is verified on
+stubFromVersion=7       # lowest JDK java-api stubs cover
+stubToVersion=27        # highest JDK java-api stubs cover (also the JDK tests run on)
+```
+
+Gradle auto-provisions each Azul JDK in the matrix via the foojay toolchain
+resolver, so no manual JDK installs are needed:
+
+```
+./gradlew :testing:test          # unit + full JDK 8..27 downgrade matrix
+```
+
+The mirrored `commons-asm`/`commons-core` tests live in the separate
+`wagyourtail/commons` repo — run `./gradlew :commons-asm:test` there.
+
+Both `build.yml` and `build_snapshot.yml` run the full matrix in CI before
+publishing. Test reports land in `testing/build/reports/tests/`.
+
+### commons-asm mirrors
+
+Several classes exist both here and in `wagyourtail/commons`
+(`commons-asm`/`commons-core`/`commons-java7`) as diverged forks. When fixing
+one side, port the fix to the counterpart:
+
+| JvmDowngrader | commons |
+|---|---|
+| `jvmdg.compile.shade.ReferenceGraph` | `commons.asm.graph.ReferenceGraph` |
+| `jvmdg.asm.ASMUtils` | `commons.asm.ASMUtils` |
+| `jvmdg.asm.AnnotationUtils` | `commons.asm.AnnotationUtils` |
+| `jvmdg.classloader.ResourceClassLoader` | `commons.classloader.ResourceClassLoader` |
+| `jvmdg.util.Lazy` | `commons.lazy.Lazy` |
+| `jvmdg.util.AsyncUtils` | `commons.java7.AsyncUtils` (commons-java7) |
+| `jvmdg.collection.{Map,FlatMap}Enumeration` | `commons.enumerations.{Map,FlatMap}Enumeration` |
+
+See `AGENTS.md` for the full mapping and verification commands.
+
 ### inspired by
 
 https://github.com/Chocohead/Not-So-New and https://github.com/luontola/retrolambda

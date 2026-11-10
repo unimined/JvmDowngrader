@@ -3,9 +3,15 @@ package xyz.wagyourtail.jvmdg.test;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 
 public class JavaRunner {
+    // cap concurrent subprocesses — hundreds of test JVMs at once OOMs the host;
+    // override with -Djvmdg.test.maxSubprocesses
+    private static final Semaphore SUBPROCESS_PERMITS = new Semaphore(
+        Integer.parseInt(System.getProperty("jvmdg.test.maxSubprocesses",
+            String.valueOf(Math.max(2, Runtime.getRuntime().availableProcessors() / 2)))));
 //    private static final String os = System.getProperty("os.name").toLowerCase();
 //    private static final String arch = System.getProperty("os.arch");
 //
@@ -162,7 +168,27 @@ public class JavaRunner {
         processBuilder.environment().putAll(env);
 
         System.out.println("Running: " + String.join(" ", processBuilder.command()));
-        Process process = processBuilder.start();
+        SUBPROCESS_PERMITS.acquire();
+        Process process;
+        try {
+            process = processBuilder.start();
+        } catch (Throwable t) {
+            SUBPROCESS_PERMITS.release();
+            throw t;
+        }
+        if (!wait) {
+            // release the permit once the process exits
+            Thread reaper = new Thread(() -> {
+                try {
+                    process.waitFor();
+                } catch (InterruptedException ignored) {
+                } finally {
+                    SUBPROCESS_PERMITS.release();
+                }
+            });
+            reaper.setDaemon(true);
+            reaper.start();
+        }
 
         InputStream inputStream = process.getInputStream();
         InputStream errorStream = process.getErrorStream();
@@ -196,6 +222,7 @@ public class JavaRunner {
             int exitCode = process.waitFor();
             outputThread.join();
             errorThread.join();
+            SUBPROCESS_PERMITS.release();
             return exitCode;
         }
 

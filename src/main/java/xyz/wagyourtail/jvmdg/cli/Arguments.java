@@ -103,9 +103,10 @@ public class Arguments {
         Map<String, List<String[]>> ret = new LinkedHashMap<>();
         outer:
         while (!args.isEmpty()) {
-            String arg = args.remove(0).toLowerCase(Locale.ROOT);
+            String arg = args.remove(0);
+            String match = arg.toLowerCase(Locale.ROOT);
             for (Set<String> strings : children.keySet()) {
-                if (strings.contains(arg)) {
+                if (strings.contains(match)) {
                     List<String> values = new ArrayList<>();
                     Arguments child = children.get(strings);
                     for (int i = 0; i < child.valueNames.length; i++) {

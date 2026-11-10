@@ -78,6 +78,32 @@ public class ReverseMap<K, V, T extends Map<K, V>> implements Map<K, V> {
         return J_U_SequencedCollection.reversed(original.values());
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("{");
+        Iterator<Entry<K, V>> it = entrySet().iterator();
+        while (it.hasNext()) {
+            Entry<K, V> e = it.next();
+            K key = e.getKey();
+            V value = e.getValue();
+            sb.append(key == this ? "(this Map)" : key).append('=').append(value == this ? "(this Map)" : value);
+            if (it.hasNext()) {
+                sb.append(", ");
+            }
+        }
+        return sb.append('}').toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return original.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return original.hashCode();
+    }
+
     public static <K, V> ReverseMap<K, V, ?> create(Map<K, V> map) {
         if (map instanceof SortedMap) {
             return new ReverseSortedMap<>((SortedMap<K, V>) map);

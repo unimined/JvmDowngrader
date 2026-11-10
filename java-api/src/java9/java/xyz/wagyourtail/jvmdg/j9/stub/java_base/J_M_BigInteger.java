@@ -6,6 +6,7 @@ import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.VarInsnNode;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -18,24 +19,45 @@ public class J_M_BigInteger {
 
     static final long LONG_MASK = 0xffffffffL;
 
-    @Stub(ref = @Ref(value = "java/lang/Integer", member = "TWO", desc = "Ljava/math/BigInteger;"))
+    @Stub(ref = @Ref(value = "java/math/BigInteger", member = "TWO", desc = "Ljava/math/BigInteger;"))
     public static BigInteger getTwo() {
         return BigInteger.valueOf(2);
+    }
+
+    /**
+     * Validation matching the real constructor: any out-of-range
+     * offset/length produces {@link IndexOutOfBoundsException}, never
+     * {@link IllegalArgumentException} (which {@code Arrays.copyOfRange}
+     * would throw for {@code from > to}).
+     */
+    public static void checkRange(byte[] bytes, int offset, int len) {
+        if (offset < 0 || len < 0 || len > bytes.length - offset) {
+            throw new IndexOutOfBoundsException();
+        }
     }
 
     @Modify(ref = @Ref(value = "Ljava/math/BigInteger;", member = "<init>", desc = "([BII)V"))
     public static void init(MethodNode mnode, int i) {
         MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
+        int base = mnode.maxLocals;
+        mnode.maxLocals += 3;
 
         // stack: BigInteger, byte[], (start) int, (len) int
-        list.add(new InsnNode(Opcodes.DUP2));
-        // stack: BigInteger, byte[], (start) int, (len) int, (start) int, (len) int
+        list.add(new VarInsnNode(Opcodes.ISTORE, base + 2));
+        list.add(new VarInsnNode(Opcodes.ISTORE, base + 1));
+        list.add(new VarInsnNode(Opcodes.ASTORE, base));
+        // stack: BigInteger
+        list.add(new VarInsnNode(Opcodes.ALOAD, base));
+        list.add(new VarInsnNode(Opcodes.ILOAD, base + 1));
+        list.add(new VarInsnNode(Opcodes.ILOAD, base + 2));
+        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+            "xyz/wagyourtail/jvmdg/j9/stub/java_base/J_M_BigInteger", "checkRange", "([BII)V", false));
+        list.add(new VarInsnNode(Opcodes.ALOAD, base));
+        list.add(new VarInsnNode(Opcodes.ILOAD, base + 1));
+        list.add(new VarInsnNode(Opcodes.ILOAD, base + 1));
+        list.add(new VarInsnNode(Opcodes.ILOAD, base + 2));
         list.add(new InsnNode(Opcodes.IADD));
-        // stack: BigInteger, byte[],(start) int, (len) int, (start+len) int
-        list.add(new InsnNode(Opcodes.SWAP));
-        // stack: BigInteger, byte[], (start) int, (start+len) int, (len) int
-        list.add(new InsnNode(Opcodes.POP));
         // stack: BigInteger, byte[], (start) int, (start+len) int
         list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "java/util/Arrays", "copyOfRange", "([BII)[B", false));
         // stack: BigInteger, byte[]
@@ -49,15 +71,24 @@ public class J_M_BigInteger {
     public static void init2(MethodNode mnode, int i) {
         MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
+        int base = mnode.maxLocals;
+        mnode.maxLocals += 3;
 
         // stack: BigInteger, int, byte[], (start) int, (len) int
-        list.add(new InsnNode(Opcodes.DUP2));
-        // stack: BigInteger, int, byte[], (start) int, (len) int, (start) int, (len) int
+        list.add(new VarInsnNode(Opcodes.ISTORE, base + 2));
+        list.add(new VarInsnNode(Opcodes.ISTORE, base + 1));
+        list.add(new VarInsnNode(Opcodes.ASTORE, base));
+        // stack: BigInteger, int
+        list.add(new VarInsnNode(Opcodes.ALOAD, base));
+        list.add(new VarInsnNode(Opcodes.ILOAD, base + 1));
+        list.add(new VarInsnNode(Opcodes.ILOAD, base + 2));
+        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+            "xyz/wagyourtail/jvmdg/j9/stub/java_base/J_M_BigInteger", "checkRange", "([BII)V", false));
+        list.add(new VarInsnNode(Opcodes.ALOAD, base));
+        list.add(new VarInsnNode(Opcodes.ILOAD, base + 1));
+        list.add(new VarInsnNode(Opcodes.ILOAD, base + 1));
+        list.add(new VarInsnNode(Opcodes.ILOAD, base + 2));
         list.add(new InsnNode(Opcodes.IADD));
-        // stack: BigInteger, int, byte[], (start) int, (len) int, (start+len) int
-        list.add(new InsnNode(Opcodes.SWAP));
-        // stack: BigInteger, int, byte[], (start) int, (start+len) int, (len) int
-        list.add(new InsnNode(Opcodes.POP));
         // stack: BigInteger, int, byte[], (start) int, (start+len) int
         list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "java/util/Arrays", "copyOfRange", "([BII)[B", false));
         // stack: BigInteger, int, byte[]

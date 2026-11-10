@@ -71,7 +71,7 @@ public class J_T_Duration {
         if ((1000_000_000L * 60 * 60 * 24 % dur) != 0) {
             throw new UnsupportedTemporalTypeException("Unit must divide into a standard day without remainder");
         }
-        long nod = (self.getSeconds() % 60 * 60 * 24) * 1000_000_000L + self.getNano();
+        long nod = (self.getSeconds() % (60 * 60 * 24)) * 1000_000_000L + self.getNano();
         long result = (nod / dur) * dur;
         return self.plusNanos(result - nod);
     }

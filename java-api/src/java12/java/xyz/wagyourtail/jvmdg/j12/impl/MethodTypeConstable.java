@@ -64,12 +64,21 @@ public class MethodTypeConstable implements J_L_C_Constable, J_L_I_TypeDescripto
 
     @Override
     public MethodTypeConstable insertParameterTypes(int index, ClassConstable... newParameterTypes) {
-        return new MethodTypeConstable(methodType.insertParameterTypes(index, Arrays.stream(newParameterTypes).map(c -> c.clazz).toArray(Class[]::new)));
+        Class<?>[] types = new Class[newParameterTypes.length];
+        for (int i = 0; i < types.length; i++) {
+            types[i] = newParameterTypes[i].clazz;
+        }
+        return new MethodTypeConstable(methodType.insertParameterTypes(index, types));
     }
 
     @Override
     public String descriptorString() {
         return methodType.toMethodDescriptorString();
+    }
+
+    @Override
+    public String toString() {
+        return methodType.toString();
     }
 
 }

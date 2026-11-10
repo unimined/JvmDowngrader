@@ -88,4 +88,19 @@ public class SequencedSet<E> implements Set<E> {
         return map.containsKey(o);
     }
 
+    @Override
+    public String toString() {
+        return map.keySet().toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return map.keySet().equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return map.keySet().hashCode();
+    }
+
 }

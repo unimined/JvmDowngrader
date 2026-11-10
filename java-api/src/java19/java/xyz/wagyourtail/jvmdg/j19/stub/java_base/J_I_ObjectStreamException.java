@@ -42,17 +42,19 @@ public class J_I_ObjectStreamException {
         MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: ObjectStreamException, Throwable
+        // Throwable(Throwable) sets detailMessage = cause == null ? null : cause.toString()
         list.add(new InsnNode(Opcodes.DUP2));
         // stack: ObjectStreamException, Throwable, ObjectStreamException, Throwable
-        list.add(new InsnNode(Opcodes.POP));
-        // stack: ObjectStreamException, Throwable, ObjectStreamException
-        // call init
-        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/io/ObjectStreamException", "<init>", "()V", false));
+        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "xyz/wagyourtail/jvmdg/j8/intl/ExceptionHelper", "causeMessage", "(Ljava/lang/Throwable;)Ljava/lang/String;", false));
+        // stack: ObjectStreamException, Throwable, ObjectStreamException, String
+        // call init(String)
+        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/io/ObjectStreamException", "<init>", "(Ljava/lang/String;)V", false));
         // stack: ObjectStreamException, Throwable
         // call initCause
         list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/io/ObjectStreamException", "initCause", "(Ljava/lang/Throwable;)Ljava/lang/Throwable;", false));
-        // stack: ObjectStreamException
+        // stack: ObjectStreamException, ObjectStreamException (initCause returns this)
         list.add(new InsnNode(Opcodes.POP));
+        // stack: ObjectStreamException
 
         mnode.instructions.insert(node, list);
         mnode.instructions.remove(node);

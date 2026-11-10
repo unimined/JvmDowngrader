@@ -12,7 +12,13 @@ import java.util.List;
 public class J_L_Class {
     @Stub(ref = @Ref("Ljava/lang/Class;"))
     public static Class<?> forName(J_L_Module module, String name) throws ClassNotFoundException {
-        return Class.forName(name, true, module.getClassLoader());
+        // Class.forName(Module, String) returns null rather than throwing
+        // when the class is not found
+        try {
+            return Class.forName(name, true, module.getClassLoader());
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
     }
 
     @Stub

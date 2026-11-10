@@ -156,7 +156,7 @@ public class J_L_R_ObjectMethods {
         visitor.visitCode();
         visitor.visitVarInsn(Opcodes.ALOAD, 0);
         String last = recordClass.getInternalName();
-        last = last.substring(last.lastIndexOf('/') + 1);
+        last = last.substring(Math.max(last.lastIndexOf('/'), last.lastIndexOf('$')) + 1);
         visitor.visitTypeInsn(Opcodes.NEW, "java/lang/StringBuilder");
         visitor.visitInsn(Opcodes.DUP);
         visitor.visitLdcInsn(last + "[");

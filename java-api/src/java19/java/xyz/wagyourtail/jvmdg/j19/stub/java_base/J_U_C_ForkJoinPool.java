@@ -21,6 +21,10 @@ public class J_U_C_ForkJoinPool {
 
     @Stub
     public static int setParallelism(ForkJoinPool fjp, int parallelism) {
+        // mirror the real bounds check even though the value cannot be applied
+        if (parallelism < 1 || parallelism > 32767) {
+            throw new IllegalArgumentException();
+        }
         // this doesn't actually set the parallelism, but it's the best we can do, really
         return fjp.getParallelism();
     }

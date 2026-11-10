@@ -19,6 +19,11 @@ public class StringConstable implements J_L_C_Constable, J_L_C_ConstantDesc {
     }
 
     @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
+
+    @Override
     public String resolveConstantDesc(MethodHandles.Lookup lookup) {
         return value;
     }

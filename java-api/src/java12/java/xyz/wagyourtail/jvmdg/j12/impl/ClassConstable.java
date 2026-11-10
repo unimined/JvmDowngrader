@@ -31,12 +31,21 @@ public class ClassConstable implements J_L_C_Constable, J_L_I_TypeDescriptor.OfF
 
     @Override
     public ClassConstable componentType() {
-        return new ClassConstable(clazz.getComponentType());
+        Class<?> component = clazz.getComponentType();
+        return component == null ? null : new ClassConstable(component);
     }
 
     @Override
     public ClassConstable arrayType() {
+        if (clazz == void.class) {
+            throw new UnsupportedOperationException();
+        }
         return new ClassConstable(Array.newInstance(clazz, 0).getClass());
+    }
+
+    @Override
+    public String toString() {
+        return clazz.toString();
     }
 
     @Override

@@ -30,6 +30,7 @@ public class ReverseList<E> extends ReverseCollection<E, List<E>>implements List
     public Iterator<E> iterator() {
         return new Iterator<>() {
             int pos = original.size();
+            boolean canRemove;
 
             @Override
             public boolean hasNext() {
@@ -38,12 +39,20 @@ public class ReverseList<E> extends ReverseCollection<E, List<E>>implements List
 
             @Override
             public E next() {
+                if (pos < 1) {
+                    throw new NoSuchElementException();
+                }
+                canRemove = true;
                 return original.get(--pos);
             }
 
             @Override
             public void remove() {
+                if (!canRemove) {
+                    throw new IllegalStateException();
+                }
                 original.remove(pos);
+                canRemove = false;
             }
 
         };
