@@ -52,7 +52,7 @@ public class J_L_I_MethodHandles {
         if (!cls.isArray()) {
             throw new IllegalArgumentException();
         }
-        return new J_L_I_VarHandle(cls);
+        return J_L_I_VarHandle.ofArray(cls);
     }
 
     @JEP(193)
@@ -65,9 +65,9 @@ public class J_L_I_MethodHandles {
         }
         Class<?> componentType = viewClass.getComponentType();
         if (!componentType.isPrimitive() || componentType == byte.class || componentType == boolean.class) {
-            throw new UnsupportedOperationException();
+            throw new IllegalArgumentException("not a primitive type array: " + viewClass);
         }
-        return new J_L_I_VarHandle(viewClass, true, byteOrder != ByteOrder.nativeOrder());
+        return J_L_I_VarHandle.ofByteArrayView(viewClass, byteOrder != ByteOrder.nativeOrder());
     }
 
     @JEP(193)
@@ -80,9 +80,9 @@ public class J_L_I_MethodHandles {
         }
         Class<?> componentType = viewClass.getComponentType();
         if (!componentType.isPrimitive() || componentType == byte.class || componentType == boolean.class) {
-            throw new UnsupportedOperationException();
+            throw new IllegalArgumentException("not a primitive type array: " + viewClass);
         }
-        return new J_L_I_VarHandle(viewClass, true, byteOrder != ByteOrder.nativeOrder());
+        return J_L_I_VarHandle.ofByteBufferView(viewClass, byteOrder != ByteOrder.nativeOrder());
     }
 
     @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
@@ -116,7 +116,7 @@ public class J_L_I_MethodHandles {
                     if ((declaredField.getModifiers() & Opcodes.ACC_STATIC) != 0) {
                         throw new IllegalAccessException();
                     }
-                    return new J_L_I_VarHandle(declaredField);
+                    return J_L_I_VarHandle.of(declaredField);
                 }
             }
             throw new NoSuchFieldException();
@@ -133,7 +133,7 @@ public class J_L_I_MethodHandles {
                     if ((declaredField.getModifiers() & Opcodes.ACC_STATIC) == 0) {
                         throw new IllegalAccessException();
                     }
-                    return new J_L_I_VarHandle(declaredField);
+                    return J_L_I_VarHandle.of(declaredField);
                 }
             }
             throw new NoSuchFieldException();
@@ -143,7 +143,7 @@ public class J_L_I_MethodHandles {
         @JEP(193)
         public static J_L_I_VarHandle unreflectVarHandle(MethodHandles.Lookup lookup, Field field) {
             Objects.requireNonNull(field);
-            return new J_L_I_VarHandle(field);
+            return J_L_I_VarHandle.of(field);
         }
         @Stub(requiresRuntime = true)
         public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] bytes) throws Throwable {

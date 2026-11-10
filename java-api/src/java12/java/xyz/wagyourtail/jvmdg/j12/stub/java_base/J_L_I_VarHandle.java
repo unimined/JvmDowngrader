@@ -68,6 +68,18 @@ public class J_L_I_VarHandle {
         }
 
         @Override
+        public String toString() {
+            switch (kind) {
+                case ARRAY:
+                    return "VarHandleDesc[" + varType.displayName() + "[]]";
+                case STATIC_FIELD:
+                    return "VarHandleDesc[static " + declaring.displayName() + "." + constantName() + ":" + varType.displayName() + "]";
+                default:
+                    return "VarHandleDesc[" + declaring.displayName() + "." + constantName() + ":" + varType.displayName() + "]";
+            }
+        }
+
+        @Override
         public VarHandle resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException {
             switch (kind) {
                 case FIELD:
