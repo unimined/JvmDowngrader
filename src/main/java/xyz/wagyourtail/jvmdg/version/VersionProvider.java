@@ -173,9 +173,10 @@ public abstract class VersionProvider {
      * enum constants this provider wants injected eagerly — {@code Bootstrap}
      * iterates loaded providers at premain (before any consumer code can
      * observe the un-extended universe) and injects each declared constant.
-     * Keys are the real enum {@link Type}, values the constant names.
+     * Keys are the real enum class (which always exists on the target — only
+     * the constant is missing), values the constant names.
      */
-    public Map<Type, Set<String>> enumExtensions() {
+    public Map<Class<? extends Enum<?>>, Set<String>> enumExtensions() {
         return Collections.emptyMap();
     }
 
@@ -393,8 +394,8 @@ public abstract class VersionProvider {
      */
     private void registerEnumExtensions() {
         Set<String> warnings = new LinkedHashSet<>();
-        for (Map.Entry<Type, Set<String>> entry : enumExtensions().entrySet()) {
-            Type enumType = entry.getKey();
+        for (Map.Entry<Class<? extends Enum<?>>, Set<String>> entry : enumExtensions().entrySet()) {
+            Type enumType = Type.getType(entry.getKey());
             String enumDesc = enumType.getDescriptor();
             for (String member : entry.getValue()) {
                 try {

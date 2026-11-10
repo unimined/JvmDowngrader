@@ -1,6 +1,5 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
-import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.cli.Flags;
@@ -111,23 +110,27 @@ public class Bootstrap {
         }
         // eagerly inject enum extensions (e.g. StandardProtocolFamily.UNIX)
         // before any consumer bytecode can observe the un-extended universe
+        injectEnumExtensions();
+        LOGGER.info("JVMDowngrader Bootstrap agent loaded.");
+    }
+
+    public static void agentmain(String args, Instrumentation instrumentation) throws URISyntaxException, IOException, UnmodifiableClassException {
+        premain(args, instrumentation);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void injectEnumExtensions() {
         for (VersionProvider provider : ServiceLoader.load(VersionProvider.class)) {
             try {
-                for (Map.Entry<Type, Set<String>> entry : provider.enumExtensions().entrySet()) {
-                    Class<?> enumClass = Class.forName(entry.getKey().getClassName());
+                for (Map.Entry<Class<? extends Enum<?>>, Set<String>> entry : provider.enumExtensions().entrySet()) {
                     for (String member : entry.getValue()) {
-                        EnumExtender.extend(enumClass.asSubclass(Enum.class), member);
+                        EnumExtender.extend((Class) entry.getKey(), member);
                     }
                 }
             } catch (Throwable t) {
                 LOGGER.warn("failed to apply enum extensions for " + provider.getClass().getName(), t);
             }
         }
-        LOGGER.info("JVMDowngrader Bootstrap agent loaded.");
-    }
-
-    public static void agentmain(String args, Instrumentation instrumentation) throws URISyntaxException, IOException, UnmodifiableClassException {
-        premain(args, instrumentation);
     }
 
 }

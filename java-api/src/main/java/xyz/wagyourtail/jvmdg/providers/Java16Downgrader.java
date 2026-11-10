@@ -11,7 +11,9 @@ import xyz.wagyourtail.jvmdg.j16.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.j16.stub.java_net_http.J_N_H_HttpRequest;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
+import java.net.StandardProtocolFamily;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,11 +23,10 @@ public class Java16Downgrader extends AllVersionDowngrader {
     }
 
     @Override
-    public Map<Type, Set<String>> enumExtensions() {
-        return Collections.singletonMap(
-            Type.getObjectType("java/net/StandardProtocolFamily"),
-            Collections.singleton("UNIX")
-        );
+    public Map<Class<? extends Enum<?>>, Set<String>> enumExtensions() {
+        Map<Class<? extends Enum<?>>, Set<String>> extensions = new LinkedHashMap<>();
+        extensions.put(StandardProtocolFamily.class, Collections.singleton("UNIX"));
+        return extensions;
     }
 
     public void init() {
