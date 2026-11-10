@@ -55,16 +55,20 @@ public class J_L_InternalError {
     public static void init2(MethodNode mnode, int i) {
         MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
+        // stack: InternalError, Throwable
+        // Throwable(Throwable) sets detailMessage = cause == null ? null : cause.toString()
         list.add(new InsnNode(Opcodes.DUP2));
         // stack: InternalError, Throwable, InternalError, Throwable
-        list.add(new InsnNode(Opcodes.POP));
-        // stack: InternalError, Throwable, InternalError
-        // call init
-        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/InternalError", "<init>", "()V", false));
+        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "xyz/wagyourtail/jvmdg/j8/intl/ExceptionHelper", "causeMessage", "(Ljava/lang/Throwable;)Ljava/lang/String;", false));
+        // stack: InternalError, Throwable, InternalError, String
+        // call init(String)
+        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/InternalError", "<init>", "(Ljava/lang/String;)V", false));
         // stack: InternalError, Throwable
+        // call initCause
         list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/InternalError", "initCause", "(Ljava/lang/Throwable;)Ljava/lang/Throwable;", false));
-        // stack: InternalError
+        // stack: InternalError, InternalError (initCause returns this)
         list.add(new InsnNode(Opcodes.POP));
+        // stack: InternalError
 
         mnode.instructions.insert(node, list);
         mnode.instructions.remove(node);

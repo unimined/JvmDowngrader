@@ -5,6 +5,7 @@ import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_I_Console;
 import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_L_Class;
 import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_L_Module;
 import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_N_F_Path;
+import xyz.wagyourtail.jvmdg.j22.stub.java_base.J_U_C_ForkJoinTask;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java22Downgrader extends AllVersionDowngrader {
@@ -20,6 +21,7 @@ public class Java22Downgrader extends AllVersionDowngrader {
         stub(J_L_Class.class);
         stub(J_L_Module.class);
         stub(J_N_F_Path.class);
+        stub(J_U_C_ForkJoinTask.class);
 
     }
 

@@ -9,6 +9,9 @@
     </Properties>
     <codeStyleSettings language="JAVA">
       <option name="BLANK_LINES_BEFORE_CLASS_END" value="1" />
+      <option name="METHOD_ANNOTATION_WRAP" value="0" />
+      <option name="CLASS_ANNOTATION_WRAP" value="0" />
+      <option name="FIELD_ANNOTATION_WRAP" value="0" />
       <indentOptions>
         <option name="CONTINUATION_INDENT_SIZE" value="4" />
       </indentOptions>

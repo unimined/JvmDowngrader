@@ -28,6 +28,17 @@ public abstract class VersionProvider {
 
     public final Coverage coverage;
 
+    /**
+     * Provider priority — higher wins when two providers claim the same
+     * input version.
+     */
+    public final int priority;
+
+    /**
+     * @deprecated misspelled; use {@link #priority}. Kept for SPI
+     * compatibility with providers compiled against older releases.
+     */
+    @Deprecated
     public final int priotity;
 
     /**
@@ -38,12 +49,18 @@ public abstract class VersionProvider {
     protected Logger logger;
 
     private volatile boolean initialized = false;
+    private boolean initializing = false;
+    // once init() fails, retries deterministically fail the same way (e.g.
+    // providers whose stub classes cannot even load on the running JVM);
+    // caching avoids re-running the whole init per caller.
+    private Throwable initFailure = null;
 
-    protected VersionProvider(int inputVersion, int outputVersion, int priotity) {
+    protected VersionProvider(int inputVersion, int outputVersion, int priority) {
         this.inputVersion = inputVersion;
         this.outputVersion = outputVersion;
         this.coverage = new Coverage(inputVersion, this);
-        this.priotity = priotity;
+        this.priority = priority;
+        this.priotity = priority;
     }
 
     public static FullyQualifiedMemberNameAndDesc resolveModifyTarget(Member member, Ref ref) {
@@ -94,7 +111,16 @@ public abstract class VersionProvider {
 
         Class<?>[] paramClasses = method.getParameterTypes();
         for (int i = 0; i < params.size(); i++) {
-            Adapter a = paramClasses[i].getAnnotation(Adapter.class);
+            // walk array types to the component: annotations don't propagate
+            // to the synthesized array class, and reflectively the signature
+            // carries the adapter (fake) type after api downgrading
+            int dims = 0;
+            Class<?> p = paramClasses[i];
+            while (p.isArray()) {
+                p = p.getComponentType();
+                dims++;
+            }
+            Adapter a = p.getAnnotation(Adapter.class);
             if (a != null) {
                 String aRef = a.value();
                 Type t;
@@ -103,13 +129,15 @@ public abstract class VersionProvider {
                 } else {
                     t = Type.getObjectType(aRef);
                 }
-
-                for (VersionProvider versionProvider : downgrader.versionProviders(this.outputVersion)) {
-                    if (versionProvider.classStubs.containsKey(t)) {
-                        params.set(i, t);
-                        break;
-                    }
+                for (int d = 0; d < dims; d++) {
+                    t = Type.getType("[" + t.getDescriptor());
                 }
+
+                // always record the real (JDK) type, not just when the adapter
+                // has already been registered — the member lookup is matched
+                // against pre-transform call sites, which carry real types, and
+                // registration order is otherwise load-order dependent
+                params.set(i, t);
             }
         }
 
@@ -277,6 +305,9 @@ public abstract class VersionProvider {
 
     public void stub(Class<?> clazz) {
         Set<String> warnings = new LinkedHashSet<>();
+        // registration failures are collected and reported once per stub class
+        // instead of one warn+stacktrace per member
+        List<String> failures = new ArrayList<>();
         try {
             FullyQualifiedMemberNameAndDesc fqm = FullyQualifiedMemberNameAndDesc.of(clazz);
             JEP jep = clazz.getAnnotation(JEP.class);
@@ -320,6 +351,19 @@ public abstract class VersionProvider {
                         if (method.isAnnotationPresent(Stub.class)) {
                             Stub stub = method.getAnnotation(Stub.class);
                             FullyQualifiedMemberNameAndDesc target = resolveStubTarget(method, stub.ref());
+                            if (stub.downgradeVersion()) {
+                                // the trailing int param receives the input
+                                // version at transform time; the registered
+                                // key must match the pre-transform signature
+                                Type d = target.getDesc();
+                                Type[] args = d.getArgumentTypes();
+                                if (args.length == 0 || !args[args.length - 1].equals(Type.INT_TYPE)) {
+                                    throw new IllegalArgumentException(method + " downgradeVersion stub must end with an int parameter");
+                                }
+                                args = Arrays.copyOf(args, args.length - 1);
+                                target = new FullyQualifiedMemberNameAndDesc(target.getOwner(), target.getName(),
+                                    Type.getMethodType(d.getReturnType(), args));
+                            }
                             Type owner = target.getOwner();
                             MemberNameAndDesc member = target.toMemberNameAndDesc();
                             getStubMapper(owner, warnings).addStub(member, method, stub);
@@ -329,26 +373,19 @@ public abstract class VersionProvider {
                             Type owner = target.getOwner();
                             MemberNameAndDesc member = target.toMemberNameAndDesc();
                             // ensure method parameters are valid
-                            Class<?>[] params = method.getParameterTypes();
-                            for (int i = 0, j = 0; i < params.length; i++, j++) {
-                                if (i >= Modify.MODIFY_SIG.length) {
-                                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " has too many parameters");
-                                }
-                                while (j < Modify.MODIFY_SIG.length && params[i] != Modify.MODIFY_SIG[j]) {
-                                    ++j;
-                                }
-                                if (j >= Modify.MODIFY_SIG.length) {
-                                    throw new IllegalArgumentException("Class " + clazz.getName() + ", @Modify method " + method.getName() + " parameter " + i + " must be of type " + Modify.MODIFY_SIG[i].getName());
-                                }
+                            try {
+                                ModifyUtils.matchModifyParams(method);
+                            } catch (IllegalArgumentException e) {
+                                throw new IllegalArgumentException("Class " + clazz.getName() + ", " + e.getMessage(), e);
                             }
                             getStubMapper(owner, warnings).addModify(member, method, modify);
                         }
                     } catch (Throwable e) {
-                        logger.warn("failed to create stub for " + clazz.getName() + ";" + method, e);
+                        failures.add(method.getName() + ": " + e);
                     }
                 }
             } catch (Throwable e) {
-                logger.warn("failed to resolve methods for " + clazz.getName(), e);
+                failures.add("resolving methods: " + e);
             }
             try {
                 // inner classes
@@ -356,10 +393,17 @@ public abstract class VersionProvider {
                     stub(inner);
                 }
             } catch (Throwable e) {
-                logger.warn("failed to resolve inner classes for " + clazz.getName(), e);
+                failures.add("resolving inner classes: " + e);
             }
         } catch (Throwable e) {
-            logger.warn("failed to create stub(s) for " + clazz.getName(), e);
+            failures.add("creating stub: " + e);
+        }
+        if (!failures.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            for (String failure : failures) {
+                sb.append("\n    ").append(failure);
+            }
+            logger.error(failures.size() + " stub registration failure(s) in " + clazz.getName() + sb);
         }
         if (!warnings.isEmpty() && logger.is(Logger.Level.WARN)) {
             if (downgrader.flags.checkInIgnoreWarnings(clazz.getName())) return;
@@ -678,6 +722,50 @@ public abstract class VersionProvider {
         }
     }
 
+    private Map<Type, Type> reverseClassStubs;
+    private int reverseClassStubsSize = -1;
+
+    /**
+     * Translates an adapter (fake) type back to its real (JDK) type.
+     * Needed when matching members on api-internal call sites: after api
+     * downgrading, reflective signatures inside the api jar carry fake types,
+     * while registered stub members and pre-transform call sites carry real
+     * ones. Identity for types with no adapter.
+     */
+    public Type unstubClass(Type type) {
+        if (type.getSort() == Type.ARRAY) {
+            Type element = type.getElementType();
+            Type unstubbed = unstubClass(element);
+            if (unstubbed != element) {
+                return Type.getType(type.getDescriptor().substring(0, type.getDimensions()) + unstubbed.getDescriptor());
+            }
+            return type;
+        }
+        if (type.getSort() != Type.OBJECT) {
+            return type;
+        }
+        // adapters are registered across all providers in the chain — consult
+        // every provider from this one's inputVersion down (starting at
+        // outputVersion would exclude this provider's own adapters)
+        List<VersionProvider> providers = downgrader.versionProviders(this.inputVersion);
+        int total = 0;
+        for (VersionProvider vp : providers) {
+            total += vp.classStubs.size();
+        }
+        if (reverseClassStubs == null || reverseClassStubsSize != total) {
+            Map<Type, Type> rev = new HashMap<>();
+            for (VersionProvider vp : providers) {
+                for (Map.Entry<Type, Pair<Type, Pair<Class<?>, Adapter>>> e : vp.classStubs.entrySet()) {
+                    rev.put(e.getValue().getFirst(), e.getKey());
+                }
+            }
+            reverseClassStubs = rev;
+            reverseClassStubsSize = total;
+        }
+        Type unstubbed = reverseClassStubs.get(type);
+        return unstubbed == null ? type : unstubbed;
+    }
+
     public ClassNode stubMethods(ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Function<String, ClassNode> getReadOnly) throws IOException {
         if (owner.name.equals("module-info")) {
             return owner;
@@ -782,17 +870,41 @@ public abstract class VersionProvider {
     public void ensureInit(ClassDowngrader downgrader) {
         this.downgrader = downgrader;
         this.logger = downgrader.logger.subLogger(getClass());
+        if (initFailure != null) {
+            rethrowInitFailure();
+        }
         if (!initialized) {
             synchronized (this) {
+                if (initFailure != null) {
+                    rethrowInitFailure();
+                }
                 if (!initialized) {
+                    if (initializing) {
+                        // re-entrant call from the thread already running init():
+                        // registering a stub class loads it through the
+                        // DowngradingClassLoader, whose transform re-enters
+                        // ensureInit. Re-running init() would re-request classes
+                        // that are mid-definition -> ClassCircularityError.
+                        // Proceeding with a partially-registered provider is
+                        // strictly better than crashing.
+                        return;
+                    }
                     if (downgrader.flags.debugSkipStubs.contains(inputVersion)) {
                         initialized = true;
                         return;
                     }
-                    preInit();
-                    init();
-                    afterInit();
-                    initialized = true;
+                    initializing = true;
+                    try {
+                        preInit();
+                        init();
+                        afterInit();
+                        initialized = true;
+                    } catch (Throwable t) {
+                        initFailure = t;
+                        Utils.<RuntimeException>sneakyThrow(t);
+                    } finally {
+                        initializing = false;
+                    }
                 }
             }
         }
@@ -800,6 +912,10 @@ public abstract class VersionProvider {
 
     public boolean isInitialized() {
         return initialized;
+    }
+
+    private void rethrowInitFailure() {
+        Utils.<RuntimeException>sneakyThrow(initFailure);
     }
 
     public ClassNode downgrade(final ClassDowngrader downgrader, ClassNode clazz, final Set<ClassNode> extra, final boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws IOException {
@@ -1073,11 +1189,13 @@ public abstract class VersionProvider {
                 removed.add(Type.getObjectType(removedInterface).getClassName());
             }
             boolean found = false;
-            for (AnnotationNode an : clazz.visibleAnnotations) {
-                if (an.desc.equals(Type.getType(RemovedInterfaces.class).getDescriptor())) {
-                    ((List<String>) an.values.get(1)).addAll(removed);
-                    found = true;
-                    break;
+            if (clazz.visibleAnnotations != null) {
+                for (AnnotationNode an : clazz.visibleAnnotations) {
+                    if (an.desc.equals(Type.getType(RemovedInterfaces.class).getDescriptor())) {
+                        ((List<String>) an.values.get(1)).addAll(removed);
+                        found = true;
+                        break;
+                    }
                 }
             }
             if (!found) {
@@ -1085,6 +1203,9 @@ public abstract class VersionProvider {
                 an.values = new ArrayList<>();
                 an.values.add("value");
                 an.values.add(removed);
+                if (clazz.visibleAnnotations == null) {
+                    clazz.visibleAnnotations = new ArrayList<>();
+                }
                 clazz.visibleAnnotations.add(an);
             }
         }

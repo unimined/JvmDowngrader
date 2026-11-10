@@ -17,6 +17,10 @@ import java.util.concurrent.ForkJoinPool;
 
 public class TestHttpClient {
 
+    // handler prints are collected and flushed on the main thread — handler
+    // threads race/interleave under batched runners
+    static final java.util.List<String> handled = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
     public static int servermain() throws IOException, InterruptedException {
         HttpServer server = HttpServer.create();
         server.bind(new InetSocketAddress(0), 0);
@@ -26,7 +30,7 @@ public class TestHttpClient {
             // read body
             if (!Objects.equals(e.getRequestMethod(), "GET")) {
                 byte[] b = e.getRequestBody().readAllBytes();
-                System.out.println(new String(b));
+                handled.add(new String(b));
                 OutputStream os = e.getResponseBody();
                 os.write("response: ".getBytes());
                 os.write(b);
@@ -76,6 +80,11 @@ public class TestHttpClient {
             System.out.println(resp2.body());
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
+        }
+        synchronized (handled) {
+            for (String s : handled) {
+                System.out.println(s);
+            }
         }
     }
 

@@ -35,10 +35,12 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class DowngradeTests extends BaseIntegrationTests {
     private static final String DOWNGRADE_PATH = "jvmdg.test.downgradePath";
     private static final Path original = Path.of(System.getProperty(DOWNGRADE_PATH));
+    private static final String BATCH_MAIN = "xyz.wagyourtail.downgradetest.BatchMain";
     private static final Map<String, Map.Entry<Integer, String>> originalResults = new ConcurrentHashMap<>();
     private static final String[] args = new String[]{
         "arg1",
@@ -47,6 +49,12 @@ public class DowngradeTests extends BaseIntegrationTests {
     };
     private static final Map<Flags, Path> downgradedPaths = new ConcurrentHashMap<>();
     private static final Map<Flags, Path> shadedPaths = new ConcurrentHashMap<>();
+    // one subprocess per flags-config runs ALL mains (BatchMain frames) instead
+    // of one JVM per (main x config) — ~650 launches down to ~16
+    private static final Map<FlagsAndRunner, Map<String, Map.Entry<Integer, String>>> downgradedResults = new ConcurrentHashMap<>();
+    private static final Map<FlagsAndRunner, Map<String, Map.Entry<Integer, String>>> shadedResults = new ConcurrentHashMap<>();
+    private static final Map<FlagsAndRunner, Map<String, Map.Entry<Integer, String>>> runtimeResults = new ConcurrentHashMap<>();
+    private static volatile List<String> mainsCache;
 
     private static Stream<FlagsAndRunner> flags() {
         Flags flags = BaseIntegrationTests.flags.copy();
@@ -88,9 +96,10 @@ public class DowngradeTests extends BaseIntegrationTests {
     }
 
     private static List<String> mainClasses() throws IOException {
+        if (mainsCache != null) return mainsCache;
         try (FileSystem fs = Utils.openZipFileSystem(original, false)) {
             Path root = fs.getPath("/");
-            return IOStream.adapt(Files.walk(root))
+            List<String> mains = IOStream.adapt(Files.walk(root))
                 .filter(e -> Files.isRegularFile(e) && e.getFileName().toString().endsWith(".class"))
                 .map(e -> root.relativize(e).toString().replaceAll("\\.class$", "").replace("/", "."))
                 .filter(e -> {
@@ -104,7 +113,11 @@ public class DowngradeTests extends BaseIntegrationTests {
                     }
                     return cn.methods.stream().anyMatch(m -> m.name.equals("main"));
                 })
+                // the batch driver itself is not a test case
+                .filter(e -> !e.equals(BATCH_MAIN))
                 .unwrap().toList();
+            mainsCache = mains;
+            return mains;
         }
     }
 
@@ -118,24 +131,130 @@ public class DowngradeTests extends BaseIntegrationTests {
 
     @BeforeAll
     public static void runOriginal() throws IOException, InterruptedException {
-        for (String main : mainClasses()) {
-            StringBuilder originalLog = new StringBuilder();
-            Integer exitCode = JavaRunner.runJarInSubprocess(
-                original,
-                args,
-                main,
-                Set.of(),
-                Path.of("."),
-                Map.of(),
-                true,
-                List.of(),
-                launchersByVersion.get(originalVersion),
-                (String it) -> originalLog.append(it).append("\n"),
-                (String it) -> originalLog.append(it).append("\n")
-            );
-            assert exitCode != null;
-            originalResults.put(main, Map.entry(exitCode, originalLog.toString()));
+        originalResults.putAll(runBatch(
+            original,
+            batchArgs(mainClasses()),
+            BATCH_MAIN,
+            Set.of(),
+            originalVersion
+        ));
+    }
+
+    // mains that observe JVM-global state (e.g. the process child list) must
+    // run on the driver thread before the parallel phase — see "++" in
+    // BatchMain and --seqmain in cli.Main
+    private static final Set<String> SEQUENTIAL_MAINS = Set.of(
+        "xyz.wagyourtail.downgradetest.TestProcessHandle"
+    );
+
+    private static String[] batchArgs(List<String> mains) {
+        List<String> all = new ArrayList<>();
+        for (String main : mains) {
+            if (SEQUENTIAL_MAINS.contains(main)) {
+                all.add(main);
+            }
         }
+        if (!all.isEmpty()) {
+            all.add("++");
+        }
+        all.addAll(mains);
+        all.add("--");
+        Collections.addAll(all, args);
+        return all.toArray(new String[0]);
+    }
+
+    private static String[] batchArgsFor(FlagsAndRunner javaVersion) throws IOException {
+        List<String> mains = new ArrayList<>();
+        for (String main : mainClasses()) {
+            mains.add(renamedMain(main, javaVersion));
+        }
+        return batchArgs(mains);
+    }
+
+    private static Map<String, Map.Entry<Integer, String>> runBatch(
+            Path jar, String[] cmdArgs, String mainClass, Set<Path> classPath,
+            JavaRunner.JavaVersion jv) throws IOException, InterruptedException {
+        StringBuilder log = new StringBuilder();
+        Integer ret = JavaRunner.runJarInSubprocess(
+            jar,
+            cmdArgs,
+            mainClass,
+            classPath,
+            Path.of("."),
+            Map.of(),
+            true,
+            List.of(),
+            launchersByVersion.get(jv),
+            (String it) -> log.append(it).append("\n"),
+            (String it) -> log.append(it).append("\n")
+        );
+        Map<String, Map.Entry<Integer, String>> parsed = parseFrames(log.toString(), ret);
+        if (parsed.isEmpty()) {
+            throw new IllegalStateException("no batch frames parsed from " + jar + " output:\n" + log);
+        }
+        return parsed;
+    }
+
+    // frames: ===JVMDG-BEGIN <name> / ===JVMDG-EXIT <code> — see BatchMain and
+    // cli.Main --batch
+    private static Map<String, Map.Entry<Integer, String>> parseFrames(String log, Integer processExit) {
+        Map<String, Map.Entry<Integer, String>> out = new LinkedHashMap<>();
+        String current = null;
+        StringBuilder cur = new StringBuilder();
+        for (String line : log.split("\n")) {
+            if (line.startsWith("===JVMDG-BEGIN ")) {
+                current = line.substring("===JVMDG-BEGIN ".length());
+                cur = new StringBuilder();
+            } else if (line.startsWith("===JVMDG-EXIT ") && current != null) {
+                out.put(current, Map.entry(Integer.parseInt(line.substring("===JVMDG-EXIT ".length()).trim()), cur.toString()));
+                current = null;
+            } else if (current != null) {
+                cur.append(line).append("\n");
+            }
+        }
+        if (current != null) {
+            // driver died mid-main — attribute the JVM's own exit code
+            out.put(current, Map.entry(processExit, cur.toString()));
+        }
+        return out;
+    }
+
+    // interfaces get their main moved to <name>$jvmdg$StaticDefaults below v52
+    private static String renamedMain(String mainClass, FlagsAndRunner javaVersion) throws IOException {
+        if (javaVersion.flags().classVersion > 51) {
+            return mainClass;
+        }
+        try (ZipFile zf = new ZipFile(DowngradeTests.original.toFile())) {
+            ZipEntry entry = zf.getEntry(mainClass.replace(".", "/") + ".class");
+            try (InputStream is = zf.getInputStream(entry)) {
+                ClassReader cr = new ClassReader(is);
+                if ((cr.getAccess() & Opcodes.ACC_INTERFACE) != 0) {
+                    return mainClass + "$jvmdg$StaticDefaults";
+                }
+            }
+        }
+        return mainClass;
+    }
+
+    private static Map<String, Map.Entry<Integer, String>> batchResults(
+            Map<FlagsAndRunner, Map<String, Map.Entry<Integer, String>>> cache,
+            FlagsAndRunner javaVersion,
+            IOSupplier<Map<String, Map.Entry<Integer, String>>> runner) {
+        return cache.computeIfAbsent(javaVersion, k -> {
+            try {
+                return runner.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
+    }
+
+    @FunctionalInterface
+    private interface IOSupplier<T> {
+        T get() throws IOException, InterruptedException;
     }
 
     private static Path getDowngradedPath(FlagsAndRunner flags) {
@@ -214,55 +333,23 @@ public class DowngradeTests extends BaseIntegrationTests {
     @MethodSource({"arguments"})
     @Execution(ExecutionMode.CONCURRENT)
     public void testDowngrade(String mainClass, FlagsAndRunner javaVersion) throws IOException, InterruptedException {
-        System.out.println("TEST_DOWNGRADE: Running " + mainClass + " on " + javaVersion.readableSlug());
-        Map.Entry<Integer, String> original = originalResults.get(mainClass);
-        System.out.println("Original: ");
-        System.out.println(original.getValue());
-        System.out.println("Exit code: " + original.getKey());
-
-        if (javaVersion.flags().classVersion <= 51) {
-            try (ZipFile zf = new ZipFile(DowngradeTests.original.toFile())) {
-                ZipEntry entry = zf.getEntry(mainClass.replace(".", "/") + ".class");
-                try (InputStream is = zf.getInputStream(entry)) {
-                    ClassReader cr = new ClassReader(is);
-                    if ((cr.getAccess() & Opcodes.ACC_INTERFACE) != 0) {
-                        mainClass = mainClass + "$jvmdg$StaticDefaults";
-                    }
-                }
-            }
-        }
-
-        System.out.println("\n\n");
-        System.out.println("Downgraded: ");
-        StringBuilder downgradedLog = new StringBuilder();
-        Integer ret = JavaRunner.runJarInSubprocess(
-            getDowngradedJar(javaVersion),
-            args,
-            mainClass,
-            Stream.concat(Stream.of(getApiJar(javaVersion)), downgradeClasspath.stream()).collect(Collectors.toSet()),
-            Path.of("."),
-            Map.of(),
-            true,
-            List.of(),
-            launchersByVersion.get(javaVersion.targetVersion()),
-            (String it) -> {
-                downgradedLog.append(it).append("\n");
-                System.out.println(it);
-            },
-            (String it) -> {
-                downgradedLog.append(it).append("\n");
-                System.out.println(it);
-            }
+        System.out.println("TEST_DOWNGRADE: " + mainClass + " on " + javaVersion.readableSlug());
+        Map<String, Map.Entry<Integer, String>> results = batchResults(downgradedResults, javaVersion, () ->
+            runBatch(
+                getDowngradedJar(javaVersion),
+                batchArgsFor(javaVersion),
+                BATCH_MAIN,
+                Stream.concat(Stream.of(getApiJar(javaVersion)), downgradeClasspath.stream()).collect(Collectors.toSet()),
+                javaVersion.targetVersion()
+            )
         );
-        System.out.println("\n");
-        System.out.println("Exit code: " + ret);
-
-        assert ret != null;
+        Map.Entry<Integer, String> downgraded = results.get(renamedMain(mainClass, javaVersion));
+        assertNotNull(downgraded, "no batch result for " + mainClass + " on " + javaVersion.readableSlug());
         compareResults(
             mainClass,
             javaVersion,
-            original,
-            Map.entry(ret, downgradedLog.toString())
+            originalResults.get(mainClass),
+            downgraded
         );
     }
 
@@ -270,117 +357,88 @@ public class DowngradeTests extends BaseIntegrationTests {
     @MethodSource({"arguments"})
     @Execution(ExecutionMode.CONCURRENT)
     public void testShade(String mainClass, FlagsAndRunner javaVersion) throws IOException, InterruptedException {
-        System.out.println("TEST_SHADE: Running " + mainClass + " on " + javaVersion.readableSlug());
-        Map.Entry<Integer, String> original = originalResults.get(mainClass);
-        System.out.println("Original: ");
-        System.out.println(original.getValue());
-        System.out.println("Exit code: " + original.getKey());
-
-        if (javaVersion.flags().classVersion <= 51) {
-            try (ZipFile zf = new ZipFile(DowngradeTests.original.toFile())) {
-                ZipEntry entry = zf.getEntry(mainClass.replace(".", "/") + ".class");
-                try (InputStream is = zf.getInputStream(entry)) {
-                    ClassReader cr = new ClassReader(is);
-                    if ((cr.getAccess() & Opcodes.ACC_INTERFACE) != 0) {
-                        mainClass = mainClass + "$jvmdg$StaticDefaults";
-                    }
-                }
-            }
-        }
-
-        System.out.println("\n\n");
-        System.out.println("Shade: ");
-        StringBuilder shadedLog = new StringBuilder();
-        Integer ret = JavaRunner.runJarInSubprocess(
-            getShadedJar(javaVersion),
-            args,
-            mainClass,
-            Set.of(),
-            Path.of("."),
-            Map.of(),
-            true,
-            List.of(),
-            launchersByVersion.get(javaVersion.targetVersion()),
-            (String it) -> {
-                shadedLog.append(it).append("\n");
-                System.out.println(it);
-            },
-            (String it) -> {
-                shadedLog.append(it).append("\n");
-                System.out.println(it);
-            }
+        System.out.println("TEST_SHADE: " + mainClass + " on " + javaVersion.readableSlug());
+        Map<String, Map.Entry<Integer, String>> results = batchResults(shadedResults, javaVersion, () ->
+            runBatch(
+                getShadedJar(javaVersion),
+                batchArgsFor(javaVersion),
+                BATCH_MAIN,
+                Set.of(),
+                javaVersion.targetVersion()
+            )
         );
-
-        System.out.println("\n");
-        System.out.println("Exit code: " + ret);
-
-        assert ret != null;
+        Map.Entry<Integer, String> shaded = results.get(renamedMain(mainClass, javaVersion));
+        assertNotNull(shaded, "no batch result for " + mainClass + " on " + javaVersion.readableSlug());
         compareResults(
             mainClass,
             javaVersion,
-            original,
-            Map.entry(ret, shadedLog.toString())
+            originalResults.get(mainClass),
+            shaded
         );
+    }
+
+    // the runtime batch only needs jvmdg's own build outputs + real deps — the
+    // full test classpath (~800KB of junit/gson/test classes) makes
+    // /proc/self/cmdline huge enough that the JDK's native
+    // ProcessHandle.Info.arguments() fails to parse it (page-sized buffer),
+    // breaking parity with the small-classpath baseline run
+    private static Set<Path> runtimeBatchClasspath() {
+        return Stream.of(System.getProperty("java.class.path").split(File.pathSeparator))
+            .map(Path::of)
+            .filter(p -> {
+                String s = p.toString();
+                String n = p.getFileName() == null ? "" : p.getFileName().toString();
+                if (n.isEmpty()) return false;
+                if (s.contains("/testing/")) return false;
+                return s.contains("jvmdowngrader") || s.contains("JvmDowngrader")
+                    || n.startsWith("asm-") || n.startsWith("gson-")
+                    || n.startsWith("commons-io") || n.startsWith("commons-compress")
+                    || n.startsWith("commons-lang3") || n.startsWith("annotations-")
+                    || n.startsWith("kotlin-stdlib") || n.startsWith("java-diff-utils");
+            })
+            .collect(Collectors.toSet());
     }
 
     @ParameterizedTest
     @MethodSource({"arguments"})
     @Execution(ExecutionMode.CONCURRENT)
     public void testRuntime(String mainClass, FlagsAndRunner javaVersion) throws IOException, InterruptedException {
-        System.out.println("TEST_RUNTIME: Running " + mainClass + " on " + javaVersion.readableSlug());
-        Map.Entry<Integer, String> original = originalResults.get(mainClass);
-        System.out.println("Original: ");
-        System.out.println(original.getValue());
-        System.out.println("Exit code: " + original.getKey());
-
-        Set<Path> classpathJars = new HashSet<>(Stream.of(System.getProperty("java.class.path").split(File.pathSeparator))
-            .map(Path::of)
-            .toList());
-
-        System.out.println("\n\n");
-        System.out.println("Runtime: ");
-        StringBuilder runtimeLog = new StringBuilder();
-        List<String> args = new ArrayList<>();
-        args.addAll(List.of(
-            "-a",
-            javaApi.toString(),
-            "--quiet",
-            "bootstrap",
-            "--classpath",
-            DowngradeTests.original.toAbsolutePath().toString(),
-            "-m",
-            mainClass
-        ));
-        args.addAll(Arrays.asList(DowngradeTests.args));
-        Integer ret = JavaRunner.runJarInSubprocess(
-            null,
-            args.toArray(new String[0]),
-            "xyz.wagyourtail.jvmdg.cli.Main",
-            classpathJars,
-            Path.of("."),
-            Map.of(),
-            true,
-            List.of(),
-            launchersByVersion.get(javaVersion.targetVersion()),
-            (String it) -> {
-                runtimeLog.append(it).append("\n");
-                System.out.println(it);
-            },
-            (String it) -> {
-                runtimeLog.append(it).append("\n");
-                System.out.println(it);
+        System.out.println("TEST_RUNTIME: " + mainClass + " on " + javaVersion.readableSlug());
+        Set<Path> classpathJars = runtimeBatchClasspath();
+        Map<String, Map.Entry<Integer, String>> results = batchResults(runtimeResults, javaVersion, () -> {
+            List<String> rargs = new ArrayList<>(List.of(
+                "-a",
+                javaApi.toString(),
+                "--quiet",
+                "bootstrap",
+                "--batch",
+                "--classpath",
+                DowngradeTests.original.toAbsolutePath().toString()
+            ));
+            for (String m : mainClasses()) {
+                if (SEQUENTIAL_MAINS.contains(m)) {
+                    rargs.add("--seqmain");
+                } else {
+                    rargs.add("-m");
+                }
+                rargs.add(m);
             }
-        );
-
-        System.out.println("\n");
-        System.out.println("Exit code: " + ret);
-
-        assert ret != null;
+            rargs.addAll(Arrays.asList(DowngradeTests.args));
+            return runBatch(
+                null,
+                rargs.toArray(new String[0]),
+                "xyz.wagyourtail.jvmdg.cli.Main",
+                classpathJars,
+                javaVersion.targetVersion()
+            );
+        });
+        Map.Entry<Integer, String> runtime = results.get(mainClass);
+        assertNotNull(runtime, "no batch result for " + mainClass + " on " + javaVersion.readableSlug());
         compareResults(
             mainClass,
             javaVersion,
-            original,
-            Map.entry(ret, runtimeLog.toString())
+            originalResults.get(mainClass),
+            runtime
         );
     }
 

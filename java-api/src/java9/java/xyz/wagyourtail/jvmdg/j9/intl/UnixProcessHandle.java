@@ -51,9 +51,16 @@ public class UnixProcessHandle implements J_L_ProcessHandle {
     private String[] pidInfo;
 
     public UnixProcessHandle(long pid) {
+        this(pid, null);
+    }
+
+    // fallbackCmdline is used only when /proc/<pid>/cmdline is unreadable —
+    // current() passes sun.java.command so self-args still resolve
+    public UnixProcessHandle(long pid, String[] fallbackCmdline) {
         this.pid = pid;
         pidInfo = readPidInfo();
-        cmdline = readCmdLine();
+        String[] cl = readCmdLine();
+        this.cmdline = cl != null ? cl : fallbackCmdline;
     }
 
     /**

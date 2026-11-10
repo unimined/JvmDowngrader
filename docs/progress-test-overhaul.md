@@ -1,0 +1,268 @@
+# Progress: audit fixes + test/stub overhaul
+
+## RESUME
+- Phase: 0-7 DONE + batching/parallel overhaul VERIFIED. Latest verified state:
+  `./gradlew :testing:test` (FULL suite) → **BUILD SUCCESSFUL** — all
+  DowngradeTests (666) + StubParityTests (8/8) + unit/integration green.
+- Subprocess count: ~650 JVMs → ~16. Mains run batched per flags-config×mode
+  (BatchMain frames ===JVMDG-BEGIN/EXIT) with bounded in-JVM parallelism
+  (jvmdg.batch.threads, ThreadGroup-routed PrintStream, atomic frame emit).
+  --seqmain/"++" runs process-state-sensitive mains (TestProcessHandle)
+  on the driver thread first.
+- Runtime class-loading fixed (was ALL 222 runtime cases failing):
+  DowngradingClassLoader is child-first for providers./stub.all./j<N>.*
+  packages (api jar on app cp loaded raw → UCVE on j8); class-version
+  pre-check in transformClass avoids collectProviders recursion;
+  VersionProvider.ensureInit caches init failures → sneakyThrow
+  (was a 12-min fillInStackTrace spin, the "7-minute test" mystery).
+  ResourceClassLoader.delegates → CopyOnWriteArrayList (CME under
+  parallel downgrade) + multiVersionList volatile — ported to commons-core.
+- ProcessHandle arguments() fixed two ways: j8 stub gained /proc→
+  sun.java.command fallback (UnixProcessHandle 2-arg ctor +
+  J_L_ProcessHandle.selfCmdline); j11+ native returns Optional.empty()
+  when argv > ~4KB (JDK page-buffer limit) — runtime batch classpath now
+  filtered to jvmdg outputs+deps (runtimeBatchClasspath()), restoring
+  parity vs the small-classpath baseline.
+- Phase 7 (corpus reorganization) delivered: per-owner generated classes
+  (jvmdg.stubtests.JavaUtilList etc. + Index dispatcher), checked-in Support/
+  StubTest annotation, manual tests in `src/stubtestsManual` discovered by
+  compile-time reflection with x-ids, 3-probe ladder (trivial/meaningful/
+  boundary) with type-aware ALIASES, deny lists for blocking/racy/network/
+  fs-writing probes. 2915 sites / 1083 members / 145 untestable (all
+  classified: denied, jvmdg-fake-type, abstract-ctor, manual-claimed).
+  Harness caught ~45 real bugs across stubs + transformer + generator.
+- Plan file (source of truth): `/home/william/.devin/plans/plan-0011c17c5731ea97.md`
+- Commons mirror repo: `/run/media/william/m2shared/Projects/unimined-org/commons`
+  (commons-asm/core/java7 — ports required per plan's mirror table)
+- Manual parity loop (fast iteration without full Gradle):
+  regen: ./gradlew :testing:stubtestsJar
+  native: $J27 -cp testing/build/libs/stubtests.jar jvmdg.stubtests.Index
+  downgrade: $J17 -Djvmdg.javaApi=java-api/build/libs/jvmdowngrader-java-api-2.0.2.jar
+    -cp "build/classes/java/main:build/classes/java/shared:$ASM911" \
+    xyz.wagyourtail.jvmdg.compile.ZipDowngrader 52 stubtests.jar /tmp/corpus8.jar
+  run8: $J8 -cp "/tmp/corpus8.jar:java-api/build/libs/*-downgraded-8.jar:$ASM911" \
+    jvmdg.stubtests.Index > /tmp/down8.txt
+  (logs contain raw NUL bytes — use `diff -a`/`grep -a` when comparing)
+  (ASM911 = org.ow2.asm *9.11.1* jars from gradle cache — MUST pin, older ASM
+   can't read v71 corpus classes)
+- Known environmental failure under manual path:
+  TestClassDowngradingAgent.retransformCodeSourceInitsLocalInCtorOnly —
+  asm 9.9.1 can't read v71 test classes; passed under Gradle earlier, recheck
+  on next clean Gradle run.
+- `.devin/active-plan` previously pointed at `../Docs/progress-2.0-completion.md`
+  (unimined 2.0 rewrite) — restore when this work parks.
+- `testImplementation(project(":java-api"))` added to testing module —
+  providers resolve via ServiceLoader in unit tests.
+- Test suite runs JUnit CONCURRENTLY (junit-platform.properties) — any test
+  mutating sysprops needs `@Execution(SAME_THREAD)` (applied to TestFlags).
+- Enumeration contract fix: callers that relied on nextElement()==null must
+  use hasMoreElements() — fixed ResourceClassLoader in jvmdg AND commons-core.
+- ASM upgraded to 9.11.1 in jvmdg AND commons-asm (user-approved) — required
+  for v70/v71 class files (JDK 26/27 corpus + agents).
+
+## Checklist
+- [x] Phase 0 — deterministic fixes + unit tests
+  - [x] 0.1 agent System.exit→IllegalClassFormatException, null-safe className/loader
+        (+ lazy multiVersions() — static-init snapshot could stay empty forever)
+  - [x] 0.2 Boolean.getBoolean→parseBoolean (logAnsiColors, shadeInlining) + flag sweep tests
+  - [x] 0.3 checkInIgnoreWarnings NONE + floorEntry shadowing + TestFlags extension
+        (+ Flags.copy api-aliasing fix pulled forward)
+  - [x] 0.4 Arguments.read case preservation + parser tests (+ --disable-inlining fall-through)
+  - [x] 0.5 visibleAnnotations NPE init + tests
+  - [x] 0.6 micro-fixes: downgrade magic check / enumerations (+commons port +
+        ResourceClassLoader/Provider findClass+findResource cascade in both repos) /
+        waitForFutures units+memoize (+commons port) / Lazy DCL verified-correct
+        (tests only, both repos) / temp prefix / Bootstrap exit propagation
+- [x] Phase 1 — structural fixes
+  - [x] 1.1 ReferenceGraph dir-root MR fix + commons-asm port
+  - [x] 1.2 missing reference kinds (ldc Handle, annotations, catch, signatures,
+        inner/record, nest, permitted, exceptions, condy desc) + commons-asm port
+  - [x] 1.3 Windows-separator prefix checks + commons-asm port (component-based
+        isMultiRelease/internalPath — folded into 1.1's fix)
+  - [x] 1.4 <init> NEW/DUP provable-pairing verifier (bounded stack-merge sim,
+        warn+skip replaces IllegalStateException) — TestClassMappingInit 9/9
+  - [x] 1.5 ManifestUtils: shared sig-strip (.EC added) + manifest attrs +
+        manifest synthesis for missing-manifest inputs + ApiShader guard
+        — TestManifestUtils + suite 14/14
+  - [x] 1.6 concurrent collections: preScan putIfAbsent, References.scan
+        synchronized, visitedClasses CHM, currentOutputData CHM **moved inside
+        version loop — was silently dropping MR output files** — 7/7
+  - [x] 1.7 api-jar cache key incl. output-affecting flags hash — 4/4
+  - [x] 1.8 getCurrentVersionDowngrader synchronized — 5/5
+  - [x] 1.9 stub-registration failures → error-level summary — 3/3
+- [x] Phase 2 — dead code / maven XML+hash / Flags.copy aliasing / MODIFY_SIG dedup /
+      utils dedup / reproducible outputs / bare asserts→JUnit / commons sweep
+  - [x] bare asserts→JUnit (DowngradeTests, MultiVersionTests)
+  - [x] MODIFY_SIG dedup → ModifyUtils.matchModifyParams (3 sites)
+  - [x] maven XMLDecoder → secure DOM parse (XXE-hardened) + .sha1 download verify
+  - [x] Flags.copy aliasing (done in 0.2)
+  - [x] commons sweep: ConcurrentMap/putIfAbsent/synchronized-scan parity port
+  - [x] dead code: Flags.serialize() removed, getIgnoreWarnings dead map,
+        stray println in JvmdgJavacPlugin
+  - [x] utils dedup: already done (buildSrc copies gradle-plugin/src/utils)
+  - [x] reproducible outputs: deferred concurrent maps + sorted write pass +
+        OutputUtils.pinTimestamps — repeatedDowngradesProduceIdenticalOutput
+        asserts identical sha256
+- [x] Phase 3 — stub-parity harness
+  - [x] TestStubInventory → testing/unexercised.txt ratchet baseline
+        (1328 members; degrades gracefully under ASM-vs-classversion)
+  - [x] generateStubTests task (real JDK call sites per registered member):
+        2731 sites / ~1002 members covered / 224 untestable-with-reasons,
+        index.txt+untestable.txt+coverage.txt reports; deny lists for
+        blocking/racy/env-dependent/file-writing members;
+        `-PstubCoverageMin` ratchet in the Gradle task
+  - [x] StubParityTests (original-vs-downgraded diff matrix over generated
+        sites): native-JDK27 baseline vs v52/v55/v61/v65 × downgrade+shade —
+        **8/8 PASS**; testing/stubparity-known-diffs.txt classifies ~105
+        accepted version-representation diffs across the 8 slugs
+  - [x] Real bugs the harness caught and got fixed (~30):
+        norm() Matcher group-ref bugs ($$Lambda#, $#), norm jvmdg-impl +
+        CollectorImpl + Wrapped-task + VT-carrier collapses, exception-ctor
+        (Throwable)-arg message loss (6 files), 3 broken exception-ctor modify
+        stack-jugglers (IPE missing POP, VME x2), LogRecord.setLongThreadID
+        fluent-return mismatch, FJP.setParallelism validation, List.of→real
+        ImmutableList impl (removeIf/removeFirst UOE-vs-NSEE semantics),
+        Optional.or NPE, Future.exceptionNow ISE, ZipEntry.getTimeLocal
+        DateTimeException, ClassDesc.ofInternalName validation, Charset.forName
+        IAE wrap, SplittableRandom.split return type + lazy ctor + of(String)
+        IAE, LocalDate.EPOCH field stub, Module.toString, ClassLoader names/
+        platform parent, FakeVirtualThread.toString + this()-delegation ctor,
+        localizedBy implLookup fallback, DecimalFormatSymbols.getLocale via
+        implLookup (InaccessibleObjectException on 17+), atomic-array bounds
+        checks x3, splitWithDelimiters JDK semantics
+  - [x] Transformer fixes driven by the harness:
+        resolveStubTarget walks array component annotations (BodyPublishers
+        .concat), unstubClass reverse fake→JDK member lookup across the whole
+        provider chain incl. self (caseFold→IntStream.mapMulti), ensureInit
+        re-entrancy guard (ClassCircularityError on self-loading providers),
+        modify-dispatch warn+skip, <init> this()/super() delegation pairing
+        (synthesized ALOAD 0), void-stub-replacing-value-call warn+skip
+        (operand underflow)
+- [x] Phase 7 — corpus reorganization + deep-probe bug harvest
+  - [x] per-owner generated classes (jvmdg.stubtests.<Owner> + Index) replacing
+        single StubParityMain; checked-in Support + @StubTest annotation
+  - [x] manual tests in src/stubtestsManual discovered by compile-time
+        reflection, x-ids in same RESULT/EXC diff path; member claims credited
+        in coverage report
+  - [x] 3-probe ladder (trivial/meaningful/boundary) + type-aware ALIASES —
+        replaced the flat 0/""-only arg synthesis; enum args emit named
+        constants (values() missing pre-enum APIs like ByteOrder; LAST const
+        version-fragile on growth enums → first/middle/early picks)
+  - [x] deny lists extended: quietlyJoin(-Uninterruptibly) parks, HttpClient
+        network, async toString races, wall-clock receivers, Formatter(String)
+        writes a real file, Files/FileSystems env-dependent reads
+  - [x] stub impls fixed (sequenced-family JDK semantics, LocalTime.ofInstant
+        overflow, Class.forName null, canAccess receiver confusion,
+        Member.accessFlags, ExactConversionsSupport NaN/-0.0, UUID.ofEpochMillis,
+        Runtime.Version VNUM regex, Duration.truncatedTo % precedence,
+        Arrays float/double equals+mismatch NaN semantics + range checks,
+        splitWithDelimiters trailing segment, BigInteger ctor range,
+        StackTraceElement 7-arg ctor descriptor + insn-shift bug + identity
+        side-table, VarHandle toString + describeConstable + internals iface,
+        TypeDescriptor OfField coercion, AccessFlag FINAL METHOD_PARAMETER
+        locations, MANDATED locations j9+, ClassDesc/VarHandleDesc toString
+        JDK formats, Files.mismatch, adaptInterruptible moved j19→j22
+        (JDK22 method — provider registration is manual))
+  - [x] known-diffs rewritten per-slug from authoritative matrix output;
+        unused-entry assert removes stale lines automatically
+  - [x] second harvest (~15 more bugs): Map.of/ofEntries + Set.of dup-arg
+        IAE + null NPE (copyOf keeps silent dedup), List.of null NPE,
+        Module.isNativeAccessEnabled ref→bare @Stub (was (LModule;)Z —
+        never rewrote), defineClass/defineHiddenClass requiresRuntime
+        dropped (fallbacks exist; ClassLoader-subclass defineClass0 helper
+        replaces the removed ClassLoader.defineClass(byte[]) MH),
+        ForkJoinPool$WorkQueue binary name (was dotted — EIIE),
+        StackTraceElement toString stub (j9 format via identity side-table;
+        Object.toString dispatch itself is irreducible → known-diff),
+        Constable value-impl toStrings (Optional[a] not IMPL@#),
+        VarHandleConstable real-VarHandle array fallback via coordTypes
+  - [x] generator/transformer fixes: fakeToReal owner+param remap now only
+        touches xyz/wagyourtail/* fake names (was corrupting every real
+        java.util.Map member → SequencedMap lookup; ~80 members un-hidden),
+        owner resolution tries adapter value-class fallback (erased
+        SequencedMap→Map members), receiver-in-arg0 lookup for static
+        instance-style stubs, downgradeVersion stubs register the call-site
+        desc (trailing origVersion is injected at transform — forName stubs
+        were dead code), requiresRuntime stubs skip the rewrite when runtime
+        unavailable (was producing guaranteed-broken calls in shade jars),
+        enum-const synthesis for post-j8 enums (ByteOrder.values() NSME)
+  - [x] wrong-descriptor registrations fixed: Arrays.parallelSort(Object[])
+        → Comparable[] bounds, parallelSetAll IntFunction (not
+        IntUnaryOperator), non-JDK 4-arg setAll de-registered, int[]
+        parallelPrefix added; Map.Entry.comparingBy* @Ref owner Map→Map$Entry;
+        BigInteger.TWO field owner Integer→BigInteger
+  - [x] Support.norm sorts Set/Map rendering (iteration order is
+        contract-unspecified + salted — killed the m0834b flake class)
+- [x] Phase 4 — scenario coverage
+  - [x] signed jars: TestPathDowngrader.signedJarEntriesAreStripped (.SF/.RSA
+        stripped, class carried, manifest attrs)
+  - [x] manifest synthesis: manifestSynthesizedForMultiReleaseWithoutInputManifest
+  - [x] directory inputs: directoryInputClassesAreRewrittenToTargetVersion
+        (v11→v1.8 rewrite verified)
+  - [x] reproducibility: repeatedDowngradesProduceIdenticalOutput (sha256)
+  - [x] -javaagent subprocess: TestAgentSubprocess.javaAgentDowngradesJava11AppOnJdk8
+        (JDK-11 isBlank app on JDK 8 through real agent premain)
+  - [x] bootstrap args: bootstrapMainPreservesArgCase (mixed-case + UPPER args
+        reach main unmodified via Bootstrap.main standalone)
+- [x] Phase 5 — CI test jobs: `test` job in build.yml (gates publish) +
+      build_snapshot.yml — JDK 8..27 via :testing:test + toolchain provisioning,
+      reports uploaded on failure
+- [x] Phase 6 — docs: README Testing section + commons mirror table;
+      AGENTS.md (Java-7 constraints, concurrent-test gotcha, mirror table,
+      compatibility constraints: priotity field, agent-no-exit, shared-jar)
+- [x] Phase 8 — batch execution + in-JVM parallelism (user ask: fewer JVMs)
+  - [x] BatchMain fixture driver: "++"-split seq list, "--"-split app args,
+        ThreadGroup-routed PrintStream capture, atomic ===JVMDG-* frames,
+        bounded workers (jvmdg.batch.threads)
+  - [x] cli.Main --batch/--seqmain (j7-compatible): seq phase on driver
+        thread, Router fall-through for unregistered groups, per-main
+        exit codes instead of System.exit
+  - [x] DowngradeTests: per-config batch result maps (lazy computeIfAbsent),
+        parseFrames attrs driver-death to process exit, SEQUENTIAL_MAINS set,
+        runtimeBatchClasspath filter (kills native arguments() >4KB-argv
+        emptiness), JavaRunner SUBPROCESS_PERMITS cap
+  - [x] DowngradingClassLoader child-first for providers./stub.all./j<N>.*
+        + transformClass version pre-check; VersionProvider cached
+        init failure via Utils.sneakyThrow; ResourceClassLoader COW
+        delegates (+commons-core port); TestStackWalker own-package
+        filter; TestFuture flag-capture; TestHttpClient serialized prints
+
+## Decisions
+- Agent failure: rethrow IllegalClassFormatException (JVM falls back to original
+  bytes) — never System.exit from a transformer.
+- `<init>` rewrite: stack-effect pairing proof or warn-and-skip — never guess.
+- `<init>` delegation calls (this()/super()): provable single-uninitialized-ref
+  shape → synthesize the missing dup via ALOAD 0; anything else warn+skip.
+- Ignore-warnings: most-specific *matching* entry wins (walk floor chain).
+- Commons ports are adaptations (lombok/walkFileTree/commons Logger), each with
+  its own test — not blind copies.
+- Parity diffs classify into: real bug → fix; racy/env-sensitive → deny in
+  generator; authentic cross-JDK representation/behavior change →
+  stubparity-known-diffs.txt entry (per-slug, never normalized away if the
+  difference is semantically real).
+- Stub impls that read JDK-private state must go through Utils.getImplLookup()
+  (trusted lookup), never raw setAccessible — modular runtimes refuse it.
+- norm() regex replacements must escape `$` as `\$` in the replacement string —
+  `$$`/`$#`/`$name` are group refs under Matcher.replaceAll and IAE on JDK8.
+
+## Dead ends
+- exception-ctor (String,Throwable) handlers can't use branchy null-safe
+  toString: ClassWriter is COMPUTE_MAXS-only, no frame computation — a
+  straight-line ExceptionHelper.toStringCause call instead.
+
+## Open items
+- commons-java7 has no test source set — create `src/test` there.
+- Commons version bump / release cadence for mirrored fixes — ask user at the end.
+
+## Scratch
+- Manual agent-jar recipe (when shadowJar can't run — WIP-blocked):
+  /tmp/agentjar = main+shared classes + org/objectweb/** from asm-9.9.1
+  {asm,tree,commons,util,analysis} jars (unrelocated — no shadow step) +
+  META-INF/lib/java-api.jar = plain java-api jar (NOT the relocated
+  shadowJar — relocation mismatch breaks MODIFY_SIG matching) + manifest
+  with Premain/Agent/Can-Retransform. `jar cfm`. The agent jar lands on
+  bootstrap classpath via appendToBootstrapClassLoaderSearch, so ASM must
+  be inside it — app-classpath ASM is invisible to the transformer.
+- TestAgentSubprocess needs JDK8 java + JDK11 javac (auto-found under
+  ~/.gradle/jdks/azul*-8/*-11 or -Djvmdg.test.java8 / jvmdg.test.java11javac).
+

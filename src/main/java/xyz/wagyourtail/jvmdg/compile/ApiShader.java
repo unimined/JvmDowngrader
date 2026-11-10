@@ -21,8 +21,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.*;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.jar.JarFile;
@@ -119,21 +122,14 @@ public class ApiShader {
                 try (JarFile jf = new JarFile(file)) {
                     Manifest mf = jf.getManifest();
                     if (mf != null) {
-                        String target = mf.getMainAttributes().getValue("JvmDowngrader-Downgrade-Target");
+                        String target = mf.getMainAttributes().getValue(ManifestUtils.DOWNGRADE_TARGET);
                         if (target != null && flags.classVersion >= Integer.parseInt(target)) {
                             downgradedApis.add(file.toPath());
                             continue;
                         }
                     }
                 } catch (Throwable ignored) {}
-                String name = file.getName();
-                int idx = name.lastIndexOf('.');
-                if (idx == -1) {
-                    throw new IllegalArgumentException("File has no extension: " + name);
-                }
-                String beforeExt = name.substring(0, idx);
-                String ext = name.substring(idx);
-                Path targetPath = file.toPath().resolveSibling(beforeExt + "-" + Utils.getShortSha1(file) + "-downgraded-" + flags.classVersion + ext);
+                Path targetPath = file.toPath().resolveSibling(downgradedApiName(file, flags));
                 ZipDowngrader.downgradeZip(downgrader, file.toPath(), new HashSet<URL>(), targetPath);
                 downgradedApis.add(targetPath);
             }
@@ -141,6 +137,52 @@ public class ApiShader {
             throw new IOException(nse);
         }
         return downgradedApis;
+    }
+
+    /**
+     * Cache-file name for a downgraded api jar. Includes the input hash, the
+     * target class version, and a hash of every flag that can change the
+     * produced bytecode — otherwise two runs with different flags would silently
+     * reuse each other's stale artifact.
+     */
+    static String downgradedApiName(File file, Flags flags) throws IOException, NoSuchAlgorithmException {
+        String name = file.getName();
+        int idx = name.lastIndexOf('.');
+        if (idx == -1) {
+            throw new IllegalArgumentException("File has no extension: " + name);
+        }
+        return name.substring(0, idx) + "-" + Utils.getShortSha1(file) +
+            "-downgraded-" + flags.classVersion + "-" + downgradeFlagsHash(flags) +
+            name.substring(idx);
+    }
+
+    /**
+     * Hash of the flags that affect downgraded-api output (output-irrelevant
+     * flags like log level or color settings are intentionally excluded so the
+     * cache stays shared).
+     */
+    private static String downgradeFlagsHash(Flags flags) throws NoSuchAlgorithmException {
+        StringBuilder sb = new StringBuilder();
+        sb.append(flags.classVersion).append('|')
+            .append(flags.multiReleaseOriginal).append('|')
+            .append(new TreeSet<>(flags.multiReleaseVersions)).append('|')
+            .append(flags.downgradeFromMultiReleases).append('|')
+            .append(flags.debugNoSynthetic).append('|')
+            .append(new TreeSet<>(flags.debugSkipStubs)).append('|')
+            .append(new TreeSet<>(flags.debugSkipJeps)).append('|');
+        List<String> skip = new ArrayList<>();
+        for (FullyQualifiedMemberNameAndDesc m : flags.debugSkipStub) {
+            skip.add(m.toString());
+        }
+        Collections.sort(skip);
+        sb.append(skip);
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        byte[] hashBytes = digest.digest(sb.toString().getBytes());
+        StringBuilder hash = new StringBuilder();
+        for (int i = 0; i < 7; i++) {
+            hash.append(String.format("%02x", hashBytes[i]));
+        }
+        return hash.toString();
     }
 
     public static Pair<ReferenceGraph, Set<Type>> scanApis(Flags flags, List<Path> apiRoots) throws IOException {
@@ -292,8 +334,18 @@ public class ApiShader {
             Set<Integer> inputVersions = inputRefs.getVersions();
             Map<Type, Set<Integer>> inputKeys = inputRefs.getKeys();
 
-            final Map<Type, byte[]> currentOutputData = new HashMap<>();
+            // deterministic output: async consumers defer into these maps,
+            // then a single sorted write pass produces reproducible order.
+            // shared across the version loop: first writer wins, matching the
+            // previous Files.exists(outPath) defer-to-lower-version check
+            final ConcurrentMap<String, byte[]> writes = new ConcurrentHashMap<>();
+            final ConcurrentMap<String, Path> copies = new ConcurrentHashMap<>();
+
             for (final int version : inputVersions) {
+                // dedup of identical class bytes is per-version: sharing this
+                // map across versions would skip writing a versioned entry
+                // whenever its bytes happen to equal another version's
+                final Map<Type, byte[]> currentOutputData = new ConcurrentHashMap<>();
                 // step 4: inline candidates
                 Pair<Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>>, Set<String>> required = apiRefs.recursivelyResolveUsagesFrom(inputRefs.getAllUsagesForRefs(version), version);
 
@@ -357,13 +409,10 @@ public class ApiShader {
                             outPath = outputRoot;
                         }
                         outPath = outPath.resolve(prefix + type.getKey().getInternalName() + ".class");
-                        if (Files.exists(outPath)) {
+                        String rel = outputRoot.relativize(outPath).toString();
+                        if (writes.containsKey(rel)) {
                             // Already written by lower version, defer to lower version
                             return;
-                        }
-                        Path parent = outPath.getParent();
-                        if (parent != null) {
-                            Files.createDirectories(parent);
                         }
                         if ((node.access & Opcodes.ACC_ENUM) == 0) {
                             // remove unused members
@@ -390,7 +439,7 @@ public class ApiShader {
                         byte[] prevData = currentOutputData.get(type.getKey());
                         if (prevData == null || !Utils.equals(prevData, 8, prevData.length, data, 8, data.length)) {
                             currentOutputData.put(type.getKey(), data);
-                            Files.write(outPath, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                            writes.putIfAbsent(rel, data);
                         }
                     }
 
@@ -399,15 +448,15 @@ public class ApiShader {
                 Future<Void> resourceWrite = AsyncUtils.forEachAsync(required.getSecond(), new IOConsumer<String>() {
                     @Override
                     public void accept(String resource) throws IOException {
+                        // never carry signature files from the api jar — they no
+                        // longer match the shaded output
+                        if (ManifestUtils.isSignatureFile(resource)) {
+                            return;
+                        }
                         for (Path apiRoot : apiRoots) {
                             Path inPath = apiRoot.resolve(resource);
                             if (Files.exists(inPath)) {
-                                Path outPath = outputRoot.resolve(resource);
-                                Path parent = outPath.getParent();
-                                if (parent != null) {
-                                    Files.createDirectories(parent);
-                                }
-                                Files.copy(inPath, outPath, StandardCopyOption.REPLACE_EXISTING);
+                                copies.put(resource, inPath);
                                 return;
                             }
                         }
@@ -432,13 +481,9 @@ public class ApiShader {
                             outPath = outputRoot;
                         }
                         outPath = outPath.resolve(type.getInternalName() + ".class");
-                        Path parent = outPath.getParent();
-                        if (parent != null) {
-                            Files.createDirectories(parent);
-                        }
                         ClassWriter writer = new ClassWriter(0);
                         node.accept(new ClassRemapper(writer, remapper));
-                        Files.write(outPath, writer.toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                        writes.put(outputRoot.relativize(outPath).toString(), writer.toByteArray());
                     }
                 });
 
@@ -450,12 +495,7 @@ public class ApiShader {
                 @Override
                 public void accept(Path path) throws IOException {
                     if (path.toString().endsWith(".class")) return;
-                    Path outPath = outputRoot.resolve(inputRoot.relativize(path).toString());
-                    Path parent = outPath.getParent();
-                    if (parent != null) {
-                        Files.createDirectories(parent);
-                    }
-                    Files.copy(path, outPath, StandardCopyOption.REPLACE_EXISTING);
+                    copies.put(inputRoot.relativize(path).toString(), path);
                 }
             }).get();
 
@@ -470,8 +510,28 @@ public class ApiShader {
                         }
                     }
                 }
-                Files.write(outputRoot.resolve("module-info.class"), ASMUtils.classNodeToBytes(modInfo), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                writes.put("module-info.class", ASMUtils.classNodeToBytes(modInfo));
             }
+
+            // single sorted write pass: deterministic entry order
+            List<String> order = new ArrayList<>(writes.size() + copies.size());
+            order.addAll(writes.keySet());
+            order.addAll(copies.keySet());
+            Collections.sort(order);
+            for (String rel : order) {
+                Path p = outputRoot.resolve(rel);
+                Path parent = p.getParent();
+                if (parent != null) {
+                    Files.createDirectories(parent);
+                }
+                byte[] data = writes.get(rel);
+                if (data != null) {
+                    Files.write(p, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                } else {
+                    Files.copy(copies.get(rel), p, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+            OutputUtils.pinTimestamps(outputRoot);
 
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);

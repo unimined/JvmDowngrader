@@ -1,5 +1,5 @@
 [versions]
-asm = "9.10.1"
+asm = "9.11.1"
 kotlin = "2.4.10"
 
 jb_annotations = "26.1.0"

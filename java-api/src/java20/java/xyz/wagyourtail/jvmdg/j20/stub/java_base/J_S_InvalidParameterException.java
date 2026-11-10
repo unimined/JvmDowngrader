@@ -23,6 +23,9 @@ public class J_S_InvalidParameterException {
         // stack: Throwable, InvalidParameterException, String, InvalidParameterException, String
         // call init
         list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/security/InvalidParameterException", "<init>", "(Ljava/lang/String;)V", false));
+        // stack: Throwable, InvalidParameterException, String
+        // remove the string
+        list.add(new InsnNode(Opcodes.POP));
         // stack: Throwable, InvalidParameterException
         list.add(new InsnNode(Opcodes.SWAP));
         // stack: InvalidParameterException, Throwable
@@ -40,21 +43,19 @@ public class J_S_InvalidParameterException {
         MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
         // stack: InvalidParameterException, Throwable
-        list.add(new InsnNode(Opcodes.DUP_X1));
-        // stack: Throwable, InvalidParameterException, Throwable
-        list.add(new InsnNode(Opcodes.POP));
-        // stack: Throwable, InvalidParameterException
-        list.add(new InsnNode(Opcodes.DUP));
-        // stack: Throwable, InvalidParameterException, InvalidParameterException
-        // call init
-        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/security/InvalidParameterException", "<init>", "()V", false));
-        // stack: Throwable, InvalidParameterException
-        list.add(new InsnNode(Opcodes.SWAP));
+        // Throwable(Throwable) sets detailMessage = cause == null ? null : cause.toString()
+        list.add(new InsnNode(Opcodes.DUP2));
+        // stack: InvalidParameterException, Throwable, InvalidParameterException, Throwable
+        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "xyz/wagyourtail/jvmdg/j8/intl/ExceptionHelper", "causeMessage", "(Ljava/lang/Throwable;)Ljava/lang/String;", false));
+        // stack: InvalidParameterException, Throwable, InvalidParameterException, String
+        // call init(String)
+        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/security/InvalidParameterException", "<init>", "(Ljava/lang/String;)V", false));
         // stack: InvalidParameterException, Throwable
         // call initCause
         list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/security/InvalidParameterException", "initCause", "(Ljava/lang/Throwable;)Ljava/lang/Throwable;", false));
-        // stack: InvalidParameterException
+        // stack: InvalidParameterException, InvalidParameterException (initCause returns this)
         list.add(new InsnNode(Opcodes.POP));
+        // stack: InvalidParameterException
 
         mnode.instructions.insert(node, list);
         mnode.instructions.remove(node);

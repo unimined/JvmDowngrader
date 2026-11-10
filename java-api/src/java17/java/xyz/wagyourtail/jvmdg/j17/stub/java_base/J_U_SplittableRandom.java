@@ -10,9 +10,12 @@ import java.util.stream.Stream;
 @JEP(356)
 public class J_U_SplittableRandom {
 
+    // the real member is covariant: SplittableRandom.split() returns a
+    // SplittableRandom, not the generator interface, so callers can keep
+    // chaining SplittableRandom members without an adapter round-trip
     @Stub
-    public static J_U_R_RandomGenerator.SplittableGenerator split(SplittableRandom random) {
-        return new SplittableRandomGeneratorImpl(random).split();
+    public static SplittableRandom split(SplittableRandom random) {
+        return random.split();
     }
 
     @Stub

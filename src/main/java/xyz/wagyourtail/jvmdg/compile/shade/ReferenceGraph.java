@@ -4,6 +4,8 @@ import org.objectweb.asm.ConstantDynamic;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.signature.SignatureReader;
+import org.objectweb.asm.signature.SignatureVisitor;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.asm.AnnotationUtils;
@@ -24,14 +26,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
 
 public class ReferenceGraph {
     private final Logger logger;
     private final Set<Integer> versions = new ConcurrentSkipListSet<>();
-    private final Map<Type, Map<Integer, References>> references = new ConcurrentHashMap<>();
-    private final Map<Type, Map<Integer, ClassNode>> classNodes = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Type, ConcurrentMap<Integer, References>> references = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Type, ConcurrentMap<Integer, ClassNode>> classNodes = new ConcurrentHashMap<>();
     private final boolean retainClassNodes;
     private final boolean retainInsns;
 
@@ -71,6 +74,35 @@ public class ReferenceGraph {
     }
 
     /**
+     * Checks whether a root-relative path is inside a multi-release {@code META-INF/versions/<n>/} tree.
+     * Uses path components so it works on every platform's separator.
+     */
+    private static boolean isMultiRelease(Path rel) {
+        return rel.getNameCount() > 3
+            && rel.getName(0).toString().equals("META-INF")
+            && rel.getName(1).toString().equals("versions");
+    }
+
+    private static int versionOf(Path rel) {
+        return isMultiRelease(rel) ? Integer.parseInt(rel.getName(2).toString()) : 0;
+    }
+
+    /**
+     * Joins a path's components with forward slashes, independent of platform separator,
+     * for use as a class-file resource path.
+     */
+    private static String internalPath(Path rel) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < rel.getNameCount(); i++) {
+            if (i > 0) {
+                sb.append('/');
+            }
+            sb.append(rel.getName(i));
+        }
+        return sb.toString();
+    }
+
+    /**
      * Pre scan the root directory to find all the classes that need to be scanned.
      *
      * @return a map of paths to types that need to be scanned.
@@ -84,30 +116,25 @@ public class ReferenceGraph {
                 if (path.getFileName().toString().equals("module-info.class")) {
                     return;
                 }
-                int version;
                 Path rel = root.relativize(path);
-                String pathStr;
-                if (rel.toString().startsWith("META-INF/versions")) {
-                    version = Integer.parseInt(path.getName(2).toString());
-                    pathStr = path.subpath(3, path.getNameCount()).toString();
-                } else {
-                    version = 0;
-                    pathStr = root.relativize(path).toString();
+                int version = versionOf(rel);
+                if (version != 0) {
+                    rel = rel.subpath(3, rel.getNameCount());
                 }
+                String pathStr = internalPath(rel);
                 versions.add(version);
                 if (pathStr.endsWith(".class")) {
                     pathStr = pathStr.substring(0, pathStr.length() - 6);
                     Type type = Type.getObjectType(pathStr);
-                    if (!references.containsKey(type)) {
-                        synchronized (references) {
-                            if (!references.containsKey(type)) {
-                                references.put(type, new ConcurrentHashMap<Integer, References>());
-                                classNodes.put(type, new ConcurrentHashMap<Integer, ClassNode>());
-                            }
-                        }
+                    ConcurrentMap<Integer, References> typeRefs = references.get(type);
+                    if (typeRefs == null) {
+                        classNodes.putIfAbsent(type, new ConcurrentHashMap<Integer, ClassNode>());
+                        references.putIfAbsent(type, new ConcurrentHashMap<Integer, References>());
+                        typeRefs = references.get(type);
                     }
-                    if (!references.get(type).containsKey(version)) {
-                        references.get(type).put(version, new References(version));
+                    // putIfAbsent keeps a second file mapping to the same
+                    // (type, version) from clobbering an in-progress References
+                    if (typeRefs.putIfAbsent(version, new References(version)) == null) {
                         newScanTargets.put(path, type);
                     }
 
@@ -127,12 +154,7 @@ public class ReferenceGraph {
         AsyncUtils.forEachAsync(newScanTargets.keySet(), new IOConsumer<Path>() {
             @Override
             public void accept(Path path) throws IOException {
-                int version;
-                if (rootPath.relativize(path).toString().startsWith("META-INF/versions")) {
-                    version = Integer.parseInt(path.getName(2).toString());
-                } else {
-                    version = 0;
-                }
+                int version = versionOf(rootPath.relativize(path));
                 try (InputStream stream = Files.newInputStream(path)) {
                     ClassNode node = ASMUtils.bytesToClassNode(Utils.readAllBytes(stream));
                     Type type = Type.getObjectType(node.name);
@@ -151,7 +173,7 @@ public class ReferenceGraph {
     public void debugPrint() {
         if (!logger.is(Logger.Level.DEBUG)) return;
         logger.debug("Reference Graph:");
-        for (Map.Entry<Type, Map<Integer, References>> entry : references.entrySet()) {
+        for (Map.Entry<Type, ConcurrentMap<Integer, References>> entry : references.entrySet()) {
             for (Map.Entry<Integer, References> e : entry.getValue().entrySet()) {
                 logger.debug("* " + e.getKey() + "/" + entry.getKey().getInternalName());
                 References refs = e.getValue();
@@ -174,7 +196,7 @@ public class ReferenceGraph {
 
     public Map<Type, Set<Integer>> getKeys() {
         Map<Type, Set<Integer>> keys = new HashMap<>();
-        for (Map.Entry<Type, Map<Integer, References>> entry : references.entrySet()) {
+        for (Map.Entry<Type, ConcurrentMap<Integer, References>> entry : references.entrySet()) {
             keys.put(entry.getKey(), new HashSet<>(entry.getValue().keySet()));
         }
         return keys;
@@ -185,7 +207,7 @@ public class ReferenceGraph {
      */
     public Set<FullyQualifiedMemberNameAndDesc> getAllRefs(int version) {
         Set<FullyQualifiedMemberNameAndDesc> refs = new HashSet<>();
-        for (Map.Entry<Type, Map<Integer, References>> entry : references.entrySet()) {
+        for (Map.Entry<Type, ConcurrentMap<Integer, References>> entry : references.entrySet()) {
             References value = resolveVersioned(entry.getValue(), version);
             for (Type requiredInstance : value.requiredInstances) {
                 refs.add(FullyQualifiedMemberNameAndDesc.of(requiredInstance));
@@ -213,7 +235,7 @@ public class ReferenceGraph {
      */
     public Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> getAllUsagesForRefs(int version) {
         Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> refs = new HashMap<>();
-        for (Map.Entry<Type, Map<Integer, References>> entry : references.entrySet()) {
+        for (Map.Entry<Type, ConcurrentMap<Integer, References>> entry : references.entrySet()) {
             Type owner = entry.getKey();
             References value = resolveVersioned(entry.getValue(), version);
             for (Type requiredInstance : value.requiredInstances) {
@@ -364,7 +386,7 @@ public class ReferenceGraph {
             throw new IllegalStateException("Insns are not retained.");
         }
         Set<AbstractInsnNode> insns = new HashSet<>();
-        for (Map<Integer, References> value : references.values()) {
+        for (ConcurrentMap<Integer, References> value : references.values()) {
             References v = value.get(version);
             // unlike all the other methods, we only want the insns for the given version.
             if (v == null) continue;
@@ -419,18 +441,72 @@ public class ReferenceGraph {
             this.version = version;
         }
 
-        public void scan(ClassNode classNode, Filter filter) {
+        /**
+         * Synchronized because two input paths can resolve to the same
+         * (type, version) — e.g. duplicate class files — in which case
+         * concurrent workers would otherwise race on this instance's maps.
+         */
+        public synchronized void scan(ClassNode classNode, Filter filter) {
             Type currentType = Type.getObjectType(classNode.name);
             // super
-            Type superType = Type.getObjectType(classNode.superName);
-            if (filter.shouldInclude(FullyQualifiedMemberNameAndDesc.of(superType))) {
-                requiredInstances.add(superType);
-            }
+            requiresInstance(null, Type.getObjectType(classNode.superName), filter);
             // interfaces
             for (String s : classNode.interfaces) {
-                Type interfaceType = Type.getObjectType(s);
-                if (filter.shouldInclude(FullyQualifiedMemberNameAndDesc.of(interfaceType))) {
-                    requiredInstances.add(interfaceType);
+                requiresInstance(null, Type.getObjectType(s), filter);
+            }
+
+            // generic signature (type params/args reference class types)
+            scanSignature(classNode.signature, null, filter);
+
+            // inner/outer/nest/permitted class metadata
+            if (classNode.innerClasses != null) {
+                for (InnerClassNode inner : classNode.innerClasses) {
+                    if (inner.name != null) {
+                        requiresInstance(null, Type.getObjectType(inner.name), filter);
+                    }
+                    if (inner.outerName != null) {
+                        requiresInstance(null, Type.getObjectType(inner.outerName), filter);
+                    }
+                }
+            }
+            if (classNode.outerClass != null) {
+                requiresInstance(null, Type.getObjectType(classNode.outerClass), filter);
+            }
+            if (classNode.outerMethod != null) {
+                requiresInstance(null, Type.getObjectType(classNode.outerMethod), filter);
+            }
+            if (classNode.outerMethodDesc != null) {
+                requiresInstance(null, Type.getMethodType(classNode.outerMethodDesc), filter);
+            }
+            if (classNode.nestHostClass != null) {
+                requiresInstance(null, Type.getObjectType(classNode.nestHostClass), filter);
+            }
+            if (classNode.nestMembers != null) {
+                for (String nestMember : classNode.nestMembers) {
+                    requiresInstance(null, Type.getObjectType(nestMember), filter);
+                }
+            }
+            if (classNode.permittedSubclasses != null) {
+                for (String permitted : classNode.permittedSubclasses) {
+                    requiresInstance(null, Type.getObjectType(permitted), filter);
+                }
+            }
+
+            // class-level annotations (types and values can reference classes)
+            scanAnnotations(classNode.visibleAnnotations, null, filter);
+            scanAnnotations(classNode.invisibleAnnotations, null, filter);
+            scanAnnotations(classNode.visibleTypeAnnotations, null, filter);
+            scanAnnotations(classNode.invisibleTypeAnnotations, null, filter);
+
+            // record components
+            if (classNode.recordComponents != null) {
+                for (RecordComponentNode rc : classNode.recordComponents) {
+                    requiresInstance(null, Type.getType(rc.descriptor), filter);
+                    scanSignature(rc.signature, null, filter);
+                    scanAnnotations(rc.visibleAnnotations, null, filter);
+                    scanAnnotations(rc.invisibleAnnotations, null, filter);
+                    scanAnnotations(rc.visibleTypeAnnotations, null, filter);
+                    scanAnnotations(rc.invisibleTypeAnnotations, null, filter);
                 }
             }
 
@@ -452,6 +528,12 @@ public class ReferenceGraph {
                 if (!isStatic(field.access)) {
                     requiresInstance(fieldMember, currentType, filter);
                 }
+
+                scanSignature(field.signature, fieldMember, filter);
+                scanAnnotations(field.visibleAnnotations, fieldMember, filter);
+                scanAnnotations(field.invisibleAnnotations, fieldMember, filter);
+                scanAnnotations(field.visibleTypeAnnotations, fieldMember, filter);
+                scanAnnotations(field.invisibleTypeAnnotations, fieldMember, filter);
 
                 if (field.invisibleAnnotations != null) {
                     for (AnnotationNode annotation : field.invisibleAnnotations) {
@@ -475,6 +557,39 @@ public class ReferenceGraph {
                 if (!isStatic(method.access)) {
                     requiresInstance(methodMember, currentType, filter);
                     instanceMembers.add(methodMember);
+                }
+
+                scanSignature(method.signature, methodMember, filter);
+                if (method.exceptions != null) {
+                    for (String exception : method.exceptions) {
+                        requiresInstance(methodMember, Type.getObjectType(exception), filter);
+                    }
+                }
+                scanAnnotations(method.visibleAnnotations, methodMember, filter);
+                scanAnnotations(method.invisibleAnnotations, methodMember, filter);
+                scanAnnotations(method.visibleTypeAnnotations, methodMember, filter);
+                scanAnnotations(method.invisibleTypeAnnotations, methodMember, filter);
+                if (method.visibleParameterAnnotations != null) {
+                    for (List<AnnotationNode> parameterAnnotations : method.visibleParameterAnnotations) {
+                        scanAnnotations(parameterAnnotations, methodMember, filter);
+                    }
+                }
+                if (method.invisibleParameterAnnotations != null) {
+                    for (List<AnnotationNode> parameterAnnotations : method.invisibleParameterAnnotations) {
+                        scanAnnotations(parameterAnnotations, methodMember, filter);
+                    }
+                }
+                if (method.annotationDefault != null) {
+                    scanAnnotationValue(method.annotationDefault, methodMember, filter);
+                }
+                if (method.tryCatchBlocks != null) {
+                    for (TryCatchBlockNode tryCatch : method.tryCatchBlocks) {
+                        if (tryCatch.type != null) {
+                            requiresInstance(methodMember, Type.getObjectType(tryCatch.type), filter);
+                        }
+                        scanAnnotations(tryCatch.visibleTypeAnnotations, methodMember, filter);
+                        scanAnnotations(tryCatch.invisibleTypeAnnotations, methodMember, filter);
+                    }
                 }
 
                 if (method.invisibleAnnotations != null) {
@@ -534,6 +649,9 @@ public class ReferenceGraph {
                             requiresInstance(methodMember, (Type) ldc.cst, filter);
                         } else if (ldc.cst instanceof ConstantDynamic) {
                             requiresCondy(methodMember, (ConstantDynamic) ldc.cst, filter, insn);
+                        } else if (ldc.cst instanceof Handle) {
+                            Handle h = (Handle) ldc.cst;
+                            requiresMember(methodMember, new FullyQualifiedMemberNameAndDesc(Type.getObjectType(h.getOwner()), h.getName(), Type.getType(h.getDesc())), filter, insn);
                         }
                     }
                 }
@@ -546,6 +664,7 @@ public class ReferenceGraph {
         }
 
         private void requiresCondy(MemberNameAndDesc member, ConstantDynamic condy, Filter filter, AbstractInsnNode insn) {
+            requiresInstance(member, Type.getType(condy.getDescriptor()), filter);
             Handle bsm = condy.getBootstrapMethod();
             requiresMember(member, new FullyQualifiedMemberNameAndDesc(Type.getObjectType(bsm.getOwner()), bsm.getName(), Type.getType(bsm.getDesc())), filter, insn);
             for (int i = 0; i < condy.getBootstrapMethodArgumentCount(); i++) {
@@ -564,29 +683,26 @@ public class ReferenceGraph {
         }
 
         private void requiresInstance(MemberNameAndDesc member, Type required, Filter filter) {
-            Set<FullyQualifiedMemberNameAndDesc> list = requiredForMembers.get(member);
-            FullyQualifiedMemberNameAndDesc type;
             switch (required.getSort()) {
                 case Type.ARRAY:
-                    type = FullyQualifiedMemberNameAndDesc.of(required.getElementType());
+                    requiresInstance(member, required.getElementType(), filter);
+                    break;
+                case Type.OBJECT: {
+                    FullyQualifiedMemberNameAndDesc type = FullyQualifiedMemberNameAndDesc.of(required);
                     if (filter.shouldInclude(type)) {
-                        if (list == null) {
-                            list = new HashSet<>();
-                            requiredForMembers.put(member, list);
+                        if (member == null) {
+                            requiredInstances.add(required);
+                        } else {
+                            Set<FullyQualifiedMemberNameAndDesc> list = requiredForMembers.get(member);
+                            if (list == null) {
+                                list = new HashSet<>();
+                                requiredForMembers.put(member, list);
+                            }
+                            list.add(type);
                         }
-                        list.add(type);
                     }
                     break;
-                case Type.OBJECT:
-                    type = FullyQualifiedMemberNameAndDesc.of(required);
-                    if (filter.shouldInclude(type)) {
-                        if (list == null) {
-                            list = new HashSet<>();
-                            requiredForMembers.put(member, list);
-                        }
-                        list.add(type);
-                    }
-                    break;
+                }
                 case Type.METHOD:
                     requiresInstance(member, required.getReturnType(), filter);
                     for (Type t : required.getArgumentTypes()) {
@@ -596,6 +712,56 @@ public class ReferenceGraph {
                 default:
                     break;
             }
+        }
+
+        private void scanAnnotations(List<? extends AnnotationNode> annotations, MemberNameAndDesc member, Filter filter) {
+            if (annotations == null) return;
+            for (AnnotationNode annotation : annotations) {
+                requiresInstance(member, Type.getType(annotation.desc), filter);
+                if (annotation.values != null) {
+                    // values are stored as (name, value) pairs
+                    for (int i = 1; i < annotation.values.size(); i += 2) {
+                        scanAnnotationValue(annotation.values.get(i), member, filter);
+                    }
+                }
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        private void scanAnnotationValue(Object value, MemberNameAndDesc member, Filter filter) {
+            if (value instanceof Type) {
+                requiresInstance(member, (Type) value, filter);
+            } else if (value instanceof AnnotationNode) {
+                AnnotationNode nested = (AnnotationNode) value;
+                requiresInstance(member, Type.getType(nested.desc), filter);
+                if (nested.values != null) {
+                    for (int i = 1; i < nested.values.size(); i += 2) {
+                        scanAnnotationValue(nested.values.get(i), member, filter);
+                    }
+                }
+            } else if (value instanceof List) {
+                for (Object o : (List<Object>) value) {
+                    scanAnnotationValue(o, member, filter);
+                }
+            } else if (value instanceof String[]) {
+                // enum constant reference: {desc, name}
+                requiresInstance(member, Type.getType(((String[]) value)[0]), filter);
+            }
+        }
+
+        private void scanSignature(String signature, final MemberNameAndDesc member, final Filter filter) {
+            if (signature == null) return;
+            new SignatureReader(signature).accept(new SignatureVisitor(Opcodes.ASM9) {
+                @Override
+                public void visitClassType(String name) {
+                    requiresInstance(member, Type.getObjectType(name), filter);
+                }
+
+                @Override
+                public void visitInnerClassType(String name) {
+                    requiresInstance(member, Type.getObjectType(name), filter);
+                }
+            });
         }
 
         private void requiresMember(MemberNameAndDesc member, FullyQualifiedMemberNameAndDesc required, Filter filter, AbstractInsnNode insn) {

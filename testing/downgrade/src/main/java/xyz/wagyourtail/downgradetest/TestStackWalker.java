@@ -10,7 +10,8 @@ public class TestStackWalker {
     }
 
     public static void walkAccept(StackWalker.StackFrame frame) {
-        if (!frame.getClassName().startsWith("xyz.wagyourtail.jvmdg")) {
+        // only the fixture's own frames — driver frames differ per launch mode
+        if (frame.getClassName().startsWith("xyz.wagyourtail.downgradetest.Test")) {
             System.out.println(frame);
         }
     }

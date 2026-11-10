@@ -4,6 +4,7 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 
@@ -13,7 +14,7 @@ public class J_N_C_Charset {
     public static Charset forName(String name, Charset defaultCharset) {
         try {
             return Charset.forName(name);
-        } catch (UnsupportedCharsetException e) {
+        } catch (UnsupportedCharsetException | IllegalCharsetNameException e) {
             return defaultCharset;
         }
     }

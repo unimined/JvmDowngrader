@@ -5,8 +5,8 @@ import xyz.wagyourtail.jvmdg.stub.all.stub.J_L_Class;
 
 public abstract class AllVersionDowngrader extends VersionProvider {
 
-    protected AllVersionDowngrader(int inputVersion, int outputVersion, int priotity) {
-        super(inputVersion, outputVersion, priotity);
+    protected AllVersionDowngrader(int inputVersion, int outputVersion, int priority) {
+        super(inputVersion, outputVersion, priority);
     }
 
     @Override

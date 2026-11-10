@@ -1,0 +1,173 @@
+# Stub parity accepted differences: <slug> <memberId>
+# slug = <targetClassVersion>-<mode> (e.g. 52-downgrade, 52-shade)
+# Every entry must be a genuine JDK-version behavior difference verified
+# against the native baseline — never a stub defect.
+#
+# m0067c Class.arrayType on void.class: j17 throws IllegalArgumentException
+#   while j21+ and the stub throw UnsupportedOperationException — version
+#   difference.
+61-downgrade m0067c
+61-shade m0067c
+#
+# m0069*/m0346* ClassDesc toString: JDK renamed the impl class
+#   (ClassOrInterfaceDesc vs ClassDesc) between 21 and 27 — version
+#   representation difference.
+61-downgrade m0069
+61-downgrade m0069b
+61-downgrade m0346b
+61-downgrade m0346c
+61-shade m0069
+61-shade m0069b
+61-shade m0346b
+61-shade m0346c
+65-downgrade m0069
+65-downgrade m0069b
+65-downgrade m0346b
+65-downgrade m0346c
+65-shade m0069
+65-shade m0069b
+65-shade m0346b
+65-shade m0346c
+#
+# m0081/m0081b Class.getNestMembers: the nestmate list of JDK classes
+#   (String, Integer) grows across releases; j8 has no nestmate support and
+#   the stub returns just the host class. Irreducible internals difference.
+52-downgrade m0081
+52-downgrade m0081b
+52-shade m0081
+52-shade m0081b
+55-downgrade m0081
+55-shade m0081
+61-downgrade m0081
+61-shade m0081
+65-downgrade m0081
+65-shade m0081
+#
+# m0092b/m0094b ClassLoader.getName/getUnnamedModule on the bootstrap
+#   loader: the receiver alias synthesizes String.class.getClassLoader()
+#   which is null — native invokevirtual NPEs on the null receiver while
+#   the rewritten static stub call reaches the impl, which deliberately
+#   answers for the bootstrap loader — semantic difference by design.
+52-downgrade m0092b
+52-downgrade m0094b
+52-shade m0092b
+52-shade m0094b
+#
+# m0161b/m0252b Math.atanh/StrictMath.atanh boundary probe: one-ulp
+#   difference between StrictMath's fdlibm port on different JDKs —
+#   irreducible floating-point last-bit difference.
+52-downgrade m0161b
+52-downgrade m0252b
+52-shade m0161b
+52-shade m0252b
+55-downgrade m0161b
+55-downgrade m0252b
+55-shade m0161b
+55-shade m0252b
+61-downgrade m0161b
+61-downgrade m0252b
+61-shade m0161b
+61-shade m0252b
+65-downgrade m0161b
+65-downgrade m0252b
+65-shade m0161b
+65-shade m0252b
+#
+# m0241b/m0241c StackTraceElement 7-arg ctor print: JDK9+ toString emits
+#   loader/module@version segments (a/a@#/a.a(a:1)). The j9 stub provides a
+#   toString impl, but the site prints via String.valueOf -> Object.toString
+#   virtual dispatch inside the JDK, which cannot be rewritten — so the real
+#   j8 StackTraceElement.toString runs. Irreducible.
+52-downgrade m0241b
+52-downgrade m0241c
+52-shade m0241b
+52-shade m0241c
+#
+# m0356/m0356b MethodHandles.privateLookupIn on JDK classes: j11's module
+#   checks return a lookup for unnamed-module callers; j27 throws
+#   IllegalAccessException — module-system strictness version difference.
+55-downgrade m0356
+55-downgrade m0356b
+55-shade m0356
+55-shade m0356b
+#
+# m0362 Lookup.unreflectVarHandle: j11's real VarHandle.toString is the
+#   Object default (normalized IMPL@#); JDK prints VarHandle[varType=...]
+#   from a later release — version representation difference.
+55-downgrade m0362
+55-shade m0362
+#
+# m0385b/m0388b getDeclaredAnnotations: the runtime-invisible ValueBased/
+#   nestmate annotations do not exist on early JDKs where the stub still
+#   runs — version annotation-surface difference.
+52-downgrade m0385b
+52-downgrade m0388b
+52-shade m0385b
+52-shade m0388b
+55-downgrade m0385b
+55-downgrade m0388b
+55-shade m0385b
+55-shade m0388b
+#
+# m0565* DateTimeFormatter.localizedBy: JDK22+ wraps ISO offset parsing in
+#   ParseStrict(false/true); older JDKs print the bare Offset section —
+#   version representation difference.
+52-downgrade m0565
+52-downgrade m0565b
+52-downgrade m0565c
+52-shade m0565
+52-shade m0565b
+52-shade m0565c
+55-downgrade m0565b
+55-downgrade m0565c
+55-shade m0565b
+55-shade m0565c
+61-downgrade m0565b
+61-downgrade m0565c
+61-shade m0565b
+61-shade m0565c
+65-downgrade m0565b
+65-downgrade m0565c
+65-shade m0565b
+65-shade m0565c
+#
+# m0827*/m0828* Scanner.toString: JDK8 renders the number-format NaN field
+#   as '�' where later JDKs print 'NaN' — version representation
+#   difference.
+52-downgrade m0827
+52-downgrade m0827b
+52-downgrade m0827c
+52-downgrade m0828
+52-downgrade m0828b
+52-downgrade m0828c
+52-shade m0827
+52-shade m0827b
+52-shade m0827c
+52-shade m0828
+52-shade m0828b
+52-shade m0828c
+#
+# m0830c/m1099c/m1100c Scanner.findAll/Pattern.asMatchPredicate/
+#   splitWithDelimiters with flag mask -1:
+#   JDK8 does not validate unknown flag bits; JDK9+ throws
+#   IllegalArgumentException — version behavior difference.
+52-downgrade m0830c
+52-downgrade m1099c
+52-downgrade m1100c
+52-shade m0830c
+52-shade m1099c
+52-shade m1100c
+#
+# m1183b/m1183c TypeDescriptor.OfMethod.insertParameterTypes with a raw
+#   Class[] arg: native erasure lets the bad array through until an
+#   ArrayStoreException inside; the downgraded bridge signature fails the
+#   array checkcast with ClassCastException first — an artifact of stub
+#   signature adaptation, not of user-visible semantics on valid args.
+52-downgrade m1183b
+52-downgrade m1183c
+52-shade m1183b
+52-shade m1183c
+55-downgrade m1183b
+55-downgrade m1183c
+55-shade m1183b
+55-shade m1183c

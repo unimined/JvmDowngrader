@@ -36,7 +36,13 @@ public interface J_U_R_RandomGenerator {
     }
 
     static J_U_R_RandomGenerator of(String name) {
-        throw MissingStubError.create();
+        if ("SplittableRandom".equals(name)) {
+            return new SplittableRandomGeneratorImpl(new SplittableRandom());
+        }
+        if ("Random".equals(name)) {
+            return new BasicRandomGeneratorImpl(new Random());
+        }
+        throw new IllegalArgumentException("Unknown implementation: " + name);
     }
 
     static J_U_R_RandomGenerator getDefault() {
@@ -455,15 +461,21 @@ public interface J_U_R_RandomGenerator {
     }
 
     default double nextGaussian() {
-        throw MissingStubError.create();
+        // Box-Muller: a correct standard-normal sample, matching the contract
+        // of RandomGenerator.nextGaussian (the JDK uses a ziggurat generator)
+        double r = nextDouble();
+        double a = nextDouble();
+        return Math.sqrt(-2.0 * Math.log(1.0 - r)) * Math.cos(2.0 * Math.PI * a);
     }
 
     default double nextGaussian(double mean, double stdDev) {
-        throw MissingStubError.create();
+        return mean + stdDev * nextGaussian();
     }
 
     default double nextExponential() {
-        throw MissingStubError.create();
+        // inverse-CDF on a uniform(0,1): -ln(1-U), matching the contract of
+        // RandomGenerator.nextExponential
+        return -Math.log(1.0 - nextDouble());
     }
 
     @Adapter(value = "java/util/random/RandomGenerator$StreamableGenerator")
@@ -482,7 +494,10 @@ public interface J_U_R_RandomGenerator {
         }
 
         static StreamableGenerator of(String name) {
-            throw MissingStubError.create();
+            if ("SplittableRandom".equals(name)) {
+                return new SplittableRandomGeneratorImpl(new SplittableRandom());
+            }
+            throw new IllegalArgumentException("Unknown implementation: " + name);
         }
 
         @Stub(noSpecial = true)
@@ -522,7 +537,10 @@ public interface J_U_R_RandomGenerator {
         }
 
         static SplittableGenerator of(String name) {
-            throw MissingStubError.create();
+            if ("SplittableRandom".equals(name)) {
+                return new SplittableRandomGeneratorImpl(new SplittableRandom());
+            }
+            throw new IllegalArgumentException("Unknown implementation: " + name);
         }
 
         @Stub(noSpecial = true)

@@ -3,6 +3,7 @@ package xyz.wagyourtail.jvmdg.collection;
 import xyz.wagyourtail.jvmdg.util.Function;
 
 import java.util.Enumeration;
+import java.util.NoSuchElementException;
 
 public class FlatMapEnumeration<T, E> implements Enumeration<E> {
     private final Enumeration<T> enumeration;
@@ -30,7 +31,7 @@ public class FlatMapEnumeration<T, E> implements Enumeration<E> {
     @Override
     public E nextElement() {
         if (!hasMoreElements()) {
-            return null;
+            throw new NoSuchElementException();
         }
         return currentEnumeration.nextElement();
     }
