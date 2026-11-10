@@ -208,6 +208,11 @@ public class ClassMapping {
                 if (newMin.getSecond().downgradeVersion()) {
                     insnList.add(new LdcInsnNode(vp.inputVersion));
                 }
+                if (!newMin.getSecond().extendEnum().isEmpty()) {
+                    // push the extended enum Class + constant name as trailing args
+                    insnList.add(new LdcInsnNode(Type.getType(newMin.getSecond().extendEnum())));
+                    insnList.add(new LdcInsnNode(newMin.getSecond().extendEnumMember()));
+                }
                 Method m = newMin.getFirst();
                 insnList.add(new MethodInsnNode(
                     Opcodes.INVOKESTATIC,
@@ -218,8 +223,13 @@ public class ClassMapping {
                 ));
                 method.instructions.insertBefore(insn, insnList);
                 if (!returnType.equals(Type.getReturnType(m))) {
-                    // add cast
-                    method.instructions.insertBefore(insn, new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName()));
+                    if (returnType.getSort() == Type.VOID) {
+                        // e.g. <init> stubs whose impl produces a value — discard it
+                        method.instructions.insertBefore(insn, new InsnNode(Opcodes.POP));
+                    } else {
+                        // add cast
+                        method.instructions.insertBefore(insn, new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName()));
+                    }
                 }
                 method.instructions.remove(insn);
                 return;
@@ -328,6 +338,9 @@ public class ClassMapping {
                 }
             }
             Method m = pair.getFirst();
+            if (runtimeAvailable && pair.getSecond().excludeWithRuntime()) {
+                return null;
+            }
             if (!runtimeAvailable && pair.getSecond().requiresRuntime()) {
                 warnings.add(m + " requires runtime transformation but runtime is not available...");
             }

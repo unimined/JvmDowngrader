@@ -8,6 +8,7 @@ jb_annotations5 = "24.1.0"
 gson = "2.10.1"
 apache_commons_compress = "1.28.0"
 java_diff_utils = "4.12"
+junixsocket = "2.11.1"
 
 junit = "5.13.4"
 
@@ -28,6 +29,7 @@ jetbrains_annotations_j5 = { module = "org.jetbrains:annotations-java5", version
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 apache_commons_compress = { module = "org.apache.commons:commons-compress", version.ref = "apache_commons_compress" }
 java_diff_utils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "java_diff_utils" }
+junixsocket_core = { module = "com.kohlschutter.junixsocket:junixsocket-core", version.ref = "junixsocket" }
 
 junit_jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit_platform_launcher = { module = "org.junit.platform:junit-platform-launcher" }

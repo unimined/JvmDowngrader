@@ -5,7 +5,9 @@ import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
+import xyz.wagyourtail.jvmdg.stub.EnumExtender;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +23,9 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.jar.JarFile;
 
 public class Bootstrap {
@@ -103,11 +108,29 @@ public class Bootstrap {
             LOGGER.info("CodeSource is modifiable, attempting to retransform it to fix code signing.");
             instrumentation.retransformClasses(CodeSource.class);
         }
+        // eagerly inject enum extensions (e.g. StandardProtocolFamily.UNIX)
+        // before any consumer bytecode can observe the un-extended universe
+        injectEnumExtensions();
         LOGGER.info("JVMDowngrader Bootstrap agent loaded.");
     }
 
     public static void agentmain(String args, Instrumentation instrumentation) throws URISyntaxException, IOException, UnmodifiableClassException {
         premain(args, instrumentation);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static void injectEnumExtensions() {
+        for (VersionProvider provider : ServiceLoader.load(VersionProvider.class)) {
+            try {
+                for (Map.Entry<Class<? extends Enum<?>>, Set<String>> entry : provider.enumExtensions().entrySet()) {
+                    for (String member : entry.getValue()) {
+                        EnumExtender.extend((Class) entry.getKey(), member);
+                    }
+                }
+            } catch (Throwable t) {
+                LOGGER.warn("failed to apply enum extensions for " + provider.getClass().getName(), t);
+            }
+        }
     }
 
 }
