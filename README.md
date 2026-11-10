@@ -261,6 +261,23 @@ DowngradingClassLoader loader = new DowngradingClassLoader(ClassDowngrader.getCu
 loader.addDelegate(new URL[]{new File("jarname.jar").toURI().toURL()});
 ```
 
+## License
+
+JvmDowngrader is licensed under the [GNU Lesser General Public License v2.1](LICENSE.md).
+
+### LGPLv2.1 License Concerns
+
+Some people think that shading would mean they're bound by the stricter GPL license due to the inclusion of
+jvmdowngrader's java class files. I don't believe this to be the case.
+
+For the purpose of Licensing, the produced jar from this task, or the downgrading task, should be considered a
+"Combined Work", as it contains the original code from the input jar and the shaded code from jvmdowngrader's api.
+
+And this does, usually, mean that you shouldn't need to use the *exact* same license.
+Running this tool, should be a thing the end-user is capable of doing, thus section 6.a should be satisfied as long as
+your project provides the unshaded/undowngraded jar as well, or alternatively provides source code to build said jar,
+or the post-shaded jar.
+
 ### inspired by
 
 https://github.com/Chocohead/Not-So-New and https://github.com/luontola/retrolambda

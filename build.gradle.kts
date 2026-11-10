@@ -155,9 +155,6 @@ tasks.jar {
     from(project("javac-plugin").sourceSets["main"].output)
 
     from(rootDir.resolve("LICENSE.md"))
-    from(rootDir.resolve("license")) {
-        into("license")
-    }
 
     isPreserveFileTimestamps = false
     isReproducibleFileOrder = true

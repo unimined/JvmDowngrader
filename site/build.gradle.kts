@@ -66,9 +66,6 @@ val myShadowJar = tasks.register<ShadowJar>("myShadowJar") {
     description = "shadow jar for site"
     from(sourceSets.main.get().output)
     from(projectDir.parentFile.resolve("LICENSE.md"))
-    from(projectDir.parentFile.resolve("license")) {
-        into("license")
-    }
     from(projectDir.parentFile.resolve("README.md"))
 
     shadowContents = listOf(project.configurations.compileClasspath.get())
