@@ -62,7 +62,7 @@ public class J_L_Class {
         Type classType = Type.getObjectType(className.replace('.', '/'));
         for (VersionProvider vp : versionProviders) {
             if (vp.classStubs.containsKey(classType)) {
-                return Class.forName(vp.classStubs.get(classType).getFirst().getInternalName().replace('/', '.'));
+                return Class.forName(vp.classStubs.get(classType).target.getInternalName().replace('/', '.'));
             }
         }
         return Class.forName(className);
@@ -75,7 +75,7 @@ public class J_L_Class {
         Type classType = Type.getObjectType(className.replace('.', '/'));
         for (VersionProvider vp : versionProviders) {
             if (vp.classStubs.containsKey(classType)) {
-                return Class.forName(vp.classStubs.get(classType).getFirst().getInternalName().replace('/', '.'), initialize, loader);
+                return Class.forName(vp.classStubs.get(classType).target.getInternalName().replace('/', '.'), initialize, loader);
             }
         }
         return Class.forName(className, initialize, loader);
@@ -99,8 +99,8 @@ public class J_L_Class {
                     ClassDowngrader downgrader = ClassDowngrader.getCurrentVersionDowngrader();
                     List<StubEntry> targets = vp.getStubMapper(target, downgrader.isInterface(downgrader.target, target, warnings), getMethods, getSuperTypes).getStubTargets();
                     for (StubEntry t : targets) {
-                        if (!methods.contains(t.method)) {
-                            methods.add(t.method);
+                        if (!methods.contains(t.handler.method())) {
+                            methods.add(t.handler.method());
                         }
                     }
                 } catch (IOException e) {

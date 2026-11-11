@@ -27,10 +27,11 @@ abstract class ShadeTransform: TransformAction<ShadeTransform.ShadeTransformFlag
         val input = input.get().asFile
         val flags = parameters
         val output = outputs.file("${input.nameWithoutExtension}-shaded-${flags.downgradeTo.get()}.${input.extension}")
+        val fl = flags.toFlags()
 
         ApiShader.shadeApis(
-            flags.toFlags(),
-            input.name.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/",
+            fl,
+            fl.shadePrefix ?: input.name.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/",
             input,
             output,
             flags.apiJar.get().toSet()

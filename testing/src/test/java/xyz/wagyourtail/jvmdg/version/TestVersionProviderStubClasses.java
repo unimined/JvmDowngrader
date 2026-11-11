@@ -6,7 +6,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.stub.all.RemovedInterfaces;
-import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.version.map.ClassStubEntry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,16 +45,16 @@ public class TestVersionProviderStubClasses {
         TestProvider provider = new TestProvider();
         provider.classStubs.put(
             Type.getObjectType("com/example/RemovedIface"),
-            new Pair<Type, Pair<Class<?>, Adapter>>(
+            new ClassStubEntry(
                 Type.getObjectType("jvmdg/stub/RemovedIface"),
-                new Pair<Class<?>, Adapter>(RemovedIfaceStub.class, RemovedIfaceStub.class.getAnnotation(Adapter.class))
+                RemovedIfaceStub.class, RemovedIfaceStub.class.getAnnotation(Adapter.class).keepInterface()
             )
         );
         provider.classStubs.put(
             Type.getObjectType("com/example/KeptIface"),
-            new Pair<Type, Pair<Class<?>, Adapter>>(
+            new ClassStubEntry(
                 Type.getObjectType("jvmdg/stub/KeptIface"),
-                new Pair<Class<?>, Adapter>(KeptIfaceStub.class, KeptIfaceStub.class.getAnnotation(Adapter.class))
+                KeptIfaceStub.class, KeptIfaceStub.class.getAnnotation(Adapter.class).keepInterface()
             )
         );
         return provider;

@@ -8,6 +8,7 @@ import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
+import xyz.wagyourtail.jvmdg.version.map.ClassStubEntry;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
@@ -1026,10 +1027,10 @@ public class StubTestGenerator {
         try (ClassDowngrader d = ClassDowngrader.downgradeTo(Opcodes.V1_8)) {
             for (VersionProvider provider : ServiceLoader.load(VersionProvider.class)) {
                 provider.ensureInit(d);
-                for (Map.Entry<Type, Pair<Type, Pair<Class<?>, Adapter>>> e :
+                for (Map.Entry<Type, ClassStubEntry> e :
                         provider.classStubs.entrySet()) {
-                    // key is the real JDK type; first is the fake stand-in class
-                    fakeToReal.put(e.getValue().getFirst().getInternalName(), e.getKey().getInternalName());
+                    // key is the real JDK type; target is the fake stand-in class
+                    fakeToReal.put(e.getValue().target.getInternalName(), e.getKey().getInternalName());
                 }
                 for (Map.Entry<Type, ClassMapping> e :
                         new ArrayList<>(provider.stubMappings.entrySet())) {

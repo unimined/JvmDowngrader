@@ -5,7 +5,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 import java.lang.reflect.Method;
 
 /**
- * Registered stub entry: the handler {@link Method} plus the redirect
+ * Registered stub entry: the handler method reference plus the redirect
  * modifiers copied off its annotation at registration. This is data, not the
  * annotation — handlers for every primary annotation ({@code @Stub},
  * {@code @DefaultImpl}) produce the same shape, which is what lets
@@ -17,7 +17,7 @@ import java.lang.reflect.Method;
 public class StubEntry {
 
     /** the {@code public static} implementation invoked in place of the target member */
-    public final Method method;
+    public final MethodRef handler;
     /** pass the input class-file version as a trailing int arg */
     public final boolean downgradeVersion;
     /** call site may only rewrite when the runtime transform is available */
@@ -34,14 +34,20 @@ public class StubEntry {
             stub.noSpecial(), stub.excludeChild());
     }
 
+    public StubEntry(Method method, boolean downgradeVersion, boolean requiresRuntime,
+                     boolean abstractDefault, boolean noSpecial, String[] excludeChild) {
+        this(new MethodRef(method), downgradeVersion, requiresRuntime, abstractDefault, noSpecial, excludeChild);
+    }
+
     /** the entry form a {@code @DefaultImpl} handler registers */
     public static StubEntry defaultImpl(Method method) {
         return new StubEntry(method, false, false, true, false, new String[0]);
     }
 
-    public StubEntry(Method method, boolean downgradeVersion, boolean requiresRuntime,
+    /** index-loading form — no reflective object needed */
+    public StubEntry(MethodRef handler, boolean downgradeVersion, boolean requiresRuntime,
                      boolean abstractDefault, boolean noSpecial, String[] excludeChild) {
-        this.method = method;
+        this.handler = handler;
         this.downgradeVersion = downgradeVersion;
         this.requiresRuntime = requiresRuntime;
         this.abstractDefault = abstractDefault;

@@ -3,6 +3,7 @@ package xyz.wagyourtail.jvmdg.compile;
 import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.compile.jar.ClassDowngradeStep;
+import xyz.wagyourtail.jvmdg.compile.jar.EmbeddedRulesStep;
 import xyz.wagyourtail.jvmdg.compile.jar.FusedJarRun;
 import xyz.wagyourtail.jvmdg.compile.jar.JarStep;
 import xyz.wagyourtail.jvmdg.compile.jar.ManifestStep;
@@ -136,6 +137,9 @@ public class PathDowngrader {
                 final Path out = outputRoots.get(i);
 
                 List<JarStep> steps = new ArrayList<>();
+                // embedded META-INF/jvmdg/*.mf rules must land in
+                // flags.scopedRules before any entry is transformed
+                steps.add(new EmbeddedRulesStep());
                 steps.add(new SignatureStripStep());
                 steps.add(new ManifestStep());
                 steps.add(new MultiReleaseRouteStep(shadePrefix != null));

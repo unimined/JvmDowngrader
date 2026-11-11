@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.version.map;
 import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
-import java.lang.reflect.Method;
 import java.util.Set;
 
 /**
@@ -38,13 +37,13 @@ public interface MemberResolver {
     CtorEntry getCtorFor(MemberNameAndDesc member, boolean runtimeAvailable, Set<String> warnings);
 
     /**
-     * The {@code @Modify} handler method for {@code member}, including the
+     * The {@code @Modify} handler reference for {@code member}, including the
      * class-level wildcard ({@code ref.member} unset) fallback — or null.
      */
-    Method getModifyFor(MemberNameAndDesc member, int opcode, Set<String> warnings);
+    MethodRef getModifyFor(MemberNameAndDesc member, int opcode, Set<String> warnings);
 
     /** Raw modify lookup for the indy bootstrap path — no wildcard fallback. */
-    Method rawModify(MemberNameAndDesc member);
+    MethodRef rawModify(MemberNameAndDesc member);
 
     /**
      * Rebuilds the member key with adapter (fake) desc types translated back

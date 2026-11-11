@@ -1,8 +1,6 @@
 package xyz.wagyourtail.jvmdg.version.map;
 
 import org.objectweb.asm.Type;
-import xyz.wagyourtail.jvmdg.util.Pair;
-import xyz.wagyourtail.jvmdg.version.Adapter;
 
 import java.util.Set;
 
@@ -24,10 +22,10 @@ public interface TypeRemap {
     Type remap(Type type, Set<String> warnings);
 
     /**
-     * The registered stub for {@code type} — adapter type plus backing stub
-     * class — or null when the type has no stub.
+     * The registered stub for {@code type} — adapter target type plus baked
+     * hook members — or null when the type has no stub.
      */
-    Pair<Type, Pair<Class<?>, Adapter>> stubFor(Type type);
+    ClassStubEntry stubFor(Type type);
 
     /**
      * Reports {@code type} as landing in transformed output with no stub, so

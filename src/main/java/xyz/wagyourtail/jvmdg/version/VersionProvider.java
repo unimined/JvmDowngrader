@@ -12,23 +12,29 @@ import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.stub.all.RemovedInterfaces;
 import xyz.wagyourtail.jvmdg.util.*;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
+import xyz.wagyourtail.jvmdg.version.map.ClassStubEntry;
 import xyz.wagyourtail.jvmdg.version.map.CtorEntry;
 import xyz.wagyourtail.jvmdg.version.map.CtorFactory;
 import xyz.wagyourtail.jvmdg.version.map.CtorRewrite;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberStubTransform;
+import xyz.wagyourtail.jvmdg.version.map.MethodRef;
 import xyz.wagyourtail.jvmdg.version.map.StructuralRemapTransform;
 import xyz.wagyourtail.jvmdg.version.map.StubEntry;
 import xyz.wagyourtail.jvmdg.version.map.StubRegistry;
 import xyz.wagyourtail.jvmdg.version.map.TypeRemap;
+import xyz.wagyourtail.jvmdg.version.idx.StubIndex;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.*;
 
 public abstract class VersionProvider implements TypeRemap {
-    public final Map<Type, Pair<Type, Pair<Class<?>, Adapter>>> classStubs = new LinkedHashMap<>();
+    public final Map<Type, ClassStubEntry> classStubs = new LinkedHashMap<>();
     public final Map<Type, ClassMapping> stubMappings = new LinkedHashMap<>();
     private final StructuralRemapTransform structuralRemap = new StructuralRemapTransform(this);
     /** registered @Stub/@Modify entries for this provider's input version, keyed by stubbed owner */
@@ -93,18 +99,18 @@ public abstract class VersionProvider implements TypeRemap {
     public void afterInit() {
         if (logger.is(Logger.Level.DEBUG)) {
             StringBuilder sb = new StringBuilder("Stubs: \n");
-            for (Map.Entry<Type, Pair<Type, Pair<Class<?>, Adapter>>> stub : classStubs.entrySet()) {
-                sb.append(stub.getKey().getInternalName()).append(" -> ").append(stub.getValue().getFirst()).append("\n");
+            for (Map.Entry<Type, ClassStubEntry> stub : classStubs.entrySet()) {
+                sb.append(stub.getKey().getInternalName()).append(" -> ").append(stub.getValue().target).append("\n");
             }
             for (Map.Entry<Type, ClassMapping> entry : stubMappings.entrySet()) {
                 for (Map.Entry<MemberNameAndDesc, StubEntry> member : entry.getValue().getMethodStubMap().entrySet()) {
                     sb.append(entry.getKey().getInternalName())
                         .append(".").append(member.getKey().getName())
                         .append(member.getKey().getDesc()).append(" -> ")
-                        .append(member.getValue().method.getDeclaringClass().getCanonicalName().replace('.', '/'))
+                        .append(member.getValue().handler.member.getOwner().getInternalName())
                         .append(";")
-                        .append(member.getValue().method.getName())
-                        .append(Type.getMethodDescriptor(member.getValue().method))
+                        .append(member.getValue().handler.member.getName())
+                        .append(member.getValue().handler.member.getDesc().getDescriptor())
                         .append("\n");
                 }
             }
@@ -303,11 +309,11 @@ public abstract class VersionProvider implements TypeRemap {
                         throw new IllegalStateException("unknown tag: " + handle.getTag());
                 }
 
-                Method m = min.method;
-                String newOwner = Type.getType(m.getDeclaringClass()).getInternalName();
-                String name = m.getName();
-                String desc = Type.getMethodDescriptor(m);
-                boolean intf = m.getDeclaringClass().isInterface();
+                MethodRef m = min.handler;
+                String newOwner = m.member.getOwner().getInternalName();
+                String name = m.member.getName();
+                String desc = m.member.getDesc().getDescriptor();
+                boolean intf = m.itf;
                 if (!desc.equals(hStaticDesc.getDescriptor())) {
                     // create wrapper as desc should exactly match.
                     newOwner = owner.name;
@@ -341,13 +347,13 @@ public abstract class VersionProvider implements TypeRemap {
                         mv.visitCode();
                         Type returnType = hStaticDesc.getReturnType();
                         Type[] arguments = hStaticDesc.getArgumentTypes();
-                        Type actualReturnType = Type.getType(m.getReturnType());
+                        Type actualReturnType = m.member.getDesc().getReturnType();
                         int k = 0;
                         for (Type argument : arguments) {
                             mv.visitVarInsn(argument.getOpcode(Opcodes.ILOAD), k);
                             k += argument.getSize();
                         }
-                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getType(m.getDeclaringClass()).getInternalName(), m.getName(), Type.getMethodDescriptor(m), false);
+                        mv.visitMethodInsn(Opcodes.INVOKESTATIC, m.member.getOwner().getInternalName(), m.member.getName(), m.member.getDesc().getDescriptor(), m.itf);
                         if (!actualReturnType.equals(returnType)) {
                             mv.visitTypeInsn(Opcodes.CHECKCAST, returnType.getInternalName());
                         }
@@ -368,7 +374,7 @@ public abstract class VersionProvider implements TypeRemap {
                 );
             }
         } else {
-            Method mod = stubMapper.getModifyFor(member, handle.getTag(), warnings);
+            MethodRef mod = stubMapper.getModifyFor(member, handle.getTag(), warnings);
             CtorEntry ce = null;
             if (mod == null && member.getName().equals("<init>") &&
                 handle.getTag() == Opcodes.H_NEWINVOKESPECIAL) {
@@ -423,12 +429,12 @@ public abstract class VersionProvider implements TypeRemap {
                             if (factory.downgradeVersion) {
                                 mn.visitLdcInsn(stubMapper.provider().inputVersion);
                             }
-                            Method fm = factory.method;
+                            MethodRef fm = factory.handler;
                             mn.visitMethodInsn(Opcodes.INVOKESTATIC,
-                                Type.getType(fm.getDeclaringClass()).getInternalName(),
-                                fm.getName(), Type.getMethodDescriptor(fm),
-                                fm.getDeclaringClass().isInterface());
-                            if (!Type.getReturnType(fm).equals(returnType)) {
+                                fm.member.getOwner().getInternalName(),
+                                fm.member.getName(), fm.member.getDesc().getDescriptor(),
+                                fm.itf);
+                            if (!fm.member.getDesc().getReturnType().equals(returnType)) {
                                 mn.visitTypeInsn(Opcodes.CHECKCAST, returnType.getInternalName());
                             }
                             mn.visitInsn(Opcodes.ARETURN);
@@ -456,8 +462,9 @@ public abstract class VersionProvider implements TypeRemap {
                         } else if (mod != null) {
                             // invoke modify
                             try {
+                                Method m = mod.method();
                                 List<Object> modifyArgs = Arrays.asList(mn, mn.instructions.size() - 2, owner, extra);
-                                mod.invoke(null, modifyArgs.subList(0, mod.getParameterTypes().length).toArray());
+                                m.invoke(null, modifyArgs.subList(0, m.getParameterTypes().length).toArray());
                             } catch (Throwable e) {
                                 throw new RuntimeException(e);
                             }
@@ -510,12 +517,12 @@ public abstract class VersionProvider implements TypeRemap {
             case Type.ARRAY:
                 Type type = desc.getElementType();
                 if (classStubs.containsKey(type)) {
-                    type = classStubs.get(type).getFirst();
+                    type = classStubs.get(type).target;
                 }
                 return Type.getType(desc.getDescriptor().substring(0, desc.getDimensions()) + type.getDescriptor());
             case Type.OBJECT:
                 if (classStubs.containsKey(desc)) {
-                    return classStubs.get(desc).getFirst();
+                    return classStubs.get(desc).target;
                 }
 //                coverage.warnClass(desc, warnings);
                 return desc;
@@ -530,8 +537,38 @@ public abstract class VersionProvider implements TypeRemap {
     }
 
     @Override
-    public Pair<Type, Pair<Class<?>, Adapter>> stubFor(Type type) {
+    public ClassStubEntry stubFor(Type type) {
         return classStubs.get(type);
+    }
+
+    /**
+     * Registry-write filter matching the reflective scanner's per-member
+     * checks: a handler is skipped when its {@code @JEP} tags intersect
+     * {@code debugSkipJeps} or its own/declaring-class FQMND is in
+     * {@code debugSkipStub}. Enforced on every registration path (scan and
+     * index) so registries are identical under the same flags.
+     */
+    public boolean shouldSkip(MethodRef handler) {
+        if (handler == null) {
+            return false;
+        }
+        for (int jep : handler.jeps) {
+            if (downgrader.flags.debugSkipJeps.contains(jep)) {
+                return true;
+            }
+        }
+        return downgrader.flags.debugSkipStub.contains(handler.member)
+            || downgrader.flags.debugSkipStub.contains(FullyQualifiedMemberNameAndDesc.of(handler.member.getOwner()));
+    }
+
+    /** class-type registration variant — stub-class JEPs + stub-class FQMND */
+    public boolean shouldSkip(ClassStubEntry entry) {
+        for (int jep : entry.jeps) {
+            if (downgrader.flags.debugSkipJeps.contains(jep)) {
+                return true;
+            }
+        }
+        return downgrader.flags.debugSkipStub.contains(FullyQualifiedMemberNameAndDesc.of(entry.stubType));
     }
 
     @Override
@@ -572,8 +609,8 @@ public abstract class VersionProvider implements TypeRemap {
         if (reverseClassStubs == null || reverseClassStubsSize != total) {
             Map<Type, Type> rev = new HashMap<>();
             for (VersionProvider vp : providers) {
-                for (Map.Entry<Type, Pair<Type, Pair<Class<?>, Adapter>>> e : vp.classStubs.entrySet()) {
-                    rev.put(e.getValue().getFirst(), e.getKey());
+                for (Map.Entry<Type, ClassStubEntry> e : vp.classStubs.entrySet()) {
+                    rev.put(e.getValue().target, e.getKey());
                 }
             }
             reverseClassStubs = rev;
@@ -765,8 +802,12 @@ public abstract class VersionProvider implements TypeRemap {
                     }
                     initializing = true;
                     try {
-                        preInit();
-                        init();
+                        if (loadStubIndex(downgrader)) {
+                            stubIndexLoaded = true;
+                        } else {
+                            preInit();
+                            init();
+                        }
                         afterInit();
                         initialized = true;
                     } catch (Throwable t) {
@@ -782,6 +823,78 @@ public abstract class VersionProvider implements TypeRemap {
 
     public boolean isInitialized() {
         return initialized;
+    }
+
+    /** set when the registry came from {@code stubs.idx} rather than the reflective scan — test/debug observable */
+    public boolean stubIndexLoaded = false;
+
+    /**
+     * Try to load this provider's section of {@code META-INF/jvmdg/stubs.idx}
+     * (written at api-jar build time from this same scan) instead of running
+     * {@link #preInit()}/{@link #init()} reflectively. Returns false when no
+     * index resource exists, none of the resources has a section for this
+     * provider, or {@link Flags#debugNoStubIdx} is set — callers fall back to
+     * the scan. A present-but-malformed or version-incompatible index is a
+     * hard failure: the api jar is corrupt or mismatched.
+     */
+    private boolean loadStubIndex(ClassDowngrader downgrader) throws IOException {
+        if (downgrader.flags.debugNoStubIdx) return false;
+        ClassLoader cl = getClass().getClassLoader();
+        Enumeration<URL> resources = cl == null
+            ? ClassLoader.getSystemResources(StubIndex.RESOURCE)
+            : cl.getResources(StubIndex.RESOURCE);
+        String myName = getClass().getName();
+        while (resources.hasMoreElements()) {
+            try (DataInputStream in = new DataInputStream(new BufferedInputStream(resources.nextElement().openStream()))) {
+                StubIndex.Header header = StubIndex.readHeader(in);
+                checkIndexVersion(header);
+                StubIndex.Snapshot snapshot = StubIndex.read(in, this::resolveStubClass).get(myName);
+                if (snapshot != null) {
+                    StubIndex.apply(snapshot, this);
+                    // materialize ClassMapping resolver nodes exactly like the
+                    // scan does — enumerators (coverage, corpus, debug dumps)
+                    // read stubMappings, not stubRegistry
+                    Set<String> warnings = new LinkedHashSet<>();
+                    for (String ownerName : snapshot.owners.keySet()) {
+                        getStubMapper(Type.getObjectType(ownerName), warnings);
+                    }
+                    if (!warnings.isEmpty() && logger.is(Logger.Level.WARN)) {
+                        StringBuilder sb = new StringBuilder();
+                        for (String warning : warnings) {
+                            sb.append("\t").append(warning).append("\n");
+                        }
+                        logger.warn("Warnings for " + myName + " stub index (" + warnings.size() + ") : \n" + sb);
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** fail-fast gate: index format must be supported, jvmdg major.minor must match the running version */
+    private static void checkIndexVersion(StubIndex.Header header) throws IOException {
+        if (header.formatVersion != StubIndex.FORMAT_VERSION) {
+            throw new IOException("stubs.idx format " + header.formatVersion
+                + " is not supported by this jvmdg (" + StubIndex.FORMAT_VERSION + ")");
+        }
+        String runtime = Flags.jvmdgVersion;
+        if (runtime == null) return; // unpackaged dev build — nothing to check against
+        String[] idx = header.jvmdgVersion.split("\\.", 3);
+        String[] run = runtime.split("\\.", 3);
+        if (idx.length < 2 || run.length < 2 || !idx[0].equals(run[0]) || !idx[1].equals(run[1])) {
+            throw new IOException("stubs.idx built for jvmdg " + header.jvmdgVersion
+                + " is incompatible with running jvmdg " + runtime);
+        }
+    }
+
+    /** lazy {@link MethodRef} lookup: handler/stub classes resolve through this provider's own classloader */
+    private Class<?> resolveStubClass(String className) {
+        try {
+            return Class.forName(className, false, getClass().getClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("stubs.idx references unloadable class " + className, e);
+        }
     }
 
     private void rethrowInitFailure() {
@@ -909,8 +1022,8 @@ public abstract class VersionProvider implements TypeRemap {
             if (member.getValue().downgradeVersion) {
                 mv.visitLdcInsn(this.inputVersion);
             }
-            Class<?> declaring = member.getValue().method.getDeclaringClass();
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getType(declaring).getInternalName(), member.getValue().method.getName(), Type.getMethodDescriptor(member.getValue().method), declaring.isInterface());
+            MethodRef handler = member.getValue().handler;
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, handler.member.getOwner().getInternalName(), handler.member.getName(), handler.member.getDesc().getDescriptor(), handler.itf);
             Type returnType = member.getKey().getDesc().getReturnType();
             mv.visitInsn(returnType.getOpcode(Opcodes.IRETURN));
             mv.visitMaxs(0, 0);
@@ -950,7 +1063,7 @@ public abstract class VersionProvider implements TypeRemap {
 
         Type type = Type.getObjectType(clazz.superName);
         if (classStubs.containsKey(type)) {
-            clazz.superName = classStubs.get(type).getFirst().getInternalName();
+            clazz.superName = classStubs.get(type).target.getInternalName();
         }
 
         List<String> removedInterfaces = new ArrayList<>();
@@ -958,9 +1071,9 @@ public abstract class VersionProvider implements TypeRemap {
             for (int i = 0; i < clazz.interfaces.size(); i++) {
                 type = Type.getObjectType(clazz.interfaces.get(i));
                 if (classStubs.containsKey(type)) {
-                    Pair<Type, Pair<Class<?>, Adapter>> stub = classStubs.get(type);
-                    if (stub.getSecond().getSecond().keepInterface()) {
-                        clazz.interfaces.set(i, stub.getFirst().getInternalName());
+                    ClassStubEntry stub = classStubs.get(type);
+                    if (stub.keepInterface) {
+                        clazz.interfaces.set(i, stub.target.getInternalName());
                     } else {
                         removedInterfaces.add(clazz.interfaces.remove(i--));
                     }
@@ -972,14 +1085,14 @@ public abstract class VersionProvider implements TypeRemap {
             for (InnerClassNode inner : clazz.innerClasses) {
                 type = Type.getObjectType(inner.name);
                 if (classStubs.containsKey(type)) {
-                    Pair<Type, Pair<Class<?>, Adapter>> stub = classStubs.get(type);
-                    inner.name = stub.getFirst().getInternalName();
+                    ClassStubEntry stub = classStubs.get(type);
+                    inner.name = stub.target.getInternalName();
                 }
                 if (inner.outerName != null) {
                     type = Type.getObjectType(inner.outerName);
                     if (classStubs.containsKey(type)) {
-                        Pair<Type, Pair<Class<?>, Adapter>> stub = classStubs.get(type);
-                        inner.outerName = stub.getFirst().getInternalName();
+                        ClassStubEntry stub = classStubs.get(type);
+                        inner.outerName = stub.target.getInternalName();
                     }
                 }
             }
@@ -1105,8 +1218,8 @@ public abstract class VersionProvider implements TypeRemap {
         for (E annotation : new ArrayList<>(annotations)) {
             Type annotationType = Type.getType(annotation.desc);
             if (classStubs.containsKey(annotationType)) {
-                Pair<Type, Pair<Class<?>, Adapter>> stub = classStubs.get(annotationType);
-                if (stub.getSecond().getSecond().keepInterface()) {
+                ClassStubEntry stub = classStubs.get(annotationType);
+                if (stub.keepInterface) {
                     E newAnnotation = AnnotationUtils.copyAnnotationNode(annotation);
                     transformAnnotation(newAnnotation, warnings);
                     annotations.add(newAnnotation);

@@ -64,6 +64,41 @@ and API surface, not behavior.
     `Stub.init`/`Stub.args` removed. `J_L_IndexOutOfBoundsException`'s
     `(long)` stub emits explicit `StringBuilder` concat so the api jar stays
     `invokedynamic`-free.
+- **`META-INF/jvmdg/stubs.idx`** (`version/idx/`) — the api jar ships a
+  deterministic, format- and jvmdg-versioned binary index of every
+  provider's stub registry, written at build time by `genStubIndex` from
+  the reflective scan's output. `VersionProvider.ensureInit` loads the
+  index instead of reflectively scanning stub classes (measured ~5x faster
+  provider init); the scan remains the semantic source of truth and the
+  parity oracle (`indexMatchesReflectiveScan` field-compares idx-loaded vs
+  scanned registries per provider). `jvmdg.debug.noStubIdx` forces the
+  scan; an absent index or missing provider section falls back
+  transparently (this also covers shaded api jars, whose provider names no
+  longer match the index keys), while a malformed or version-mismatched
+  index fails fast. `debugSkip*` filters apply identically on both paths.
+- **`jvmdg.mf` config files + annotation-bound flags** (`config/`) — the
+  `Flags` option surface is declared once per field via `@BoundFlag`; that
+  single source drives system-property init, CLI flag declaration and
+  application, config-file keys, `copy()`/`equals`/`hashCode`/`toString`,
+  the Gradle DSL mapping, and the `--print` dump — nothing is hand-mirrored
+  (a field without binding metadata fails class-init). `jvmdg.mf` is JAR
+  manifest syntax (plus ordered sections, duplicate rejection, no length
+  limit, `file:line` errors): `Jvmdg-Config-Version: 1` header, global keys
+  in the main section, `Name:`-scoped sections resolved most-specific-wins
+  (equal-specificity conflicts are errors). Applied via `--config` (CLI,
+  repeatable, ordered), `jvmdg { config.from(...) }` (Gradle,
+  `@InputFiles`-cache-tracked), and the javac plugin's shared args.
+  Precedence: defaults < embedded rules < config files < sysprops < CLI/DSL.
+  `jvmdg config --print` / `jvmdgPrintConfig` dump the merged state with
+  per-value sources. `Shade-Prefix` supplies `--prefix`/Gradle `shadePath`
+  defaults. See `docs/Configuration.md`.
+- **Embedded jar rules** — input jars carrying `META-INF/jvmdg/*.mf` are read
+  before their classes transform; every rule is sandboxed to the jar's own
+  package set (named sections intersect it too), global/unknown keys warn and
+  are ignored so a dependency's rules can't steer or brick your build. Rules
+  strip from output by default; `Keep-Embedded-Rules` preserves them,
+  `Ignore-Embedded-Rules` skips application entirely and passes files
+  through. First consumable scoped key: `Ignore-Warnings` per matched class.
 
 ### Breaking API changes
 
@@ -76,6 +111,10 @@ and API surface, not behavior.
 - `ClassMapping` reduced to a `MemberResolver`/`TypeRemap` implementation;
   registration/emission moved to `StubRegistry`/`StubScanner`/
   `MemberStubTransform`/`StructuralRemapTransform`.
+- Registry records are now declarative: `StubEntry`/`CtorFactory`/
+  `CtorRewrite`/`memberModify` carry `MethodRef` (lazy `Method`
+  resolution), and `classStubs` maps to `ClassStubEntry` instead of
+  `Pair<Class<?>, Adapter>` — both serializable for `stubs.idx`.
 - `VersionProvider.downgrade` no longer drives the whole class transform —
   providers emit stage content; the registrar composes it. Providers
   overriding `downgrade` still run via `ProviderStep`.

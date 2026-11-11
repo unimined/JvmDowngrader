@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.gradle.flags
 
 import org.gradle.api.JavaVersion
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
@@ -9,6 +10,16 @@ import xyz.wagyourtail.jvmdg.logging.Logger
 import java.io.File
 
 interface DowngradeFlags {
+
+    /**
+     * jvmdg.mf config files — applied in order below explicit DSL values.
+     * Editing a file listed here invalidates task/transform caches.
+     * @since 3.0.0
+     */
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    @get:Optional
+    val config: ConfigurableFileCollection
 
     /**
      * sets the target class version to downgrade to,
@@ -142,5 +153,55 @@ interface DowngradeFlags {
     @get:Input
     @get:Optional
     val debugSkipJeps: SetProperty<Int>
+
+    /**
+     * allows maven lookup for auto-resolving [apiJar]
+     * @since 3.0.0
+     */
+    @get:Input
+    @get:Optional
+    val allowMaven: Property<Boolean>
+
+    /**
+     * disables [xyz.wagyourtail.jvmdg.pipeline.FusibleTransform] fusion —
+     * sequential path is the correctness oracle
+     * @since 3.0.0
+     */
+    @get:Input
+    @get:Optional
+    val debugNoFuse: Property<Boolean>
+
+    /**
+     * forces the reflective stub scan even when the api jar ships a stubs.idx
+     * @since 3.0.0
+     */
+    @get:Input
+    @get:Optional
+    val debugNoStubIdx: Property<Boolean>
+
+    /**
+     * do not apply META-INF/jvmdg/ `.mf` rules embedded in input jars
+     * @since 3.0.0
+     */
+    @get:Input
+    @get:Optional
+    val ignoreEmbeddedRules: Property<Boolean>
+
+    /**
+     * copy META-INF/jvmdg/ `.mf` rule files into the output instead of stripping
+     * @since 3.0.0
+     */
+    @get:Input
+    @get:Optional
+    val keepEmbeddedRules: Property<Boolean>
+
+    /**
+     * prefix used when shading api classes into the output — the task's
+     * shadePath property overrides it
+     * @since 3.0.0
+     */
+    @get:Input
+    @get:Optional
+    val shadePrefix: Property<String>
 
 }

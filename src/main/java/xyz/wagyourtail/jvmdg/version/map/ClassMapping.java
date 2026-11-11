@@ -121,19 +121,19 @@ public class ClassMapping implements MemberResolver {
     }
 
     public void addStub(MemberNameAndDesc member, StubEntry entry) {
-        int modifiers = entry.method.getModifiers();
+        if (vp.shouldSkip(entry.handler)) {
+            return;
+        }
+        int modifiers = entry.handler.modifiers;
         if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
-            throw new RuntimeException("@Stub " + entry.method + " must be public static");
+            throw new RuntimeException("@Stub " + entry.handler + " must be public static");
         }
         StubRegistry.Owner stubs = stubsForWrite();
         if (member.isMethod()) {
-            if (member.getName().equals("forEachRemaining") && member.getDesc().getDescriptor().contains("Consumer")) {
-                new Exception("addStub " + member + " via " + entry.method + (entry.abstractDefault ? " [abstract]" : " [method]")).printStackTrace();
-            }
             stubs.methodStub.put(member, entry);
         } else {
             FieldStubEntry field = stubs.fieldStub.get(member);
-            if (entry.method.getReturnType().equals(Void.TYPE)) {
+            if (entry.handler.member.getDesc().getReturnType() == Type.VOID_TYPE) {
                 field = field == null ? new FieldStubEntry(null, entry) : field.withSetter(entry);
             } else {
                 field = field == null ? new FieldStubEntry(entry, null) : field.withGetter(entry);
@@ -151,7 +151,14 @@ public class ClassMapping implements MemberResolver {
     }
 
     public void addModify(MemberNameAndDesc member, Method method) {
-        int modifiers = method.getModifiers();
+        addModify(member, new MethodRef(method));
+    }
+
+    public void addModify(MemberNameAndDesc member, MethodRef method) {
+        if (vp.shouldSkip(method)) {
+            return;
+        }
+        int modifiers = method.modifiers;
         if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
             throw new RuntimeException("@Modify " + method + " must be public static");
         }
@@ -181,7 +188,7 @@ public class ClassMapping implements MemberResolver {
      * wildcard fallback, matching the original inline site.
      */
     @Override
-    public Method rawModify(MemberNameAndDesc member) {
+    public MethodRef rawModify(MemberNameAndDesc member) {
         StubRegistry.Owner stubs = stubs();
         return stubs == null ? null : stubs.memberModify.get(member);
     }
@@ -266,7 +273,7 @@ public class ClassMapping implements MemberResolver {
                 }
             }
             if (!runtimeAvailable && entry.requiresRuntime) {
-                warnings.add(entry.method + " requires runtime transformation but runtime is not available...");
+                warnings.add(entry.handler + " requires runtime transformation but runtime is not available...");
                 return null;
             }
             // NEWINVOKESPECIAL is the <init> flavour of invokespecial — a
@@ -296,9 +303,9 @@ public class ClassMapping implements MemberResolver {
         }
     }
 
-    public Method getParentModifyFor(MemberNameAndDesc member, int opcode, Set<String> warnings) {
+    public MethodRef getParentModifyFor(MemberNameAndDesc member, int opcode, Set<String> warnings) {
         for (ClassMapping parent : parents.get()) {
-            Method node = parent.getModifyFor(member, opcode, warnings);
+            MethodRef node = parent.getModifyFor(member, opcode, warnings);
             if (node != null) {
                 return node;
             }
@@ -307,7 +314,7 @@ public class ClassMapping implements MemberResolver {
     }
 
     @Override
-    public Method getModifyFor(MemberNameAndDesc member, int opcode, Set<String> warnings) {
+    public MethodRef getModifyFor(MemberNameAndDesc member, int opcode, Set<String> warnings) {
         opcode = ASMUtils.toHandleTag(opcode);
         boolean isStatic = false;
         switch (opcode) {
@@ -318,7 +325,7 @@ public class ClassMapping implements MemberResolver {
         }
         try {
             StubRegistry.Owner stubs = stubs();
-            Method m = stubs == null ? null : stubs.memberModify.get(member);
+            MethodRef m = stubs == null ? null : stubs.memberModify.get(member);
             if (m == null && stubs != null) {
                 m = stubs.memberModify.get(null);
             }
@@ -333,7 +340,7 @@ public class ClassMapping implements MemberResolver {
                 warnMember(member, warnings, opcode == Opcodes.H_INVOKESTATIC);
                 return null;
             }
-            int modifiers = m.getModifiers();
+            int modifiers = m.modifiers;
             if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
                 throw new RuntimeException("modify method must be public static");
             }
@@ -358,9 +365,9 @@ public class ClassMapping implements MemberResolver {
         return stubs == null ? Collections.<MemberNameAndDesc, CtorEntry>emptyMap() : stubs.ctor;
     }
 
-    public Map<MemberNameAndDesc, Method> getMethodModifyMap() {
+    public Map<MemberNameAndDesc, MethodRef> getMethodModifyMap() {
         StubRegistry.Owner stubs = stubs();
-        return stubs == null ? Collections.<MemberNameAndDesc, Method>emptyMap() : stubs.memberModify;
+        return stubs == null ? Collections.<MemberNameAndDesc, MethodRef>emptyMap() : stubs.memberModify;
     }
 
     @VisibleForTesting

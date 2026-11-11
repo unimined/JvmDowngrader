@@ -98,35 +98,31 @@ public class StructuralRemapTransform {
         switch (desc.getSort()) {
             case Type.ARRAY:
                 Type type = desc.getElementType();
-                Pair<Type, Pair<Class<?>, Adapter>> elementStub = remap.stubFor(type);
+                ClassStubEntry elementStub = remap.stubFor(type);
                 if (elementStub != null) {
-                    type = elementStub.getFirst();
+                    type = elementStub.target;
                 }
                 remap.warnUnstubbed(type, warnings);
                 insn.desc = Type.getType(desc.getDescriptor().substring(0, desc.getDimensions()) + type.getDescriptor()).getInternalName();
                 return null;
             case Type.OBJECT:
-                Pair<Type, Pair<Class<?>, Adapter>> stub = remap.stubFor(desc);
+                ClassStubEntry stub = remap.stubFor(desc);
                 if (stub != null) {
-                    // check if clazz has method `jvmdg$opcode
+                    // baked jvmdg$ hooks from the stub class
                     switch (insn.getOpcode()) {
                         case Opcodes.INSTANCEOF:
-                            for (Method declaredMethod : stub.getSecond().getFirst().getDeclaredMethods()) {
-                                if (declaredMethod.getName().equals("jvmdg$instanceof")) {
-                                    return new MethodInsnNode(Opcodes.INVOKESTATIC, Type.getType(stub.getSecond().getFirst()).getInternalName(), "jvmdg$instanceof", Type.getMethodDescriptor(declaredMethod), false);
-                                }
+                            if (stub.instanceofHook != null) {
+                                return new MethodInsnNode(Opcodes.INVOKESTATIC, stub.instanceofHook.getOwner().getInternalName(), stub.instanceofHook.getName(), stub.instanceofHook.getDesc().getDescriptor(), false);
                             }
                             break;
                         case Opcodes.CHECKCAST:
-                            for (Method declaredMethod : stub.getSecond().getFirst().getDeclaredMethods()) {
-                                if (declaredMethod.getName().equals("jvmdg$checkcast")) {
-                                    return new MethodInsnNode(Opcodes.INVOKESTATIC, Type.getType(stub.getSecond().getFirst()).getInternalName(), "jvmdg$checkcast", Type.getMethodDescriptor(declaredMethod), false);
-                                }
+                            if (stub.checkcastHook != null) {
+                                return new MethodInsnNode(Opcodes.INVOKESTATIC, stub.checkcastHook.getOwner().getInternalName(), stub.checkcastHook.getName(), stub.checkcastHook.getDesc().getDescriptor(), false);
                             }
                             break;
                         default:
                     }
-                    insn.desc = stub.getFirst().getInternalName();
+                    insn.desc = stub.target.getInternalName();
                     return null;
                 }
                 remap.warnUnstubbed(desc, warnings);

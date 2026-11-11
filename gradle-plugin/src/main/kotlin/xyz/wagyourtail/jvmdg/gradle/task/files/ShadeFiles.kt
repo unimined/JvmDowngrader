@@ -89,12 +89,13 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
                     fs.getPath("/")
                 }
             }
+            val fl = this.toFlags()
             for (i in toDowngradePaths.indices) {
                 val toDowngradeFile = toDowngradePaths[i]
                 val downgradedFile = downgraded[i]
                 ApiShader.shadeApis(
-                    this.toFlags(),
-                    toDowngrade[i].name.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/",
+                    fl,
+                    fl.shadePrefix ?: toDowngrade[i].name.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/",
                     toDowngradeFile,
                     downgradedFile,
                     apiJar.get().toSet()

@@ -2,7 +2,6 @@ package xyz.wagyourtail.jvmdg.version.map;
 
 import org.objectweb.asm.Type;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,10 +32,15 @@ public class StubRegistry {
         /** original-ctor member → {@link CtorFactory} or {@link CtorRewrite}; resolved owner-exact (a {@code new Sub()} never inherits {@code Super}'s rewrite) */
         public final Map<MemberNameAndDesc, CtorEntry> ctor = new HashMap<>();
         /** null key = class-level {@code @Modify} ({@code Ref.member} unset) — catches every member insn on the owner */
-        public final Map<MemberNameAndDesc, Method> memberModify = new HashMap<>();
+        public final Map<MemberNameAndDesc, MethodRef> memberModify = new HashMap<>();
     }
 
     /** Registration path — creates the owner's entry on first write. */
+    /** all registered owners by internal name — index serialization + parity tooling */
+    public Map<String, Owner> owners() {
+        return owners;
+    }
+
     public Owner forOwner(Type owner) {
         String key = owner.getInternalName();
         Owner o = owners.get(key);

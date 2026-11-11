@@ -8,7 +8,6 @@ import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.version.ModifyUtils;
 
-import java.lang.reflect.Method;
 import java.util.*;
 
 /**
@@ -29,7 +28,7 @@ public class MemberStubTransform {
             InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
             MemberNameAndDesc member = new MemberNameAndDesc(indy.bsm.getName(), Type.getMethodType(indy.bsm.getDesc()));
 
-            Method m = mr.rawModify(member);
+            MethodRef m = mr.rawModify(member);
             if (m != null) {
                 invokeModify(m, method, index, classNode, extra, mr, member, warnings);
             }
@@ -84,16 +83,16 @@ public class MemberStubTransform {
                     if (factory.downgradeVersion) {
                         insnList.add(new LdcInsnNode(mr.provider().inputVersion));
                     }
-                    Method fm = factory.method;
+                    MethodRef fm = factory.handler;
                     insnList.add(new MethodInsnNode(
                         Opcodes.INVOKESTATIC,
-                        Type.getType(fm.getDeclaringClass()).getInternalName(),
-                        fm.getName(),
-                        Type.getMethodDescriptor(fm),
-                        fm.getDeclaringClass().isInterface()
+                        fm.member.getOwner().getInternalName(),
+                        fm.member.getName(),
+                        fm.member.getDesc().getDescriptor(),
+                        fm.itf
                     ));
                     method.instructions.insertBefore(insn, insnList);
-                    Type fret = Type.getReturnType(fm);
+                    Type fret = fm.member.getDesc().getReturnType();
                     if (!returnType.equals(fret)) {
                         method.instructions.insertBefore(insn, new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName()));
                     }
@@ -112,16 +111,16 @@ public class MemberStubTransform {
                 if (newMin.downgradeVersion) {
                     insnList.add(new LdcInsnNode(mr.provider().inputVersion));
                 }
-                Method m = newMin.method;
+                MethodRef m = newMin.handler;
                 insnList.add(new MethodInsnNode(
                     Opcodes.INVOKESTATIC,
-                    Type.getType(m.getDeclaringClass()).getInternalName(),
-                    m.getName(),
-                    Type.getMethodDescriptor(m),
-                    m.getDeclaringClass().isInterface()
+                    m.member.getOwner().getInternalName(),
+                    m.member.getName(),
+                    m.member.getDesc().getDescriptor(),
+                    m.itf
                 ));
-                if (!returnType.equals(Type.getReturnType(m))) {
-                    if (Type.getReturnType(m) == Type.VOID_TYPE) {
+                if (!returnType.equals(m.member.getDesc().getReturnType())) {
+                    if (m.member.getDesc().getReturnType() == Type.VOID_TYPE) {
                         // a void-returning stub cannot fabricate the original
                         // call's result — emitting the call would leave the
                         // stack short (and a CHECKCAST would pop nothing)
@@ -134,7 +133,7 @@ public class MemberStubTransform {
                     }
                 }
                 method.instructions.insertBefore(insn, insnList);
-                if (!returnType.equals(Type.getReturnType(m))) {
+                if (!returnType.equals(m.member.getDesc().getReturnType())) {
                     // add cast
                     method.instructions.insertBefore(insn, new TypeInsnNode(Opcodes.CHECKCAST, returnType.getInternalName()));
                 }
@@ -142,7 +141,7 @@ public class MemberStubTransform {
                 return;
             }
             }
-            Method m = mr.getModifyFor(member, insn.getOpcode(), warnings);
+            MethodRef m = mr.getModifyFor(member, insn.getOpcode(), warnings);
             if (m != null) {
                 // <init> @Modify handlers rewrite the construction site and assume
                 // the javac NEW+DUP shape (two uninitialised refs on the stack,
@@ -173,21 +172,23 @@ public class MemberStubTransform {
     }
 
     /** reflectively invokes a {@code @Modify} handler with its declared parameter subset; failures warn, never sink */
-    private static void invokeModify(Method modify, MethodNode method, int index, ClassNode classNode,
+    private static void invokeModify(MethodRef modify, MethodNode method, int index, ClassNode classNode,
                                      Set<ClassNode> extra, MemberResolver mr, MemberNameAndDesc member, Set<String> warnings) {
         try {
+            java.lang.reflect.Method m = modify.method();
             Object[] modifyArgs = new Object[] { method, index, classNode, extra, mr.provider().downgrader.flags.debugNoSynthetic };
-            int[] sigIdx = ModifyUtils.matchModifyParams(modify);
+            int[] sigIdx = ModifyUtils.matchModifyParams(m);
             List<Object> takeArgs = new ArrayList<>();
             for (int idx : sigIdx) {
                 takeArgs.add(modifyArgs[idx]);
             }
-            modify.invoke(null, takeArgs.toArray());
+            m.invoke(null, takeArgs.toArray());
         } catch (Throwable e) {
             // a failed @Modify handler must not sink the whole class —
             // warn and leave the insn unmodified
-            warnings.add("modify " + modify.getDeclaringClass().getSimpleName()
-                + "." + modify.getName() + " failed on " + member.getName()
+            String ownerName = modify.member.getOwner().getInternalName();
+            warnings.add("modify " + ownerName.substring(ownerName.lastIndexOf('/') + 1)
+                + "." + modify.member.getName() + " failed on " + member.getName()
                 + member.getDesc() + ": " + e);
         }
     }
@@ -284,10 +285,10 @@ public class MemberStubTransform {
         method.instructions.remove(insn);
     }
 
-    private static MethodInsnNode invokestatic(Method m) {
+    private static MethodInsnNode invokestatic(MethodRef m) {
         return new MethodInsnNode(Opcodes.INVOKESTATIC,
-            Type.getType(m.getDeclaringClass()).getInternalName(), m.getName(),
-            Type.getMethodDescriptor(m), m.getDeclaringClass().isInterface());
+            m.member.getOwner().getInternalName(), m.member.getName(),
+            m.member.getDesc().getDescriptor(), m.itf);
     }
 
     // --- <init> NEW/DUP pairing verification ---------------------------------

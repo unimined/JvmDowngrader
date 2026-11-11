@@ -20,6 +20,7 @@ import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import java.io.FileReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+
 import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Map;
@@ -103,8 +104,8 @@ public class TestCtorRewrite implements Opcodes {
             public CtorEntry getCtorFor(MemberNameAndDesc member, boolean runtimeAvailable, Set<String> warnings) {
                 return member.getName().equals("<init>") ? entry : null;
             }
-            @Override public Method getModifyFor(MemberNameAndDesc member, int opcode, Set<String> warnings) { return null; }
-            @Override public Method rawModify(MemberNameAndDesc member) { return null; }
+            @Override public MethodRef getModifyFor(MemberNameAndDesc member, int opcode, Set<String> warnings) { return null; }
+            @Override public MethodRef rawModify(MemberNameAndDesc member) { return null; }
             @Override public MemberNameAndDesc unstubMember(String name, Type desc) {
                 return new MemberNameAndDesc(name, desc);
             }
@@ -460,7 +461,7 @@ public class TestCtorRewrite implements Opcodes {
                 .get(new MemberNameAndDesc("<init>", Type.getMethodType(ORIG)));
             assertNotNull(rw);
             assertEquals(-1, rw.keep[1]);
-            assertEquals("nameOf", rw.argMethods[1].getName());
+            assertEquals("nameOf", rw.argMethods[1].member.getName());
             assertArrayEquals(new int[]{1}, rw.argFrom[1]);
         }
     }

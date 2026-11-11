@@ -16,6 +16,7 @@ import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.convention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
+import xyz.wagyourtail.jvmdg.gradle.task.PrintConfig
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeJar
 import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeTransform
 import xyz.wagyourtail.jvmdg.gradle.transform.ShadeTransform
@@ -47,6 +48,9 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
             it.archiveClassifier.set("downgraded-shaded")
         }
     }
+
+    @get:Internal
+    val printConfigTask = project.tasks.register("jvmdgPrintConfig", PrintConfig::class.java)
 
     init {
         downgradeTo.convention(JavaVersion.VERSION_1_8).finalizeValueOnRead()
@@ -80,6 +84,11 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         shadeInlining.convention(true).finalizeValueOnRead()
         multiReleaseOriginal.convention(false).finalizeValueOnRead()
         multiReleaseVersions.convention(emptySet()).finalizeValueOnRead()
+        allowMaven.convention(false).finalizeValueOnRead()
+        debugNoFuse.convention(false).finalizeValueOnRead()
+        debugNoStubIdx.convention(false).finalizeValueOnRead()
+        ignoreEmbeddedRules.convention(false).finalizeValueOnRead()
+        keepEmbeddedRules.convention(false).finalizeValueOnRead()
     }
 
     @get:Internal

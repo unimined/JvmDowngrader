@@ -87,9 +87,10 @@ abstract class ShadeJar: Jar(), ShadeFlags, FlagsConvention {
         val tempOutput = temporaryDir.resolve("downgradedInput.jar")
         tempOutput.deleteIfExists()
 
+        val fl = this.toFlags()
         ApiShader.shadeApis(
-            this.toFlags(),
-            shadePath.getOrElse(archiveBaseName.get().replace(Regex("[.;\\[/]"), "-") + "/"),
+            fl,
+            shadePath.getOrElse(fl.shadePrefix ?: archiveBaseName.get().replace(Regex("[.;\\[/]"), "-") + "/"),
             inputFile.asFile.get(),
             tempOutput,
             apiJar.get().toSet()

@@ -159,10 +159,38 @@ val coverageReport = tasks.register<CoverageRunTask>("coverageReport") {
     javaVersion = toVersion - 1
 }
 
+// serialize every provider's reflective-scan registry to META-INF/jvmdg/stubs.idx —
+// the runtime loads this instead of re-running the scan (parity: same scan, dumped)
+val stubIndexDir = layout.buildDirectory.dir("generated/stubindex")
+val genStubIndex = tasks.register<JavaExec>("genStubIndex") {
+    group = "jvmdg"
+    dependsOn(":classes", "classes")
+    for (vers in fromVersion..toVersion) {
+        dependsOn("java${vers.ordinal + 1}Classes")
+    }
+    classpath = files(
+        rootProject.sourceSets["main"].output,
+        rootProject.sourceSets["shared"].output,
+        sourceSets.main.get().output,
+        (fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }
+    ) + configurations.runtimeClasspath.get()
+    mainClass.set("xyz.wagyourtail.jvmdg.version.idx.StubIndexWriter")
+    args = listOf(
+        stubIndexDir.get().file("META-INF/jvmdg/stubs.idx").asFile.absolutePath,
+        project.version.toString()
+    )
+    outputs.dir(stubIndexDir)
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
+        vendor.set(JvmVendorSpec.AZUL)
+    }
+}
+
 tasks.jar {
     dependsOn(coverageReport)
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
     from(rootProject.sourceSets.getByName("shared").output)
+    from(genStubIndex)
     from(coverageReport.get().coverageReports) {
         into("META-INF/coverage")
         exclude("**/unmatched.txt")
@@ -187,6 +215,7 @@ val testJar = tasks.register<Jar>("testJar") {
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
     from(rootProject.sourceSets.getByName("shared").output)
     from(sourceSets.main.get().output)
+    from(genStubIndex)
 
     destinationDirectory = temporaryDir
 
@@ -215,6 +244,7 @@ tasks.javadoc {
 val shadowJar = tasks.register<ShadowJar>("shadowJar") {
     dependsOn(tasks.jar.get().taskDependencies)
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output } + sourceSets.main.get().output).toTypedArray())
+    from(genStubIndex)
 
     archiveClassifier.set("all")
 

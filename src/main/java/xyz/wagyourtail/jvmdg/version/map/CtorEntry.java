@@ -22,5 +22,5 @@ public abstract class CtorEntry {
      * {@code @InitPre}/{@code @InitPost} methods for {@link CtorRewrite}.
      * Coverage/corpus consumers use this to mark handler methods exercised.
      */
-    public abstract java.lang.reflect.Method[] methods();
+    public abstract MethodRef[] methods();
 }

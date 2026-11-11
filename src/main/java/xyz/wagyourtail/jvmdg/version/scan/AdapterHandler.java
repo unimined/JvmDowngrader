@@ -1,8 +1,8 @@
 package xyz.wagyourtail.jvmdg.version.scan;
 
 import org.objectweb.asm.Type;
-import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.map.ClassStubEntry;
 
 import java.lang.annotation.Annotation;
 
@@ -40,6 +40,9 @@ public class AdapterHandler implements AnnotationHandler {
                 target = Type.getObjectType(stub.target());
             }
         }
-        ctx.vp.classStubs.put(value, new Pair<>(target, new Pair<Class<?>, Adapter>(clazz, stub)));
+        ClassStubEntry entry = new ClassStubEntry(target, clazz, stub.keepInterface());
+        if (!ctx.vp.shouldSkip(entry)) {
+            ctx.vp.classStubs.put(value, entry);
+        }
     }
 }

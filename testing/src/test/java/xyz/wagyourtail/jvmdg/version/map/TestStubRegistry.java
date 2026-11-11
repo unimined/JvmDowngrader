@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Method;
+import xyz.wagyourtail.jvmdg.version.map.MethodRef;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -44,9 +45,9 @@ public class TestStubRegistry {
         StubRegistry registry = new StubRegistry();
         StubRegistry.Owner owner = registry.forOwner(OWNER_A);
         Method m = getClass().getDeclaredMethod("wildcardProbe");
-        owner.memberModify.put(null, m);
+        owner.memberModify.put(null, new MethodRef(m));
         assertTrue(owner.memberModify.containsKey(null));
-        assertSame(m, owner.memberModify.get(null));
+        assertSame(m, owner.memberModify.get(null).method());
     }
 
     @SuppressWarnings("unused")
@@ -58,7 +59,7 @@ public class TestStubRegistry {
         StubRegistry registry = new StubRegistry();
         registry.forOwner(OWNER_A).methodStub.put(
             new MemberNameAndDesc("get", Type.getMethodType("()Ljava/lang/Object;")),
-            new StubEntry(null, false, false, false, false, new String[0]));
+            new StubEntry((MethodRef) null, false, false, false, false, new String[0]));
         assertTrue(registry.forOwner(OWNER_B).methodStub.isEmpty());
         assertEquals(1, registry.owner(OWNER_A).methodStub.size());
     }

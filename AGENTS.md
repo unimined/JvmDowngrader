@@ -77,7 +77,8 @@ The core is a **version-agnostic pipeline** with registrars layered on top:
 ```
 entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
    └─ compile/jar/   JarStep chain in one FusedJarRun traversal
-        SignatureStripStep → ManifestStep → MultiReleaseRouteStep
+        EmbeddedRulesStep (META-INF/jvmdg/*.mf scan, sandboxed apply, strip)
+          → SignatureStripStep → ManifestStep → MultiReleaseRouteStep
           → ClassDowngradeStep (per-entry, legacy path)
           → or PipelineJarStep (whole-set: downgrade union + shade in one run)
              └─ pipeline/    version-free engine
@@ -98,6 +99,11 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
                   MemberStubTransform (emission) + StructuralRemapTransform
                   (mechanical type-slot remap) + MemberResolver/TypeRemap
                   (ClassMapping implements both — resolver graph only)
+             └─ version/idx/ StubIndex — META-INF/jvmdg/stubs.idx codec
+                  (deterministic, format+jvmdg-versioned); StubIndexWriter
+                  serializes the reflective scan at api-jar build time
+                  (genStubIndex JavaExec); providers idx-load at ensureInit,
+                  falling back to the scan (jvmdg.debug.noStubIdx forces it)
              └─ compile/shade/ ReferenceIndex (member-level edges, floor
                   slot lookup, usages inversion, BFS closure) + IndexScanner
                   (entry stream → index) + RefExtractor SPI (MemberRefExtractor,
@@ -109,6 +115,15 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
 asm/index/   ClasspathIndex/NamespaceView/WorkingClasses — memoized
              classpath hierarchy queries (replaces re-parse amplification)
 asm/info/    ClassInfo/MethodInfo/FieldInfo — member projections
+config/      BoundFlag (field annotation) + FlagBindings (one reflective
+             index driving sysprop init, CLI gen/apply, config keys,
+             copy/equals/hash/toString, --print, Gradle mapping) +
+             ManifestConfigReader (jvmdg.mf syntax) + JvmdgConfig (application
+             rules: version header, unknown keys, scoped sections) +
+             ScopedRule (Name:-scoped, jarScope-sandboxed, most-specific wins)
+version/idx/ StubIndex codec + StubIndexWriter — deterministic, versioned
+             stubs.idx shipped in the api jar; ensureInit loads it instead of
+             reflectively scanning (~5x faster provider init)
 classloader/ DowngradingClassLoader — runtime transform path (per-class
              downgrade, untouched by the jar-level rework)
 ```
@@ -144,6 +159,7 @@ Invariants:
 | Wider per-class pass | `otherTransforms` on the provider — becomes `OtherTransformsTransform` in the stage; emits `jvmdg$indy$/handle$/methodtype$/lookup/nest$/instanceMain` helpers via `ctx.extras`. |
 | Whole-set/ordering-sensitive pass | A `StageHook` (`onEnter`/`onExit`) — sees the full `TransformContext`; the shade closure barrier is the model. |
 | Ref kind for the index | A `RefExtractor`/`MemberScanner` SPI impl — plug into `ReferenceIndex` construction; `RequiresResourceScanner` is the model. |
+| Flag / config option | `@BoundFlag` on the `Flags` field — CLI/sysprop/config/`copy()`/`--print` come free; Gradle needs the typed `Property` on `DowngradeFlags` + one `GRADLE_APPLIERS` adapter. Docs table is drift-tested (`everyBoundKeyAndCliFlagIsDocumented`). See `docs/Configuration.md`. |
 
 ## Verification checklist
 

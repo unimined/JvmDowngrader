@@ -6,8 +6,8 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
-import xyz.wagyourtail.jvmdg.util.Pair;
-import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.map.ClassStubEntry;
+
 
 import java.util.*;
 
@@ -39,7 +39,7 @@ public class TestStructuralRemapTransform {
 
     /** Recursive map-backed remap mirroring {@code VersionProvider.stubClass}. */
     private static class FakeRemap implements TypeRemap {
-        final Map<Type, Pair<Type, Pair<Class<?>, Adapter>>> stubs = new HashMap<>();
+        final Map<Type, ClassStubEntry> stubs = new HashMap<>();
         final Set<String> warned = new HashSet<>();
 
         @Override
@@ -53,21 +53,21 @@ public class TestStructuralRemapTransform {
                     return Type.getMethodType(remap(type.getReturnType(), warnings), args);
                 case Type.ARRAY:
                     Type element = type.getElementType();
-                    Pair<Type, Pair<Class<?>, Adapter>> es = stubFor(element);
+                    ClassStubEntry es = stubFor(element);
                     if (es != null) {
-                        element = es.getFirst();
+                        element = es.target;
                     }
                     return Type.getType(type.getDescriptor().substring(0, type.getDimensions()) + element.getDescriptor());
                 case Type.OBJECT:
-                    Pair<Type, Pair<Class<?>, Adapter>> s = stubFor(type);
-                    return s == null ? type : s.getFirst();
+                    ClassStubEntry s = stubFor(type);
+                    return s == null ? type : s.target;
                 default:
                     return type;
             }
         }
 
         @Override
-        public Pair<Type, Pair<Class<?>, Adapter>> stubFor(Type type) {
+        public ClassStubEntry stubFor(Type type) {
             return stubs.get(type);
         }
 
@@ -79,13 +79,13 @@ public class TestStructuralRemapTransform {
 
     private static FakeRemap remapWithAdapter() {
         FakeRemap r = new FakeRemap();
-        r.stubs.put(REAL, new Pair<Type, Pair<Class<?>, Adapter>>(FAKE, new Pair<Class<?>, Adapter>(FakeAdapter.class, null)));
+        r.stubs.put(REAL, new ClassStubEntry(FAKE, FakeAdapter.class, false));
         return r;
     }
 
     private static FakeRemap remapWithoutAdapter() {
         FakeRemap r = new FakeRemap();
-        r.stubs.put(REAL, new Pair<Type, Pair<Class<?>, Adapter>>(FAKE, new Pair<Class<?>, Adapter>(Object.class, null)));
+        r.stubs.put(REAL, new ClassStubEntry(FAKE, Object.class, false));
         return r;
     }
 
