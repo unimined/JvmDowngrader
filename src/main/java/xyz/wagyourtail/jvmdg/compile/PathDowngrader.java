@@ -1,27 +1,28 @@
 package xyz.wagyourtail.jvmdg.compile;
 
+import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.compile.jar.ClassDowngradeStep;
+import xyz.wagyourtail.jvmdg.compile.jar.FusedJarRun;
+import xyz.wagyourtail.jvmdg.compile.jar.JarStep;
+import xyz.wagyourtail.jvmdg.compile.jar.ManifestStep;
+import xyz.wagyourtail.jvmdg.compile.jar.MultiReleaseRouteStep;
+import xyz.wagyourtail.jvmdg.compile.jar.PipelineJarStep;
+import xyz.wagyourtail.jvmdg.compile.jar.SignatureStripStep;
+import xyz.wagyourtail.jvmdg.compile.jar.StepContext;
+import xyz.wagyourtail.jvmdg.compile.shade.ReferenceIndex;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.classloader.ResourceClassLoader;
 import xyz.wagyourtail.jvmdg.util.*;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.instrument.IllegalClassFormatException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.jar.Manifest;
 
 public class PathDowngrader {
 
@@ -46,7 +47,8 @@ public class PathDowngrader {
             }
         }
         downgradePaths(target, new ArrayList<>(input), new ArrayList<>(output), classpath);
-        System.out.println("Downgraded in " + (System.currentTimeMillis() - start) + "ms");
+        new Logger(PathDowngrader.class, Logger.Level.INFO, true, System.out)
+            .info("Downgraded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     public static void downgradePaths(int opcVersion, List<Path> inputRoots, List<Path> outputRoots, Set<File> classpath) throws IOException {
@@ -60,6 +62,18 @@ public class PathDowngrader {
     }
 
     public static void downgradePaths(final ClassDowngrader downgrader, final List<Path> inputRoots, List<Path> outputRoots, Set<URL> classpath) throws IOException {
+        downgradePaths(downgrader, inputRoots, outputRoots, classpath, null, null, null, null);
+    }
+
+    /**
+     * Fused downgrade + shade: when {@code shadePrefix} is non-null the class
+     * step runs the whole-set pipeline — the downgrade union chain for the
+     * observed input versions followed by the shade stage list — over every
+     * class in one pass, so shading sees the complete post-transform set
+     * without an intermediate jar write.
+     */
+    public static void downgradePaths(final ClassDowngrader downgrader, final List<Path> inputRoots, List<Path> outputRoots, Set<URL> classpath,
+                                      final String shadePrefix, final ReferenceIndex apiIndex, final Set<Type> apiClasses, final List<Path> apiRoots) throws IOException {
         try (final ResourceClassLoader extraClasspath = new ResourceClassLoader(classpath, PathDowngrader.class.getClassLoader()) {
 
             @Override
@@ -77,182 +91,63 @@ public class PathDowngrader {
             }
 
         }) {
+            final List<String> multiReleasePaths = new ArrayList<>();
+            for (int j = downgrader.maxVersion(); j >= 52; j--) {
+                multiReleasePaths.add("META-INF/versions/" + Utils.classVersionToMajorVersion(j));
+            }
+            final Function<String, byte[]> extraRead = new Function<String, byte[]>() {
+                @Override
+                public byte[] apply(String s) {
+                    try {
+                        // multi-version
+                        if (downgrader.flags.downgradeFromMultiReleases) {
+                            for (String pth : multiReleasePaths) {
+                                for (Path in : inputRoots) {
+                                    Path p = in.resolve(pth).resolve(s + ".class");
+                                    if (Files.exists(p)) {
+                                        return Files.readAllBytes(p);
+                                    }
+                                }
+                            }
+                        }
+
+                        // main version
+                        for (Path in : inputRoots) {
+                            Path p = in.resolve(s + ".class");
+                            if (Files.exists(p)) {
+                                return Files.readAllBytes(p);
+                            }
+                        }
+
+                        URL url = extraClasspath.getResource(s + ".class");
+                        if (url == null) return null;
+                        try (InputStream is = url.openStream()) {
+                            return Utils.readAllBytes(is);
+                        }
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+
             // zip input and output
             for (int i = 0; i < inputRoots.size(); i++) {
                 final Path in = inputRoots.get(i);
                 final Path out = outputRoots.get(i);
 
-                final List<String> multiReleasePaths = new ArrayList<>();
-                for (int j = downgrader.maxVersion(); j >= 52; j--) {
-                    multiReleasePaths.add("META-INF/versions/" + Utils.classVersionToMajorVersion(j));
+                List<JarStep> steps = new ArrayList<>();
+                steps.add(new SignatureStripStep());
+                steps.add(new ManifestStep());
+                steps.add(new MultiReleaseRouteStep(shadePrefix != null));
+                if (shadePrefix != null) {
+                    steps.add(new PipelineJarStep(shadePrefix, apiIndex, apiClasses, apiRoots));
+                } else {
+                    steps.add(new ClassDowngradeStep());
                 }
-                final Set<Path> visitedClasses = Collections.newSetFromMap(new ConcurrentHashMap<Path, Boolean>());
-                // deterministic output: async consumers defer into these maps,
-                // then a single sorted write pass produces reproducible order
-                final Set<String> mkdirs = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-                final ConcurrentMap<String, byte[]> writes = new ConcurrentHashMap<>();
-                final ConcurrentMap<String, Path> copies = new ConcurrentHashMap<>();
-
-                AsyncUtils.visitPathsAsync(in, new IOFunction<Path, Boolean>() {
-
-                    @Override
-                    public Boolean apply(Path path) throws IOException {
-                        mkdirs.add(in.relativize(path).toString());
-                        return true;
-                    }
-
-                }, new IOConsumer<Path>() {
-
-                    @Override
-                    public void accept(Path path) throws IOException {
-                        Path relativized = in.relativize(path);
-                        if (path.getFileName().toString().endsWith(".class")) {
-
-                            if (relativized.startsWith("META-INF/versions")) {
-                                if (downgrader.flags.downgradeFromMultiReleases) {
-                                    relativized = relativized.subpath(3, relativized.getNameCount());
-                                } else if (downgrader.flags.multiReleaseOriginal) {
-                                    // copy original
-                                    copies.put(relativized.toString(), path);
-                                    return;
-                                } else {
-                                    return;
-                                }
-                            }
-
-                            // dont if already visited
-                            if (!visitedClasses.add(out.resolve(relativized.toString()))) {
-                                return;
-                            }
-
-                            if (downgrader.flags.downgradeFromMultiReleases) {
-                                // prefer highest multi-release
-                                for (String pth : multiReleasePaths) {
-                                    if (Files.exists(in.resolve(pth).resolve(relativized))) {
-                                        path = in.resolve(pth).resolve(relativized);
-                                        break;
-                                    }
-                                }
-                            }
-
-                            try {
-                                String relativizedName = relativized.toString();
-                                if (relativized.getFileSystem().getSeparator().equals("\\")) {
-                                    relativizedName = relativizedName.replace('\\', '/');
-                                }
-                                String internalName = relativizedName.substring(0, relativizedName.length() - 6);
-                                byte[] bytes = Files.readAllBytes(path);
-                                Map<String, byte[]> outputs = downgrader.downgrade(new AtomicReference<>(internalName), bytes, false, new Function<String, byte[]>() {
-                                    @Override
-                                    public byte[] apply(String s) {
-                                        try {
-
-                                            // multi-version
-                                            if (downgrader.flags.downgradeFromMultiReleases) {
-                                                for (String pth : multiReleasePaths) {
-                                                    for (Path in : inputRoots) {
-                                                        Path p = in.resolve(pth).resolve(s + ".class");
-                                                        if (Files.exists(p)) {
-                                                            return Files.readAllBytes(p);
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                            // main version
-                                            for (Path in : inputRoots) {
-                                                Path p = in.resolve(s + ".class");
-                                                if (Files.exists(p)) {
-                                                    return Files.readAllBytes(p);
-                                                }
-                                            }
-
-                                            URL url = extraClasspath.getResource(s + ".class");
-                                            if (url == null) return null;
-                                            try (InputStream is = url.openStream()) {
-                                                return Utils.readAllBytes(is);
-                                            }
-                                        } catch (IOException e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    }
-                                });
-                                if (outputs == null) {
-                                    copies.put(relativized.toString(), path);
-                                } else {
-                                    for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
-                                        writes.put(entry.getKey() + ".class", entry.getValue());
-                                    }
-                                }
-                            } catch (IllegalClassFormatException e) {
-                                throw new IOException("Failed to downgrade " + path, e);
-                            }
-                        } else if (ManifestUtils.MANIFEST_PATH.equals(
-                                relativized.toString().replace('\\', '/'))) {
-                            // add version number to manifest
-                            try (InputStream is = Files.newInputStream(path)) {
-                                Manifest manifest = new Manifest(is);
-                                ManifestUtils.applyDowngradeAttributes(manifest, downgrader.flags);
-                                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                                manifest.write(bos);
-                                writes.put(ManifestUtils.MANIFEST_PATH, bos.toByteArray());
-                            }
-                        } else {
-                            // strip signatures since downgraded classes will not have the same signatures
-                            if (ManifestUtils.isSignatureFile(relativized.toString().replace('\\', '/'))) {
-                                return;
-                            }
-                            copies.put(relativized.toString(), path);
-                        }
-                    }
-
-                }).get();
-
-                // single sorted write pass: deterministic entry order
-                List<String> dirs = new ArrayList<>(mkdirs);
-                Collections.sort(dirs);
-                for (String d : dirs) {
-                    Files.createDirectories(out.resolve(d));
-                }
-                List<String> order = new ArrayList<>(writes.size() + copies.size());
-                order.addAll(writes.keySet());
-                order.addAll(copies.keySet());
-                Collections.sort(order);
-                for (String rel : order) {
-                    Path p = out.resolve(rel);
-                    Path parent = p.getParent();
-                    if (parent != null) {
-                        Files.createDirectories(parent);
-                    }
-                    byte[] data = writes.get(rel);
-                    if (data != null) {
-                        Files.write(p, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-                    } else {
-                        Files.copy(copies.get(rel), p, StandardCopyOption.REPLACE_EXISTING);
-                    }
-                }
-                // inputs without a manifest still need one when multi-release
-                // output was requested, or the JVM ignores META-INF/versions
-                if (ManifestUtils.needsMultiRelease(downgrader.flags)) {
-                    Path mfPath = out.resolve(ManifestUtils.MANIFEST_PATH);
-                    if (!Files.exists(mfPath)) {
-                        Path parent = mfPath.getParent();
-                        if (parent != null) {
-                            Files.createDirectories(parent);
-                        }
-                        Manifest manifest = new Manifest();
-                        ManifestUtils.applyDowngradeAttributes(manifest, downgrader.flags);
-                        try (OutputStream os = Files.newOutputStream(mfPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-                            manifest.write(os);
-                        }
-                    }
-                }
-
-                // pin after every write — including the synthesized manifest
-                // and its META-INF dir above — so no entry keeps wall-clock time
-                OutputUtils.pinTimestamps(out);
+                StepContext ctx = new StepContext(downgrader.flags, downgrader.logger, downgrader, inputRoots, extraRead);
+                FusedJarRun.run(in, steps, ctx, out);
             }
-        } catch (ExecutionException | InterruptedException | URISyntaxException e) {
+        } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }

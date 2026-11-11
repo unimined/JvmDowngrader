@@ -1039,6 +1039,9 @@ public class StubTestGenerator {
                     for (MemberNameAndDesc m : mapping.getMethodStubMap().keySet()) {
                         add(members, owner, m, "method");
                     }
+                    for (MemberNameAndDesc m : mapping.getCtorMap().keySet()) {
+                        add(members, owner, m, "method");
+                    }
                     for (MemberNameAndDesc m : mapping.getFieldStubMap().keySet()) {
                         add(members, owner, m, "field");
                     }
@@ -1285,6 +1288,39 @@ public class StubTestGenerator {
                 && method.getDeclaringClass() != clazz) {
                 setReason(reason, "declared-on-non-public");
                 return null;
+            }
+            // a member surfaced under a child-interface owner resolves via
+            // getMethod to the parent's inherited declaration; its erased
+            // generic signature (e.g. OfPrimitive.forEachRemaining(Object))
+            // isn't source-expressible on the child, so cast the receiver to
+            // the declaring interface — the same receiver type the
+            // receiverInArg0 path produced for receiver-in-desc registrations.
+            // Class owners keep their own type: inherited methods are
+            // source-callable there and the callsite owner must stay the
+            // registered one.
+            if (clazz.isInterface() && method.getDeclaringClass().isInterface()
+                && method.getDeclaringClass() != clazz) {
+                clazz = method.getDeclaringClass();
+                cName = clazz.getCanonicalName();
+            }
+            // javac's specialized override emits a synthetic bridge carrying
+            // the erased generic signature on the child itself — getMethod
+            // resolves to that bridge, but it isn't source-callable. The real
+            // erased declaration lives on the generic supertype, so re-resolve
+            // through the interface hierarchy.
+            if (method.isBridge()) {
+                for (Class<?> iface : clazz.getInterfaces()) {
+                    try {
+                        Method decl = iface.getMethod(e.name, params);
+                        if (!decl.isBridge() && decl.getDeclaringClass().isInterface()) {
+                            clazz = decl.getDeclaringClass();
+                            cName = clazz.getCanonicalName();
+                            method = decl;
+                            break;
+                        }
+                    } catch (NoSuchMethodException ignored) {
+                    }
+                }
             }
         }
         if (receiverInArg0) {

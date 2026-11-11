@@ -16,7 +16,14 @@ import java.util.jar.JarFile;
 
 public class DowngradingClassLoader extends ResourceClassLoader implements Closeable {
     private final ClassDowngrader holder;
-    private final ClassDowngrader currentVersionDowngrader;
+    /**
+     * the downgrader targeting the <i>current</i> jvm, used to load api/provider
+     * classes when this loader's holder targets a lower version. Lazily created:
+     * constructing it eagerly in the ctor spins up a whole second
+     * {@link ClassDowngrader} (its own classloader + provider scan) for every
+     * {@code DowngradingClassLoader}, even though most loads never need it.
+     */
+    private volatile ClassDowngrader currentVersionDowngrader;
 
     private final Logger logger;
 
@@ -29,11 +36,6 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
             }
         }
         this.holder = downgrader;
-        if (downgrader.target != Utils.getCurrentClassVersion()) {
-            this.currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(downgrader.flags);
-        } else {
-            this.currentVersionDowngrader = downgrader;
-        }
         logger = holder.logger.subLogger(DowngradingClassLoader.class);
     }
 
@@ -50,12 +52,24 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
             }
         }
         this.holder = downgrader;
-        if (downgrader.target != Utils.getCurrentClassVersion()) {
-            this.currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(downgrader.flags);
-        } else {
-            this.currentVersionDowngrader = downgrader;
-        }
         logger = holder.logger.subLogger(DowngradingClassLoader.class);
+    }
+
+    private ClassDowngrader currentVersionDowngrader() {
+        if (holder.target == Utils.getCurrentClassVersion()) {
+            return holder;
+        }
+        ClassDowngrader d = currentVersionDowngrader;
+        if (d == null) {
+            synchronized (this) {
+                d = currentVersionDowngrader;
+                if (d == null) {
+                    d = ClassDowngrader.getCurrentVersionDowngrader(holder.flags);
+                    currentVersionDowngrader = d;
+                }
+            }
+        }
+        return d;
     }
 
     public DowngradingClassLoader(ClassDowngrader downgrader, List<ResourceProvider> providers) throws IOException {
@@ -125,7 +139,7 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
         }
         String internalName = name.replace('.', '/');
         try {
-            Map<String, byte[]> outputs = currentVersionDowngrader.downgrade(new AtomicReference<>(internalName), classBytes, true, new Function<String, byte[]>() {
+            Map<String, byte[]> outputs = currentVersionDowngrader().downgrade(new AtomicReference<>(internalName), classBytes, true, new Function<String, byte[]>() {
                 @Override
                 public byte[] apply(String s) {
                     try {
@@ -149,7 +163,7 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
                 }
                 returnValue = defineClass(name, classBytes, 0, classBytes.length);
             } catch (ClassFormatError e) {
-                currentVersionDowngrader.writeBytesToDebug(name, classBytes);
+                currentVersionDowngrader().writeBytesToDebug(name, classBytes);
                 logger.fatal("Failed to load class " + name + " with downgraded bytes, writing to debug folder.", e);
                 throw new ClassNotFoundException(name, e);
             }
@@ -159,10 +173,14 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
                 String extraName = entry.getKey().replace('/', '.');
                 byte[] extraBytes = entry.getValue();
                 try {
-                    defineClass(extraName, extraBytes, 0, extraBytes.length);
+                    // defineClass outside loadClass bypasses the per-name lock;
+                    // take it explicitly so concurrent extras can't double-define
+                    synchronized (getClassLoadingLock(extraName)) {
+                        defineClass(extraName, extraBytes, 0, extraBytes.length);
+                    }
                 } catch (ClassFormatError | ClassCircularityError e) {
                     logger.fatal("Failed to load class " + extraName + " with downgraded bytes, writing to debug folder.", e);
-                    currentVersionDowngrader.writeBytesToDebug(extraName, extraBytes);
+                    currentVersionDowngrader().writeBytesToDebug(extraName, extraBytes);
                     throw e;
                 }
             }
@@ -191,8 +209,9 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
 
     @Override
     public void close() throws IOException {
-        if (holder != currentVersionDowngrader) {
-            currentVersionDowngrader.close();
+        ClassDowngrader d = currentVersionDowngrader;
+        if (d != null && d != holder) {
+            d.close();
         }
         super.close();
     }

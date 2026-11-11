@@ -2,6 +2,8 @@ package xyz.wagyourtail.jvmdg.runtime;
 
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -15,7 +17,9 @@ import java.io.InputStream;
 import java.lang.instrument.IllegalClassFormatException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -126,32 +130,78 @@ public class TestClassDowngradingAgent {
     @Test
     public void retransformCodeSourceInitsLocalInCtorOnly() throws IOException {
         ClassDowngradingAgent agent = new ClassDowngradingAgent();
-        byte[] out = agent.retransformCodeSource(ownClassBytes());
+        byte[] out = agent.retransformCodeSource(fakeCtorClassBytes());
         ClassNode node = new ClassNode();
         new ClassReader(out).accept(node, 0);
-        boolean sawCtor = false;
+        Map<String, Integer> expected = new HashMap<>();
+        // desc -> the ASTORE slot that must be nulled, null = no injection
+        expected.put("(Ljava/lang/Object;Ljava/lang/Object;)V", 2);
+        expected.put("(JLjava/lang/Object;)V", 3); // long occupies slots 1-2
+        expected.put("(Ljava/lang/Object;[Ljava/lang/Object;)V", 2);
+        expected.put("()V", null);
+        expected.put("(Ljava/lang/Object;)V", null);
+        expected.put("(Ljava/lang/Object;I)V", null);
         for (MethodNode method : node.methods) {
+            AbstractInsnNode first = method.instructions.getFirst();
+            while (first != null && first.getOpcode() == -1) first = first.getNext();
             if (method.name.equals("<init>")) {
-                sawCtor = true;
-                AbstractInsnNode first = method.instructions.getFirst();
-                while (first != null && first.getOpcode() == -1) first = first.getNext();
-                assertNotNull(first);
-                assertEquals(Opcodes.ACONST_NULL, first.getOpcode());
-                AbstractInsnNode second = first.getNext();
-                while (second != null && second.getOpcode() == -1) second = second.getNext();
-                assertNotNull(second);
-                assertTrue(second instanceof VarInsnNode);
-                assertEquals(Opcodes.ASTORE, second.getOpcode());
-                assertEquals(2, ((VarInsnNode) second).var);
+                assertTrue(expected.containsKey(method.desc),
+                    "unexpected ctor shape in fixture: " + method.desc);
+                Integer slot = expected.remove(method.desc);
+                if (slot == null) {
+                    assertNotEquals(Opcodes.ACONST_NULL, first.getOpcode(),
+                        "ctor " + method.desc + " must not get the local init (no 2nd reference arg)");
+                } else {
+                    assertNotNull(first);
+                    assertEquals(Opcodes.ACONST_NULL, first.getOpcode());
+                    AbstractInsnNode second = first.getNext();
+                    while (second != null && second.getOpcode() == -1) second = second.getNext();
+                    assertNotNull(second);
+                    assertTrue(second instanceof VarInsnNode);
+                    assertEquals(Opcodes.ASTORE, second.getOpcode());
+                    assertEquals((int) slot, ((VarInsnNode) second).var);
+                }
             } else {
-                AbstractInsnNode first = method.instructions.getFirst();
-                while (first != null && first.getOpcode() == -1) first = first.getNext();
                 if (first instanceof InsnNode) {
                     assertNotEquals(Opcodes.ACONST_NULL, first.getOpcode(),
                         "non-ctor method " + method.name + " must not get the local init");
                 }
             }
         }
-        assertTrue(sawCtor, "test class should have at least one constructor");
+        assertTrue(expected.isEmpty(), "fixture ctors were not all visited: " + expected.keySet());
+    }
+
+    /**
+     * Builds a class with constructors covering the arg shapes the
+     * CodeSource retransform must distinguish — it nulls the 2nd parameter
+     * only when it exists and is a reference type.
+     */
+    private static byte[] fakeCtorClassBytes() {
+        ClassWriter writer = new ClassWriter(0);
+        writer.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC, "fake/Cls", null, "java/lang/Object", null);
+        String[] ctorDescs = {
+            "(Ljava/lang/Object;Ljava/lang/Object;)V",
+            "(JLjava/lang/Object;)V",
+            "(Ljava/lang/Object;[Ljava/lang/Object;)V",
+            "()V",
+            "(Ljava/lang/Object;)V",
+            "(Ljava/lang/Object;I)V",
+        };
+        for (String desc : ctorDescs) {
+            MethodVisitor mv = writer.visitMethod(Opcodes.ACC_PUBLIC, "<init>", desc, null, null);
+            mv.visitCode();
+            mv.visitVarInsn(Opcodes.ALOAD, 0);
+            mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+            mv.visitInsn(Opcodes.RETURN);
+            mv.visitMaxs(1, 4);
+            mv.visitEnd();
+        }
+        MethodVisitor mv = writer.visitMethod(Opcodes.ACC_PUBLIC, "foo", "()V", null, null);
+        mv.visitCode();
+        mv.visitInsn(Opcodes.RETURN);
+        mv.visitMaxs(0, 1);
+        mv.visitEnd();
+        writer.visitEnd();
+        return writer.toByteArray();
     }
 }

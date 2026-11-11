@@ -84,7 +84,7 @@ public final class MiscTests {
     }
 
     @StubTest(member = @Ref(value = "java/io/ObjectStreamException",
-        member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V;"))
+        member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V"))
     public static void objectStreamExceptionCtor(String id) {
         MyOse e = new MyOse("ose", null);
         Support.print(id, e.getMessage());
@@ -98,7 +98,7 @@ public final class MiscTests {
     }
 
     @StubTest(member = @Ref(value = "java/io/ObjectStreamException",
-        member = "<init>", desc = "(Ljava/lang/Throwable;)V;"))
+        member = "<init>", desc = "(Ljava/lang/Throwable;)V"))
     public static void objectStreamExceptionCauseCtor(String id) {
         MyOseCause e = new MyOseCause(new IllegalStateException("cause"));
         Support.print(id, e.getCause() != null);

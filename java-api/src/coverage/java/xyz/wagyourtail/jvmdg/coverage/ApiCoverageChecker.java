@@ -12,12 +12,14 @@ import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
+import xyz.wagyourtail.jvmdg.version.map.FieldStubEntry;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -117,8 +119,12 @@ public class ApiCoverageChecker {
                             .map(m -> m.toFullyQualified(e.getValue().getFirst()))
                     ).collect(Collectors.toSet());
                 var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(val ->
-                    Stream.of(val.getMethodStubMap().values().stream(), val.getFieldStubMap().values().stream().map(Pair::getFirst), val.getMethodModifyMap().values().stream())
-                        .flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
+                    Stream.of(
+                            val.getMethodStubMap().values().stream().map(e -> e.method),
+                            val.getFieldStubMap().values().stream().flatMap(f -> f.getter == null ? Stream.<Method>empty() : Stream.of(f.getter.method)),
+                            val.getCtorMap().values().stream().flatMap(e -> Stream.of(e.methods())),
+                            val.getMethodModifyMap().values().stream())
+                        .flatMap(e -> e)).collect(Collectors.toList());
 
                 try {
                     var requiredStubs = new ArrayList<MemberInfo>();
@@ -204,19 +210,28 @@ public class ApiCoverageChecker {
 
                             if (stubProvider.getMethodStubMap().containsKey(member)) {
                                 availableStubCount++;
-                                unmatchedStubs.remove(stubProvider.getMethodStubMap().get(member).getFirst());
+                                unmatchedStubs.remove(stubProvider.getMethodStubMap().get(member).method);
                                 continue;
                             }
 
                             if (stubProvider.getFieldStubMap().containsKey(member)) {
                                 availableStubCount++;
-                                unmatchedStubs.remove(stubProvider.getFieldStubMap().get(member).getFirst().getFirst());
+                                FieldStubEntry fe = stubProvider.getFieldStubMap().get(member);
+                                unmatchedStubs.remove(fe.getter == null ? null : fe.getter.method);
                                 continue;
                             }
 
                             if (stubProvider.getMethodModifyMap().containsKey(member)) {
                                 availableStubCount++;
-                                unmatchedStubs.remove(stubProvider.getMethodModifyMap().get(member).getFirst());
+                                unmatchedStubs.remove(stubProvider.getMethodModifyMap().get(member));
+                                continue;
+                            }
+
+                            if (stubProvider.getCtorMap().containsKey(member)) {
+                                availableStubCount++;
+                                for (Method hm : stubProvider.getCtorMap().get(member).methods()) {
+                                    unmatchedStubs.remove(hm);
+                                }
                                 continue;
                             }
 
@@ -225,17 +240,18 @@ public class ApiCoverageChecker {
                                 ClassMapping parent = parents.pollFirst();
                                 if (parent.getMethodStubMap().containsKey(member)) {
                                     onlyOnParentStubCount++;
-                                    unmatchedStubs.remove(parent.getMethodStubMap().get(member).getFirst());
+                                    unmatchedStubs.remove(parent.getMethodStubMap().get(member).method);
                                     parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                     continue outer;
                                 } else if (parent.getFieldStubMap().containsKey(member)) {
                                     onlyOnParentStubCount++;
-                                    unmatchedStubs.remove(parent.getFieldStubMap().get(member).getFirst().getFirst());
+                                    FieldStubEntry fe = parent.getFieldStubMap().get(member);
+                                    unmatchedStubs.remove(fe.getter == null ? null : fe.getter.method);
                                     parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                     continue outer;
                                 } else if (parent.getMethodModifyMap().containsKey(member)) {
                                     onlyOnParentStubCount++;
-                                    unmatchedStubs.remove(parent.getMethodModifyMap().get(member).getFirst());
+                                    unmatchedStubs.remove(parent.getMethodModifyMap().get(member));
                                     parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                     continue outer;
                                 }

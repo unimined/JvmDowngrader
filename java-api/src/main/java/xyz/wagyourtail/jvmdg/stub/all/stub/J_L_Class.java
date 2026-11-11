@@ -9,6 +9,7 @@ import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
+import xyz.wagyourtail.jvmdg.version.map.StubEntry;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -96,10 +97,10 @@ public class J_L_Class {
             if (vp.classStubs.containsKey(target)) {
                 try {
                     ClassDowngrader downgrader = ClassDowngrader.getCurrentVersionDowngrader();
-                    List<Pair<Method, Stub>> targets = vp.getStubMapper(target, downgrader.isInterface(downgrader.target, target, warnings), getMethods, getSuperTypes).getStubTargets();
-                    for (Pair<Method, Stub> t : targets) {
-                        if (!methods.contains(t.getFirst())) {
-                            methods.add(t.getFirst());
+                    List<StubEntry> targets = vp.getStubMapper(target, downgrader.isInterface(downgrader.target, target, warnings), getMethods, getSuperTypes).getStubTargets();
+                    for (StubEntry t : targets) {
+                        if (!methods.contains(t.method)) {
+                            methods.add(t.method);
                         }
                     }
                 } catch (IOException e) {

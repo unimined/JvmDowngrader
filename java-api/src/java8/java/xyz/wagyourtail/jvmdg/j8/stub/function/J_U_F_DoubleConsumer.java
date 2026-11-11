@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 
 import java.util.Objects;
 
@@ -16,7 +16,7 @@ public interface J_U_F_DoubleConsumer {
 
     class DoubleConsumerDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static J_U_F_DoubleConsumer andThen(final J_U_F_DoubleConsumer c1, final J_U_F_DoubleConsumer c2) {
             Objects.requireNonNull(c2);
             return new J_U_F_DoubleConsumer.DoubleConsumerAdapter() {

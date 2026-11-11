@@ -76,7 +76,7 @@ public class MultiVersionTests extends BaseIntegrationTests {
 
     @BeforeAll
     public static void deleteExisting() throws IOException {
-        Files.deleteIfExists(original.resolveSibling("downgraded-" + flagsAndRunner.readableSlug()));
+        Files.deleteIfExists(original.resolveSibling("multi-version-downgraded-" + flagsAndRunner.readableSlug() + ".jar"));
     }
 
     @BeforeAll

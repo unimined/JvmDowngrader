@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.compile;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
@@ -26,7 +27,8 @@ public class ZipDowngrader {
             }
         }
         downgradeZip(target, input, classpath, output);
-        System.out.println("Downgraded in " + (System.currentTimeMillis() - start) + "ms");
+        new Logger(ZipDowngrader.class, Logger.Level.INFO, true, System.out)
+            .info("Downgraded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     public static void downgradeZip(int opcVersion, File input, Set<File> classpath, File output) throws IOException {

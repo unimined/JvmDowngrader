@@ -3,7 +3,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 
 @J_L_FunctionalInterface
 @Adapter("Ljava/util/function/LongConsumer;")
@@ -15,7 +15,7 @@ public interface J_U_F_LongConsumer {
 
     class LongConsumerDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static J_U_F_LongConsumer andThen(final J_U_F_LongConsumer self, final J_U_F_LongConsumer after) {
             return new J_U_F_LongConsumer.LongConsumerAdapter() {
                 @Override

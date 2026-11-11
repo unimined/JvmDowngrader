@@ -184,6 +184,7 @@ tasks.getByName<Jar>("sourcesJar") {
 
 tasks.javadoc {
     source = sourceSets.main.get().allJava + sourceSets["shared"].allJava
+    (options as CoreJavadocOptions).addStringOption("Xdoclint:none", "-quiet")
 }
 
 project.evaluationDependsOnChildren()

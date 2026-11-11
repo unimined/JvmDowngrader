@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -19,7 +20,7 @@ public interface J_U_F_Function<T, R> {
 
     class FunctionDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T, R, V> J_U_F_Function<V, R> compose(final J_U_F_Function<T, R> f1, final J_U_F_Function<? super V, ? extends T> f2) {
             Objects.requireNonNull(f2);
             return new J_U_F_Function.FunctionAdapter<V, R>() {
@@ -30,7 +31,7 @@ public interface J_U_F_Function<T, R> {
             };
         }
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T, R, V> J_U_F_Function<T, V> andThen(final J_U_F_Function<T, R> f1, final J_U_F_Function<? super R, ? extends V> f2) {
             Objects.requireNonNull(f2);
             return (J_U_F_Function<T, V>) compose(f2, f1);

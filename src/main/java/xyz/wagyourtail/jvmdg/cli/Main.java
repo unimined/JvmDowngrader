@@ -1,12 +1,15 @@
 package xyz.wagyourtail.jvmdg.cli;
 
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
+import xyz.wagyourtail.jvmdg.compile.shade.ReferenceIndex;
 import xyz.wagyourtail.jvmdg.logging.Logger;
+import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
@@ -192,16 +195,28 @@ public class Main {
         }
 
 
-        for (Map.Entry<String, List<String[]>> entry : parsed.entrySet()) {
+        List<Map.Entry<String, List<String[]>>> ops = new ArrayList<>(parsed.entrySet());
+        for (int i = 0; i < ops.size(); i++) {
+            Map.Entry<String, List<String[]>> entry = ops.get(i);
             if (!entry.getKey().startsWith("--")) {
                 Map<String, List<String[]>> subArgs = Arguments.subCommandArgs(entry.getKey(), parsed);
                 switch (entry.getKey()) {
                     case "debug":
                         debug(subArgs);
                         break;
-                    case "downgrade":
+                    case "downgrade": {
+                        // fuse `downgrade - shade` when they're chained through
+                        // a temp file — one jar pass instead of two
+                        Map<String, List<String[]>> nextArgs = null;
+                        if (i + 1 < ops.size() && "shade".equals(ops.get(i + 1).getKey()) &&
+                            fuses(subArgs, nextArgs = Arguments.subCommandArgs(ops.get(i + 1).getKey(), parsed))) {
+                            downgradeShade(subArgs, nextArgs);
+                            i++;
+                            break;
+                        }
                         downgrade(subArgs);
                         break;
+                    }
                     case "shade":
                         shade(subArgs);
                         break;
@@ -213,6 +228,14 @@ public class Main {
             }
         }
 
+    }
+
+    /** The `downgrade - shade` chain is fusable only through the temp-file hop: downgrade writes `-`, shade reads `-`. */
+    private static boolean fuses(Map<String, List<String[]>> downgradeArgs, Map<String, List<String[]>> shadeArgs) {
+        List<String[]> dt = downgradeArgs.get("--target");
+        List<String[]> st = shadeArgs.get("--target");
+        return dt != null && st != null && dt.size() == 1 && st.size() == 1 &&
+            "-".equals(dt.get(0)[1]) && "-".equals(st.get(0)[0]);
     }
 
     public void debug(Map<String, List<String[]>> args) throws IOException {
@@ -414,6 +437,95 @@ public class Main {
             ApiShader.shadeApis(flags, prefixes, inputs, outputs, downgradedApi);
         } finally {
             for (FileSystem fileSystem : fileSystems) {
+                fileSystem.close();
+            }
+        }
+    }
+
+    /**
+     * Fused {@code downgrade - shade}: one {@link PathDowngrader} pass where
+     * the class step runs the downgrade union chain then the shade stage list
+     * — the temp jar the chain would hop through is never written. Input
+     * comes from the downgrade op's {@code --target}, output from the shade
+     * op's; {@code --prefix}/{@code --downgradedApi} are the shade op's.
+     */
+    public void downgradeShade(Map<String, List<String[]>> dArgs, Map<String, List<String[]>> sArgs) throws IOException {
+        if (!sArgs.containsKey("--prefix")) {
+            throw new IllegalArgumentException("No prefix specified");
+        }
+        String prefix = sArgs.get("--prefix").get(0)[0];
+        if (!prefix.endsWith("/")) {
+            prefix += "/";
+        }
+        Set<File> apiJars = new HashSet<>();
+        if (sArgs.containsKey("--downgradedApi")) {
+            for (String[] s : sArgs.get("--downgradedApi")) {
+                for (String s1 : s[0].split(File.pathSeparator)) {
+                    apiJars.add(new File(s1));
+                }
+            }
+        }
+        if (apiJars.isEmpty()) {
+            apiJars = null;
+        }
+
+        String[] dTarget = dArgs.get("--target").get(0);
+        String[] sTarget = sArgs.get("--target").get(0);
+        List<FileSystem> fileSystems = new ArrayList<>();
+        List<FileSystem> apiFs = new ArrayList<>();
+        try {
+            File input = new File(dTarget[0]);
+            if (!input.exists()) {
+                throw new IllegalArgumentException("input \"" + input + "\" does not exist");
+            }
+            Path inputPath;
+            if (input.isDirectory() || input.toString().endsWith(".class")) {
+                inputPath = input.toPath();
+            } else {
+                FileSystem fs = Utils.openZipFileSystem(input.toPath(), false);
+                fileSystems.add(fs);
+                inputPath = fs.getPath("/");
+            }
+
+            File output = new File(sTarget[1]);
+            File parent = output.getParentFile();
+            if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                throw new IOException("Failed to create directory: " + parent);
+            }
+            if (output.exists() && !output.delete()) {
+                throw new IOException("Failed to delete output file: " + output);
+            }
+            Path outputPath;
+            if (output.toString().endsWith(".jar") || output.toString().endsWith(".zip")) {
+                FileSystem fs = Utils.openZipFileSystem(output.toPath(), true);
+                fileSystems.add(fs);
+                outputPath = fs.getPath("/");
+            } else {
+                outputPath = output.toPath();
+            }
+
+            Set<Path> downgradedApiPath = ApiShader.resolveDowngradedApi(flags, apiJars);
+            List<Path> apiRoots = new ArrayList<>();
+            for (Path file : downgradedApiPath) {
+                FileSystem fs = Utils.openZipFileSystem(file, false);
+                apiFs.add(fs);
+                apiRoots.add(fs.getPath("/"));
+            }
+            Pair<ReferenceIndex, Set<Type>> api = ApiShader.scanApis(flags, apiRoots);
+
+            Set<URL> classpath = new HashSet<>();
+            classpath.addAll(getClasspath(dArgs));
+            classpath.addAll(getClasspath(sArgs));
+            try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
+                PathDowngrader.downgradePaths(downgrader,
+                    Collections.singletonList(inputPath), Collections.singletonList(outputPath), classpath,
+                    prefix, api.getFirst(), api.getSecond(), apiRoots);
+            }
+        } finally {
+            for (FileSystem fileSystem : fileSystems) {
+                fileSystem.close();
+            }
+            for (FileSystem fileSystem : apiFs) {
                 fileSystem.close();
             }
         }

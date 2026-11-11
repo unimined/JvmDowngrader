@@ -73,7 +73,21 @@ dependencies {
 
 for (vers in fromVersion..toVersion) {
     tasks.getByName("compileJava${vers.ordinal + 1}Java") {
-        (this as JavaCompile).configCompile(vers - 1)
+        this as JavaCompile
+        if (vers < JavaVersion.VERSION_1_9) {
+            // javac < 8 can't read the shared set's v52 classes (main is now
+            // Java 8). `--release` on a newer toolchain keeps the same
+            // target version AND the ct.sym API-surface guard (only APIs of
+            // the version each set downgrades to are visible).
+            options.release.set((vers - 1).majorVersion.toInt())
+            options.encoding = "UTF-8"
+            javaCompiler = javaToolchains.compilerFor {
+                languageVersion = JavaLanguageVersion.of(11)
+                vendor.set(JvmVendorSpec.AZUL)
+            }
+        } else {
+            configCompile(vers - 1)
+        }
     }
 }
 

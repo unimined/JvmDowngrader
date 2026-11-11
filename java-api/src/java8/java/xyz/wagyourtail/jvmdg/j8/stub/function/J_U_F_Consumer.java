@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 
 import java.util.Objects;
 
@@ -16,7 +16,7 @@ public interface J_U_F_Consumer<T> {
 
     class ConsumerDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T> J_U_F_Consumer<T> andThen(final J_U_F_Consumer<T> c1, final J_U_F_Consumer<? super T> c2) {
 
             Objects.requireNonNull(c2);

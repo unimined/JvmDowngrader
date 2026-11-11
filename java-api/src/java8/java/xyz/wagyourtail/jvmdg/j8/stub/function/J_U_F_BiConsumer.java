@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 
 import java.util.Objects;
 
@@ -16,7 +16,7 @@ public interface J_U_F_BiConsumer<T, U> {
 
     class BiConsumerDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T, U> J_U_F_BiConsumer<T, U> andThen(final J_U_F_BiConsumer<T, U> c1, final J_U_F_BiConsumer<? super T, ? super U> c2) {
             Objects.requireNonNull(c2);
             return new J_U_F_BiConsumer.BiConsumerAdapter<T, U>() {

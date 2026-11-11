@@ -250,6 +250,10 @@ jmh {
 //    }
 }
 
+tasks.named("jmh") {
+    dependsOn(featureJar)
+}
+
 tasks.test {
     useJUnitPlatform()
 

@@ -9,6 +9,7 @@ import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Consumer;
 import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
 import org.w3c.dom.Document;
@@ -25,7 +26,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
 import java.util.*;
 
 public class Flags {
@@ -123,6 +123,14 @@ public class Flags {
      * @since 1.2.3
      */
     public boolean debugNoSynthetic = Boolean.getBoolean(Constants.DEBUG_NO_SYNTHETIC);
+    /**
+     * disables {@link xyz.wagyourtail.jvmdg.pipeline.FusibleTransform} fusion —
+     * adjacent fusible transforms run sequentially. The sequential path is
+     * the correctness oracle; set this to bisect a fused-output difference.
+     *
+     * @since 3.0.0
+     */
+    public boolean debugNoFuse = Boolean.getBoolean(Constants.DEBUG_NO_FUSE);
     /**
      * if should move the original class file to the multi-release directory
      *
@@ -396,6 +404,11 @@ public class Flags {
     private URL getJavaApiFromMaven() throws IOException {
         Package pkg = ClassDowngrader.class.getPackage();
         String version = pkg.getImplementationVersion();
+        if (version == null) {
+            // running from raw class dirs (dev/tests) — no artifact
+            // coordinates to resolve, same as any other not-found path
+            return null;
+        }
         if (version.contains("SNAPSHOT")) {
             // retrieve maven metadata
             URL url = URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/maven-metadata.xml").toURL();
@@ -464,20 +477,8 @@ public class Flags {
     }
 
     private String hash(InputStream is) {
-        MessageDigest digest = null;
         try {
-            digest = MessageDigest.getInstance("SHA-1");
-            byte[] buffer = new byte[8192];
-            int read = 0;
-            while ((read = is.read(buffer)) > 0) {
-                digest.update(buffer, 0, read);
-            }
-            byte[] hash = digest.digest();
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
+            return Utils.getSha1(is);
         } catch (Exception e) {
             throw new RuntimeException("Failed to hash", e);
         }

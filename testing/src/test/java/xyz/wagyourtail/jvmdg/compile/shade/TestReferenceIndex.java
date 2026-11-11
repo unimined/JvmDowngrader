@@ -8,6 +8,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.logging.Logger;
+import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
@@ -20,17 +21,17 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TestReferenceGraph {
+public class TestReferenceIndex {
 
-    private static final ReferenceGraph.Filter INCLUDE_ALL = new ReferenceGraph.Filter() {
+    private static final RefExtractor.Filter INCLUDE_ALL = new RefExtractor.Filter() {
         @Override
         public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
             return true;
         }
     };
 
-    private static ReferenceGraph graph() {
-        return new ReferenceGraph(new Logger(TestReferenceGraph.class, Logger.Level.FATAL, false, System.out));
+    private static ReferenceIndex graph() {
+        return new ReferenceIndex(new Logger(TestReferenceIndex.class, Logger.Level.FATAL, false, System.out));
     }
 
     private static ClassNode baseClass(String name) {
@@ -52,6 +53,57 @@ public class TestReferenceGraph {
         writeClass(root.resolve("META-INF/versions/9"), internalName, node);
     }
 
+    // --- member-scanner extension ---
+
+    private static final String CUSTOM_DESC = "Lexample/Marker;";
+
+    /** A consumer-side member scanner: marker annotation pulls a helper ref + a resource. */
+    private static class MarkerScanner implements MemberScanner {
+        @Override
+        public void scanClass(ClassNode node, MemberSink sink) {
+        }
+
+        @Override
+        public void scanField(FieldNode field, MemberNameAndDesc member, MemberSink sink) {
+        }
+
+        @Override
+        public void scanMethod(MethodNode method, MemberNameAndDesc member, MemberSink sink) {
+            if (method.visibleAnnotations != null) {
+                for (AnnotationNode annotation : method.visibleAnnotations) {
+                    if (annotation.desc.equals(CUSTOM_DESC)) {
+                        sink.requiresMember(new FullyQualifiedMemberNameAndDesc(
+                            Type.getObjectType("api/Helper"), "assist", Type.getMethodType("()V")));
+                        sink.requiresResource("marker-data.bin");
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    public void customMemberScannerContributes() throws Exception {
+        List<MemberScanner> extra = new ArrayList<MemberScanner>();
+        extra.add(new MarkerScanner());
+        ReferenceIndex index = new ReferenceIndex(
+            new Logger(TestReferenceIndex.class, Logger.Level.FATAL, false, System.out),
+            new MemberRefExtractor(false, extra), false, false);
+
+        ClassNode node = baseClass("in/Caller");
+        MethodNode method = new MethodNode(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "call", "()V", null, null);
+        AnnotationNode marker = new AnnotationNode(CUSTOM_DESC);
+        method.visibleAnnotations = new ArrayList<AnnotationNode>(1);
+        method.visibleAnnotations.add(marker);
+        node.methods.add(method);
+
+        index.add(node, 0, INCLUDE_ALL);
+        ExtractedRefs refs = index.refsFor(Type.getObjectType("in/Caller"), 0);
+        MemberNameAndDesc callMember = new MemberNameAndDesc("call", Type.getMethodType("()V"));
+        assertTrue(refs.requiredForMembers.get(callMember).contains(
+            new FullyQualifiedMemberNameAndDesc(Type.getObjectType("api/Helper"), "assist", Type.getMethodType("()V"))));
+        assertArrayEquals(new String[]{"marker-data.bin"}, refs.resourceList.get(callMember));
+    }
+
     // --- multi-release path handling (dir root was an absolute-path crash; separators were "/" hardcoded) ---
 
     @Test
@@ -60,13 +112,13 @@ public class TestReferenceGraph {
         writeMultiRelease(dir, "com/example/Foo", baseClass("com/example/Foo"));
         writeMultiRelease(dir, "com/example/Only9", baseClass("com/example/Only9"));
 
-        ReferenceGraph g = graph();
-        assertDoesNotThrow(() -> g.scan(dir, INCLUDE_ALL), "directory roots used to NumberFormatException");
+        ReferenceIndex g = graph();
+        assertDoesNotThrow(() -> IndexScanner.scanRoot(g, dir, INCLUDE_ALL), "directory roots used to NumberFormatException");
 
-        Map<Type, Set<Integer>> keys = g.getKeys();
+        Map<Type, Set<Integer>> keys = g.keys();
         assertEquals(new HashSet<>(Arrays.asList(0, 9)), keys.get(Type.getObjectType("com/example/Foo")));
         assertEquals(new HashSet<>(Collections.singletonList(9)), keys.get(Type.getObjectType("com/example/Only9")));
-        assertEquals(new TreeSet<>(Arrays.asList(0, 9)), g.getVersions());
+        assertEquals(new TreeSet<>(Arrays.asList(0, 9)), g.versions());
     }
 
     @Test
@@ -79,10 +131,10 @@ public class TestReferenceGraph {
             writeMultiRelease(root, "com/example/Foo", baseClass("com/example/Foo"));
             writeMultiRelease(root, "com/example/Only9", baseClass("com/example/Only9"));
 
-            ReferenceGraph g = graph();
-            g.scan(root, INCLUDE_ALL);
+            ReferenceIndex g = graph();
+            IndexScanner.scanRoot(g, root, INCLUDE_ALL);
 
-            Map<Type, Set<Integer>> keys = g.getKeys();
+            Map<Type, Set<Integer>> keys = g.keys();
             assertEquals(new HashSet<>(Arrays.asList(0, 9)), keys.get(Type.getObjectType("com/example/Foo")));
             assertEquals(new HashSet<>(Collections.singletonList(9)), keys.get(Type.getObjectType("com/example/Only9")));
         }
@@ -96,11 +148,11 @@ public class TestReferenceGraph {
         writeClass(dir, "META-INF/other/com/example/Other",
             baseClass("META-INF/other/com/example/Other"));
 
-        ReferenceGraph g = graph();
-        g.scan(dir, INCLUDE_ALL);
+        ReferenceIndex g = graph();
+        IndexScanner.scanRoot(g, dir, INCLUDE_ALL);
 
-        Map<Type, Set<Integer>> keys = g.getKeys();
-        assertEquals(new TreeSet<>(Collections.singletonList(0)), g.getVersions());
+        Map<Type, Set<Integer>> keys = g.keys();
+        assertEquals(new TreeSet<>(Collections.singletonList(0)), g.versions());
         assertEquals(Collections.singleton(0), keys.get(Type.getObjectType("META-INF/versionsX/com/example/Fake")));
         assertEquals(Collections.singleton(0), keys.get(Type.getObjectType("META-INF/other/com/example/Other")));
         for (Set<Integer> versions : keys.values()) {
@@ -160,9 +212,9 @@ public class TestReferenceGraph {
     public void allReferenceCategoriesAreCollected(@TempDir Path dir) throws Exception {
         writeClass(dir, "app/Uses", buildUsesClass());
 
-        ReferenceGraph g = graph();
-        g.scan(dir, INCLUDE_ALL);
-        Set<FullyQualifiedMemberNameAndDesc> refs = g.getAllRefs(0);
+        ReferenceIndex g = graph();
+        IndexScanner.scanRoot(g, dir, INCLUDE_ALL);
+        Set<FullyQualifiedMemberNameAndDesc> refs = g.allRefs(0);
 
         Set<String> owners = new HashSet<>();
         for (FullyQualifiedMemberNameAndDesc ref : refs) {
@@ -184,9 +236,9 @@ public class TestReferenceGraph {
     public void catchTypesAttachToTheirMethod(@TempDir Path dir) throws Exception {
         writeClass(dir, "app/Uses", buildUsesClass());
 
-        ReferenceGraph g = graph();
-        g.scan(dir, INCLUDE_ALL);
-        Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> usages = g.getAllUsagesForRefs(0);
+        ReferenceIndex g = graph();
+        IndexScanner.scanRoot(g, dir, INCLUDE_ALL);
+        Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> usages = g.usages(0);
 
         FullyQualifiedMemberNameAndDesc caught = FullyQualifiedMemberNameAndDesc.of(Type.getObjectType("stub/Caught"));
         Set<FullyQualifiedMemberNameAndDesc> users = usages.get(caught);
@@ -221,9 +273,9 @@ public class TestReferenceGraph {
 
         Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> ref = null;
         for (int run = 0; run < 5; run++) {
-            ReferenceGraph g = graph();
-            g.scan(dir, INCLUDE_ALL);
-            Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> usages = g.getAllUsagesForRefs(0);
+            ReferenceIndex g = graph();
+            IndexScanner.scanRoot(g, dir, INCLUDE_ALL);
+            Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> usages = g.usages(0);
             if (ref == null) {
                 ref = usages;
             } else {
@@ -236,16 +288,93 @@ public class TestReferenceGraph {
     public void filterExcludesUnwantedRefs(@TempDir Path dir) throws Exception {
         writeClass(dir, "app/Uses", buildUsesClass());
 
-        ReferenceGraph g = graph();
+        ReferenceIndex g = graph();
         // only include the ldc-referenced type
-        g.scan(dir, new ReferenceGraph.Filter() {
+        IndexScanner.scanRoot(g, dir, new RefExtractor.Filter() {
             @Override
             public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
                 return member.getOwner().getInternalName().equals("stub/LdcType");
             }
         });
-        Set<FullyQualifiedMemberNameAndDesc> refs = g.getAllRefs(0);
+        Set<FullyQualifiedMemberNameAndDesc> refs = g.allRefs(0);
         assertEquals(1, refs.size());
         assertEquals("stub/LdcType", refs.iterator().next().getOwner().getInternalName());
     }
+
+    // --- reachability ---
+
+    @Test
+    public void closureExpandsClassRefsToInstanceMembers(@TempDir Path dir) throws Exception {
+        // api/Target has instance method m + requires api/Dep via m's insns
+        ClassNode target = baseClass("api/Target");
+        MethodNode m = new MethodNode(Opcodes.ACC_PUBLIC, "m", "()V", null, null);
+        m.instructions.add(new TypeInsnNode(Opcodes.NEW, "api/Dep"));
+        m.instructions.add(new InsnNode(Opcodes.DUP));
+        m.instructions.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "api/Dep", "<init>", "()V", false));
+        m.instructions.add(new InsnNode(Opcodes.POP));
+        m.instructions.add(new InsnNode(Opcodes.RETURN));
+        target.methods.add(m);
+        writeClass(dir, "api/Target", target);
+        writeClass(dir, "api/Dep", baseClass("api/Dep"));
+
+        ReferenceIndex g = graph();
+        IndexScanner.scanRoot(g, dir, INCLUDE_ALL);
+        Pair<Set<FullyQualifiedMemberNameAndDesc>, Set<String>> closed =
+            g.closure(Collections.singleton(FullyQualifiedMemberNameAndDesc.of(Type.getObjectType("api/Target"))), 0);
+        Set<String> names = new HashSet<>();
+        for (FullyQualifiedMemberNameAndDesc r : closed.getFirst()) {
+            names.add(r.getOwner().getInternalName() + "." + (r.getName() == null ? "*" : r.getName()));
+        }
+        assertTrue(names.contains("api/Target.*"), "seed class ref retained");
+        assertTrue(names.contains("api/Target.m"), "class ref expands to instance methods");
+        assertTrue(names.contains("api/Dep.*"), "member refs pull their types");
+    }
+
+    @Test
+    public void closureWithUsagesTracksPuller(@TempDir Path dir) throws Exception {
+        ClassNode user = baseClass("app/User");
+        MethodNode m = new MethodNode(Opcodes.ACC_PUBLIC, "m", "()V", null, null);
+        m.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "api/Helper", "h", "()V", false));
+        m.instructions.add(new InsnNode(Opcodes.RETURN));
+        user.methods.add(m);
+        writeClass(dir, "app/User", user);
+        writeClass(dir, "api/Helper", baseClass("api/Helper"));
+
+        ReferenceIndex g = graph();
+        IndexScanner.scanRoot(g, dir, INCLUDE_ALL);
+        Pair<Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>>, Set<String>> closed =
+            g.closureWithUsages(g.usages(0), 0);
+        FullyQualifiedMemberNameAndDesc h = new FullyQualifiedMemberNameAndDesc(
+            Type.getObjectType("api/Helper"), "h", Type.getMethodType("()V"));
+        Set<FullyQualifiedMemberNameAndDesc> users = closed.getFirst().get(h);
+        assertNotNull(users, "usage map must track the caller");
+        assertTrue(users.contains(new FullyQualifiedMemberNameAndDesc(
+            Type.getObjectType("app/User"), "m", Type.getMethodType("()V"))));
+    }
+
+    @Test
+    public void insnsForIsExactVersionAndOwnerScoped(@TempDir Path dir) throws Exception {
+        writeClass(dir, "app/Uses", buildUsesClass());
+        ReferenceIndex g = new ReferenceIndex(
+            new Logger(TestReferenceIndex.class, Logger.Level.FATAL, false, System.out), true, true);
+        IndexScanner.scanRoot(g, dir, INCLUDE_ALL);
+        FullyQualifiedMemberNameAndDesc h = new FullyQualifiedMemberNameAndDesc(
+            Type.getObjectType("stub/HandleOwner"), "h", Type.getMethodType("()V"));
+        assertEquals(1, g.insnsFor(h, 0, null).size());
+        assertEquals(1, g.insnsFor(h, 0, Type.getObjectType("app/Uses")).size());
+        assertEquals(0, g.insnsFor(h, 0, Type.getObjectType("app/Other")).size());
+        assertEquals(0, g.insnsFor(h, 9, null).size(), "exact slot — no floor on insn lookup");
+    }
+
+    @Test
+    public void resolveVersionedFloorsDown() {
+        Map<Integer, String> m = new HashMap<>();
+        m.put(0, "base");
+        m.put(9, "nine");
+        assertEquals("nine", ReferenceIndex.resolveVersioned(m, 11));
+        assertEquals("base", ReferenceIndex.resolveVersioned(m, 8));
+        assertEquals("base", ReferenceIndex.resolveVersioned(m, 0));
+        assertNull(ReferenceIndex.resolveVersioned(null, 0));
+    }
+
 }

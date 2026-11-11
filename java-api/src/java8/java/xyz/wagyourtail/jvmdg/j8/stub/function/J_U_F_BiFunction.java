@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 
 import java.util.Objects;
 
@@ -16,7 +16,7 @@ public interface J_U_F_BiFunction<T, U, R> {
 
     class BiFunctionDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T, U, V, R> J_U_F_BiFunction<T, U, R> andThen(final J_U_F_BiFunction<T, U, ? extends V> f1, final J_U_F_Function<? super V, ? extends R> f2) {
             Objects.requireNonNull(f2);
             return new J_U_F_BiFunction.BiFunctionAdapter<T, U, R>() {

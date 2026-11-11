@@ -2,10 +2,17 @@
 
 Downgrades modern java bytecode to older versions. at either compile or runtime.
 
-This is currently capable of downgrading from Java 22 to Java 8. Java 7 may come in the future.
+This is currently capable of downgrading from Java 27 to Java 8. Java 7 may come in the future.
 
 Currently attempting to downgrade to Java 7 will produce valid class files, but some of the API stubs are broken, and
 many common ones dont exist.
+
+Internally (3.0), downgrading runs on a version-agnostic transform pipeline —
+each `VersionProvider` boundary decomposes into ordered stages (stub classes,
+stub methods, abstract insertion, other transforms) executed over the whole
+class set, and shading composes as a second stage list on the same engine:
+reference scan → reachable-set closure → inline/prefix of just the api
+classes you use. See [docs/Bytecode Manipulation.md](docs/Bytecode%20Manipulation.md).
 
 ### After downgrading you must either shade, or add the api jar to the classpath at runtime.
 
@@ -294,7 +301,7 @@ one side, port the fix to the counterpart:
 
 | JvmDowngrader | commons |
 |---|---|
-| `jvmdg.compile.shade.ReferenceGraph` | `commons.asm.graph.ReferenceGraph` |
+| `jvmdg.compile.shade.ReferenceIndex` | `commons.asm.graph.ReferenceGraph` (replaced upstream by the index trio) |
 | `jvmdg.asm.ASMUtils` | `commons.asm.ASMUtils` |
 | `jvmdg.asm.AnnotationUtils` | `commons.asm.AnnotationUtils` |
 | `jvmdg.classloader.ResourceClassLoader` | `commons.classloader.ResourceClassLoader` |

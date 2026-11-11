@@ -1,6 +1,6 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
 
 public class J_N_F_Path {
 
-    @Stub(abstractDefault = true)
+    @DefaultImpl
     public static File toFile(Path path) {
         if (path.getFileSystem() == FileSystems.getDefault()) {
             return new File(path.toString());
@@ -18,27 +18,27 @@ public class J_N_F_Path {
         throw new UnsupportedOperationException("Path not associated with default filesystem.");
     }
 
-    @Stub(abstractDefault = true)
+    @DefaultImpl
     public static boolean startsWith(Path path, String other) {
         return path.startsWith(path.getFileSystem().getPath(other));
     }
 
-    @Stub(abstractDefault = true)
+    @DefaultImpl
     public static boolean endsWith(Path path, String other) {
         return path.endsWith(path.getFileSystem().getPath(other));
     }
 
-    @Stub(abstractDefault = true)
+    @DefaultImpl
     public static WatchKey register(Path path, WatchService watcher, WatchEvent.Kind<?>... events) throws IOException {
         return path.register(watcher, events, new WatchEvent.Modifier[0]);
     }
 
-    @Stub(abstractDefault = true)
+    @DefaultImpl
     public static Path resolve(Path self, String other) throws Throwable {
         return self.resolve(self.getFileSystem().getPath(other));
     }
 
-    @Stub(abstractDefault = true)
+    @DefaultImpl
     public static Path resolveSibling(Path self, Path other) throws Throwable {
         Path parent = self.getParent();
         if (parent == null) {
@@ -47,7 +47,7 @@ public class J_N_F_Path {
         return parent.resolve(other);
     }
 
-    @Stub(abstractDefault = true)
+    @DefaultImpl
     public static Path resolveSibling(Path self, String other) throws Throwable {
         return resolveSibling(self, self.getFileSystem().getPath(other));
     }
@@ -55,7 +55,7 @@ public class J_N_F_Path {
     /**
      * missing default before j9
      */
-    @Stub(abstractDefault = true)
+    @DefaultImpl
     public static Iterator<Path> iterator(Path self) {
         return new Iterator<Path>() {
             private int i = 0;

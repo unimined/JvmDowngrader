@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 
 import java.util.Objects;
 
@@ -20,7 +20,7 @@ public interface J_U_F_BiPredicate<T, U> {
 
     class BiPredicateDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T, U> J_U_F_BiPredicate<T, U> and(final J_U_F_BiPredicate<T, U> p1, final J_U_F_BiPredicate<? super T, ? super U> p2) {
             Objects.requireNonNull(p2);
             return new J_U_F_BiPredicate.BiPredicateAdapter<T, U>() {
@@ -31,7 +31,7 @@ public interface J_U_F_BiPredicate<T, U> {
             };
         }
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T, U> J_U_F_BiPredicate<T, U> negate(final J_U_F_BiPredicate<T, U> p) {
             return new J_U_F_BiPredicate.BiPredicateAdapter<T, U>() {
                 @Override
@@ -41,7 +41,7 @@ public interface J_U_F_BiPredicate<T, U> {
             };
         }
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T, U> J_U_F_BiPredicate<T, U> or(final J_U_F_BiPredicate<T, U> p1, final J_U_F_BiPredicate<? super T, ? super U> p2) {
             Objects.requireNonNull(p2);
             return new J_U_F_BiPredicate.BiPredicateAdapter<T, U>() {

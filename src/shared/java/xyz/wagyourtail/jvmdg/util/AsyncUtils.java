@@ -76,6 +76,37 @@ public class AsyncUtils {
         };
     }
 
+    private static <T> Future<Void> asVoidFuture(final Future<List<T>> future) {
+        return new Future<Void>() {
+            @Override
+            public boolean cancel(boolean mayInterruptIfRunning) {
+                return future.cancel(mayInterruptIfRunning);
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return future.isCancelled();
+            }
+
+            @Override
+            public boolean isDone() {
+                return future.isDone();
+            }
+
+            @Override
+            public Void get() throws InterruptedException, ExecutionException {
+                future.get();
+                return null;
+            }
+
+            @Override
+            public Void get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                future.get(timeout, unit);
+                return null;
+            }
+        };
+    }
+
     public static <T> Future<Void> forEachAsync(final Collection<T> paths, final IOConsumer<T> fileVisitor) {
         final Queue<Future<Void>> futures = new ArrayDeque<>();
         for (final T path : paths) {
@@ -90,7 +121,7 @@ public class AsyncUtils {
                 }
             }, (Void) null));
         }
-        return (Future) waitForFutures(futures);
+        return asVoidFuture(waitForFutures(futures));
     }
 
     public static Future<Void> runAll(Runnable... runnables) {
@@ -98,7 +129,7 @@ public class AsyncUtils {
         for (final Runnable runnable : runnables) {
             futures.add(pool.submit(runnable, (Void) null));
         }
-        return (Future) waitForFutures(futures);
+        return asVoidFuture(waitForFutures(futures));
     }
 
     public static Future<Void> visitPathsAsync(final Path start, final IOFunction<Path, Boolean> folderVisitor, final IOConsumer<Path> fileVisitor) throws IOException {
@@ -145,16 +176,7 @@ public class AsyncUtils {
                 return FileVisitResult.CONTINUE;
             }
         });
-        return (Future) waitForFutures(futures);
+        return asVoidFuture(waitForFutures(futures));
     }
-
-//    public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
-//        visitPathsAsync(Paths.get("./"), null, new IOConsumer<Path>() {
-//            @Override
-//            public void accept(Path path) throws IOException {
-//                System.out.println(path);
-//            }
-//        }).get();
-//    }
 
 }

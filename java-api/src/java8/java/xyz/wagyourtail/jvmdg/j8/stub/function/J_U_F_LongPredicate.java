@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 
 @J_L_FunctionalInterface
 @Adapter("Ljava/util/function/LongPredicate;")
@@ -18,7 +18,7 @@ public interface J_U_F_LongPredicate {
 
     class LongPredicateDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static J_U_F_LongPredicate and(final J_U_F_LongPredicate self, final J_U_F_LongPredicate other) {
             return new J_U_F_LongPredicate.LongPredicateAdapter() {
                 @Override
@@ -28,7 +28,7 @@ public interface J_U_F_LongPredicate {
             };
         }
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static J_U_F_LongPredicate negate(final J_U_F_LongPredicate self) {
             return new J_U_F_LongPredicate.LongPredicateAdapter() {
                 @Override
@@ -38,7 +38,7 @@ public interface J_U_F_LongPredicate {
             };
         }
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static J_U_F_LongPredicate or(final J_U_F_LongPredicate self, final J_U_F_LongPredicate other) {
             return new J_U_F_LongPredicate.LongPredicateAdapter() {
                 @Override
