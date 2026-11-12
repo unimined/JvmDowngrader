@@ -171,7 +171,9 @@ public boolean myFlag = false;
 ```
 
 That is the whole change for CLI/sysprop/config/copy/equals/toString/`--print`.
-Gradle needs the typed `Property` declaration on `DowngradeFlags` (the DSL is a
-public API surface) plus one line in `GRADLE_APPLIERS` for the value adapter;
-a binding naming a gradle property with no applier fails at runtime, and the
-completeness check fails the build for any unbound field.
+Gradle needs only the typed `Property` declaration on `DowngradeFlags` (the DSL
+is a public API surface) — `toFlags()` resolves each bound `gradle` name to the
+like-named property, and each value converts through the flag's own `form`
+parser (`JavaVersion` properties map to class-version opcodes). A `gradle`
+name with no declared property fails fast at runtime and in
+`TestToFlags.everyBoundGradleNameHasAPropertyOnSomeInterface`.

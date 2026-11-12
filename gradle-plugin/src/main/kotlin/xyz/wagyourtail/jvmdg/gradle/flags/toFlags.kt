@@ -9,50 +9,26 @@ import xyz.wagyourtail.jvmdg.config.FlagBindings
 import xyz.wagyourtail.jvmdg.config.FlagParser
 import xyz.wagyourtail.jvmdg.config.JvmdgConfig
 import xyz.wagyourtail.jvmdg.config.ManifestConfigReader
-import xyz.wagyourtail.jvmdg.config.OnMissingApi
-import xyz.wagyourtail.jvmdg.config.StubPolicy
-import xyz.wagyourtail.jvmdg.logging.Logger
 import xyz.wagyourtail.jvmdg.util.toOpcode
-import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc
 
 /**
- * Per-[BoundFlag.gradle] name → value adapter. The property plumbing (find the
- * property, read `orNull`, apply) is generated in [toFlags]; this map only
- * carries the type conversion each DSL property needs. A bound flag naming a
- * gradle property with no entry here throws — the mirror can't drift.
+ * The flags interfaces a DSL object may implement — a bound `gradle` name
+ * resolving a property on none of them is mirror drift (the flag names a
+ * DSL property that was never declared) and fails fast.
  */
-private val GRADLE_APPLIERS: Map<String, DowngradeFlags.(Flags) -> Boolean> = mapOf(
-    "downgradeTo" to { f -> downgradeTo.orNull?.let { f.classVersion = it.toOpcode(); true } ?: false },
-    "apiJar" to { f -> apiJar.orNull?.let { f.api = it; true } ?: false },
-    "quiet" to { f -> quiet.orNull?.let { f.quiet = it; true } ?: false },
-    "logAnsiColors" to { f -> logAnsiColors.orNull?.let { f.logAnsiColors = it; true } ?: false },
-    "logLevel" to { f -> logLevel.orNull?.let { f.logLevel = Logger.Level.valueOf(it.uppercase()); true } ?: false },
-    "ignoreWarningsIn" to { f -> ignoreWarningsIn.getOrElse(emptyList()).takeIf { it.isNotEmpty() }?.let { v -> v.forEach(f::addIgnore); true } ?: false },
-    "debug" to { f -> debug.orNull?.let { f.printDebug = it; true } ?: false },
-    "debugSkipStub" to { f -> debugSkipStub.orNull?.let { f.debugSkipStub = it.map(FullyQualifiedMemberNameAndDesc::of).toSet(); true } ?: false },
-    "debugSkipStubs" to { f -> debugSkipStubs.orNull?.let { f.debugSkipStubs = it.map(JavaVersion::toOpcode).toSet(); true } ?: false },
-    "debugSkipJeps" to { f -> debugSkipJeps.orNull?.let { f.debugSkipJeps = it; true } ?: false },
-    "stubPolicy" to { f -> stubPolicy.orNull?.let { f.stubPolicy = FlagParser.STUB_POLICY.parseScalar(it) as StubPolicy; true } ?: false },
-    "onMissingApi" to { f -> onMissingApi.orNull?.let { f.onMissingApi = FlagParser.ON_MISSING_API.parseScalar(it) as OnMissingApi; true } ?: false },
-    "includeStub" to { f -> includeStub.orNull?.takeIf { it.isNotEmpty() }?.let { f.includeStub = it.map(FullyQualifiedMemberNameAndDesc::of).toSet(); true } ?: false },
-    "debugDumpClasses" to { f -> debugDumpClasses.orNull?.let { f.debugDumpClasses = it; true } ?: false },
-    "debugNoSynthetic" to { f -> debugNoSynthetic.orNull?.let { f.debugNoSynthetic = it; true } ?: false },
-    "debugNoFuse" to { f -> debugNoFuse.orNull?.let { f.debugNoFuse = it; true } ?: false },
-    "debugNoStubIdx" to { f -> debugNoStubIdx.orNull?.let { f.debugNoStubIdx = it; true } ?: false },
-    "multiReleaseOriginal" to { f -> multiReleaseOriginal.orNull?.let { f.multiReleaseOriginal = it; true } ?: false },
-    "multiReleaseVersions" to { f -> multiReleaseVersions.orNull?.let { f.multiReleaseVersions = it.map(JavaVersion::toOpcode).toSet(); true } ?: false },
-    "downgradeFromMultiReleases" to { f -> downgradeFromMultiReleases.orNull?.let { f.downgradeFromMultiReleases = it; true } ?: false },
-    "allowMaven" to { f -> allowMaven.orNull?.let { f.allowMaven = it; true } ?: false },
-    "ignoreEmbeddedRules" to { f -> ignoreEmbeddedRules.orNull?.let { f.ignoreEmbeddedRules = it; true } ?: false },
-    "keepEmbeddedRules" to { f -> keepEmbeddedRules.orNull?.let { f.keepEmbeddedRules = it; true } ?: false },
-    "shadePrefix" to { f -> shadePrefix.orNull?.let { f.shadePrefix = it; true } ?: false },
-    "shadeInlining" to { f -> (this as? ShadeFlags)?.shadeInlining?.orNull?.let { f.shadeInlining = it; true } ?: false },
-)
+private val FLAGS_INTERFACES = listOf(DowngradeFlags::class.java, ShadeFlags::class.java)
 
 /**
  * Defaults &lt; embedded rules &lt; config files &lt; sysprops &lt; DSL —
  * the Flags ctor already applied defaults+sysprops, config files apply next
  * (skipping sysprop-set fields), then DSL `orNull` values win outright.
+ *
+ * The DSL→Flags mapping is driven by the bound-flag table, not a per-flag
+ * map: each `gradle` name resolves the like-named property on this object
+ * (`get<Name>`), an unset property defers to config, and each value is
+ * converted by [dslValue] — `JavaVersion` is the only DSL-side type, strings
+ * parse through the flag's own `BoundFlag.form` parser, and map-typed
+ * fields accumulate entries through [FlagBindings.Binding.apply].
  */
 fun DowngradeFlags.toFlags(sources: MutableMap<String, FlagBindings.Source>? = null): Flags {
     val flags = Flags()
@@ -62,13 +38,59 @@ fun DowngradeFlags.toFlags(sources: MutableMap<String, FlagBindings.Source>? = n
     }
     for (b in FlagBindings.ALL) {
         val name = b.metas.firstOrNull { it.gradle.isNotEmpty() }?.gradle ?: continue
-        val apply = GRADLE_APPLIERS[name]
-            ?: throw IllegalStateException("bound flag '$name' has no Gradle applier — add one to GRADLE_APPLIERS")
-        if (apply(this, flags)) {
-            sources?.put(b.field.name, FlagBindings.Source.GRADLE)
+        val prop = dslProp(this, name)
+        if (prop == null) {
+            val getter = "get" + name.replaceFirstChar { it.uppercase() }
+            if (FLAGS_INTERFACES.none { iface -> iface.methods.any { it.name == getter } }) {
+                throw IllegalStateException(
+                    "bound flag '${b.field.name}' names Gradle property '$name' but no 'val $name' " +
+                        "exists on DowngradeFlags/ShadeFlags — the DSL mirror drifted")
+            }
+            continue // declared on another flags type (e.g. shadeInlining on ShadeFlags)
         }
+        val value = when (prop) {
+            is Property<*> -> prop.orNull
+            is HasMultipleValues<*> -> (prop as Provider<*>).orNull
+            else -> null
+        } ?: continue
+        applyDsl(b, flags, value)
+        sources?.put(b.field.name, FlagBindings.Source.GRADLE)
     }
     return flags
+}
+
+private fun applyDsl(b: FlagBindings.Binding, f: Flags, value: Any) {
+    if (Map::class.java.isAssignableFrom(b.field.type)) {
+        // map-typed flags accumulate — each DSL element merges through the
+        // binding's own parser so config-file entries survive a DSL add
+        for (e in value as Iterable<*>) b.apply(f, e.toString(), true, true)
+        return
+    }
+    if (value is Iterable<*>) {
+        val elems = java.util.LinkedHashSet<Any?>()
+        value.mapTo(elems) { dslValue(b, it) }
+        b.field.set(f,
+            if (Set::class.java.isAssignableFrom(b.field.type)) elems else ArrayList(elems))
+    } else {
+        b.field.set(f, dslValue(b, value))
+    }
+}
+
+/** DSL element → field element: `JavaVersion` is the only DSL-side type;
+ *  strings parse through the flag's own [FlagParser]; anything else is
+ *  already field-typed. */
+private fun dslValue(b: FlagBindings.Binding, v: Any?): Any? = when (v) {
+    null -> null
+    is JavaVersion -> v.toOpcode()
+    is String -> b.parser().parseScalar(v)
+    else -> v
+}
+
+/** `val <name>` on a managed flags object — `get<Name>` invoked reflectively;
+ *  null when this object doesn't implement the declaring interface. */
+private fun dslProp(obj: DowngradeFlags, name: String): Provider<*>? {
+    val getter = "get" + name.replaceFirstChar { it.uppercase() }
+    return runCatching { obj.javaClass.getMethod(getter).invoke(obj) as? Provider<*> }.getOrNull()
 }
 
 fun DowngradeFlags.toFlags(): Flags = toFlags(null)
@@ -82,9 +104,8 @@ fun convention(self: DowngradeFlags, target: DowngradeFlags) {
     self.config.from(target.config)
     for (b in FlagBindings.ALL) {
         val name = b.metas.firstOrNull { it.gradle.isNotEmpty() }?.gradle ?: continue
-        val getter = "get" + name.replaceFirstChar { it.uppercase() }
-        val sp = runCatching { self.javaClass.getMethod(getter).invoke(self) as? Provider<*> }.getOrNull()
-        val tp = runCatching { target.javaClass.getMethod(getter).invoke(target) as? Provider<*> }.getOrNull()
+        val sp = dslProp(self, name)
+        val tp = dslProp(target, name)
         if (sp != null && tp != null) {
             @Suppress("UNCHECKED_CAST")
             when (sp) {

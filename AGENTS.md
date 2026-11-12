@@ -171,7 +171,7 @@ Invariants:
 | Wider per-class pass | `otherTransforms` on the provider — becomes `OtherTransformsTransform` in the stage; emits `jvmdg$indy$/handle$/methodtype$/lookup/nest$/instanceMain` helpers via `ctx.extras`. |
 | Whole-set/ordering-sensitive pass | A `StageHook` (`onEnter`/`onExit`) — sees the full `TransformContext`; the shade closure barrier is the model. |
 | Ref kind for the index | A `RefExtractor`/`MemberScanner` SPI impl — plug into `ReferenceIndex` construction; `RequiresResourceScanner` is the model. |
-| Flag / config option | `@BoundFlag` on the `Flags` field — CLI/sysprop/config/`copy()`/`--print` come free; Gradle needs the typed `Property` on `DowngradeFlags` + one `GRADLE_APPLIERS` adapter. Docs table is drift-tested (`everyBoundKeyAndCliFlagIsDocumented`). See `docs/Configuration.md`. |
+| Flag / config option | `@BoundFlag` on the `Flags` field — CLI/sysprop/config/`copy()`/`--print`/Gradle application come free; Gradle needs only the typed `Property` on `DowngradeFlags` (`toFlags` resolves bound `gradle` names reflectively, values convert via the flag's `form` parser). Docs table is drift-tested (`everyBoundKeyAndCliFlagIsDocumented`), the property surface by `TestToFlags`. See `docs/Configuration.md`. |
 
 ## Verification checklist
 
