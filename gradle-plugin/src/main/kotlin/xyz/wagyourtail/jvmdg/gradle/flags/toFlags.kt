@@ -6,8 +6,11 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import xyz.wagyourtail.jvmdg.cli.Flags
 import xyz.wagyourtail.jvmdg.config.FlagBindings
+import xyz.wagyourtail.jvmdg.config.FlagParser
 import xyz.wagyourtail.jvmdg.config.JvmdgConfig
 import xyz.wagyourtail.jvmdg.config.ManifestConfigReader
+import xyz.wagyourtail.jvmdg.config.OnMissingApi
+import xyz.wagyourtail.jvmdg.config.StubPolicy
 import xyz.wagyourtail.jvmdg.logging.Logger
 import xyz.wagyourtail.jvmdg.util.toOpcode
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc
@@ -29,6 +32,9 @@ private val GRADLE_APPLIERS: Map<String, DowngradeFlags.(Flags) -> Boolean> = ma
     "debugSkipStub" to { f -> debugSkipStub.orNull?.let { f.debugSkipStub = it.map(FullyQualifiedMemberNameAndDesc::of).toSet(); true } ?: false },
     "debugSkipStubs" to { f -> debugSkipStubs.orNull?.let { f.debugSkipStubs = it.map(JavaVersion::toOpcode).toSet(); true } ?: false },
     "debugSkipJeps" to { f -> debugSkipJeps.orNull?.let { f.debugSkipJeps = it; true } ?: false },
+    "stubPolicy" to { f -> stubPolicy.orNull?.let { f.stubPolicy = FlagParser.STUB_POLICY.parseScalar(it) as StubPolicy; true } ?: false },
+    "onMissingApi" to { f -> onMissingApi.orNull?.let { f.onMissingApi = FlagParser.ON_MISSING_API.parseScalar(it) as OnMissingApi; true } ?: false },
+    "includeStub" to { f -> includeStub.orNull?.takeIf { it.isNotEmpty() }?.let { f.includeStub = it.map(FullyQualifiedMemberNameAndDesc::of).toSet(); true } ?: false },
     "debugDumpClasses" to { f -> debugDumpClasses.orNull?.let { f.debugDumpClasses = it; true } ?: false },
     "debugNoSynthetic" to { f -> debugNoSynthetic.orNull?.let { f.debugNoSynthetic = it; true } ?: false },
     "debugNoFuse" to { f -> debugNoFuse.orNull?.let { f.debugNoFuse = it; true } ?: false },

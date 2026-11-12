@@ -102,8 +102,18 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
              └─ version/idx/ StubIndex — META-INF/jvmdg/stubs.idx codec
                   (deterministic, format+jvmdg-versioned); StubIndexWriter
                   serializes the reflective scan at api-jar build time
-                  (genStubIndex JavaExec); providers idx-load at ensureInit,
-                  falling back to the scan (jvmdg.debug.noStubIdx forces it)
+                  (genStubIndex JavaExec; also stamps memberSince per
+                  registered member from the genCtSym JDK-surface index);
+                  providers idx-load at ensureInit, falling back to the
+                  scan (jvmdg.debug.noStubIdx forces it)
+             └─ stub kinds + policy — memberSince/memberKind side-maps on
+                  StubRegistry (idx-populated; scan path leaves memberSince
+                  empty → MISSING_API); kindOf = kind= override → modify ⇒
+                  LANGUAGE → since≤target ⇒ BEHAVIOR → else MISSING_API.
+                  MemberStubTransform.vetoed applies Stub-Policy
+                  (full/noBehavior/mechanical) + On-Missing-Api (error/warn)
+                  and scoped exclusions post-resolution — never on
+                  unstubbed calls
              └─ compile/shade/ ReferenceIndex (member-level edges, floor
                   slot lookup, usages inversion, BFS closure) + IndexScanner
                   (entry stream → index) + RefExtractor SPI (MemberRefExtractor,
@@ -120,7 +130,9 @@ config/      BoundFlag (field annotation) + FlagBindings (one reflective
              copy/equals/hash/toString, --print, Gradle mapping) +
              ManifestConfigReader (jvmdg.mf syntax) + JvmdgConfig (application
              rules: version header, unknown keys, scoped sections) +
-             ScopedRule (Name:-scoped, jarScope-sandboxed, most-specific wins)
+             ScopedRule (Name:-scoped, jarScope-sandboxed, most-specific wins;
+             typed accessors: ignoreWarnings/excludeStubs/excludeJeps/
+             stubPolicy/onMissingApi) + StubPolicy + OnMissingApi enums
 version/idx/ StubIndex codec + StubIndexWriter — deterministic, versioned
              stubs.idx shipped in the api jar; ensureInit loads it instead of
              reflectively scanning (~5x faster provider init)

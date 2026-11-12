@@ -125,7 +125,10 @@ public final class JvmdgConfig {
     }
 
     /**
-     * The scoped-section keys honored today. {@code Stub-Policy},
+     * The scoped-section keys honored today: {@code Ignore-Warnings},
+     * {@code Exclude-Stubs}, and {@code Exclude-Jeps} are consumed at
+     * emission time ({@link xyz.wagyourtail.jvmdg.version.map.MemberStubTransform}
+     * vetoes the resolved entry, leaving the native callsite). {@code Stub-Policy},
      * {@code On-Missing-Api}, {@code Keep-Reflection}, and
      * {@code Include-Stubs} arrive with the stubPolicy phase — they are
      * unknown keys until their semantics exist (typo protection beats a

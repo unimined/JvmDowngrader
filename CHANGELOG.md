@@ -99,6 +99,46 @@ and API surface, not behavior.
   strip from output by default; `Keep-Embedded-Rules` preserves them,
   `Ignore-Embedded-Rules` skips application entirely and passes files
   through. First consumable scoped key: `Ignore-Warnings` per matched class.
+- **Scoped `Exclude-Stubs`/`Exclude-Jeps`** — `Name:`-section exclusions are
+  consumed at emission time: inside a matching class, the stub/modify/ctor
+  entry is vetoed and the callsite keeps its native reference (the normal
+  missing-member warning still fires). Classes outside the pattern are
+  unaffected — unlike the global flags, which filter at registration.
+- **Stub kinds + `Stub-Policy`/`On-Missing-Api`** — `stubs.idx` format v2
+  carries each registered member's JDK-introduction version (`memberSince`,
+  computed at build time from the `genCtSym` JDK-surface index) and any
+  explicit `kind=` override (`@Stub`/`@Modify` attribute, `StubKind.AUTO`
+  default). `StubRegistry.kindOf` classifies a resolved site:
+  `LANGUAGE` for `@Modify`/transform-only entries, `BEHAVIOR` when the
+  member already exists on the target, `MISSING_API` when it doesn't.
+  `Stub-Policy` (`full`/`noBehavior`/`mechanical`, CLI `--stubPolicy`,
+  sysprop `jvmdg.stubPolicy`, scoped-valid) is enforced at the same
+  emission seam as scoped exclusions — after an entry actually resolves,
+  so ordinary calls aren't misclassified: `noBehavior` silently drops
+  `BEHAVIOR` rewrites; `mechanical` also drops `MISSING_API` rewrites and
+  reports the callsite + required Java version as an error (`On-Missing-Api`
+  `error`, default) or a warning (`warn`), keeping `LANGUAGE` transforms.
+  Both keys can be set per `Name:` section; a missing `memberSince`
+  (scan-path or unindexed member) classifies as `MISSING_API`.
+- **`Include-Stubs`** (`--includeStub`/`-is`, sysprop `jvmdg.includeStub`,
+  Gradle `includeStub`, scoped-valid) re-includes a callsite member that an
+  `Exclude-Stubs`/`Exclude-Jeps` rule or `Stub-Policy` would drop — the
+  member-level include is the most specific statement and always emits,
+  making `mechanical` + a few `Include-Stubs` the "error on everything
+  except my deliberate polyfills" configuration. It cannot resurrect
+  members dropped at registration time by the global `Exclude-*` flags.
+  The Gradle DSL also gained the `stubPolicy`/`onMissingApi` properties the
+  bound flags declared (their absence made `toFlags` throw — the
+  bound-flag/Gradle mirror now holds for every flag).
+- **`@Internal` replaces `@CoverageIgnore`** — the marker for "public member
+  that doesn't mirror a JDK member" is renamed and narrowed: registration
+  now fails when it (or the deprecated alias) sits on a `@Stub`/`@Modify`
+  member. The coverage checker auto-excludes what used to need the marker:
+  registered sites that exist on the target surface (BEHAVIOR) and adapter
+  members resolvable on the stub-version surface including inherited
+  declarations and covariant returns. `unmatched.txt` shrinks accordingly
+  (e.g. 8: 208→155, 9: 284→278, 18/23: →0) — remaining entries are genuine
+  non-mirrors. `@CoverageIgnore` stays honored for one release.
 
 ### Breaking API changes
 
@@ -127,6 +167,10 @@ and API surface, not behavior.
 - `ApiShader`'s shading internals moved to `compile/shade/` (the public
   `shadeApis` signatures are unchanged; the version-loop is one
   `FusedJarRun` + `PipelineJarStep` call).
+- `@Stub`/`@Modify` gained a defaulted `kind()` member (`StubKind.AUTO`) —
+  source-compatible at use sites but breaks manual `implements Stub` code.
+  `@CoverageIgnore` is deprecated; `@Internal` rejects co-location with
+  primary stub annotations.
 
 ### Fixed
 

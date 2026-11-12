@@ -1,7 +1,6 @@
 package xyz.wagyourtail.jvmdg.j12.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
 import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.invoke.MethodHandles;
@@ -177,7 +176,6 @@ public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescripto
     }
 
     @Override
-    @CoverageIgnore
         // for generics
     Class<?> resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
 

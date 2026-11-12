@@ -5,6 +5,8 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import xyz.wagyourtail.jvmdg.config.ManifestConfigReader;
+import xyz.wagyourtail.jvmdg.config.ScopedRule;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.version.ModifyUtils;
 
@@ -22,34 +24,49 @@ import java.util.*;
  */
 public class MemberStubTransform {
 
-    public void transformInsn(MemberResolver mr, MethodNode method, int index, ClassNode classNode, Set<ClassNode> extra, boolean runtimeAvailable, Set<String> warnings) {
+    public void transformInsn(MemberResolver mr, MethodNode method, int index, ClassNode classNode, Set<ClassNode> extra, boolean runtimeAvailable, Set<String> warnings, ScopedRule rule) {
         AbstractInsnNode insn = method.instructions.get(index);
         if (insn instanceof InvokeDynamicInsnNode) {
             InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
             MemberNameAndDesc member = new MemberNameAndDesc(indy.bsm.getName(), Type.getMethodType(indy.bsm.getDesc()));
 
             MethodRef m = mr.rawModify(member);
-            if (m != null) {
+            if (m != null && !vetoed(mr, rule, indy.bsm.getOwner(), indy.bsm.getName(),
+                Type.getMethodType(indy.bsm.getDesc()), m.jeps, true, classNode, method, warnings)) {
                 invokeModify(m, method, index, classNode, extra, mr, member, warnings);
             }
         } else {
             MemberNameAndDesc member;
             String owner;
             Type returnType;
+            Type siteDesc;
             if (insn instanceof MethodInsnNode) {
                 MethodInsnNode min = (MethodInsnNode) insn;
 
                 owner = min.owner;
                 member = mr.unstubMember(min.name, Type.getMethodType(min.desc));
                 returnType = Type.getReturnType(min.desc);
+                siteDesc = Type.getMethodType(min.desc);
             } else if (insn instanceof FieldInsnNode) {
                 FieldInsnNode fin = (FieldInsnNode) insn;
 
                 owner = fin.owner;
                 member = mr.unstubMember(fin.name, Type.getType(fin.desc));
                 returnType = Type.getType(fin.desc);
+                siteDesc = Type.getType(fin.desc);
             } else {
                 return;
+            }
+            String siteName = insn instanceof MethodInsnNode
+                ? ((MethodInsnNode) insn).name : ((FieldInsnNode) insn).name;
+            try {
+                if (excluded(rule, owner, siteName, siteDesc, null)
+                    && !included(mr, rule, owner, siteName, siteDesc)) {
+                    // scoped Exclude-Stubs — the callsite keeps its native reference
+                    return;
+                }
+            } catch (ManifestConfigReader.ConfigException e) {
+                throw new IllegalStateException(e.getMessage(), e);
             }
 
             if (member.getName().equals("<init>")) {
@@ -57,6 +74,9 @@ public class MemberStubTransform {
                 // factories replace the NEW/DUP construction, rewrites
                 // retarget the <init> and run pre/arg/post hooks
                 CtorEntry ce = mr.getCtorFor(member, runtimeAvailable, warnings);
+                if (ce != null && vetoed(mr, rule, owner, siteName, siteDesc, jepsOf(ce), false, classNode, method, warnings)) {
+                    ce = null;
+                }
                 if (ce instanceof CtorRewrite) {
                     rewriteCtor(method, insn, index, classNode, owner, member,
                         (CtorRewrite) ce, mr, warnings);
@@ -101,7 +121,7 @@ public class MemberStubTransform {
                 }
             } else {
                 StubEntry newMin = mr.getStubFor(member, runtimeAvailable, insn.getOpcode(), warnings);
-            if (newMin != null) {
+            if (newMin != null && !vetoed(mr, rule, owner, siteName, siteDesc, newMin.handler.jeps, false, classNode, method, warnings)) {
                 // handled specially, by inserting a call to the stub in the implementation if it's missing an implementation.
                 // unless it's invokespecial, then this is a super call, and need to fix it to call the stub.
                 if (newMin.abstractDefault && insn.getOpcode() != Opcodes.INVOKESPECIAL) {
@@ -142,7 +162,7 @@ public class MemberStubTransform {
             }
             }
             MethodRef m = mr.getModifyFor(member, insn.getOpcode(), warnings);
-            if (m != null) {
+            if (m != null && !vetoed(mr, rule, owner, siteName, siteDesc, m.jeps, true, classNode, method, warnings)) {
                 // <init> @Modify handlers rewrite the construction site and assume
                 // the javac NEW+DUP shape (two uninitialised refs on the stack,
                 // the second just below the args). this()/super() delegation
@@ -283,6 +303,129 @@ public class MemberStubTransform {
         }
         method.instructions.insertBefore(insn, ops);
         method.instructions.remove(insn);
+    }
+
+    /**
+     * Scoped exclusion veto ({@code Name:}-section {@code Exclude-Stubs} /
+     * {@code Exclude-Jeps}): the callsite keeps its native reference — the
+     * class behaves as if the stub didn't exist, and the normal
+     * missing-member warning machinery still reports it. The raw insn
+     * (pre-{@code unstubMember}) identifies the member so exclusions name the
+     * JDK callsite like global {@code debugSkipStub} does.
+     */
+    private static boolean excluded(ScopedRule rule, String owner, String name, Type desc, int[] jeps) {
+        if (rule == null) {
+            return false;
+        }
+        try {
+            if (jeps != null) {
+                for (int jep : jeps) {
+                    if (rule.excludeJeps().contains(jep)) {
+                        return true;
+                    }
+                }
+            }
+            return rule.excludeStubs().contains(
+                new FullyQualifiedMemberNameAndDesc(Type.getObjectType(owner), name, desc));
+        } catch (ManifestConfigReader.ConfigException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Whether a resolved entry may emit for this class: scoped exclusions +
+     * {@code Stub-Policy}. Effective policy = the class's resolved rule, else
+     * the global flag. {@code mechanical} keeps {@code LANGUAGE} entries and
+     * reports each {@code MISSING_API} hit per {@code On-Missing-Api};
+     * {@code noBehavior} drops {@code BEHAVIOR} entries silently.
+     * Policy only evaluates here (post-resolution): {@code memberSince} is
+     * sparse over registered members, so unstubbed callsites can't be
+     * classified without false-positives.
+     */
+    /**
+     * {@code Include-Stubs} — global flag ∪ the resolved scoped rule. An
+     * explicitly included member is the most specific statement possible, so
+     * it is never vetoed: it beats {@code Exclude-Stubs}/{@code Exclude-Jeps}
+     * in scope and every {@code Stub-Policy} drop (the {@code mechanical}
+     * escape hatch). Registration-time drops ({@code debugSkip*}) can't be
+     * resurrected — the entry was never registered.
+     */
+    private static boolean included(MemberResolver mr, ScopedRule rule, String owner, String name,
+                                    Type desc) throws ManifestConfigReader.ConfigException {
+        FullyQualifiedMemberNameAndDesc site =
+            new FullyQualifiedMemberNameAndDesc(Type.getObjectType(owner), name, desc);
+        xyz.wagyourtail.jvmdg.cli.Flags flags =
+            mr.provider() == null || mr.provider().downgrader == null
+                ? null : mr.provider().downgrader.flags;
+        if (flags != null && flags.includeStub.contains(site)) {
+            return true;
+        }
+        return rule != null && rule.includeStubs().contains(site);
+    }
+
+    private static boolean vetoed(MemberResolver mr, ScopedRule rule, String owner, String name,
+                                  Type desc, int[] jeps, boolean modifyEntry, ClassNode classNode,
+                                  MethodNode method, Set<String> warnings) {
+        xyz.wagyourtail.jvmdg.cli.Flags flags =
+            mr.provider() == null || mr.provider().downgrader == null
+                ? null : mr.provider().downgrader.flags;
+        try {
+            if (included(mr, rule, owner, name, desc)) {
+                return false;
+            }
+            xyz.wagyourtail.jvmdg.config.StubPolicy policy =
+                flags == null ? xyz.wagyourtail.jvmdg.config.StubPolicy.FULL : flags.stubPolicy;
+            xyz.wagyourtail.jvmdg.config.OnMissingApi onMissing =
+                flags == null ? xyz.wagyourtail.jvmdg.config.OnMissingApi.ERROR : flags.onMissingApi;
+            if (rule != null) {
+                if (rule.stubPolicy() != null) policy = rule.stubPolicy();
+                if (rule.onMissingApi() != null) onMissing = rule.onMissingApi();
+            }
+            if (policy != xyz.wagyourtail.jvmdg.config.StubPolicy.FULL) {
+                FullyQualifiedMemberNameAndDesc site =
+                    new FullyQualifiedMemberNameAndDesc(Type.getObjectType(owner), name, desc);
+                xyz.wagyourtail.jvmdg.version.StubKind kind =
+                    mr.provider().stubRegistry.kindOf(site, modifyEntry, flags.classVersion);
+                if (policy == xyz.wagyourtail.jvmdg.config.StubPolicy.NO_BEHAVIOR) {
+                    if (kind == xyz.wagyourtail.jvmdg.version.StubKind.BEHAVIOR) return true;
+                } else if (kind != xyz.wagyourtail.jvmdg.version.StubKind.LANGUAGE) {
+                    if (kind == xyz.wagyourtail.jvmdg.version.StubKind.MISSING_API) {
+                        Integer since = mr.provider().stubRegistry.memberSince.get(site);
+                        String msg = site + " in " + classNode.name + "." + method.name + method.desc +
+                            (since != null && since > 0
+                                ? " requires Java " + (since - 44)
+                                : " is not available on the target") +
+                            " (stubPolicy=mechanical)";
+                        if (onMissing == xyz.wagyourtail.jvmdg.config.OnMissingApi.ERROR) {
+                            throw new IllegalStateException(msg);
+                        }
+                        warnings.add(msg);
+                    }
+                    return true;
+                }
+            }
+            return excluded(rule, owner, name, desc, jeps);
+        } catch (ManifestConfigReader.ConfigException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
+    }
+
+    /** union of a ctor family's {@code @JEP} ids — any intersect vetoes the whole entry. */
+    private static int[] jepsOf(CtorEntry ce) {
+        int n = 0;
+        for (MethodRef m : ce.methods()) {
+            n += m.jeps == null ? 0 : m.jeps.length;
+        }
+        int[] out = new int[n];
+        int i = 0;
+        for (MethodRef m : ce.methods()) {
+            if (m.jeps != null) {
+                for (int j : m.jeps) {
+                    out[i++] = j;
+                }
+            }
+        }
+        return out;
     }
 
     private static MethodInsnNode invokestatic(MethodRef m) {

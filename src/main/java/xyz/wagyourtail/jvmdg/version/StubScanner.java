@@ -109,6 +109,12 @@ public class StubScanner {
                             }
                             throw new IllegalArgumentException("multiple primary stub annotations on one method: " + names);
                         }
+                        if (!present.isEmpty() &&
+                            (method.isAnnotationPresent(Internal.class) ||
+                                method.isAnnotationPresent(CoverageIgnore.class))) {
+                            throw new IllegalArgumentException(
+                                "@Internal/@CoverageIgnore is not valid on a stub-annotated member — stub entries are classified by StubKind");
+                        }
                         if (!present.isEmpty()) {
                             Annotation a = present.get(0);
                             for (AnnotationHandler handler : HANDLERS) {

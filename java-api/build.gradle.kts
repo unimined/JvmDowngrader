@@ -177,8 +177,11 @@ val genStubIndex = tasks.register<JavaExec>("genStubIndex") {
     mainClass.set("xyz.wagyourtail.jvmdg.version.idx.StubIndexWriter")
     args = listOf(
         stubIndexDir.get().file("META-INF/jvmdg/stubs.idx").asFile.absolutePath,
-        project.version.toString()
+        project.version.toString(),
+        genCtSym.get().ctSym.get().asFile.absolutePath
     )
+    inputs.file(genCtSym.flatMap { it.ctSym })
+    dependsOn(genCtSym)
     outputs.dir(stubIndexDir)
     javaLauncher = javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))

@@ -144,7 +144,7 @@ public class TestCtorRewrite implements Opcodes {
 
     private Set<String> transform(MemberResolver mr, MethodNode m, int index, ClassNode c) {
         Set<String> warnings = new HashSet<>();
-        new MemberStubTransform().transformInsn(mr, m, index, c, new HashSet<ClassNode>(), true, warnings);
+        new MemberStubTransform().transformInsn(mr, m, index, c, new HashSet<ClassNode>(), true, warnings, null);
         return warnings;
     }
 
@@ -529,6 +529,9 @@ public class TestCtorRewrite implements Opcodes {
             @Override public boolean requiresRuntime() { return false; }
             @Override public boolean noSpecial() { return false; }
             @Override public String[] excludeChild() { return new String[0]; }
+            @Override public xyz.wagyourtail.jvmdg.version.StubKind kind() {
+                return xyz.wagyourtail.jvmdg.version.StubKind.AUTO;
+            }
         };
     }
 

@@ -37,6 +37,9 @@ public class StubHandler implements AnnotationHandler {
             member = applyDowngradeVersion(method, target).toMemberNameAndDesc();
         }
         ctx.stubMapper(owner).addStub(member, new StubEntry(method, stub));
+        if (stub.kind() != xyz.wagyourtail.jvmdg.version.StubKind.AUTO) {
+            ctx.stubMapper(owner).putKind(target, stub.kind());
+        }
     }
 
     /**

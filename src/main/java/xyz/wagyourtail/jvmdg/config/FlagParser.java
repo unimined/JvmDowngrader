@@ -87,6 +87,27 @@ public abstract class FlagParser {
         }
     };
 
+    /** {@link StubPolicy} — {@code full|noBehavior|mechanical} (case-insensitive). */
+    public static final FlagParser STUB_POLICY = new FlagParser() {
+        @Override
+        public Object parseScalar(String raw) {
+            for (StubPolicy p : StubPolicy.values()) {
+                if (p.name().replace("_", "").equalsIgnoreCase(raw.trim().replace("_", ""))) {
+                    return p;
+                }
+            }
+            throw new IllegalArgumentException("expected full|noBehavior|mechanical, got '" + raw + "'");
+        }
+    };
+
+    /** {@link OnMissingApi} — {@code error|warn} (case-insensitive). */
+    public static final FlagParser ON_MISSING_API = new FlagParser() {
+        @Override
+        public Object parseScalar(String raw) {
+            return OnMissingApi.valueOf(raw.trim().toUpperCase());
+        }
+    };
+
     // ---- collection parsers ----
 
     /** Base for {@code Set}-typed fields: elements add into a LinkedHashSet. */

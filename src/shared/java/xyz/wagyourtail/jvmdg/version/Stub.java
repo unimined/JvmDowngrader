@@ -46,4 +46,14 @@ public @interface Stub {
 
     String[] excludeChild() default {};
 
+    /**
+     * Force the {@link StubKind} classification for this member — the default
+     * {@link StubKind#AUTO} derives it: member stubs whose target exists on
+     * the downgrade target classify {@link StubKind#BEHAVIOR}, else
+     * {@link StubKind#MISSING_API}. Override when the member's JDK-presence
+     * data can't express the intent (e.g. a stub deliberately shadowing an
+     * existing member that {@code ct.sym} reports absent).
+     */
+    StubKind kind() default StubKind.AUTO;
+
 }

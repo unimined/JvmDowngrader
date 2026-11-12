@@ -18,6 +18,9 @@ public class Constants {
     public static final String DEBUG_SKIP_STUB = "jvmdg.debug.skipStub";
     public static final String DEBUG_SKIP_STUBS = "jvmdg.debug.skipStubs";
     public static final String DEBUG_SKIP_JEPS = "jvmdg.debug.skipJeps";
+    public static final String STUB_POLICY = "jvmdg.stubPolicy";
+    public static final String ON_MISSING_API = "jvmdg.onMissingApi";
+    public static final String INCLUDE_STUB = "jvmdg.includeStub";
     public static final String DEBUG_DUMP_CLASSES = "jvmdg.debug.dumpClasses";
     public static final String DEBUG_NO_SYNTHETIC = "jvmdg.debug.noSynthetic";
     public static final String DEBUG_NO_FUSE = "jvmdg.debug.noFuse";

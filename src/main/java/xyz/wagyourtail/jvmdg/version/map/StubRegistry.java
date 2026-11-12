@@ -24,6 +24,47 @@ public class StubRegistry {
     // hit per member reference during transformation
     private final Map<String, Owner> owners = new HashMap<>();
 
+    /**
+     * JDK-introduction class-version per callsite member, written by the
+     * build-time index from the {@code ct.sym} membership data (0 = unknown,
+     * classifies {@link xyz.wagyourtail.jvmdg.version.StubKind#MISSING_API}
+     * on every target). Side data — not part of entry identity, so the
+     * idx/scan parity oracle compares {@link #owners} only.
+     */
+    public final Map<FullyQualifiedMemberNameAndDesc, Integer> memberSince = new HashMap<>();
+
+    /**
+     * Explicit {@link xyz.wagyourtail.jvmdg.version.StubKind} overrides from
+     * {@code @Stub(kind=)}/{@code @Modify(kind=)} — sparse; absent entries
+     * auto-classify.
+     */
+    public final Map<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind> memberKind = new HashMap<>();
+
+    /**
+     * Classify a callsite entry for a downgrade to {@code targetClassVersion}:
+     * an explicit {@code kind=} override wins, {@code memberModify} entries
+     * are {@link xyz.wagyourtail.jvmdg.version.StubKind#LANGUAGE}, and member
+     * stubs are {@link xyz.wagyourtail.jvmdg.version.StubKind#BEHAVIOR} when
+     * the JDK member exists on the target ({@code since} populated by the
+     * build-time {@code ct.sym} pass) else
+     * {@link xyz.wagyourtail.jvmdg.version.StubKind#MISSING_API} — including
+     * the reflection-scan path where {@link #memberSince} stays empty.
+     */
+    public xyz.wagyourtail.jvmdg.version.StubKind kindOf(
+            FullyQualifiedMemberNameAndDesc siteFqn, boolean modifyEntry, int targetClassVersion) {
+        xyz.wagyourtail.jvmdg.version.StubKind k = memberKind.get(siteFqn);
+        if (k != null) {
+            return k;
+        }
+        if (modifyEntry) {
+            return xyz.wagyourtail.jvmdg.version.StubKind.LANGUAGE;
+        }
+        Integer since = memberSince.get(siteFqn);
+        return since != null && since > 0 && since <= targetClassVersion
+            ? xyz.wagyourtail.jvmdg.version.StubKind.BEHAVIOR
+            : xyz.wagyourtail.jvmdg.version.StubKind.MISSING_API;
+    }
+
     /** Every stub/modify entry registered for one JDK type. */
     public static final class Owner {
         public final Map<MemberNameAndDesc, StubEntry> methodStub = new HashMap<>();

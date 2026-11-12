@@ -155,6 +155,42 @@ interface DowngradeFlags {
     val debugSkipJeps: SetProperty<Int>
 
     /**
+     * which stub kinds callsites may use — `full` applies all stubs,
+     * `noBehavior` skips BEHAVIOR stubs (never wrap an API the target
+     * already has), `mechanical` keeps LANGUAGE desugars only and reports
+     * MISSING_API hits per [onMissingApi].
+     * No convention is set so an unset property defers to config files.
+     *
+     * @since 3.0.0
+     */
+    @get:Input
+    @get:Optional
+    val stubPolicy: Property<String>
+
+    /**
+     * what `mechanical` does with a MISSING_API callsite — `error` aborts
+     * the transform naming the site + required Java version; `warn` reports
+     * it and keeps building.
+     *
+     * @since 3.0.0
+     */
+    @get:Input
+    @get:Optional
+    val onMissingApi: Property<String>
+
+    /**
+     * stub members always emitted — an explicit member-level statement
+     * that beats [debugSkipStub]/[debugSkipJeps] scoped excludes and
+     * [stubPolicy] drops (the `mechanical` escape hatch). Members are
+     * `Lpackage/to/ClassName;methodName;()V`, same form as [debugSkipStub].
+     *
+     * @since 3.0.0
+     */
+    @get:Input
+    @get:Optional
+    val includeStub: SetProperty<String>
+
+    /**
      * allows maven lookup for auto-resolving [apiJar]
      * @since 3.0.0
      */

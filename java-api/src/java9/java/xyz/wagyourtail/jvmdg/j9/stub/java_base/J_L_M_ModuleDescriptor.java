@@ -3,7 +3,7 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 import org.jetbrains.annotations.NotNull;
 import xyz.wagyourtail.jvmdg.j9.intl.NameChecks;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
+import xyz.wagyourtail.jvmdg.version.Internal;
 import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.util.*;
@@ -281,7 +281,7 @@ public class J_L_M_ModuleDescriptor implements Comparable<J_L_M_ModuleDescriptor
         String rawVersion;
         String mainClass;
 
-        @CoverageIgnore
+        @Internal
         public Builder(String name, boolean strict, Set<Modifier> modifiers) {
             this.name = name;
             this.strict = strict;

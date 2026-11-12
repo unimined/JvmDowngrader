@@ -55,6 +55,10 @@ import xyz.wagyourtail.jvmdg.version.map.StubRegistry;
  *            u16 fieldStub entries (member + opt StubEntry getter + opt setter),
  *            u16 ctor entries (member + u8 kind + payload),
  *            u16 memberModify entries (opt member + MethodRef)
+ *     u16      memberSince count — site-form FQN + u16 class version the JDK
+ *            member first appears in (ct.sym-derived; 0 = unknown)
+ *     u16      memberKind count — site-form FQN + u8 {@link xyz.wagyourtail.jvmdg.version.StubKind}
+ *            ordinal, explicit {@code kind=} overrides only
  * </pre>
  *
  * <p>Every map is emitted sorted by its key so identical registries produce
@@ -64,7 +68,14 @@ public class StubIndex {
 
     public static final String RESOURCE = "META-INF/jvmdg/stubs.idx";
     public static final byte[] MAGIC = {'J', 'V', 'M', 'D', 'G', 'I', 'D', 'X'};
-    public static final int FORMAT_VERSION = 1;
+    public static final int FORMAT_VERSION = 2;
+
+    private static final Comparator<FullyQualifiedMemberNameAndDesc> FQ_ORDER = new Comparator<FullyQualifiedMemberNameAndDesc>() {
+        @Override
+        public int compare(FullyQualifiedMemberNameAndDesc a, FullyQualifiedMemberNameAndDesc b) {
+            return a.toString().compareTo(b.toString());
+        }
+    };
 
     private static final Comparator<MemberNameAndDesc> MEMBER_ORDER = new Comparator<MemberNameAndDesc>() {
         @Override
@@ -94,6 +105,8 @@ public class StubIndex {
     /** one provider's deserialized section */
     public static class Snapshot {
         public final Map<String, StubRegistry.Owner> owners = new TreeMap<>();
+        public final Map<FullyQualifiedMemberNameAndDesc, Integer> memberSince = new TreeMap<>(FQ_ORDER);
+        public final Map<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind> memberKind = new TreeMap<>(FQ_ORDER);
         public final Map<Type, ClassStubEntry> classStubs = new TreeMap<>(new Comparator<Type>() {
             @Override
             public int compare(Type a, Type b) {
@@ -188,6 +201,34 @@ public class StubIndex {
                 }
                 writeMethodRef(o, m.getValue());
             }
+        }
+        List<Map.Entry<FullyQualifiedMemberNameAndDesc, Integer>> since =
+            new ArrayList<>(vp.stubRegistry.memberSince.entrySet());
+        since.sort(new Comparator<Map.Entry<FullyQualifiedMemberNameAndDesc, Integer>>() {
+            @Override
+            public int compare(Map.Entry<FullyQualifiedMemberNameAndDesc, Integer> a,
+                               Map.Entry<FullyQualifiedMemberNameAndDesc, Integer> b) {
+                return FQ_ORDER.compare(a.getKey(), b.getKey());
+            }
+        });
+        o.writeShort(since.size());
+        for (Map.Entry<FullyQualifiedMemberNameAndDesc, Integer> e : since) {
+            writeFQMND(o, e.getKey());
+            o.writeShort(e.getValue());
+        }
+        List<Map.Entry<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind>> kinds =
+            new ArrayList<>(vp.stubRegistry.memberKind.entrySet());
+        kinds.sort(new Comparator<Map.Entry<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind>>() {
+            @Override
+            public int compare(Map.Entry<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind> a,
+                               Map.Entry<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind> b) {
+                return FQ_ORDER.compare(a.getKey(), b.getKey());
+            }
+        });
+        o.writeShort(kinds.size());
+        for (Map.Entry<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind> e : kinds) {
+            writeFQMND(o, e.getKey());
+            o.writeByte(e.getValue().ordinal());
         }
     }
 
@@ -355,6 +396,15 @@ public class StubIndex {
             }
             if (s.owners.put(ownerName, owner) != null) throw new IOException("duplicate owner " + ownerName);
         }
+        int sinceCount = in.readShort() & 0xFFFF;
+        for (int i = 0; i < sinceCount; i++) {
+            s.memberSince.put(readFQMND(in), in.readShort() & 0xFFFF);
+        }
+        int kindCount = in.readShort() & 0xFFFF;
+        for (int i = 0; i < kindCount; i++) {
+            s.memberKind.put(readFQMND(in),
+                xyz.wagyourtail.jvmdg.version.StubKind.values()[in.readByte()]);
+        }
         return s;
     }
 
@@ -446,6 +496,8 @@ public class StubIndex {
      * behave identically on both paths)
      */
     public static void apply(Snapshot snapshot, VersionProvider vp) {
+        vp.stubRegistry.memberSince.putAll(snapshot.memberSince);
+        vp.stubRegistry.memberKind.putAll(snapshot.memberKind);
         for (Map.Entry<Type, ClassStubEntry> e : snapshot.classStubs.entrySet()) {
             if (!vp.shouldSkip(e.getValue())) {
                 vp.classStubs.put(e.getKey(), e.getValue());

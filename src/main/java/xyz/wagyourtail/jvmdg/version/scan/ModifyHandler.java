@@ -37,6 +37,10 @@ public class ModifyHandler implements AnnotationHandler {
             throw new IllegalArgumentException("Class " + ctx.clazz.getName() + ", " + e.getMessage(), e);
         }
         ctx.stubMapper(owner).addModify(member, method);
+        if (modify.kind() != xyz.wagyourtail.jvmdg.version.StubKind.AUTO &&
+            member != null && member.getName() != null) {
+            ctx.stubMapper(owner).putKind(target, modify.kind());
+        }
     }
 
     /**

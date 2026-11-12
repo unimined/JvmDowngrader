@@ -93,6 +93,81 @@ public final class ScopedRule {
      * config error — silently picking one would make file order semantically
      * load-bearing.
      */
+    /** {@code Ignore-Warnings: true} suppresses transform warnings for classes in scope. */
+    public boolean ignoreWarnings() {
+        return Boolean.parseBoolean(attributes.get("Ignore-Warnings".toLowerCase(java.util.Locale.ROOT)));
+    }
+
+    /**
+     * Members of {@code Exclude-Stubs} — callsite references in scope keep their
+     * native form (the stub is not emitted for the class). Parsed lazily; an
+     * invalid member ref surfaces as a {@link ManifestConfigReader.ConfigException}
+     * pointing at the declaring rule.
+     */
+    public java.util.Set<xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc> excludeStubs()
+        throws ManifestConfigReader.ConfigException {
+        return parseSet("exclude-stubs", FlagParser.FQMND_SET);
+    }
+
+    /**
+     * JEP ids of {@code Exclude-Jeps} — stub entries whose {@code @JEP} set
+     * intersects are not emitted for classes in scope.
+     */
+    public java.util.Set<Integer> excludeJeps() throws ManifestConfigReader.ConfigException {
+        return parseSet("exclude-jeps", FlagParser.JEP_SET);
+    }
+
+    /**
+     * Members of {@code Include-Stubs} — re-included for classes in scope even
+     * when {@code Exclude-Stubs}/{@code Exclude-Jeps} or {@code Stub-Policy}
+     * would drop them. An explicit member-level statement is the most specific
+     * one possible, so it wins over every veto.
+     */
+    public java.util.Set<xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc> includeStubs()
+        throws ManifestConfigReader.ConfigException {
+        return parseSet("include-stubs", FlagParser.FQMND_SET);
+    }
+
+    /** {@code Stub-Policy} for classes in scope — null defers to the global flag. */
+    public StubPolicy stubPolicy() throws ManifestConfigReader.ConfigException {
+        return (StubPolicy) parseScalar("stub-policy", FlagParser.STUB_POLICY);
+    }
+
+    /** {@code On-Missing-Api} for classes in scope — null defers to the global flag. */
+    public OnMissingApi onMissingApi() throws ManifestConfigReader.ConfigException {
+        return (OnMissingApi) parseScalar("on-missing-api", FlagParser.ON_MISSING_API);
+    }
+
+    private Object parseScalar(String key, FlagParser parser) throws ManifestConfigReader.ConfigException {
+        String raw = attributes.get(key);
+        if (raw == null) {
+            return null;
+        }
+        try {
+            return parser.parseScalar(raw);
+        } catch (RuntimeException e) {
+            throw new ManifestConfigReader.ConfigException(source, line,
+                "invalid '" + key + "' value: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> java.util.Set<T> parseSet(String key, FlagParser parser) throws ManifestConfigReader.ConfigException {
+        String raw = attributes.get(key);
+        if (raw == null) {
+            return java.util.Collections.emptySet();
+        }
+        try {
+            Object parsed = parser.parseMulti(raw);
+            return parsed instanceof java.util.Set
+                ? (java.util.Set<T>) parsed
+                : new java.util.LinkedHashSet<>((java.util.Collection<T>) parsed);
+        } catch (RuntimeException e) {
+            throw new ManifestConfigReader.ConfigException(source, line,
+                "invalid '" + key + "' value: " + e.getMessage());
+        }
+    }
+
     public static ScopedRule resolve(Iterable<ScopedRule> rules, String className)
         throws ManifestConfigReader.ConfigException {
         ScopedRule best = null;

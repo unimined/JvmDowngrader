@@ -13,7 +13,9 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.*;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -161,6 +163,262 @@ public class TestPathDowngrader {
         }
         assertArrayEquals(hashes[0], hashes[1],
             "two downgrades of the same input must produce identical bytes");
+    }
+
+    /** V11 class whose {@code call(String)} invokes {@code String.strip} — a j11 MISSING_API stub callsite. */
+    private static byte[] callsStripClass(String name) {
+        ClassNode node = new ClassNode();
+        node.version = Opcodes.V11;
+        node.access = Opcodes.ACC_PUBLIC;
+        node.name = name;
+        node.superName = "java/lang/Object";
+        org.objectweb.asm.tree.MethodNode m = new org.objectweb.asm.tree.MethodNode(
+            Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "call",
+            "(Ljava/lang/String;)Ljava/lang/String;", null, null);
+        m.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        m.instructions.add(new org.objectweb.asm.tree.MethodInsnNode(
+            Opcodes.INVOKEVIRTUAL, "java/lang/String", "strip", "()Ljava/lang/String;"));
+        m.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ARETURN));
+        node.methods.add(m);
+        return ASMUtils.classNodeToBytes(node, 0);
+    }
+
+    /** whether {@code entry} in {@code out} still contains an {@code owner.name} method insn of {@code opcode}. */
+    private static boolean hasMethodInsn(Path out, String entry, int opcode, String owner, String name) throws Exception {
+        try (FileSystem fs = Utils.openZipFileSystem(out, false)) {
+            ClassNode n = new ClassNode();
+            new org.objectweb.asm.ClassReader(Files.readAllBytes(fs.getPath("/" + entry))).accept(n, 0);
+            for (org.objectweb.asm.tree.MethodNode m : n.methods) {
+                for (org.objectweb.asm.tree.AbstractInsnNode i : m.instructions) {
+                    if (i instanceof org.objectweb.asm.tree.MethodInsnNode) {
+                        org.objectweb.asm.tree.MethodInsnNode mi = (org.objectweb.asm.tree.MethodInsnNode) i;
+                        if (mi.getOpcode() == opcode && mi.owner.equals(owner) && mi.name.equals(name)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    @Test
+    public void scopedExcludeStubsKeepsNativeCallsite(@TempDir Path dir) throws Exception {
+        Path in = dir.resolve("in.jar");
+        try (FileSystem fs = zip(in)) {
+            Path root = fs.getPath("/");
+            Files.createDirectories(root.resolve("probe"));
+            Files.write(root.resolve("probe/Caller.class"), callsStripClass("probe/Caller"));
+            Files.createDirectories(root.resolve("other"));
+            Files.write(root.resolve("other/Other.class"), callsStripClass("other/Other"));
+        }
+        Path out = dir.resolve("out.jar");
+
+        Flags f = flags();
+        f.scopedRules.add(new xyz.wagyourtail.jvmdg.config.ScopedRule(
+            "probe/", Flags.WildcardType.DOUBLE, "test", null, 1,
+            Collections.singletonMap("exclude-stubs",
+                "Ljava/lang/String;strip;()Ljava/lang/String;")));
+        try (ClassDowngrader d = ClassDowngrader.downgradeTo(f);
+             FileSystem inFs = Utils.openZipFileSystem(in, false);
+             FileSystem outFs = zip(out)) {
+            PathDowngrader.downgradePaths(d,
+                Collections.singletonList(inFs.getPath("/")),
+                Collections.singletonList(outFs.getPath("/")),
+                new HashSet<java.net.URL>());
+        }
+
+        assertTrue(hasMethodInsn(out, "probe/Caller.class", Opcodes.INVOKEVIRTUAL,
+            "java/lang/String", "strip"),
+            "scoped Exclude-Stubs must leave the native callsite in place");
+        assertFalse(hasMethodInsn(out, "other/Other.class", Opcodes.INVOKEVIRTUAL,
+            "java/lang/String", "strip"),
+            "out-of-scope classes still get the stub rewrite");
+    }
+
+    @Test
+    public void scopedExcludeJepsSkipsTaggedStubs(@TempDir Path dir) throws Exception {
+        Path in = dir.resolve("in.jar");
+        try (FileSystem fs = zip(in)) {
+            Path root = fs.getPath("/");
+            Files.createDirectories(root.resolve("probe"));
+            Files.write(root.resolve("probe/Caller.class"), callsGetPropertyClass("probe/Caller"));
+        }
+        Path out = dir.resolve("out.jar");
+
+        Flags f = flags();
+        f.scopedRules.add(new xyz.wagyourtail.jvmdg.config.ScopedRule(
+            "probe/", Flags.WildcardType.DOUBLE, "test", null, 1,
+            Collections.singletonMap("exclude-jeps", "400")));
+        try (ClassDowngrader d = ClassDowngrader.downgradeTo(f);
+             FileSystem inFs = Utils.openZipFileSystem(in, false);
+             FileSystem outFs = zip(out)) {
+            PathDowngrader.downgradePaths(d,
+                Collections.singletonList(inFs.getPath("/")),
+                Collections.singletonList(outFs.getPath("/")),
+                new HashSet<java.net.URL>());
+        }
+
+        assertTrue(hasMethodInsn(out, "probe/Caller.class", Opcodes.INVOKESTATIC,
+            "java/lang/System", "getProperty"),
+            "scoped Exclude-Jeps must leave JEP 400 stub callsites native");
+    }
+
+    @Test
+    public void noBehaviorPolicySkipsBehaviorStubs(@TempDir Path dir) throws Exception {
+        // System.getProperty exists on the V1_8 target — its JEP 400 stub is
+        // BEHAVIOR-kind, so noBehavior vetoes it and the callsite stays native
+        Path in = dir.resolve("in.jar");
+        try (FileSystem fs = zip(in)) {
+            Path root = fs.getPath("/");
+            Files.createDirectories(root.resolve("probe"));
+            Files.write(root.resolve("probe/Caller.class"), callsGetPropertyClass("probe/Caller"));
+        }
+        Path out = dir.resolve("out.jar");
+
+        Flags f = flags();
+        f.stubPolicy = xyz.wagyourtail.jvmdg.config.StubPolicy.NO_BEHAVIOR;
+        try (ClassDowngrader d = ClassDowngrader.downgradeTo(f);
+             FileSystem inFs = Utils.openZipFileSystem(in, false);
+             FileSystem outFs = zip(out)) {
+            PathDowngrader.downgradePaths(d,
+                Collections.singletonList(inFs.getPath("/")),
+                Collections.singletonList(outFs.getPath("/")),
+                new HashSet<java.net.URL>());
+        }
+        assertTrue(hasMethodInsn(out, "probe/Caller.class", Opcodes.INVOKESTATIC,
+            "java/lang/System", "getProperty"),
+            "noBehavior must veto the JEP 400 wrap on an existing API");
+    }
+
+    @Test
+    public void mechanicalPolicyReportsMissingApi(@TempDir Path dir) throws Exception {
+        // String.strip is absent on the V1_8 target — mechanical vetoes the
+        // stub and reports the callsite (error mode aborts the transform)
+        Path in = dir.resolve("in.jar");
+        try (FileSystem fs = zip(in)) {
+            Path root = fs.getPath("/");
+            Files.createDirectories(root.resolve("probe"));
+            Files.write(root.resolve("probe/Caller.class"), callsStripClass("probe/Caller"));
+        }
+
+        Flags f = flags();
+        f.stubPolicy = xyz.wagyourtail.jvmdg.config.StubPolicy.MECHANICAL;
+        try (ClassDowngrader d = ClassDowngrader.downgradeTo(f);
+             FileSystem inFs = Utils.openZipFileSystem(in, false);
+             FileSystem outFs = zip(dir.resolve("out.jar"))) {
+            Exception e = assertThrows(Exception.class, () ->
+                PathDowngrader.downgradePaths(d,
+                    Collections.singletonList(inFs.getPath("/")),
+                    Collections.singletonList(outFs.getPath("/")),
+                    new HashSet<java.net.URL>()));
+            String chain = e.toString();
+            for (Throwable t = e.getCause(); t != null; t = t.getCause()) {
+                chain += " | " + t.getMessage();
+            }
+            assertTrue(chain.contains("requires Java 11"),
+                "mechanical error should name the required version: " + chain);
+        }
+
+        // warn mode keeps building and leaves the native callsite
+        Path out2 = dir.resolve("out2.jar");
+        Flags f2 = flags();
+        f2.stubPolicy = xyz.wagyourtail.jvmdg.config.StubPolicy.MECHANICAL;
+        f2.onMissingApi = xyz.wagyourtail.jvmdg.config.OnMissingApi.WARN;
+        try (ClassDowngrader d = ClassDowngrader.downgradeTo(f2);
+             FileSystem inFs = Utils.openZipFileSystem(in, false);
+             FileSystem outFs = zip(out2)) {
+            PathDowngrader.downgradePaths(d,
+                Collections.singletonList(inFs.getPath("/")),
+                Collections.singletonList(outFs.getPath("/")),
+                new HashSet<java.net.URL>());
+        }
+        assertTrue(hasMethodInsn(out2, "probe/Caller.class", Opcodes.INVOKEVIRTUAL,
+            "java/lang/String", "strip"),
+            "mechanical+warn must veto the stub but keep building");
+    }
+
+    @Test
+    public void scopedIncludeStubsBeatsExcludeJeps(@TempDir Path dir) throws Exception {
+        // same scope drops JEP 400 stubs but re-includes getProperty — the
+        // member-level include is the most specific statement and wins
+        Path in = dir.resolve("in.jar");
+        try (FileSystem fs = zip(in)) {
+            Path root = fs.getPath("/");
+            Files.createDirectories(root.resolve("probe"));
+            Files.write(root.resolve("probe/Caller.class"), callsGetPropertyClass("probe/Caller"));
+        }
+        Path out = dir.resolve("out.jar");
+
+        Map<String, String> attrs = new HashMap<>();
+        attrs.put("exclude-jeps", "400");
+        attrs.put("include-stubs",
+            "Ljava/lang/System;getProperty;(Ljava/lang/String;)Ljava/lang/String;");
+        Flags f = flags();
+        f.scopedRules.add(new xyz.wagyourtail.jvmdg.config.ScopedRule(
+            "probe/", Flags.WildcardType.DOUBLE, "test", null, 1, attrs));
+        try (ClassDowngrader d = ClassDowngrader.downgradeTo(f);
+             FileSystem inFs = Utils.openZipFileSystem(in, false);
+             FileSystem outFs = zip(out)) {
+            PathDowngrader.downgradePaths(d,
+                Collections.singletonList(inFs.getPath("/")),
+                Collections.singletonList(outFs.getPath("/")),
+                new HashSet<java.net.URL>());
+        }
+
+        assertFalse(hasMethodInsn(out, "probe/Caller.class", Opcodes.INVOKESTATIC,
+            "java/lang/System", "getProperty"),
+            "scoped Include-Stubs must re-include the member its Exclude-Jeps dropped");
+    }
+
+    @Test
+    public void mechanicalPolicyIncludesListedStub(@TempDir Path dir) throws Exception {
+        // the mechanical escape hatch: a listed MISSING_API member keeps its
+        // stub instead of erroring
+        Path in = dir.resolve("in.jar");
+        try (FileSystem fs = zip(in)) {
+            Path root = fs.getPath("/");
+            Files.createDirectories(root.resolve("probe"));
+            Files.write(root.resolve("probe/Caller.class"), callsStripClass("probe/Caller"));
+        }
+        Path out = dir.resolve("out.jar");
+
+        Flags f = flags();
+        f.stubPolicy = xyz.wagyourtail.jvmdg.config.StubPolicy.MECHANICAL;
+        f.includeStub.add(xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc.of(
+            "Ljava/lang/String;strip;()Ljava/lang/String;"));
+        try (ClassDowngrader d = ClassDowngrader.downgradeTo(f);
+             FileSystem inFs = Utils.openZipFileSystem(in, false);
+             FileSystem outFs = zip(out)) {
+            PathDowngrader.downgradePaths(d,
+                Collections.singletonList(inFs.getPath("/")),
+                Collections.singletonList(outFs.getPath("/")),
+                new HashSet<java.net.URL>());
+        }
+        assertFalse(hasMethodInsn(out, "probe/Caller.class", Opcodes.INVOKEVIRTUAL,
+            "java/lang/String", "strip"),
+            "mechanical + Include-Stubs must emit the listed member's stub");
+    }
+
+    /** V18 class invoking the JEP 400-stubbed {@code System.getProperty(String)}
+     * — V18 input so the j18 provider (where the stub registers) runs; a
+     * lower input version would make every assertion on it vacuous. */
+    private static byte[] callsGetPropertyClass(String name) {
+        ClassNode node = new ClassNode();
+        node.version = Opcodes.V18;
+        node.access = Opcodes.ACC_PUBLIC;
+        node.name = name;
+        node.superName = "java/lang/Object";
+        org.objectweb.asm.tree.MethodNode m = new org.objectweb.asm.tree.MethodNode(
+            Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "call",
+            "()Ljava/lang/String;", null, null);
+        m.instructions.add(new org.objectweb.asm.tree.LdcInsnNode("native.encoding"));
+        m.instructions.add(new org.objectweb.asm.tree.MethodInsnNode(
+            Opcodes.INVOKESTATIC, "java/lang/System", "getProperty",
+            "(Ljava/lang/String;)Ljava/lang/String;"));
+        m.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ARETURN));
+        node.methods.add(m);
+        return ASMUtils.classNodeToBytes(node, 0);
     }
 
     private Path jarWithRules(Path dir, String name, String mfContent) throws Exception {

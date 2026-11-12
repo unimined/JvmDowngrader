@@ -116,6 +116,13 @@ public class TestStubIndex {
                 false, true));
         owner.memberModify.put(new MemberNameAndDesc("call", Type.getMethodType("()V")), ref("x/M", "m1", "()V"));
         owner.memberModify.put(null, ref("x/M", "all", "()V"));
+        p.stubRegistry.memberSince.put(
+            new FullyQualifiedMemberNameAndDesc(Type.getObjectType("com/example/Target"), "name",
+                Type.getMethodType("()Ljava/lang/String;")), 52);
+        p.stubRegistry.memberKind.put(
+            new FullyQualifiedMemberNameAndDesc(Type.getObjectType("com/example/Target"), "name",
+                Type.getMethodType("()Ljava/lang/String;")),
+            xyz.wagyourtail.jvmdg.version.StubKind.LANGUAGE);
         return p;
     }
 
@@ -233,6 +240,52 @@ public class TestStubIndex {
         assertEquals(a.keySet(), snap.owners.keySet());
         for (Map.Entry<String, StubRegistry.Owner> e : a.entrySet()) {
             assertOwner(e.getValue(), snap.owners.get(e.getKey()));
+        }
+        assertEquals(source.stubRegistry.memberSince, snap.memberSince, "memberSince differs");
+        assertEquals(source.stubRegistry.memberKind, snap.memberKind, "memberKind differs");
+    }
+
+    /** kind classification: override > memberModify=LANGUAGE > since vs target */
+    @Test
+    public void kindClassification() throws Exception {
+        try (ClassDowngrader d = ClassDowngrader.downgradeTo(Opcodes.V1_8)) {
+            TestProvider p = populatedProvider(d);
+            StubRegistry reg = p.stubRegistry;
+            FullyQualifiedMemberNameAndDesc site =
+                new FullyQualifiedMemberNameAndDesc(Type.getObjectType("com/example/Target"),
+                    "name", Type.getMethodType("()Ljava/lang/String;"));
+            // explicit override wins regardless of since/target
+            assertEquals(xyz.wagyourtail.jvmdg.version.StubKind.LANGUAGE,
+                reg.kindOf(site, false, Opcodes.V1_8));
+            reg.memberKind.remove(site);
+            // since=52 exists on a V1_8 target -> BEHAVIOR; on V1_7 -> MISSING_API
+            assertEquals(xyz.wagyourtail.jvmdg.version.StubKind.BEHAVIOR,
+                reg.kindOf(site, false, Opcodes.V1_8));
+            assertEquals(xyz.wagyourtail.jvmdg.version.StubKind.MISSING_API,
+                reg.kindOf(site, false, Opcodes.V1_7));
+            // memberModify entries are LANGUAGE
+            assertEquals(xyz.wagyourtail.jvmdg.version.StubKind.LANGUAGE,
+                reg.kindOf(new FullyQualifiedMemberNameAndDesc(
+                    Type.getObjectType("com/example/Target"), "call", Type.getMethodType("()V")),
+                    true, Opcodes.V1_8));
+            // unknown since -> MISSING_API on every target
+            assertEquals(xyz.wagyourtail.jvmdg.version.StubKind.MISSING_API,
+                reg.kindOf(new FullyQualifiedMemberNameAndDesc(
+                    Type.getObjectType("java/lang/String"), "nope", Type.getMethodType("()V")),
+                    false, Opcodes.V11));
+        }
+    }
+
+    /** the built api jar's idx carries ct.sym-derived since data for real members */
+    @Test
+    public void apiJarIndexCarriesMemberSince() throws Exception {
+        try (ClassDowngrader d = apiJarDowngrader()) {
+            int found = 0;
+            for (VersionProvider vp : d.versionProviders(Opcodes.V9)) {
+                vp.ensureInit(d);
+                found += vp.stubRegistry.memberSince.size();
+            }
+            assertTrue(found > 0, "no memberSince data in the api jar index");
         }
     }
 

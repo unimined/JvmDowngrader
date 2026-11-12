@@ -173,11 +173,20 @@ referencing it.
 | Tag a stub with the JEP it implements (enables `debug --skipJEP`) | `@JEP(<n>)` on the member |
 | Pull a non-class resource into shaded output when a member is used | `@RequiresResource("path")` |
 | Declare reflection-only references the index should see | `@ReflectionReferences({@Ref(...)})` |
-| Keep an adapter member out of the `unmatched.txt` coverage ratchet | `@CoverageIgnore` |
+| Keep a jvmdg-internal public member on a stub/adapter class out of the `unmatched.txt` coverage ratchet | `@Internal` (`@CoverageIgnore` is a deprecated alias) |
 
 `@JEP` values are the JEP number that introduced the member — the audit test
 cross-checks them against the provider's JEP table, so an untagged newer-API
 stub fails the suite rather than silently skipping `--skipJEP` filtering.
+
+`@Internal` is only for public members that genuinely don't mirror a JDK
+member (internal ctors, helper defaults, adapter record components). Members
+that *do* mirror the JDK are excluded from `unmatched.txt` automatically:
+the checker resolves each registered site against the target surface and
+each adapter member against its own version's surface, including inherited
+declarations and covariant returns — so BEHAVIOR stubs and covariant
+redeclarations need no marker at all. Putting `@Internal` (or
+`@CoverageIgnore`) on a `@Stub`/`@Modify` member fails registration.
 
 ### RequiresResource
 

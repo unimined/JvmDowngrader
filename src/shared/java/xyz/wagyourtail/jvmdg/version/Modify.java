@@ -24,4 +24,12 @@ public @interface Modify {
 
     Ref ref() default @Ref();
 
+    /**
+     * Force the {@link StubKind} classification — the default
+     * {@link StubKind#AUTO} classifies {@code @Modify} entries
+     * {@link StubKind#LANGUAGE} (insn-level desugars aren't API mirrors).
+     * Override for a {@code @Modify} that emulates API semantics.
+     */
+    StubKind kind() default StubKind.AUTO;
+
 }

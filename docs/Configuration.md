@@ -69,6 +69,9 @@ separator), `wildcard-map` (comma-separated patterns).
 | `Exclude-Jeps` | `debug --skipJEP` / `-sj` | `jvmdg.debug.skipJeps` | `debugSkipJeps` | int-set |
 | `Debug-Dump-Classes` | `debug --dumpClasses` / `-d` | `jvmdg.debug.dumpClasses` | `debugDumpClasses` | const-true / bool |
 | `Exclude-Stubs` | `debug --skipStub` / `-ss` | `jvmdg.debug.skipStub` | `debugSkipStub` | member-set |
+| `Stub-Policy` | `--stubPolicy` | `jvmdg.stubPolicy` | `stubPolicy` | `full`/`noBehavior`/`mechanical` |
+| `On-Missing-Api` | `--onMissingApi` | `jvmdg.onMissingApi` | `onMissingApi` | `error`/`warn` |
+| `Include-Stubs` | `--includeStub` / `-is` | `jvmdg.includeStub` | `includeStub` | member-set |
 | `Debug-No-Synthetic` | `debug --noSynthetic` / `-ns` | `jvmdg.debug.noSynthetic` | `debugNoSynthetic` | const-true / bool |
 | `Debug-No-Fuse` | — | `jvmdg.debug.noFuse` | `debugNoFuse` | bool |
 | `Debug-No-Stub-Idx` | — | `jvmdg.debug.noStubIdx` | `debugNoStubIdx` | bool |
@@ -104,11 +107,33 @@ Scoped keys honored today:
 
 - `Ignore-Warnings: true|false` — suppress/enable missing-member warnings
   for matching classes.
+- `Exclude-Stubs: <member-ref>…` — stub/modify/ctor emission for the listed
+  callsite members is vetoed in matching classes: the callsite keeps its
+  native reference (and the normal missing-member warning still reports it).
+  Exclusions name the JDK callsite (`Ljava/lang/String;strip;()Ljava/lang/String;`),
+  same form as global `Exclude-Stubs`.
+- `Exclude-Jeps: <n>…` — veto stub entries whose `@JEP` set intersects the
+  listed ids in matching classes.
+- `Stub-Policy: full|noBehavior|mechanical` — override the global
+  `Stub-Policy` for matching classes.
+- `On-Missing-Api: error|warn` — override the global `On-Missing-Api` for
+  matching classes.
+- `Include-Stubs: <member-ref>…` — re-include the listed callsite members in
+  matching classes even when `Exclude-Stubs`/`Exclude-Jeps` or `Stub-Policy`
+  would drop them.
 
-`Exclude-Jeps`/`Exclude-Stubs` are global-only until the per-class condition
-store lands with `stubPolicy`; `Stub-Policy`, `On-Missing-Api`,
-`Keep-Reflection`, and `Include-Stubs` arrive in the same phase. Unknown keys
-and global keys in a `Name:` section are hard errors.
+Scoped exclusion is emission-time, not registration: a globally excluded
+member is never registered, while a scoped exclusion only suppresses
+emission for classes inside the pattern — classes outside still get the
+stub. `Include-Stubs` (global flag ∪ the matching rule's set) is the
+exception that proves the rule: an explicitly listed member is the most
+specific statement possible, so it is **always emitted** — it beats scoped
+`Exclude-Stubs`/`Exclude-Jeps` and every `Stub-Policy` drop, which makes it
+the `mechanical` escape hatch (`mechanical` + a handful of `Include-Stubs`
+= "error on everything missing except these deliberate polyfills"). It
+cannot resurrect members dropped at registration time by the global
+`Exclude-*` flags. `Keep-Reflection` arrives with the reflection work in
+3.1. Unknown keys and global keys in a `Name:` section are hard errors.
 
 ## Embedded rules
 

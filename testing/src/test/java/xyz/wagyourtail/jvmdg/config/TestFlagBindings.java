@@ -283,4 +283,58 @@ public class TestFlagBindings {
         FlagBindings.Binding colors = FlagBindings.byCliFlag("--noColor");
         assertEquals("false", colors.metaForCli("--noColor").cliConst());
     }
+
+    @Test
+    public void scopedRuleAccessorsParseTypedAttrs() throws Exception {
+        ScopedRule rule = new ScopedRule("com/foo/", Flags.WildcardType.DOUBLE, "test", null, 1,
+            new LinkedHashMap<String, String>() {{
+                put("ignore-warnings", "true");
+                put("exclude-stubs", "Ljava/lang/String;strip;()Ljava/lang/String;");
+                put("exclude-jeps", "400 418");
+                put("include-stubs", "Ljava/lang/System;getProperty;(Ljava/lang/String;)Ljava/lang/String;");
+            }});
+        assertTrue(rule.ignoreWarnings());
+        assertTrue(rule.excludeStubs().contains(
+            xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc.of(
+                "Ljava/lang/String;strip;()Ljava/lang/String;")));
+        assertEquals(1, rule.excludeStubs().size());
+        assertTrue(rule.excludeJeps().contains(400));
+        assertTrue(rule.excludeJeps().contains(418));
+        assertTrue(rule.includeStubs().contains(
+            xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc.of(
+                "Ljava/lang/System;getProperty;(Ljava/lang/String;)Ljava/lang/String;")));
+        // absent attrs are empty, not null
+        ScopedRule empty = new ScopedRule("", Flags.WildcardType.DOUBLE, "test", null, 1,
+            new LinkedHashMap<>());
+        assertTrue(empty.excludeStubs().isEmpty());
+        assertTrue(empty.excludeJeps().isEmpty());
+        assertTrue(empty.includeStubs().isEmpty());
+        assertFalse(empty.ignoreWarnings());
+    }
+
+    @Test
+    public void scopedRuleBadAttrReportsSource() {
+        ScopedRule bad = new ScopedRule("a/", Flags.WildcardType.DOUBLE, "cfg.mf", null, 7,
+            new LinkedHashMap<String, String>() {{ put("exclude-jeps", "not-a-number"); }});
+        ConfigException e = assertThrows(ConfigException.class, bad::excludeJeps);
+        assertTrue(e.getMessage().contains("cfg.mf"), e.getMessage());
+    }
+
+    @Test
+    public void excludeKeysAcceptedInNamedSections() throws Exception {
+        // scoped Exclude-Stubs/Exclude-Jeps are consumed at emission —
+        // named-section use must validate, not fail as unknown
+        Flags f = new Flags();
+        JvmdgConfig.apply(ManifestConfigReader.read(new StringReader(
+            "Jvmdg-Config-Version: 1\n" +
+            "\n" +
+            "Name: com/example/**\n" +
+            "Exclude-Stubs: Ljava/lang/String;strip;()Ljava/lang/String;\n" +
+            "Include-Stubs: Ljava/lang/System;getProperty;(Ljava/lang/String;)Ljava/lang/String;\n" +
+            "Exclude-Jeps: 400\n"), "test"), f, null);
+        assertEquals(1, f.scopedRules.size());
+        ScopedRule rule = f.scopedRules.get(0);
+        assertFalse(rule.excludeStubs().isEmpty());
+        assertTrue(rule.excludeJeps().contains(400));
+    }
 }

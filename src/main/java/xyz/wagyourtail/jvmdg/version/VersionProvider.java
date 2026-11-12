@@ -732,6 +732,13 @@ public abstract class VersionProvider implements TypeRemap {
     }
 
     public MethodNode stubMethod(MethodNode method, ClassNode owner, Set<ClassNode> extra, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, final Function<String, ClassNode> getReadOnly, final Set<String> warnings) throws IOException {
+        xyz.wagyourtail.jvmdg.config.ScopedRule scopedRule;
+        try {
+            scopedRule = downgrader.flags.scopedRules.isEmpty() ? null :
+                xyz.wagyourtail.jvmdg.config.ScopedRule.resolve(downgrader.flags.scopedRules, owner.name);
+        } catch (xyz.wagyourtail.jvmdg.config.ManifestConfigReader.ConfigException e) {
+            throw new IllegalStateException(e.getMessage(), e);
+        }
         for (int i = 0; i < method.instructions.size(); i++) {
             AbstractInsnNode insn = method.instructions.get(i);
             AbstractInsnNode replacement = structuralRemap.remapInsn(insn, warnings);
@@ -743,7 +750,7 @@ public abstract class VersionProvider implements TypeRemap {
                 MethodInsnNode min = (MethodInsnNode) insn;
                 if (!min.owner.startsWith("[")) {
                     getStubMapper(Type.getObjectType(min.owner), min.itf, memberResolver, superTypeResolver)
-                        .transform(method, i, owner, extra, enableRuntime, warnings);
+                        .transform(method, i, owner, extra, enableRuntime, warnings, scopedRule);
                 }
             } else if (insn instanceof FieldInsnNode) {
                 final FieldInsnNode fin = (FieldInsnNode) insn;
@@ -754,13 +761,13 @@ public abstract class VersionProvider implements TypeRemap {
                             return downgrader.isInterface(outputVersion, Type.getObjectType(fin.owner), warnings) == Boolean.TRUE;
                         }
                     }, memberResolver, superTypeResolver)
-                        .transform(method, i, owner, extra, enableRuntime, warnings);
+                        .transform(method, i, owner, extra, enableRuntime, warnings, scopedRule);
                 }
             } else if (insn instanceof InvokeDynamicInsnNode) {
                 InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
                 stubBSMArgs(owner, method, extra, indy.bsm, indy.desc, indy.bsmArgs, enableRuntime, memberResolver, superTypeResolver, warnings);
                 getStubMapper(Type.getObjectType(indy.bsm.getOwner()), indy.bsm.isInterface(), memberResolver, superTypeResolver)
-                    .transform(method, i, owner, extra, enableRuntime, warnings);
+                    .transform(method, i, owner, extra, enableRuntime, warnings, scopedRule);
             } else if (insn instanceof LdcInsnNode) {
                 LdcInsnNode ldc = (LdcInsnNode) insn;
                 if (ldc.cst instanceof ConstantDynamic) {

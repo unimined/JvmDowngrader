@@ -142,6 +142,11 @@ public class ClassMapping implements MemberResolver {
         }
     }
 
+    /** record an explicit {@code @Stub(kind=)}/{@code @Modify(kind=)} override, keyed by the site-form FQN */
+    public void putKind(FullyQualifiedMemberNameAndDesc siteFqn, xyz.wagyourtail.jvmdg.version.StubKind kind) {
+        vp.stubRegistry.memberKind.put(siteFqn, kind);
+    }
+
     /** registers a ctor callsite entry; a second entry on the same ctor (e.g. {@code @InitFactory} + {@code @InitRewrite}) is a registration error */
     public void addCtor(MemberNameAndDesc member, CtorEntry entry) {
         if (stubsForWrite().ctor.putIfAbsent(member, entry) != null) {
@@ -179,8 +184,8 @@ public class ClassMapping implements MemberResolver {
     }
 
     /** emission lives in {@link MemberStubTransform} — this stays as the call-site facade while stubMethods migrates */
-    public void transform(MethodNode method, int index, ClassNode classNode, Set<ClassNode> extra, boolean runtimeAvailable, Set<String> warnings) {
-        memberStubTransform.transformInsn(this, method, index, classNode, extra, runtimeAvailable, warnings);
+    public void transform(MethodNode method, int index, ClassNode classNode, Set<ClassNode> extra, boolean runtimeAvailable, Set<String> warnings, xyz.wagyourtail.jvmdg.config.ScopedRule rule) {
+        memberStubTransform.transformInsn(this, method, index, classNode, extra, runtimeAvailable, warnings, rule);
     }
 
     /**

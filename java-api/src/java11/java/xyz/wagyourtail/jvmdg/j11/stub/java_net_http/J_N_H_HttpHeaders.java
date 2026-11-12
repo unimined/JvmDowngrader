@@ -1,7 +1,7 @@
 package xyz.wagyourtail.jvmdg.j11.stub.java_net_http;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
+import xyz.wagyourtail.jvmdg.version.Internal;
 
 import java.util.*;
 import java.util.function.BiPredicate;
@@ -10,7 +10,7 @@ import java.util.function.BiPredicate;
 public class J_N_H_HttpHeaders {
     Map<String, List<String>> headers;
 
-    @CoverageIgnore
+    @Internal
     public J_N_H_HttpHeaders(Map<String, List<String>> headers) {
         this.headers = headers;
     }

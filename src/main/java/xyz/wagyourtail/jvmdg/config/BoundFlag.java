@@ -97,6 +97,8 @@ public @interface BoundFlag {
         FQMND_SET(FlagParser.FQMND_SET),
         FILE_LIST(FlagParser.FILE_LIST),
         WILDCARD_MAP(FlagParser.WILDCARD_MAP),
+        STUB_POLICY(FlagParser.STUB_POLICY),
+        ON_MISSING_API(FlagParser.ON_MISSING_API),
         INTERNAL(null);
 
         final FlagParser instance;

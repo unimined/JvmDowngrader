@@ -144,7 +144,7 @@ public class Flags {
      * @since 1.4.0
      */
     @BoundFlag(key = "Exclude-Jeps", cli = "--skipJEP", aliases = "-sj",
-        argNames = {"jep"}, command = "debug", sysprop = Constants.DEBUG_SKIP_JEPS,
+        argNames = {"jep"}, command = "debug", sysprop = Constants.DEBUG_SKIP_JEPS, scoped = true,
         gradle = "debugSkipJeps", form = BoundFlag.Parser.JEP_SET,
         doc = "Skip stubs for the specified JEPs")
     public Set<Integer> debugSkipJeps = new HashSet<>();
@@ -166,10 +166,54 @@ public class Flags {
      * @since 1.3.0
      */
     @BoundFlag(key = "Exclude-Stubs", cli = "--skipStub", aliases = "-ss",
-        argNames = {"stub"}, command = "debug", sysprop = Constants.DEBUG_SKIP_STUB,
+        argNames = {"stub"}, command = "debug", sysprop = Constants.DEBUG_SKIP_STUB, scoped = true,
         gradle = "debugSkipStub", form = BoundFlag.Parser.FQMND_SET,
         doc = "Skip specific stub classes/methods")
     public Set<FullyQualifiedMemberNameAndDesc> debugSkipStub = new HashSet<>();
+
+    /**
+     * which stub kinds callsites may use — {@code full} applies all stubs,
+     * {@code noBehavior} skips {@code BEHAVIOR} stubs (never wrap an API the
+     * target already has), {@code mechanical} keeps {@code LANGUAGE} desugars
+     * only and reports {@code MISSING_API} hits per {@link #onMissingApi}.
+     * Scoped in {@code Name:} sections — resolved per transformed class.
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "Stub-Policy", cli = "--stubPolicy", argNames = {"policy"},
+        sysprop = Constants.STUB_POLICY, gradle = "stubPolicy", scoped = true,
+        form = BoundFlag.Parser.STUB_POLICY,
+        doc = "Stub application policy: full|noBehavior|mechanical")
+    public xyz.wagyourtail.jvmdg.config.StubPolicy stubPolicy = xyz.wagyourtail.jvmdg.config.StubPolicy.FULL;
+
+    /**
+     * what {@code mechanical} does with a {@code MISSING_API} callsite —
+     * {@code error} aborts the transform naming the site + required Java
+     * version; {@code warn} reports it and keeps building.
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "On-Missing-Api", cli = "--onMissingApi", argNames = {"mode"},
+        sysprop = Constants.ON_MISSING_API, gradle = "onMissingApi", scoped = true,
+        form = BoundFlag.Parser.ON_MISSING_API,
+        doc = "Mechanical-mode missing-API reporting: error|warn")
+    public xyz.wagyourtail.jvmdg.config.OnMissingApi onMissingApi = xyz.wagyourtail.jvmdg.config.OnMissingApi.ERROR;
+
+    /**
+     * members named here are always emitted — an explicit member-level
+     * statement that beats {@code Exclude-Stubs}/{@code Exclude-Jeps} and
+     * {@code Stub-Policy} drops in scope (the {@code mechanical} escape
+     * hatch: keep a deliberate polyfill while everything else missing
+     * errors out). Cannot resurrect members dropped at registration time
+     * by global {@code Exclude-Stubs}/{@code Exclude-Jeps}/{@code Exclude-Stub-Versions}.
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "Include-Stubs", cli = "--includeStub", aliases = "-is",
+        argNames = {"stub"}, sysprop = Constants.INCLUDE_STUB, scoped = true,
+        gradle = "includeStub", form = BoundFlag.Parser.FQMND_SET,
+        doc = "Always emit the listed stub members, overriding excludes and policy")
+    public Set<FullyQualifiedMemberNameAndDesc> includeStub = new HashSet<>();
 
     /**
      * set generated methods to not be synthetic
@@ -405,8 +449,7 @@ public class Flags {
             try {
                 xyz.wagyourtail.jvmdg.config.ScopedRule rule =
                     xyz.wagyourtail.jvmdg.config.ScopedRule.resolve(scopedRules, className);
-                return rule != null &&
-                    Boolean.parseBoolean(rule.attributes.get("ignore-warnings"));
+                return rule != null && rule.ignoreWarnings();
             } catch (xyz.wagyourtail.jvmdg.config.ManifestConfigReader.ConfigException e) {
                 throw new IllegalStateException(e.getMessage(), e);
             }
