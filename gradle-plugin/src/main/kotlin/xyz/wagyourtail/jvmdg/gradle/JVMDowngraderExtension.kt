@@ -145,6 +145,20 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
     @Deprecated("not compatibile with configuration cache for use in tasks")
     fun getDowngradedApi(version: JavaVersion): Set<File> = downgradedApis[version]
 
+    /**
+     * Like [dg] but binds the transforms to a [ShadeFlags] source —
+     * typically a named [FlagsSpec] from [specs]:
+     * `jvmdg.dg(configurations.test, jvmdg.specs["test"])`. The spec's
+     * flag values replace this extension's for the transform (the
+     * spec itself still conventions the extension for unset flags).
+     *
+     * @since 2.1.0
+     */
+    @JvmOverloads
+    fun dg(dep: Configuration, spec: ShadeFlags, shade: Boolean = true) {
+        dg(dep, shade) { convention(spec) }
+    }
+
     @JvmOverloads
     fun dg(dep: Configuration, shade: Boolean = true, config: DowngradeFlags.() -> Unit = {}) {
         val artifactType = Attribute.of("artifactType", String::class.java)

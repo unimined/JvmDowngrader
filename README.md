@@ -196,7 +196,16 @@ task downgradeTest(type: xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles)
 
 Specs can also chain each other — `spec("b") { convention(spec("a")) }` —
 and plugin authors can create their own standalone specs with
-`objects.newInstance(FlagsSpec::class.java)`.
+`objects.newInstance(FlagsSpec::class.java, "name")`.
+
+Dependency transforms bind to a spec with the `dg(dep, spec)` overload — the
+spec's flags replace the extension's for that configuration's downgrades:
+
+```gradle
+jvmdg.dg(configurations.downgrade, jvmdg.spec("java11") {
+    downgradeTo = JavaVersion.VERSION_11
+})
+```
 ie. `jvmdg.dg(configurations.downgrade, false)`
 
 you may have to include whatever configuration you're downgrading in ShadowJar yourself.

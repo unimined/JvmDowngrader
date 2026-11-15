@@ -100,9 +100,12 @@ if (project.hasProperty("runningTest")) {
 }
 
 val downgrade by configurations.creating
-jvmdg.dg(downgrade) {
-    downgradeTo = JavaVersion.VERSION_11
+// bind the dep transforms to a named spec — its flags replace the
+// extension's for this configuration's downgrades
+val dgScoped = jvmdg.spec("dg-scoped") {
+    downgradeTo.set(JavaVersion.VERSION_11)
 }
+jvmdg.dg(downgrade, dgScoped)
 
 dependencies {
     implementation("org.jetbrains:annotations-java5:24.1.0")
@@ -129,6 +132,7 @@ tasks.register("verifyScopedSpec") {
     doLast {
         check(!scoped.enabled.get()) { "spec enabled should be false" }
         check(scoped.downgradeTo.get() == JavaVersion.VERSION_11) { "spec downgradeTo should be 11" }
+        check(dgScoped.downgradeTo.get() == JavaVersion.VERSION_11) { "dg spec downgradeTo should be 11" }
         // unset flags inherit the extension's conventions
         check(scoped.logLevel.get() == "INFO") { "spec logLevel should inherit jvmdg" }
     }
