@@ -10,6 +10,7 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.NamedDomainObjectProvider
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskProvider
@@ -75,6 +76,11 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                 spec.convention(this@JVMDowngraderExtension)
             }
         }
+
+    /** Modules already rewritten by [DowngradeTargetJvmRule] — dedupes
+     *  `withModule` across `dg()` calls sharing a dep. */
+    @get:Internal
+    private val jvmRuleModules = mutableSetOf<String>()
 
     /**
      * Get or create a named [FlagsSpec] in [specs].
@@ -245,14 +251,23 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         call(target)
     }
 
+    /**
+     * Downgrade (and optionally api-shade) the jars resolving through
+     * [dep] — registers the artifact transforms and, for each external
+     * module dependency declared on the configuration, a
+     * [DowngradeTargetJvmRule] rewriting `org.gradle.jvm.version` to
+     * `downgradeTo` so Gradle Module Metadata published only for
+     * higher jvm versions still resolves (pre-2.1.0 this required
+     * disabling `metadataSources`).
+     */
     @JvmOverloads
     fun dg(dep: Configuration, shade: Boolean = true, config: DowngradeFlags.() -> Unit = {}) {
         val artifactType = Attribute.of("artifactType", String::class.java)
         val downgradeAttr = Attribute.of("jvmdg.dg.${dep.name}", Boolean::class.javaObjectType)
         val shadeAttr = Attribute.of("jvmdg.shade.${dep.name}", Boolean::class.javaObjectType)
-        val javaVersionAttr = Attribute.of("org.gradle.jvm.version", Int::class.javaObjectType)
-
-        lateinit var javaVersion: JavaVersion
+        lateinit var downgradeTarget: JavaVersion
+        // first registration wins for a module — dg() with a differing
+        // target on the same dep keeps the earlier rewrite
 
         project.dependencies.apply {
             attributesSchema {
@@ -268,7 +283,27 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                 spec.parameters {
                     it.convention(this@JVMDowngraderExtension)
                     config(it)
-                    javaVersion = it.downgradeTo.get()
+                    downgradeTarget = it.downgradeTo.get()
+                }
+            }
+        }
+
+        // rewriting the module's org.gradle.jvm.version to the emit
+        // level lets variant selection succeed against GMM-published
+        // deps that only offer higher-jvm variants — without this a
+        // consumer targeting `downgradeTo` fails compatibility checks
+        // before the transform can apply. `allDependencies.all` fires
+        // for declared deps now and ones added later; file deps carry
+        // no metadata and project deps produce their own
+        dep.allDependencies.all {
+            val g = (it as? ExternalModuleDependency)?.group
+                ?: return@all
+            if (jvmRuleModules.add("$g:${it.name}")) {
+                project.dependencies.components.withModule(
+                    "$g:${it.name}",
+                    DowngradeTargetJvmRule::class.java
+                ) { r ->
+                    r.params(downgradeTarget.majorVersion.toInt())
                 }
             }
         }

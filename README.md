@@ -257,10 +257,21 @@ It is **strongly** not recommended due to the following but is still possible.
 instead, you *should* just shade dependencies into your project and downgrade the combined output.
 The dependencies may not be correctly represented in the pom with this method.
 
-There may be issues with metadata breaking because of how early gradle checks the java version,
-you can disable this by setting `artifact` in the `metadataSources` function on repositories
-to explicitly disable metadata, if you are lucky, you may be able to include `mavenPom` as well, so trasitive dependencies can resolve, otherwise
-**transitive dependencies will not be included**, and must be included manually.
+Since 2.1.0, `dg()` on an external module dependency registers a
+component metadata rule that rewrites the module's
+`org.gradle.jvm.version` to the downgrade target, so a consumer
+resolving at that level passes variant compatibility against
+Gradle Module Metadata that only publishes higher-jvm variants —
+metadata sources and transitive resolution work as-is. File
+dependencies carry no metadata and are unaffected.
+
+On older versions, there may be issues with metadata breaking because
+of how early gradle checks the java version. You can disable this by
+setting `artifact` in the `metadataSources` function on repositories
+to explicitly disable metadata, if you are lucky, you may be able to
+include `mavenPom` as well, so trasitive dependencies can resolve,
+otherwise **transitive dependencies will not be included**, and must
+be included manually.
 
 for example:
 
