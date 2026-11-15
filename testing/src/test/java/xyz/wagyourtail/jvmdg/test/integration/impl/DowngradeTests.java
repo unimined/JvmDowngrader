@@ -91,6 +91,18 @@ public class DowngradeTests extends BaseIntegrationTests {
             new FlagsAndRunner(JavaRunner.JavaVersion.V21, flags.copy(e -> {
                 e.classVersion = JavaRunner.JavaVersion.V1_8.toOpcode();
                 e.shadeInlining = true;
+            })),
+            // --noIndy parity: indy/condy are legal at these targets but
+            // must be stripped without changing observable behavior
+            new FlagsAndRunner(JavaRunner.JavaVersion.V11, flags.copy(e -> {
+                e.classVersion = JavaRunner.JavaVersion.V11.toOpcode();
+                e.shadeInlining = true;
+                e.noIndy = true;
+            })),
+            new FlagsAndRunner(JavaRunner.JavaVersion.V21, flags.copy(e -> {
+                e.classVersion = JavaRunner.JavaVersion.V21.toOpcode();
+                e.shadeInlining = true;
+                e.noIndy = true;
             }))
         ).filter(e -> launchersByVersion.containsKey(e.targetVersion()));
     }

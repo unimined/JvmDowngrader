@@ -1,13 +1,6 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
-import org.objectweb.asm.Handle;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.TypeInsnNode;
 import sun.misc.Unsafe;
-import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.j9.intl.varhandle.ArrayVarHandle;
 import xyz.wagyourtail.jvmdg.j9.intl.varhandle.ByteArrayViewVarHandle;
 import xyz.wagyourtail.jvmdg.j9.intl.varhandle.ByteBufferViewVarHandle;
@@ -16,9 +9,9 @@ import xyz.wagyourtail.jvmdg.j9.intl.varhandle.StaticFieldVarHandle;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.JEP;
-import xyz.wagyourtail.jvmdg.version.Modify;
-import xyz.wagyourtail.jvmdg.version.Ref;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -32,52 +25,71 @@ import java.util.List;
 import java.util.Map;
 
 @JEP(193)
-@Adapter("java/lang/invoke/VarHandle")
+@Adapter(value = "java/lang/invoke/VarHandle", signaturePolymorphic = {
+    "get", "set", "getVolatile", "setVolatile", "getAcquire", "setRelease",
+    "getOpaque", "setOpaque", "compareAndSet", "compareAndExchange",
+    "compareAndExchangeAcquire", "compareAndExchangeRelease",
+    "weakCompareAndSetPlain", "weakCompareAndSet", "weakCompareAndSetAcquire",
+    "weakCompareAndSetRelease", "getAndSet", "getAndSetAcquire", "getAndSetRelease",
+    "getAndAdd", "getAndAddAcquire", "getAndAddRelease", "getAndBitwiseOr",
+    "getAndBitwiseOrRelease", "getAndBitwiseOrAcquire", "getAndBitwiseAnd",
+    "getAndBitwiseAndRelease", "getAndBitwiseAndAcquire", "getAndBitwiseXor",
+    "getAndBitwiseXorRelease", "getAndBitwiseXorAcquire"
+})
 public abstract class J_L_I_VarHandle implements xyz.wagyourtail.jvmdg.stub.VarHandleInternals {
     protected static final Unsafe unsafe = Utils.getUnsafe();
 
-    @Modify(ref = @Ref("xyz/wagyourtail/jvmdg/j9/stub/java_base/J_L_I_VarHandle"))
-    public static void modifyPolymorphics(MethodNode mnode, int i) {
-        MethodInsnNode min = (MethodInsnNode) mnode.instructions.get(i);
-        AccessMode am = AccessMode.byName.get(min.name);
-        if (am == null) return;
-        Type ret = Type.getReturnType(min.desc);
-        min.name = fixMethodName(am.stubName, ret.getDescriptor());
-        Type[] args = Type.getArgumentTypes(min.desc);
-        for (int j = 0; j < args.length; j++) {
-            if (args[j].getSort() >= 9) args[j] = Type.getObjectType("java/lang/Object");
+    /**
+     * invokedynamic bootstrap for signature-polymorphic callsites — emitted
+     * by the transform for member names in {@code @Adapter(signaturePolymorphic=…)}.
+     * The callsite desc is arbitrary (javac signature-polymorphic), so the
+     * impl-matrix signature is derived here at link time: {@code get*} names
+     * take the site return's typecode ({@code get}→{@code getI}), reference
+     * args erase to {@code Object}, {@code COMPARE_AND_EXCHANGE}/
+     * {@code GET_AND_UPDATE} keep a primitive last-arg return. The resolved
+     * handle is taken on {@code J_L_I_VarHandle} itself — virtual dispatch
+     * selects the impl's override like a real {@code invokevirtual} — and
+     * {@code asType} performs the casts/boxes the old {@code @Modify} splice
+     * used to emit inline.
+     */
+    public static CallSite jvmdg$bootstrap(MethodHandles.Lookup caller, String name, MethodType site) {
+        AccessMode am = AccessMode.byName.get(name);
+        if (am == null) {
+            throw new WrongMethodTypeException(name + " is not a signature-polymorphic method of VarHandle");
         }
-        if (ret.getSort() >= 9) {
-            if (!ret.getInternalName().equals("java/lang/Object")) {
-                mnode.instructions.insert(min, new TypeInsnNode(Opcodes.CHECKCAST, ret.getInternalName()));
+        MethodType member = site.dropParameterTypes(0, 1);
+        List<Class<?>> params = member.parameterList();
+        Class<?>[] erased = params.toArray(new Class<?>[params.size()]);
+        for (int i = 0; i < erased.length; i++) {
+            if (!erased[i].isPrimitive()) {
+                erased[i] = Object.class;
             }
-            ret = Type.getObjectType("java/lang/Object");
         }
-        if (ret.getInternalName().equals("java/lang/Object")) {
+        Class<?> ret = member.returnType();
+        if (!ret.isPrimitive()) {
+            ret = Object.class;
+        }
+        if (ret == Object.class) {
             switch (am.accessType) {
-                case GET:
-                    break;
-                case SET:
-                case COMPARE_AND_SET:
-                    throw new IllegalStateException();
                 case COMPARE_AND_EXCHANGE:
                 case GET_AND_UPDATE:
-                    Type lastArg = args[args.length - 1];
-                    if (lastArg.getSort() < 9) {
+                    Class<?> lastArg = erased[erased.length - 1];
+                    if (lastArg.isPrimitive()) {
                         ret = lastArg;
-                        Handle box = ASMUtils.boxType(lastArg);
-                        assert box != null;
-                        mnode.instructions.insert(min, new MethodInsnNode(
-                            Opcodes.INVOKESTATIC,
-                            box.getOwner(),
-                            box.getName(),
-                            box.getDesc(),
-                            false
-                        ));
                     }
+                    break;
             }
         }
-        min.desc = Type.getMethodDescriptor(ret, args);
+        MethodType implType = MethodType.methodType(ret, erased);
+        MethodHandle mh;
+        try {
+            mh = caller.findVirtual(J_L_I_VarHandle.class,
+                fixMethodName(am.stubName, Utils.getDescForClass(member.returnType())), implType);
+        } catch (Throwable t) {
+            throw new WrongMethodTypeException(
+                name + site + " has no VarHandle access-mode implementation");
+        }
+        return new ConstantCallSite(mh.asType(site));
     }
 
     private static String fixMethodName(String name, String desc) {

@@ -337,4 +337,56 @@ public class TestFlagBindings {
         assertFalse(rule.excludeStubs().isEmpty());
         assertTrue(rule.excludeJeps().contains(400));
     }
+
+    @Test
+    public void shadeReflectionParsesAndApplies() throws Exception {
+        Flags f = new Flags();
+        assertEquals(ShadeReflection.USED_OWNERS, f.shadeReflection, "default");
+        JvmdgConfig.apply(parse("Jvmdg-Config-Version: 1\nShade-Reflection: none\n"), f, null);
+        assertEquals(ShadeReflection.NONE, f.shadeReflection);
+        // parser accepts case/underscore variants of the enum names
+        assertEquals(ShadeReflection.ALL, FlagParser.SHADE_REFLECTION.parseScalar("All"));
+        assertEquals(ShadeReflection.USED_OWNERS, FlagParser.SHADE_REFLECTION.parseScalar("usedowners"));
+        assertThrows(IllegalArgumentException.class,
+            () -> FlagParser.SHADE_REFLECTION.parseScalar("bogus"));
+    }
+
+    @Test
+    public void shadeReflectionSyspropApplies() {
+        String prev = System.getProperty(Constants.SHADE_REFLECTION);
+        try {
+            System.setProperty(Constants.SHADE_REFLECTION, "all");
+            assertEquals(ShadeReflection.ALL, new Flags().shadeReflection);
+        } finally {
+            if (prev == null) System.clearProperty(Constants.SHADE_REFLECTION);
+            else System.setProperty(Constants.SHADE_REFLECTION, prev);
+        }
+    }
+
+    @Test
+    public void shadeKeepReflectionAccumulatesWildcards() throws Exception {
+        Flags f = new Flags();
+        JvmdgConfig.apply(parse(
+            "Jvmdg-Config-Version: 1\n" +
+            "Shade-Keep-Reflection: java/util/List.* java/util/Scanner.useDelimiter\n"), f, null);
+        assertEquals(Flags.WildcardType.SINGLE, f.shadeKeepReflection.get("java/util/List."));
+        assertEquals(Flags.WildcardType.NONE,
+            f.shadeKeepReflection.get("java/util/Scanner.useDelimiter"));
+    }
+
+    @Test
+    public void noIndyParsesAndApplies() throws Exception {
+        Flags f = new Flags();
+        assertFalse(f.noIndy, "default");
+        JvmdgConfig.apply(parse("Jvmdg-Config-Version: 1\nNo-Indy: true\n"), f, null);
+        assertTrue(f.noIndy);
+    }
+
+    @Test
+    public void allowPreviewParsesAndApplies() throws Exception {
+        Flags f = new Flags();
+        assertFalse(f.allowPreview, "default");
+        JvmdgConfig.apply(parse("Jvmdg-Config-Version: 1\nAllow-Preview: true\n"), f, null);
+        assertTrue(f.allowPreview);
+    }
 }

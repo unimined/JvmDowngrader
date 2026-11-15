@@ -12,13 +12,17 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 
 import org.objectweb.asm.Type;
 
+import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.StubCondition;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.ClassStubEntry;
 import xyz.wagyourtail.jvmdg.version.map.CtorEntry;
@@ -47,14 +51,24 @@ import xyz.wagyourtail.jvmdg.version.map.StubRegistry;
  *   per provider section (sorted by provider class name):
  *     UTF      provider class name
  *     u16      classStubs count (sorted by source type name)
- *       per: UTF sourceName, UTF targetName, UTF stubName, u8 keepInterface,
- *            optFQMND instanceofHook, optFQMND checkcastHook, int[] jeps
+ *       per: UTF sourceName, UTF targetName, UTF stubName,
+ *            u8 flags (bit0 keepInterface, bit1 stubType-is-interface),
+ *            optFQMND instanceofHook, optFQMND checkcastHook, int[] jeps,
+ *            u8 mode (1=SUPERTYPE, 2=OWN_INTERFACE), optFQMND wrap,
+ *            u16 implementedBy count + UTF internal names,
+ *            optFQMND polymorphic hook, u16 polymorphicNames count + UTFs
+ *            (signature-polymorphic member names → invokedynamic sites)
  *     u16      owner count (sorted by owner internal name)
  *       per: UTF ownerName,
- *            u16 methodStub entries (member + StubEntry),
+ *            u16 methodStub entries (member + StubEntry — u8 flags:
+ *            bit0 downgradeVersion, bits1-2 StubCondition ordinal,
+ *            bit3 abstractDefault, bit4 noSpecial, bit5 callerClass),
  *            u16 fieldStub entries (member + opt StubEntry getter + opt setter),
- *            u16 ctor entries (member + u8 kind + payload),
- *            u16 memberModify entries (opt member + MethodRef)
+ *            u16 ctor entries (member + u8 kind + payload; payload u8 flags:
+ *            bit0 downgradeVersion, bits1-2 StubCondition ordinal),
+ *            u16 memberModify entries (opt member + MethodRef),
+ *            u16 indyDesugars entries (member + MethodRef — indy-site-only
+ *            bootstrap desugars; never intercepted by direct invokes)
  *     u16      memberSince count — site-form FQN + u16 class version the JDK
  *            member first appears in (ct.sym-derived; 0 = unknown)
  *     u16      memberKind count — site-form FQN + u8 {@link xyz.wagyourtail.jvmdg.version.StubKind}
@@ -68,7 +82,7 @@ public class StubIndex {
 
     public static final String RESOURCE = "META-INF/jvmdg/stubs.idx";
     public static final byte[] MAGIC = {'J', 'V', 'M', 'D', 'G', 'I', 'D', 'X'};
-    public static final int FORMAT_VERSION = 2;
+    public static final int FORMAT_VERSION = 7;
 
     private static final Comparator<FullyQualifiedMemberNameAndDesc> FQ_ORDER = new Comparator<FullyQualifiedMemberNameAndDesc>() {
         @Override
@@ -156,10 +170,21 @@ public class StubIndex {
             o.writeUTF(e.getKey().getInternalName());
             o.writeUTF(s.target.getInternalName());
             o.writeUTF(s.stubType.getInternalName());
-            o.writeByte(s.keepInterface ? 1 : 0);
+            o.writeByte((s.keepInterface ? 1 : 0) | (s.itf ? 2 : 0));
             writeOptFQMND(o, s.instanceofHook);
             writeOptFQMND(o, s.checkcastHook);
             writeInts(o, s.jeps);
+            o.writeByte(s.mode == Adapter.Mode.SUPERTYPE ? 1 : s.mode == Adapter.Mode.OWN_INTERFACE ? 2 : 0);
+            writeOptFQMND(o, s.wrap);
+            o.writeShort(s.implementedBy.size());
+            for (String name : s.implementedBy) {
+                o.writeUTF(name);
+            }
+            writeOptFQMND(o, s.polymorphic);
+            o.writeShort(s.polymorphicNames.size());
+            for (String name : s.polymorphicNames) {
+                o.writeUTF(name);
+            }
         }
         Map<String, StubRegistry.Owner> owners = new TreeMap<>(vp.stubRegistry.owners());
         o.writeShort(owners.size());
@@ -199,6 +224,11 @@ public class StubIndex {
                     o.writeByte(1);
                     writeMemberKey(o, m.getKey());
                 }
+                writeMethodRef(o, m.getValue());
+            }
+            o.writeShort(owner.indyDesugars.size());
+            for (Map.Entry<MemberNameAndDesc, MethodRef> m : sorted(owner.indyDesugars)) {
+                writeMemberKey(o, m.getKey());
                 writeMethodRef(o, m.getValue());
             }
         }
@@ -251,8 +281,11 @@ public class StubIndex {
 
     private static void writeStubEntry(DataOutputStream o, StubEntry e) throws IOException {
         writeMethodRef(o, e.handler);
-        o.writeByte((e.downgradeVersion ? 1 : 0) | (e.requiresRuntime ? 2 : 0)
-            | (e.abstractDefault ? 4 : 0) | (e.noSpecial ? 8 : 0));
+        // bits 1-2 = StubCondition ordinal; 0 = downgradeVersion,
+        // 3 = abstractDefault, 4 = noSpecial, 5 = callerClass
+        o.writeByte((e.downgradeVersion ? 1 : 0) | (e.condition.ordinal() << 1)
+            | (e.abstractDefault ? 8 : 0) | (e.noSpecial ? 16 : 0)
+            | (e.callerClass ? 32 : 0));
         writeStrings(o, e.excludeChild);
     }
 
@@ -266,11 +299,11 @@ public class StubIndex {
             o.writeByte(0);
             CtorFactory f = (CtorFactory) e;
             writeMethodRef(o, f.handler);
-            o.writeByte((f.downgradeVersion ? 1 : 0) | (f.requiresRuntime ? 2 : 0));
+            o.writeByte((f.downgradeVersion ? 1 : 0) | (f.condition.ordinal() << 1));
         } else {
             o.writeByte(1);
             CtorRewrite r = (CtorRewrite) e;
-            o.writeByte((r.downgradeVersion ? 1 : 0) | (r.requiresRuntime ? 2 : 0));
+            o.writeByte((r.downgradeVersion ? 1 : 0) | (r.condition.ordinal() << 1));
             o.writeByte(r.toArgs.length);
             for (Type t : r.toArgs) o.writeUTF(t.getDescriptor());
             writeInts(o, r.keep);
@@ -363,11 +396,29 @@ public class StubIndex {
             Type source = Type.getObjectType(in.readUTF());
             Type target = Type.getObjectType(in.readUTF());
             Type stubType = Type.getObjectType(in.readUTF());
-            boolean keepInterface = in.readByte() != 0;
+            int flags = in.readByte();
+            boolean keepInterface = (flags & 1) != 0;
+            boolean itf = (flags & 2) != 0;
             FullyQualifiedMemberNameAndDesc io = readOptFQMND(in);
             FullyQualifiedMemberNameAndDesc cc = readOptFQMND(in);
             int[] jeps = readInts(in);
-            if (s.classStubs.put(source, new ClassStubEntry(target, stubType, keepInterface, io, cc, jeps)) != null) {
+            int modeByte = in.readByte();
+            Adapter.Mode mode = modeByte == 1 ? Adapter.Mode.SUPERTYPE
+                : modeByte == 2 ? Adapter.Mode.OWN_INTERFACE : Adapter.Mode.AUTO;
+            FullyQualifiedMemberNameAndDesc wrap = readOptFQMND(in);
+            int implCount = in.readShort() & 0xFFFF;
+            Set<String> implementedBy = new LinkedHashSet<>(implCount);
+            for (int j = 0; j < implCount; j++) {
+                implementedBy.add(in.readUTF());
+            }
+            FullyQualifiedMemberNameAndDesc polymorphic = readOptFQMND(in);
+            int polyCount = in.readShort() & 0xFFFF;
+            Set<String> polymorphicNames = new LinkedHashSet<>(polyCount);
+            for (int j = 0; j < polyCount; j++) {
+                polymorphicNames.add(in.readUTF());
+            }
+            if (s.classStubs.put(source, new ClassStubEntry(target, stubType, keepInterface, itf, io, cc, jeps,
+                mode, implementedBy, wrap, polymorphic, polymorphicNames)) != null) {
                 throw new IOException("duplicate classStub for " + source.getInternalName());
             }
         }
@@ -394,6 +445,10 @@ public class StubIndex {
                 MemberNameAndDesc key = in.readByte() != 0 ? readMemberKey(in) : null;
                 owner.memberModify.put(key, readMethodRef(in, classLookup));
             }
+            int desugars = in.readShort() & 0xFFFF;
+            for (int j = 0; j < desugars; j++) {
+                owner.indyDesugars.put(readMemberKey(in), readMethodRef(in, classLookup));
+            }
             if (s.owners.put(ownerName, owner) != null) throw new IOException("duplicate owner " + ownerName);
         }
         int sinceCount = in.readShort() & 0xFFFF;
@@ -415,8 +470,10 @@ public class StubIndex {
 
     private static StubEntry readStubEntry(DataInputStream in, Function<String, Class<?>> classLookup) throws IOException {
         MethodRef handler = readMethodRef(in, classLookup);
-        int flags = in.readByte();
-        return new StubEntry(handler, (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0, (flags & 8) != 0, readStrings(in));
+        int flags = in.readByte() & 0xFF;
+        return new StubEntry(handler, (flags & 1) != 0, (flags & 32) != 0,
+            StubCondition.values()[(flags >> 1) & 3],
+            (flags & 8) != 0, (flags & 16) != 0, readStrings(in));
     }
 
     private static StubEntry readOptStubEntry(DataInputStream in, Function<String, Class<?>> classLookup) throws IOException {
@@ -427,10 +484,11 @@ public class StubIndex {
         int kind = in.readByte();
         if (kind == 0) {
             MethodRef handler = readMethodRef(in, classLookup);
-            int flags = in.readByte();
-            return new CtorFactory(handler, (flags & 1) != 0, (flags & 2) != 0);
+            int flags = in.readByte() & 0xFF;
+            return new CtorFactory(handler, (flags & 1) != 0,
+                StubCondition.values()[(flags >> 1) & 3]);
         }
-        int flags = in.readByte();
+        int flags = in.readByte() & 0xFF;
         int argCount = in.readByte() & 0xFF;
         Type[] toArgs = new Type[argCount];
         for (int i = 0; i < argCount; i++) toArgs[i] = Type.getType(in.readUTF());
@@ -447,7 +505,7 @@ public class StubIndex {
         MethodRef post = readOptMethodRef(in, classLookup);
         int[] postFrom = readInts(in);
         CtorRewrite r = new CtorRewrite(toArgs, keep, argMethods, argFrom, pre, preFrom, post, postFrom,
-            (flags & 1) != 0, (flags & 2) != 0);
+            (flags & 1) != 0, StubCondition.values()[(flags >> 1) & 3]);
         return r;
     }
 
@@ -526,6 +584,11 @@ public class StubIndex {
                 if (vp.shouldSkip(m.getValue())) continue;
                 if (target == null) target = vp.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
                 target.memberModify.put(m.getKey(), m.getValue());
+            }
+            for (Map.Entry<MemberNameAndDesc, MethodRef> m : e.getValue().indyDesugars.entrySet()) {
+                if (vp.shouldSkip(m.getValue())) continue;
+                if (target == null) target = vp.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
+                target.indyDesugars.put(m.getKey(), m.getValue());
             }
         }
     }

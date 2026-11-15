@@ -122,7 +122,7 @@ public class PathDowngrader {
 
                         URL url = extraClasspath.getResource(s + ".class");
                         if (url == null) return null;
-                        try (InputStream is = url.openStream()) {
+                        try (InputStream is = Utils.openUncached(url)) {
                             return Utils.readAllBytes(is);
                         }
                     } catch (IOException e) {

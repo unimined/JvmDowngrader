@@ -38,10 +38,39 @@ public @interface Stub {
     boolean downgradeVersion() default false;
 
     /**
+     * if the {@code Class} of the class containing the callsite should be
+     * pushed onto the stack before the stub is called — emitted as an
+     * {@code ldc} of the containing class, before {@link #downgradeVersion}'s
+     * trailing int. The handler signature carries it as a {@code Class}
+     * parameter so caller-sensitive stubs (e.g. {@code Class.forName})
+     * resolve through the callsite's own class loader.
+     */
+    boolean callerClass() default false;
+
+    /**
      * if the stub requires the runtime to be loaded to work properly.
+     * Equivalent to {@code condition = StubCondition.REQUIRES_RUNTIME} —
+     * setting both a non-{@link StubCondition#ALWAYS} condition and this flag
+     * is a registration error.
      */
     boolean requiresRuntime() default false;
 
+    /**
+     * activation condition for the redirect — see {@link StubCondition}.
+     * {@link #PREVIEW} entries register but never fire unless the run opted
+     * in via {@code --allowPreview}.
+     */
+    StubCondition condition() default StubCondition.ALWAYS;
+
+    /**
+     * Never rewrite {@code INVOKESPECIAL}/{@code NEWINVOKESPECIAL} sites —
+     * a {@code super.m()} call keeps its native super-dispatch semantics
+     * instead of being rerouted through the stub. Derived automatically for
+     * members of {@code OWN_INTERFACE}-mode {@link Adapter} targets (the
+     * stand-in interface carries real default bodies, so the super call
+     * stays legal and correct); declare it only for members whose owner
+     * isn't a class-stubbed type.
+     */
     boolean noSpecial() default false;
 
     String[] excludeChild() default {};

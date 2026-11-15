@@ -8,8 +8,16 @@ java {
 val java8 = javaToolchains.compilerFor { languageVersion.set(JavaLanguageVersion.of(8)) }.get()
 
 dependencies {
-    compileOnly(rootProject.sourceSets["main"].output)
-    compileOnly(rootProject.sourceSets["shared"].output)
+    // classpath-only v52 compiles — the raw outputs are v71 under the
+    // CG-5 self-host toolchain and this project's javac-8 can't read them
+    compileOnly(
+        rootProject.files(rootProject.layout.buildDirectory.dir("classes-v52/main"))
+            .builtBy(":compileMainV52")
+    )
+    compileOnly(
+        rootProject.files(rootProject.layout.buildDirectory.dir("classes-v52/shared"))
+            .builtBy(":compileSharedV52")
+    )
 
     implementation(files("${java8.metadata.installationPath}/lib/tools.jar"))
 
@@ -33,4 +41,8 @@ tasks.compileTestJava {
 
 tasks.test {
     useJUnitPlatform()
+    // the plugin shades the api jar into the test output dir; only TheTest is a
+    // test — discovery must not try to resolve the shaded stub classes (they
+    // reference post-8 JDK types absent on this task's Java 8 runtime)
+    include("**/TheTest.class")
 }

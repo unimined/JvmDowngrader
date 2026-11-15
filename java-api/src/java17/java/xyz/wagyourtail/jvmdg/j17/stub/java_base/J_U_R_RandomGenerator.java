@@ -3,10 +3,9 @@ package xyz.wagyourtail.jvmdg.j17.stub.java_base;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j17.impl.random.BasicRandomGeneratorImpl;
 import xyz.wagyourtail.jvmdg.j17.impl.random.SplittableRandomGeneratorImpl;
+import xyz.wagyourtail.jvmdg.stub.RetroTypes;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Coerce;
 import xyz.wagyourtail.jvmdg.version.JEP;
-import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.util.Random;
 import java.util.SplittableRandom;
@@ -16,24 +15,8 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 @JEP(356)
-@Adapter(value = "java/util/random/RandomGenerator")
+@Adapter(value = "java/util/random/RandomGenerator", impls = {BasicRandomGeneratorImpl.class})
 public interface J_U_R_RandomGenerator {
-
-    static boolean jvmdg$instanceof(Object obj) {
-        return obj instanceof J_U_R_RandomGenerator ||
-            obj instanceof Random ||
-            obj instanceof SplittableRandom;
-    }
-
-    static J_U_R_RandomGenerator jvmdg$checkcast(Object obj) {
-        if (obj instanceof Random random) {
-            return new BasicRandomGeneratorImpl(random);
-        }
-        if (obj instanceof SplittableRandom random) {
-            return new SplittableRandomGeneratorImpl(random);
-        }
-        return (J_U_R_RandomGenerator) obj;
-    }
 
     static J_U_R_RandomGenerator of(String name) {
         if ("SplittableRandom".equals(name)) {
@@ -47,156 +30,6 @@ public interface J_U_R_RandomGenerator {
 
     static J_U_R_RandomGenerator getDefault() {
         return new BasicRandomGeneratorImpl(new Random());
-    }
-
-    @Stub(noSpecial = true)
-    static boolean isDeprecated(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).isDeprecated();
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).doubles();
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, double lower, double upper) {
-        return jvmdg$checkcast(obj).doubles(lower, upper);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
-        return jvmdg$checkcast(obj).doubles(limit);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static DoubleStream doubles(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, double origin, double bound) {
-        return jvmdg$checkcast(obj).doubles(limit, origin, bound);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).ints();
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, int origin, int bound) {
-        return jvmdg$checkcast(obj).ints(origin, bound);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
-        return jvmdg$checkcast(obj).ints(limit);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static IntStream ints(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, int origin, int bound) {
-        return jvmdg$checkcast(obj).ints(limit, origin, bound);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).longs();
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long origin, long bound) {
-        return jvmdg$checkcast(obj).longs(origin, bound);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit) {
-        return jvmdg$checkcast(obj).longs(limit);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static LongStream longs(@Coerce(J_U_R_RandomGenerator.class) Object obj, long limit, long origin, long bound) {
-        return jvmdg$checkcast(obj).longs(limit, origin, bound);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static boolean nextBoolean(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).nextBoolean();
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static void nextBytes(@Coerce(J_U_R_RandomGenerator.class) Object obj, byte[] bytes) {
-        jvmdg$checkcast(obj).nextBytes(bytes);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static float nextFloat(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).nextFloat();
-    }
-
-    @Stub(noSpecial = true)
-    static float nextFloat(@Coerce(J_U_R_RandomGenerator.class) Object obj, float bound) {
-        return jvmdg$checkcast(obj).nextFloat(bound);
-    }
-
-    @Stub(noSpecial = true)
-    static float nextFloat(@Coerce(J_U_R_RandomGenerator.class) Object obj, float origin, float bound) {
-        return jvmdg$checkcast(obj).nextFloat(origin, bound);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static double nextDouble(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).nextDouble();
-    }
-
-    @Stub(noSpecial = true)
-    static double nextDouble(@Coerce(J_U_R_RandomGenerator.class) Object obj, double bound) {
-        return jvmdg$checkcast(obj).nextDouble(bound);
-    }
-
-    @Stub(noSpecial = true)
-    static double nextDouble(@Coerce(J_U_R_RandomGenerator.class) Object obj, double origin, double bound) {
-        return jvmdg$checkcast(obj).nextDouble(origin, bound);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).nextInt();
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj, int bound) {
-        return jvmdg$checkcast(obj).nextInt(bound);
-    }
-
-    @Stub(noSpecial = true)
-    static int nextInt(@Coerce(J_U_R_RandomGenerator.class) Object obj, int origin, int bound) {
-        return jvmdg$checkcast(obj).nextInt(origin, bound);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static long nextLong(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).nextLong();
-    }
-
-    @Stub(noSpecial = true)
-    static long nextLong(@Coerce(J_U_R_RandomGenerator.class) Object obj, long bound) {
-        return jvmdg$checkcast(obj).nextLong(bound);
-    }
-
-    @Stub(noSpecial = true)
-    static long nextLong(@Coerce(J_U_R_RandomGenerator.class) Object obj, long origin, long bound) {
-        return jvmdg$checkcast(obj).nextLong(origin, bound);
-    }
-
-    @Stub(noSpecial = true, excludeChild = "java/util/Random")
-    static double nextGaussian(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).nextGaussian();
-    }
-
-    @Stub(noSpecial = true)
-    static double nextGaussian(@Coerce(J_U_R_RandomGenerator.class) Object obj, double mean, double stdDev) {
-        return jvmdg$checkcast(obj).nextGaussian(mean, stdDev);
-    }
-
-    @Stub(noSpecial = true)
-    static double nextExponential(@Coerce(J_U_R_RandomGenerator.class) Object obj) {
-        return jvmdg$checkcast(obj).nextExponential();
     }
 
     default boolean isDeprecated() {
@@ -503,38 +336,11 @@ public interface J_U_R_RandomGenerator {
     @Adapter(value = "java/util/random/RandomGenerator$StreamableGenerator")
     interface StreamableGenerator extends J_U_R_RandomGenerator {
 
-        static boolean jvmdg$instanceof(Object obj) {
-            return obj instanceof StreamableGenerator ||
-                obj instanceof SplittableRandom;
-        }
-
-        static StreamableGenerator jvmdg$checkcast(Object obj) {
-            if (obj instanceof SplittableRandom random) {
-                return new SplittableRandomGeneratorImpl(random);
-            }
-            return (StreamableGenerator) obj;
-        }
-
         static StreamableGenerator of(String name) {
             if ("SplittableRandom".equals(name)) {
                 return new SplittableRandomGeneratorImpl(new SplittableRandom());
             }
             throw new IllegalArgumentException("Unknown implementation: " + name);
-        }
-
-        // invokeinterface dispatch: call owners are remapped to the fake
-        // type before stub lookup, so coerce param0 to the adapter type
-        // itself (Object keeps the signature distinct from the instance
-        // methods); receivers may arrive unwrapped (javac elides provable
-        // checkcasts) so always re-coerce before delegating
-        @Stub(noSpecial = true)
-        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(StreamableGenerator.class) Object obj) {
-            return jvmdg$checkcast(obj).rngs();
-        }
-
-        @Stub(noSpecial = true)
-        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(StreamableGenerator.class) Object obj, long limit) {
-            return jvmdg$checkcast(obj).rngs(limit);
         }
 
         Stream<J_U_R_RandomGenerator> rngs();
@@ -548,19 +354,11 @@ public interface J_U_R_RandomGenerator {
 
     }
 
-    @Adapter(value = "java/util/random/RandomGenerator$SplittableGenerator")
+    @Adapter(value = "java/util/random/RandomGenerator$SplittableGenerator", impls = {SplittableRandomGeneratorImpl.class})
     interface SplittableGenerator extends StreamableGenerator {
 
-        static boolean jvmdg$instanceof(Object obj) {
-            return obj instanceof SplittableGenerator ||
-                obj instanceof SplittableRandom;
-        }
-
-        static SplittableGenerator jvmdg$checkcast(Object obj) {
-            if (obj instanceof SplittableRandom random) {
-                return new SplittableRandomGeneratorImpl(random);
-            }
-            return (SplittableGenerator) obj;
+        static SplittableGenerator jvmdg$wrap(Object obj) {
+            return (SplittableGenerator) RetroTypes.wrap(obj, "java/util/random/RandomGenerator$SplittableGenerator", SplittableGenerator.class);
         }
 
         static SplittableGenerator of(String name) {
@@ -568,46 +366,6 @@ public interface J_U_R_RandomGenerator {
                 return new SplittableRandomGeneratorImpl(new SplittableRandom());
             }
             throw new IllegalArgumentException("Unknown implementation: " + name);
-        }
-
-        @Stub(noSpecial = true)
-        static SplittableGenerator split(@Coerce(SplittableGenerator.class) Object obj) {
-            return jvmdg$checkcast(obj).split();
-        }
-
-        @Stub(noSpecial = true)
-        static SplittableGenerator split(@Coerce(SplittableGenerator.class) Object obj, SplittableGenerator source) {
-            return jvmdg$checkcast(obj).split(source);
-        }
-
-        @Stub(noSpecial = true)
-        static Stream<SplittableGenerator> splits(@Coerce(SplittableGenerator.class) Object obj) {
-            return jvmdg$checkcast(obj).splits();
-        }
-
-        @Stub(noSpecial = true)
-        static Stream<SplittableGenerator> splits(@Coerce(SplittableGenerator.class) Object obj, long size) {
-            return jvmdg$checkcast(obj).splits(size);
-        }
-
-        @Stub(noSpecial = true)
-        static Stream<SplittableGenerator> splits(@Coerce(SplittableGenerator.class) Object obj, SplittableGenerator source) {
-            return jvmdg$checkcast(obj).splits(source);
-        }
-
-        @Stub(noSpecial = true)
-        static Stream<SplittableGenerator> splits(@Coerce(SplittableGenerator.class) Object obj, long size, SplittableGenerator source) {
-            return jvmdg$checkcast(obj).splits(size, source);
-        }
-
-        @Stub(noSpecial = true)
-        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(SplittableGenerator.class) Object obj) {
-            return jvmdg$checkcast(obj).rngs();
-        }
-
-        @Stub(noSpecial = true)
-        static Stream<J_U_R_RandomGenerator> rngs(@Coerce(SplittableGenerator.class) Object obj, long limit) {
-            return jvmdg$checkcast(obj).rngs(limit);
         }
 
         SplittableGenerator split();

@@ -116,6 +116,18 @@ public class ClassDowngrader implements Closeable {
         return classLoader;
     }
 
+    /**
+     * Every {@link VersionProvider} discovered at construction, keyed by
+     * {@code inputVersion} — includes providers below {@link #target} that
+     * no run's version chain will ever initialize (needed when a transform
+     * wants provider data outside the chain, e.g. the noIndy desugar
+     * union). Read-only view; these are the same instances the chain
+     * initializes.
+     */
+    public Map<Integer, VersionProvider> providers() {
+        return java.util.Collections.unmodifiableMap(downgraders);
+    }
+
     public synchronized Map<Integer, VersionProvider> collectProviders() {
         Map<Integer, VersionProvider> downgraders = new HashMap<>();
         try {
@@ -244,6 +256,12 @@ public class ClassDowngrader implements Closeable {
         // ignore minor version
         // get major version
         int version = ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF);
+        if (!flags.allowPreview && (((bytes[4] & 0xFF) << 8) | (bytes[5] & 0xFF)) == 0xFFFF) {
+            // javac --enable-preview sets minor_version = 0xFFFF — refuse
+            // silently processing such inputs unless the run opted in
+            throw new IllegalClassFormatException(name.get() +
+                " (preview-compiled, rerun with --allowPreview)");
+        }
         if (version <= target) {
             // already at or below the target version
             return null;

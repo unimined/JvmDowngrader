@@ -252,4 +252,189 @@ public class TestPipelineJarStep {
         assertEquals(Opcodes.V1_8, readOut(out, "a/High.class").version);
     }
 
+    // --- preview inputs ---
+
+    @Test
+    public void fusedPreviewInputRejectedWithoutFlag() throws Exception {
+        Flags flags = flags();
+        Path in = tmp.resolve("in-pv");
+        Path out = tmp.resolve("out-pv");
+        // javac --enable-preview emits minor 0xFFFF — ASM reads it back as
+        // minor<<16|major, a negative ClassNode.version
+        putClass(in, "a/Prev", stripCaller("a/Prev", (0xFFFF << 16) | Opcodes.V11));
+
+        Set<Type> apiClasses = new HashSet<Type>(Collections.singleton(Type.getObjectType("api/Util")));
+        try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () ->
+                run(in, out,
+                    Collections.<JarStep>singletonList(
+                        new PipelineJarStep(PREFIX, apiIndex(apiClasses), apiClasses, Collections.<Path>emptyList())),
+                    ctx(flags, downgrader, in)));
+            assertTrue(e.getMessage().contains("a/Prev"), "error names the preview class");
+            assertTrue(e.getMessage().contains("allowPreview"), "error names the opt-in flag");
+        }
+    }
+
+    @Test
+    public void fusedPreviewInputRoutesToMajorBoundary() throws Exception {
+        Flags flags = flags();
+        flags.allowPreview = true;
+        Path in = tmp.resolve("in-pv2");
+        Path out = tmp.resolve("out-pv2");
+        putClass(in, "a/Prev", stripCaller("a/Prev", (0xFFFF << 16) | Opcodes.V11));
+
+        Set<Type> apiClasses = new HashSet<Type>(Collections.singleton(Type.getObjectType("api/Util")));
+        try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
+            run(in, out,
+                Collections.<JarStep>singletonList(
+                    new PipelineJarStep(PREFIX, apiIndex(apiClasses), apiClasses, Collections.<Path>emptyList())),
+                ctx(flags, downgrader, in));
+        }
+
+        ClassNode prev = readOut(out, "a/Prev.class");
+        // routed through the 59→…→52 chain: output is plain V1_8 — no
+        // preview minor survives the rewrite
+        assertEquals(Opcodes.V1_8, prev.version, "preview input not downgraded to target");
+        // the V11-only String.strip callsite must have been rewritten
+        // (indy dispatch or invokestatic — either way it no longer
+        // invokes the real JDK member)
+        for (AbstractInsnNode insn : prev.methods.get(0).instructions) {
+            if (insn instanceof MethodInsnNode) {
+                MethodInsnNode m = (MethodInsnNode) insn;
+                assertFalse("java/lang/String".equals(m.owner) && "strip".equals(m.name),
+                    "callsite still points at the real JDK member");
+            }
+        }
+    }
+
+    // --- META-INF/services shading ---
+
+    private static void putService(Path root, String ifaceDotted, List<String> lines) throws IOException {
+        Path p = root.resolve("META-INF/services/" + ifaceDotted);
+        Files.createDirectories(p.getParent());
+        Files.write(p, lines);
+    }
+
+    @Test
+    public void shadeRemapsServiceProviderLines() throws Exception {
+        Flags flags = flags();
+        Path in = tmp.resolve("in-svc");
+        Path out = tmp.resolve("out-svc");
+        // two callers force api/Util to emit prefixed rather than inline
+        putClass(in, "a/CallerA", caller("a/CallerA", Opcodes.V1_8));
+        putClass(in, "b/CallerB", caller("b/CallerB", Opcodes.V1_8));
+        putService(in, "a.Spi", Arrays.asList(
+            "# comment",
+            "a.MyImpl",   // input-owned provider — untouched
+            "api.Util",   // emitted api provider — prefixed
+            "api.Gone")); // api class outside the closure — dropped
+
+        Set<Type> apiClasses = new HashSet<Type>(Arrays.asList(
+            Type.getObjectType("api/Util"), Type.getObjectType("api/Gone")));
+        run(in, out,
+            Collections.<JarStep>singletonList(
+                new PipelineJarStep(PREFIX, apiIndex(apiClasses), apiClasses, Collections.<Path>emptyList())),
+            ctx(flags, null, in));
+
+        Path outSvc = out.resolve("META-INF/services/a.Spi");
+        assertTrue(Files.exists(outSvc));
+        List<String> lines = Files.readAllLines(outSvc);
+        assertEquals(Arrays.asList("# comment", "a.MyImpl", "shaded.api.Util"), lines);
+    }
+
+    @Test
+    public void shadeRenamesServiceFileForApiInterface() throws Exception {
+        Flags flags = flags();
+        Path in = tmp.resolve("in-svc-if");
+        Path out = tmp.resolve("out-svc-if");
+        putClass(in, "a/CallerA", caller("a/CallerA", Opcodes.V1_8));
+        putClass(in, "b/CallerB", caller("b/CallerB", Opcodes.V1_8));
+        putService(in, "api.Util", Collections.singletonList("a.MyImpl"));
+
+        Set<Type> apiClasses = new HashSet<Type>(Arrays.asList(
+            Type.getObjectType("api/Util"), Type.getObjectType("api/Gone")));
+        run(in, out,
+            Collections.<JarStep>singletonList(
+                new PipelineJarStep(PREFIX, apiIndex(apiClasses), apiClasses, Collections.<Path>emptyList())),
+            ctx(flags, null, in));
+
+        // ServiceLoader.load(shaded.api.Util) resolves the prefixed name
+        assertFalse(Files.exists(out.resolve("META-INF/services/api.Util")));
+        assertEquals(Collections.singletonList("a.MyImpl"),
+            Files.readAllLines(out.resolve("META-INF/services/shaded.api.Util")));
+    }
+
+    @Test
+    public void shadeDropsServiceFileForPrunedApiInterface() throws Exception {
+        Flags flags = flags();
+        Path in = tmp.resolve("in-svc-pr");
+        Path out = tmp.resolve("out-svc-pr");
+        putClass(in, "a/CallerA", caller("a/CallerA", Opcodes.V1_8));
+        putClass(in, "b/CallerB", caller("b/CallerB", Opcodes.V1_8));
+        // the api interface never makes the closure — the file can't resolve
+        putService(in, "api.Gone", Collections.singletonList("a.MyImpl"));
+
+        Set<Type> apiClasses = new HashSet<Type>(Arrays.asList(
+            Type.getObjectType("api/Util"), Type.getObjectType("api/Gone")));
+        run(in, out,
+            Collections.<JarStep>singletonList(
+                new PipelineJarStep(PREFIX, apiIndex(apiClasses), apiClasses, Collections.<Path>emptyList())),
+            ctx(flags, null, in));
+
+        assertFalse(Files.exists(out.resolve("META-INF/services/api.Gone")));
+        assertFalse(Files.exists(out.resolve("META-INF/services/shaded.api.Gone")));
+    }
+
+    @Test
+    public void shadeMergesInputAndApiServiceFiles() throws Exception {
+        Flags flags = flags();
+        Path in = tmp.resolve("in-svc-m");
+        Path out = tmp.resolve("out-svc-m");
+        Path apiRoot = tmp.resolve("api-root");
+        putClass(in, "a/CallerA", caller("a/CallerA", Opcodes.V1_8));
+        putClass(in, "b/CallerB", caller("b/CallerB", Opcodes.V1_8));
+        putService(in, "a.Spi", Collections.singletonList("a.MyImpl"));
+        putService(apiRoot, "a.Spi", Arrays.asList("api.Util", "api.Gone"));
+
+        Set<Type> apiClasses = new HashSet<Type>(Arrays.asList(
+            Type.getObjectType("api/Util"), Type.getObjectType("api/Gone")));
+        run(in, out,
+            Collections.<JarStep>singletonList(
+                new PipelineJarStep(PREFIX, apiIndex(apiClasses), apiClasses,
+                    Collections.singletonList(apiRoot))),
+            ctx(flags, null, in));
+
+        // one output file per interface — input providers lead, api-side
+        // survivors follow prefixed
+        assertEquals(Arrays.asList("a.MyImpl", "shaded.api.Util"),
+            Files.readAllLines(out.resolve("META-INF/services/a.Spi")));
+    }
+
+    @Test
+    public void shadeCopiesApiServiceFilesFromRoots() throws Exception {
+        Flags flags = flags();
+        Path in = tmp.resolve("in-svc-api");
+        Path out = tmp.resolve("out-svc-api");
+        Path apiRoot = tmp.resolve("api-root2");
+        putClass(in, "a/CallerA", caller("a/CallerA", Opcodes.V1_8));
+        putClass(in, "b/CallerB", caller("b/CallerB", Opcodes.V1_8));
+        // api-side file whose interface is a main (non-api) class — the
+        // real shape of TransformContributor/VersionProvider registrations
+        putService(apiRoot, "main.Spi", Arrays.asList("api.Util", "api.Gone"));
+        // api-side file whose whole provider set prunes away — dropped
+        putService(apiRoot, "other.Spi", Collections.singletonList("api.Gone"));
+
+        Set<Type> apiClasses = new HashSet<Type>(Arrays.asList(
+            Type.getObjectType("api/Util"), Type.getObjectType("api/Gone")));
+        run(in, out,
+            Collections.<JarStep>singletonList(
+                new PipelineJarStep(PREFIX, apiIndex(apiClasses), apiClasses,
+                    Collections.singletonList(apiRoot))),
+            ctx(flags, null, in));
+
+        assertEquals(Collections.singletonList("shaded.api.Util"),
+            Files.readAllLines(out.resolve("META-INF/services/main.Spi")));
+        assertFalse(Files.exists(out.resolve("META-INF/services/other.Spi")));
+    }
+
 }

@@ -26,7 +26,7 @@ public class InsertAbstractsTransform extends StepTransform {
         Set<ClassNode> extra = ctx.extras.asSet();
         Set<String> warnings = dc.warnings(node.name);
         return provider.insertAbstractMethods(
-            node, extra,
+            node, extra, dc.enableRuntime, warnings,
             provider.memberResolver(extra, dc.getReadOnly, warnings),
             provider.superTypeResolver(extra, dc.getReadOnly, warnings)
         );

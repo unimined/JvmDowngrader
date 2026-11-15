@@ -59,7 +59,13 @@ public @interface InitFactory {
 
     /**
      * if the stub requires the runtime to be loaded to work properly.
+     * Equivalent to {@code condition = StubCondition.REQUIRES_RUNTIME}.
      */
     boolean requiresRuntime() default false;
+
+    /**
+     * activation condition for the rewrite — see {@link StubCondition}.
+     */
+    StubCondition condition() default StubCondition.ALWAYS;
 
 }

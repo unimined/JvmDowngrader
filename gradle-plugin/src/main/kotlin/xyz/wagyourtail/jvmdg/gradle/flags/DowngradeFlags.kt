@@ -133,6 +133,25 @@ interface DowngradeFlags {
     val downgradeFromMultiReleases: Property<Boolean>
 
     /**
+     * emit no invokedynamic/ConstantDynamic in the output — every bootstrap
+     * site desugars to ordinary invokes/fields at transform time
+     * @since 3.1.0
+     */
+    @get:Input
+    @get:Optional
+    val noIndy: Property<Boolean>
+
+    /**
+     * accept preview-compiled input class files (javac --enable-preview sets
+     * the class-file minor version to 0xFFFF) and activate PREVIEW-condition
+     * stubs — without it a preview input fails naming the class
+     * @since 3.1.0
+     */
+    @get:Input
+    @get:Optional
+    val allowPreview: Property<Boolean>
+
+    /**
      * this skips applying specific stub classes/methods, for example to disable the JEP 400, you would put
      * {@link xyz.wagyourtail.jvmdg.j18.stub.java_base.J_L_System} in.
      *

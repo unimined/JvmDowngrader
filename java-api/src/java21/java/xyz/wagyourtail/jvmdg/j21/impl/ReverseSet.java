@@ -3,10 +3,11 @@ package xyz.wagyourtail.jvmdg.j21.impl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.j21.stub.java_base.J_U_SequencedSet;
 
 import java.util.*;
 
-public class ReverseSet<E, T extends Set<E>> extends ReverseCollection<E, T> implements Set<E> {
+public class ReverseSet<E, T extends Set<E>> extends ReverseCollection<E, T> implements Set<E>, J_U_SequencedSet.Marker {
 
     private ReverseSet(T original) {
         super(original);

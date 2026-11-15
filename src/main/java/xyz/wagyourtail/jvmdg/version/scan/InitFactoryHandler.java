@@ -34,7 +34,9 @@ public class InitFactoryHandler implements AnnotationHandler {
         }
         MemberNameAndDesc member = target.toMemberNameAndDesc();
         ctx.stubMapper(target.getOwner()).addCtor(member,
-            new CtorFactory(method, factory.downgradeVersion(), factory.requiresRuntime()));
+            new CtorFactory(method, factory.downgradeVersion(),
+                xyz.wagyourtail.jvmdg.version.StubCondition.of(
+                    factory.requiresRuntime(), factory.condition(), "@InitFactory " + method)));
     }
 
     /**

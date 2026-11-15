@@ -92,7 +92,7 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
         if (resource == null) {
             return super.findClass(name);
         }
-        try (InputStream is = resource.openStream()) {
+        try (InputStream is = Utils.openUncached(resource)) {
             return transformClass(name, Utils.readAllBytes(is));
         } catch (IOException e) {
             throw new ClassNotFoundException(name, e);

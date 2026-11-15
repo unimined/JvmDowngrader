@@ -2,13 +2,14 @@ package xyz.wagyourtail.jvmdg.j21.impl;
 
 import org.jetbrains.annotations.NotNull;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.j21.stub.java_base.J_U_SequencedCollection;
 
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class ReverseCollection<E, T extends Collection<E>> extends AbstractCollection<E> implements Collection<E> {
+public class ReverseCollection<E, T extends Collection<E>> extends AbstractCollection<E> implements Collection<E>, J_U_SequencedCollection.Marker {
     public final T original;
 
     public ReverseCollection(T original) {

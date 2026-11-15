@@ -11,24 +11,15 @@ import java.util.*;
 @Adapter(value = "java/util/SequencedSet", target = "java/util/Set")
 public class J_U_SequencedSet {
 
+    /**
+     * Opt-in {@code java/util/SequencedSet} membership for types that
+     * implement neither the real interface nor this stub — see
+     * {@link J_U_SequencedCollection.Marker}.
+     */
+    public interface Marker {
+    }
+
     private J_U_SequencedSet() {
-    }
-
-    public static boolean jvmdg$instanceof(Object obj) {
-        return obj instanceof LinkedHashSet<?> ||
-            obj instanceof SortedSet<?> ||
-            obj instanceof ReverseSet<?, ?> ||
-            obj instanceof xyz.wagyourtail.jvmdg.j21.impl.UnmodifiableSequencedSet<?, ?>;
-    }
-
-    public static <E> Set<E> jvmdg$checkcast(Object obj) {
-        if (!jvmdg$instanceof(obj)) {
-            throw new ClassCastException();
-        }
-        if (obj instanceof Set<?>) {
-            return (Set<E>) obj;
-        }
-        throw new ClassCastException();
     }
 
     @Stub

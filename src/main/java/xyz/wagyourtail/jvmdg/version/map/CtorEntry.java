@@ -1,5 +1,7 @@
 package xyz.wagyourtail.jvmdg.version.map;
 
+import xyz.wagyourtail.jvmdg.version.StubCondition;
+
 /**
  * Base for registered constructor callsite rewrites. Ctor entries live in the
  * owner's {@code ctor} map, separate from member redirects: an
@@ -9,11 +11,18 @@ package xyz.wagyourtail.jvmdg.version.map;
  */
 public abstract class CtorEntry {
 
-    /** call site may only rewrite when the runtime transform is available */
+    /** when this entry may fire — {@link StubCondition} */
+    public final StubCondition condition;
+    /** call site may only rewrite when the runtime transform is available — boolean view of {@code condition == REQUIRES_RUNTIME} */
     public final boolean requiresRuntime;
 
     protected CtorEntry(boolean requiresRuntime) {
-        this.requiresRuntime = requiresRuntime;
+        this(requiresRuntime ? StubCondition.REQUIRES_RUNTIME : StubCondition.ALWAYS);
+    }
+
+    protected CtorEntry(StubCondition condition) {
+        this.condition = condition;
+        this.requiresRuntime = condition == StubCondition.REQUIRES_RUNTIME;
     }
 
     /**

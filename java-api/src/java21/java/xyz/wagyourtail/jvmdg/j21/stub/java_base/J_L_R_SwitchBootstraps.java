@@ -6,10 +6,18 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.version.IndyDesugar;
 import xyz.wagyourtail.jvmdg.version.JEP;
-import xyz.wagyourtail.jvmdg.version.Modify;
+import xyz.wagyourtail.jvmdg.version.ModifyContext;
 import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.Stub;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -18,9 +26,12 @@ import java.util.TreeSet;
 @JEP(441)
 public class J_L_R_SwitchBootstraps {
 
-    @Modify(ref = @Ref(value = "java/lang/runtime/SwitchBootstraps", member = "typeSwitch", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
-    public static void makeTypeSwitch(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
-        InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
+    @IndyDesugar(ref = @Ref(value = "java/lang/runtime/SwitchBootstraps", member = "typeSwitch", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
+    public static void makeTypeSwitch(ModifyContext ctx) {
+        MethodNode mnode = ctx.method;
+        ClassNode cnode = ctx.node;
+        boolean noSynthetic = ctx.noSynthetic;
+        InvokeDynamicInsnNode indy = ctx.indy;
         List<Object> types = new ArrayList<>();
         for (Object bsmArg : indy.bsmArgs) {
             if (bsmArg instanceof ConstantDynamic condy) {
@@ -40,9 +51,12 @@ public class J_L_R_SwitchBootstraps {
         mnode.instructions.set(indy, min);
     }
 
-    @Modify(ref = @Ref(value = "java/lang/runtime/SwitchBootstraps", member = "enumSwitch", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
-    public static void makeEnumSwitch(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
-        InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
+    @IndyDesugar(ref = @Ref(value = "java/lang/runtime/SwitchBootstraps", member = "enumSwitch", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
+    public static void makeEnumSwitch(ModifyContext ctx) {
+        MethodNode mnode = ctx.method;
+        ClassNode cnode = ctx.node;
+        boolean noSynthetic = ctx.noSynthetic;
+        InvokeDynamicInsnNode indy = ctx.indy;
         Type[] argTypes = Type.getArgumentTypes(indy.desc);
         List<Object> types = new ArrayList<>();
         for (Object bsmArg : indy.bsmArgs) {
@@ -54,6 +68,107 @@ public class J_L_R_SwitchBootstraps {
         }
         MethodInsnNode min = makeSwitchInternal(mnode.name, indy.desc, types, cnode, noSynthetic);
         mnode.instructions.set(indy, min);
+    }
+
+    private static final MethodHandle TYPE_SWITCH;
+    private static final MethodHandle ENUM_SWITCH;
+
+    static {
+        try {
+            TYPE_SWITCH = MethodHandles.lookup().findStatic(J_L_R_SwitchBootstraps.class,
+                "typeSwitchImpl", MethodType.methodType(int.class, MethodHandles.Lookup.class,
+                    Object[].class, Object.class, int.class));
+            ENUM_SWITCH = MethodHandles.lookup().findStatic(J_L_R_SwitchBootstraps.class,
+                "enumSwitchImpl", MethodType.methodType(int.class, MethodHandles.Lookup.class,
+                    Class.class, Object[].class, Object.class, int.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    /**
+     * Runtime impl for a direct {@code typeSwitch} invoke — the indy
+     * callsite path is desugared by {@link #makeTypeSwitch(ModifyContext)}.
+     * Label match mirrors {@link #makeSwitchInternal}: {@code null} value
+     * returns -1, {@code restart} resumes the label scan, labels are enum
+     * name / String / int-widening / retro-instanceof checks.
+     */
+    @Stub(ref = @Ref(value = "java/lang/runtime/SwitchBootstraps", member = "typeSwitch", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
+    public static CallSite typeSwitchStub(MethodHandles.Lookup lookup, String invocationName, MethodType invocationType, Object... labels) {
+        MethodHandle mh = MethodHandles.insertArguments(TYPE_SWITCH, 0, lookup, (Object) labels);
+        return new ConstantCallSite(mh.asType(invocationType));
+    }
+
+    @Stub(ref = @Ref(value = "java/lang/runtime/SwitchBootstraps", member = "enumSwitch", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
+    public static CallSite enumSwitchStub(MethodHandles.Lookup lookup, String invocationName, MethodType invocationType, Object... labels) {
+        MethodHandle mh = MethodHandles.insertArguments(ENUM_SWITCH, 0, lookup,
+            invocationType.parameterType(0), (Object) labels);
+        return new ConstantCallSite(mh.asType(invocationType));
+    }
+
+    public static int typeSwitchImpl(MethodHandles.Lookup lookup, Object[] labels, Object value,
+                                     int restart) throws Throwable {
+        if (value == null) {
+            return -1;
+        }
+        for (int i = restart; i < labels.length; i++) {
+            if (matchesLabel(lookup, labels[i], value)) {
+                return i;
+            }
+        }
+        return labels.length;
+    }
+
+    public static int enumSwitchImpl(MethodHandles.Lookup lookup, Class<?> enumClass, Object[] labels,
+                                     Object value, int restart) throws Throwable {
+        if (value == null) {
+            return -1;
+        }
+        String name = value instanceof Enum ? ((Enum<?>) value).name() : null;
+        for (int i = restart; i < labels.length; i++) {
+            Object label = labels[i];
+            if (label instanceof String) {
+                // enumSwitch String labels are enum constant names —
+                // EnumType in the desugar
+                if (enumClass.isInstance(value) && label.equals(name)) {
+                    return i;
+                }
+            } else if (matchesLabel(lookup, label, value)) {
+                return i;
+            }
+        }
+        return labels.length;
+    }
+
+    private static boolean matchesLabel(MethodHandles.Lookup lookup, Object label, Object value)
+        throws Throwable {
+        if (label instanceof Class) {
+            // mirror the desugar's Type branch: route through the
+            // retro-supertype membership table so labels naming types
+            // that gained supertypes still match
+            Class<?> cls = (Class<?>) label;
+            boolean array = cls.isArray();
+            String name = array ? cls.getComponentType().getName() : cls.getName();
+            return xyz.wagyourtail.jvmdg.stub.RetroTypes.isInstanceOrFallback(value,
+                name.replace('.', '/'), cls.getName(), lookup.lookupClass(), array);
+        } else if (label instanceof String) {
+            return label.equals(value);
+        } else if (label instanceof Integer) {
+            int l = (Integer) label;
+            return (value instanceof Number && ((Number) value).intValue() == l) ||
+                (value instanceof Character && ((Character) value) == l);
+        } else if (label != null && label.getClass().getName().equals("java.lang.Enum$EnumDesc")) {
+            // EnumDesc condy label — reflective read keeps a constant-pool
+            // edge to the j12+ type out of the stub
+            String constantName = (String) label.getClass().getMethod("constantName").invoke(label);
+            Object constantType = label.getClass().getMethod("constantType").invoke(label);
+            Class<?> enumClass = (Class<?>) constantType.getClass()
+                .getMethod("resolveConstantDesc", MethodHandles.Lookup.class)
+                .invoke(constantType, lookup);
+            return enumClass.isInstance(value) && ((Enum<?>) value).name().equals(constantName);
+        } else {
+            throw new IllegalStateException("Unknown type for switch: " + label);
+        }
     }
 
     public static MethodInsnNode makeSwitchInternal(String holdingMethod, String desc, List<Object> types, ClassNode cnode, boolean noSynthetic) {
@@ -334,11 +449,27 @@ public class J_L_R_SwitchBootstraps {
                     smnode.visitLdcInsn(j);
                     smnode.visitJumpInsn(Opcodes.GOTO, retLabel);
                 } else if (type instanceof Type) {
-                    // if (value instanceof type) {
-                    //     return j;
-                    // }
+                    // labels keep their source type (the transform leaves
+                    // typeSwitch args unremapped) so a stubbed label routes
+                    // through the retro-supertype membership table by name;
+                    // plain labels resolve lazily — emitting instanceof on
+                    // a possibly-missing type would fail verification
+                    Type label = (Type) type;
+                    boolean array = label.getSort() == Type.ARRAY;
+                    String memberName = array
+                        ? label.getElementType().getInternalName()
+                        : label.getInternalName();
+                    String fallbackName = array
+                        ? label.getDescriptor().replace('/', '.')
+                        : memberName.replace('/', '.');
                     smnode.visitVarInsn(Opcodes.ALOAD, 0);
-                    smnode.visitTypeInsn(Opcodes.INSTANCEOF, ((Type) type).getInternalName());
+                    smnode.visitLdcInsn(memberName);
+                    smnode.visitLdcInsn(fallbackName);
+                    smnode.visitLdcInsn(Type.getObjectType(cnode.name));
+                    smnode.visitInsn(array ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
+                    smnode.visitMethodInsn(Opcodes.INVOKESTATIC, "xyz/wagyourtail/jvmdg/stub/RetroTypes",
+                        "isInstanceOrFallback",
+                        "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Class;Z)Z", false);
                     smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);
                     smnode.visitLdcInsn(j);
                     smnode.visitJumpInsn(Opcodes.GOTO, retLabel);

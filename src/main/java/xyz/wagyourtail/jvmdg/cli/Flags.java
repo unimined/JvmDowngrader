@@ -125,6 +125,33 @@ public class Flags {
             doc = "Disables shade inlining")
     })
     public boolean shadeInlining = true;
+
+    /**
+     * which {@code reflection.idx} entries a shaded output ships for dynamic
+     * reflection sites — {@code none|usedOwners|all}. {@code usedOwners}
+     * (default) roots the impl classes of stub members on every JDK owner the
+     * input references, so reflective calls can reach them without shipping
+     * the whole table.
+     */
+    @BoundFlag(key = "Shade-Reflection", cli = "--shadeReflection",
+        argNames = {"none|usedOwners|all"}, sysprop = Constants.SHADE_REFLECTION,
+        gradle = "shadeReflection", form = BoundFlag.Parser.SHADE_REFLECTION,
+        doc = "Reflection-table retention under shade")
+    public xyz.wagyourtail.jvmdg.config.ShadeReflection shadeReflection = xyz.wagyourtail.jvmdg.config.ShadeReflection.USED_OWNERS;
+
+    /**
+     * extra {@code reflection.idx} entries to keep under
+     * {@code Shade-Reflection: usedOwners} — ProGuard-style
+     * {@code owner.member} patterns ({@code java/util/List.*}), merged across
+     * {@code Name:} scopes. Matched against the stubbed JDK owner + member
+     * name, same wildcard machinery as {@code Ignore-Warnings-In}.
+     */
+    @BoundFlag(key = "Shade-Keep-Reflection", cli = "--shadeKeepReflection",
+        argNames = {"owner.member glob"}, sysprop = Constants.SHADE_KEEP_REFLECTION,
+        gradle = "shadeKeepReflection",
+        form = BoundFlag.Parser.WILDCARD_MAP,
+        doc = "Reflection entries kept under shade beyond referenced owners")
+    public TreeMap<String, WildcardType> shadeKeepReflection = new TreeMap<>();
     /**
      * this skips applying stubs for the specified input class version, this will still apply the
      * {@link xyz.wagyourtail.jvmdg.version.VersionProvider#otherTransforms(ClassNode, Set, Function, Set)}
@@ -276,6 +303,33 @@ public class Flags {
     public boolean downgradeFromMultiReleases = false;
 
     /**
+     * emit no {@code invokedynamic} / {@code ConstantDynamic} in the output —
+     * every bootstrap site desugars to ordinary invokes/fields at transform
+     * time (string concat, lambdas, condy, records, type-switch). For
+     * runtimes/toolchains where indy linking is unsupported or undesirable.
+     *
+     * @since 3.1.0
+     */
+    @BoundFlag(key = "No-Indy", cli = "--noIndy", cliConst = "true",
+        sysprop = Constants.NO_INDY, gradle = "noIndy",
+        doc = "Emit no invokedynamic/ConstantDynamic in the output")
+    public boolean noIndy = false;
+
+    /**
+     * accept preview-compiled input class files (javac {@code --enable-preview}
+     * sets the class-file minor version to 0xFFFF) — they route through the
+     * provider chain of their major version — and activate stubs registered
+     * with {@code condition = PREVIEW}. Without this flag a preview input is a
+     * hard error naming the class.
+     *
+     * @since 3.1.0
+     */
+    @BoundFlag(key = "Allow-Preview", cli = "--allowPreview", cliConst = "true",
+        sysprop = Constants.ALLOW_PREVIEW, gradle = "allowPreview",
+        doc = "Accept preview-compiled input classes and activate PREVIEW-condition stubs")
+    public boolean allowPreview = false;
+
+    /**
      * prefix used when shading api classes into the output — the {@code shade}
      * command's {@code --prefix} argument overrides it
      *
@@ -395,7 +449,7 @@ public class Flags {
                         foundApi = Collections.singletonList(tmp.toFile());
                         return foundApi;
                     } else {
-                        try (InputStream in = url.openStream()) {
+                        try (InputStream in = Utils.openUncached(url)) {
                             try (InputStream in2 = Files.newInputStream(tmp)) {
                                 if (hash(in).equals(hash(in2))) {
                                     foundApi = Collections.singletonList(tmp.toFile());
@@ -410,7 +464,7 @@ public class Flags {
                     url = getJavaApiFromMaven();
                 }
                 if (url != null) {
-                    try (InputStream in = url.openStream()) {
+                    try (InputStream in = Utils.openUncached(url)) {
                         Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
                         foundApi = Collections.singletonList(tmp.toFile());
                         return foundApi;
@@ -457,7 +511,7 @@ public class Flags {
         return false;
     }
 
-    private static boolean wildcardMatches(WildcardType type, String key, String className) {
+    public static boolean wildcardMatches(WildcardType type, String key, String className) {
         switch (type) {
             case NONE:
                 return className.equals(key);
@@ -505,7 +559,7 @@ public class Flags {
             URL url = URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/maven-metadata.xml").toURL();
             // get actual latest — parse as plain XML; XMLDecoder is a
             // deserialization codec and unsafe on remote input
-            try (InputStream in = url.openStream()) {
+            try (InputStream in = Utils.openUncached(url)) {
                 DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
                 dbf.setFeature("http://javax.xml.XMLConstants/feature/secure-processing", true);
                 try {
@@ -537,12 +591,12 @@ public class Flags {
             // fetch the published sha1 for integrity verification (optional —
             // older artifacts may not publish one)
             String expectedSha1 = null;
-            try (InputStream shaIn = URI.create(url.toString() + ".sha1").toURL().openStream()) {
+            try (InputStream shaIn = Utils.openUncached(URI.create(url.toString() + ".sha1").toURL())) {
                 expectedSha1 = readFirstToken(shaIn);
             } catch (IOException ignored) {
             }
             // download
-            try (InputStream in = url.openStream()) {
+            try (InputStream in = Utils.openUncached(url)) {
                 Files.copy(in, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
             if (expectedSha1 != null) {

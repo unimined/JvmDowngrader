@@ -6,6 +6,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 
+import xyz.wagyourtail.jvmdg.util.Utils;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -73,8 +75,10 @@ public final class TransformPipeline {
                 for (ClassNode c : current) {
                     // Integer labels are class-file versions — capture only
                     // classes actually at that version (a mixed-version set
-                    // carries others past the boundary untouched)
-                    if (label instanceof Integer && c.version != (Integer) label) {
+                    // carries others past the boundary untouched). Compare
+                    // masked majors: a preview class carries minor 0xFFFF
+                    // but labels are plain majors.
+                    if (label instanceof Integer && Utils.majorClassVersion(c.version) != (Integer) label) {
                         continue;
                     }
                     snapshot.add(copy(c));

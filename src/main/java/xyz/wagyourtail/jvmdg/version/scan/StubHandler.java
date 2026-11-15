@@ -32,10 +32,13 @@ public class StubHandler implements AnnotationHandler {
         Stub stub = (Stub) a;
         FullyQualifiedMemberNameAndDesc target = resolveStubTarget(method, stub.ref(), stub);
         Type owner = target.getOwner();
-        MemberNameAndDesc member = target.toMemberNameAndDesc();
         if (stub.downgradeVersion()) {
-            member = applyDowngradeVersion(method, target).toMemberNameAndDesc();
+            target = applyDowngradeVersion(method, target);
         }
+        if (stub.callerClass()) {
+            target = applyCallerClass(method, target);
+        }
+        MemberNameAndDesc member = target.toMemberNameAndDesc();
         ctx.stubMapper(owner).addStub(member, new StubEntry(method, stub));
         if (stub.kind() != xyz.wagyourtail.jvmdg.version.StubKind.AUTO) {
             ctx.stubMapper(owner).putKind(target, stub.kind());
@@ -68,6 +71,24 @@ public class StubHandler implements AnnotationHandler {
         Type[] args = d.getArgumentTypes();
         if (args.length == 0 || !args[args.length - 1].equals(Type.INT_TYPE)) {
             throw new IllegalArgumentException(method + " downgradeVersion stub must end with an int parameter");
+        }
+        args = Arrays.copyOf(args, args.length - 1);
+        return new FullyQualifiedMemberNameAndDesc(target.getOwner(), target.getName(),
+            Type.getMethodType(d.getReturnType(), args));
+    }
+
+    /**
+     * Strips the trailing {@code Class} that {@code callerClass} appends to
+     * the handler signature — the transform pushes an {@code ldc} of the
+     * containing class ahead of {@code downgradeVersion}'s int, so the
+     * registered key must match the pre-transform signature. Runs after
+     * {@link #applyDowngradeVersion} since the version int stays last.
+     */
+    public static FullyQualifiedMemberNameAndDesc applyCallerClass(Method method, FullyQualifiedMemberNameAndDesc target) {
+        Type d = target.getDesc();
+        Type[] args = d.getArgumentTypes();
+        if (args.length == 0 || !args[args.length - 1].equals(Type.getType(Class.class))) {
+            throw new IllegalArgumentException(method + " callerClass stub must end with a Class parameter");
         }
         args = Arrays.copyOf(args, args.length - 1);
         return new FullyQualifiedMemberNameAndDesc(target.getOwner(), target.getName(),

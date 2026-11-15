@@ -8,6 +8,9 @@ public record FlagsAndRunner(JavaRunner.JavaVersion targetVersion, Flags flags) 
     public String readableSlug() {
         StringBuilder sb = new StringBuilder();
         sb.append(flags.classVersion);
+        if (flags.noIndy) {
+            sb.append("-noindy");
+        }
         if (!flags.debugSkipStubs.isEmpty()) {
             sb.append("-fake-");
             for (int i : flags.debugSkipStubs) {

@@ -41,7 +41,10 @@ dependencies {
     implementation(libs.apache.commons.compress)
 
     api(project(":"))
-    implementation(rootProject.sourceSets.getByName("shared").output)
+    implementation(
+        rootProject.files(rootProject.layout.buildDirectory.dir("classes-v52/shared"))
+            .builtBy(":compileSharedV52")
+    )
 
     testImplementation(kotlin("test"))
 }

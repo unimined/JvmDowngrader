@@ -104,7 +104,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
 
             if (loader != null && className != null && Bootstrap.flags.downgradeFromMultiReleases) {
                 for (Integer version : multiVersions()) {
-                    try (InputStream stream = loader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + className + ".class")) {
+                    try (InputStream stream = openResource(loader, "META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + className + ".class")) {
                         if (stream != null) {
                             bytes = Utils.readAllBytes(stream);
                             break;
@@ -138,14 +138,14 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                     try {
                         if (loader != null && Bootstrap.flags.downgradeFromMultiReleases) {
                             for (Integer version : multiVersions()) {
-                                try (InputStream stream = resourceLoader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + s + ".class")) {
+                                try (InputStream stream = openResource(resourceLoader, "META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + s + ".class")) {
                                     if (stream != null) {
                                         return Utils.readAllBytes(stream);
                                     }
                                 }
                             }
                         }
-                        try (InputStream stream = resourceLoader.getResourceAsStream(s + ".class")) {
+                        try (InputStream stream = openResource(resourceLoader, s + ".class")) {
                             if (stream != null) {
                                 return Utils.readAllBytes(stream);
                             }
@@ -195,6 +195,10 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             e.initCause(t);
             throw e;
         }
+    }
+
+    private static InputStream openResource(ClassLoader loader, String path) throws IOException {
+        return Utils.openResource(loader, path);
     }
 
 }

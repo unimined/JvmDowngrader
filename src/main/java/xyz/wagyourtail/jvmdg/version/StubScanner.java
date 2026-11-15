@@ -6,6 +6,7 @@ import xyz.wagyourtail.jvmdg.version.scan.AdapterHandler;
 import xyz.wagyourtail.jvmdg.version.scan.DefaultImplHandler;
 import xyz.wagyourtail.jvmdg.version.scan.InitArgHandler;
 import xyz.wagyourtail.jvmdg.version.scan.InitArgsHandler;
+import xyz.wagyourtail.jvmdg.version.scan.IndyDesugarHandler;
 import xyz.wagyourtail.jvmdg.version.scan.InitFactoryHandler;
 import xyz.wagyourtail.jvmdg.version.scan.InitPostHandler;
 import xyz.wagyourtail.jvmdg.version.scan.InitPostsHandler;
@@ -58,7 +59,8 @@ public class StubScanner {
             new InitPresHandler(),
             new InitPostHandler(),
             new InitPostsHandler(),
-            new ModifyHandler()
+            new ModifyHandler(),
+            new IndyDesugarHandler()
         ));
 
     private final VersionProvider vp;

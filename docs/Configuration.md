@@ -78,7 +78,11 @@ separator), `wildcard-map` (comma-separated patterns).
 | `Multi-Release-Original` | `--multiReleaseOriginal` / `-mro` | `jvmdg.multiReleaseOriginal` | `multiReleaseOriginal` | const-true / bool |
 | `Multi-Release-Versions` | `--multiRelease` / `-mr` | `jvmdg.multiReleaseVersions` | `multiReleaseVersions` | version-set |
 | `Multi-Release-Inputs` | `--multiReleaseInputs` / `-mri` | — | `downgradeFromMultiReleases` | const-true / bool |
+| `No-Indy` | `--noIndy` | `jvmdg.noIndy` | `noIndy` | const-true / bool |
+| `Allow-Preview` | `--allowPreview` | `jvmdg.allowPreview` | `allowPreview` | const-true / bool |
 | `Shade-Prefix` | — | — | `shadePrefix` | string |
+| `Shade-Reflection` | `--shadeReflection` | `jvmdg.shadeReflection` | `shadeReflection` | `none`/`usedOwners`/`all` |
+| `Shade-Keep-Reflection` | `--shadeKeepReflection` | `jvmdg.shadeKeepReflection` | `shadeKeepReflection` | wildcard-map |
 | `Ignore-Embedded-Rules` | `--ignoreEmbeddedRules` | — | `ignoreEmbeddedRules` | const-true / bool |
 | `Keep-Embedded-Rules` | `--keepEmbeddedRules` | — | `keepEmbeddedRules` | const-true / bool |
 
@@ -87,6 +91,35 @@ CLI-only (not config keys): `--config`, `--target`, `--classpath`, `--prefix`,
 
 `--api`'s config/sysprop form uses the platform path separator; the Gradle
 `apiJar` is a `ListProperty<File>`.
+
+`Shade-Reflection` selects which `reflection.idx` entries a shaded output
+ships for reflection sites that can't be folded at transform time:
+
+- `none` — no entries; dynamic lookups degrade to the native JVM behavior
+  (`ClassNotFoundException`/`NoSuchMethodException` exactly as the old
+  runtime gives).
+- `usedOwners` *(default)* — entries whose stubbed JDK owner the input
+  references anywhere; those entries' impl classes become shade-closure
+  roots so the reflective call can actually reach them.
+- `all` — every entry; largest output, least pruning.
+
+`Shade-Keep-Reflection` unions extra `owner.member` wildcard patterns into
+the `usedOwners` root set (same `*`/`**` semantics as `Ignore-Warnings-In`,
+e.g. `java/util/List.*`). Under `none`/`usedOwners`, input members calling
+dynamic entry points (`Class.forName`, `Lookup.find*`, reflective
+`invoke`/`newInstance`) report a shade warning naming each site.
+
+`No-Indy` makes the output free of `invokedynamic` and `ldc <condy>`:
+bootstrap sites (string concat, lambdas/methodrefs, records, pattern
+switches, `ConstantDynamic`) are desugared to ordinary method calls,
+generated helper classes, or constant-folding fields at transform time.
+Observable behavior is unchanged; only the linkage mechanism differs.
+
+`Allow-Preview` accepts input classes compiled `javac --enable-preview`
+(minor version `0xFFFF`): they route to the provider for their major
+version and `condition = PREVIEW` stubs activate for them. Without the
+flag a preview class is rejected — its minor version doesn't match any
+provider's input window.
 
 ## Scoped sections
 
@@ -132,8 +165,7 @@ specific statement possible, so it is **always emitted** — it beats scoped
 the `mechanical` escape hatch (`mechanical` + a handful of `Include-Stubs`
 = "error on everything missing except these deliberate polyfills"). It
 cannot resurrect members dropped at registration time by the global
-`Exclude-*` flags. `Keep-Reflection` arrives with the reflection work in
-3.1. Unknown keys and global keys in a `Name:` section are hard errors.
+`Exclude-*` flags. Unknown keys and global keys in a `Name:` section are hard errors.
 
 ## Embedded rules
 

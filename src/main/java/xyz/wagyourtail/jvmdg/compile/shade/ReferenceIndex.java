@@ -266,8 +266,16 @@ public class ReferenceIndex {
         for (FullyQualifiedMemberNameAndDesc ref : refs) {
             ExtractedRefs refer = refsFor(ref.getOwner(), version);
             if (refer == null) continue;
+            // class-level attachments key on the null member: they ship on
+            // ANY usage of the owner — a member requirement still emits the
+            // class, and member calls are the only way statics-only classes
+            // like RetroTypes are ever reached
+            String[] classLevel = refer.resourceList.get(null);
+            if (classLevel != null) {
+                resources.addAll(Arrays.asList(classLevel));
+            }
             MemberNameAndDesc member = ref.toMemberNameAndDesc();
-            if (refer.resourceList.containsKey(member)) {
+            if (member != null && refer.resourceList.containsKey(member)) {
                 resources.addAll(Arrays.asList(refer.resourceList.get(member)));
             }
         }

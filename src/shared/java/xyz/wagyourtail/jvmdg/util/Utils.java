@@ -14,6 +14,8 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -161,7 +163,40 @@ public class Utils {
         if (create && !Files.exists(path)) {
             new ZipOutputStream(Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)).close();
         }
-        return FileSystems.newFileSystem(path, null);
+        return FileSystems.newFileSystem(path, (ClassLoader) null);
+    }
+
+    /**
+     * Open {@code url} bypassing the JVM-wide {@link URLConnection} cache —
+     * the JDK caches {@code JarFile} handles by URL, so a jar rewritten
+     * in-place (Gradle daemon/worker reuse across rebuilds) would otherwise
+     * be read through stale offsets ("invalid LOC header").
+     */
+    public static InputStream openUncached(URL url) throws IOException {
+        URLConnection conn = url.openConnection();
+        conn.setUseCaches(false);
+        return conn.getInputStream();
+    }
+
+    /**
+     * {@link #openUncached(URL)} on the resource URL, falling back to
+     * {@code getResourceAsStream} when the loader answers streams but not
+     * URLs (custom loaders may override only the stream method).
+     */
+    public static InputStream openResource(ClassLoader loader, String name) throws IOException {
+        URL url = loader == null ? ClassLoader.getSystemResource(name) : loader.getResource(name);
+        if (url != null) return openUncached(url);
+        return loader == null ? ClassLoader.getSystemResourceAsStream(name) : loader.getResourceAsStream(name);
+    }
+
+    /**
+     * {@link #openResource(ClassLoader, String)} resolved relative to
+     * {@code base}'s package, same stream-only fallback.
+     */
+    public static InputStream openResource(Class<?> base, String name) throws IOException {
+        URL url = base.getResource(name);
+        if (url != null) return openUncached(url);
+        return base.getResourceAsStream(name);
     }
 
     public static byte[] readAllBytes(InputStream in) throws IOException {
@@ -189,6 +224,22 @@ public class Utils {
     public static int classVersionToMajorVersion(int version) {
         if (version == Opcodes.V1_1) return 1;
         else return (version & 0xFFFF) - Opcodes.V1_2 + 2;
+    }
+
+    /**
+     * The class-file version masked to its major — {@code ClassNode.version}
+     * carries {@code minor << 16 | major} as read by ASM, and
+     * {@code javac --enable-preview} sets the minor to {@code 0xFFFF}, so
+     * raw {@code ==} comparisons against provider versions only work after
+     * masking.
+     */
+    public static int majorClassVersion(int version) {
+        return version & 0xFFFF;
+    }
+
+    /** a preview-compiled class file — its minor version is {@code 0xFFFF} (the only nonzero minor the JVMS allows) */
+    public static boolean isPreviewVersion(int version) {
+        return (version >>> 16) == 0xFFFF;
     }
 
     public static int majorVersionToClassVersion(int version) {

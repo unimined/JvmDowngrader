@@ -1,5 +1,7 @@
 package xyz.wagyourtail.jvmdg.version.map;
 
+import xyz.wagyourtail.jvmdg.version.StubCondition;
+
 import java.lang.reflect.Method;
 
 /**
@@ -18,9 +20,20 @@ public class CtorFactory extends CtorEntry {
         this(new MethodRef(method), downgradeVersion, requiresRuntime);
     }
 
+    /** condition-carrying form — scan handlers */
+    public CtorFactory(Method method, boolean downgradeVersion, StubCondition condition) {
+        this(new MethodRef(method), downgradeVersion, condition);
+    }
+
     /** index-loading form — no reflective object needed */
     public CtorFactory(MethodRef handler, boolean downgradeVersion, boolean requiresRuntime) {
-        super(requiresRuntime);
+        this(handler, downgradeVersion,
+            requiresRuntime ? StubCondition.REQUIRES_RUNTIME : StubCondition.ALWAYS);
+    }
+
+    /** index-loading form — no reflective object needed */
+    public CtorFactory(MethodRef handler, boolean downgradeVersion, StubCondition condition) {
+        super(condition);
         this.handler = handler;
         this.downgradeVersion = downgradeVersion;
     }

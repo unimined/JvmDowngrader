@@ -261,7 +261,9 @@ public class CtorRewriteCollector {
 
         ctx.stubMapper(owner).addCtor(new MemberNameAndDesc("<init>", origDesc),
             new CtorRewrite(toArgs, keep, argMethods, argFrom, pre, preFrom, post, postFrom,
-                rw.downgradeVersion(), rw.requiresRuntime()));
+                rw.downgradeVersion(),
+                xyz.wagyourtail.jvmdg.version.StubCondition.of(
+                    rw.requiresRuntime(), rw.condition(), "@InitRewrite " + origDesc)));
     }
 
     /** {@code to}/{@code ref.desc} parse: a method descriptor returning void */

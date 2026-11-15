@@ -2,6 +2,8 @@ package xyz.wagyourtail.jvmdg.version.map;
 
 import org.objectweb.asm.Type;
 
+import xyz.wagyourtail.jvmdg.version.StubCondition;
+
 import java.lang.reflect.Method;
 
 /**
@@ -55,14 +57,32 @@ public class CtorRewrite extends CtorEntry {
         this(toArgs, keep, wrap(argMethods), argFrom,
             pre == null ? null : new MethodRef(pre), preFrom,
             post == null ? null : new MethodRef(post), postFrom,
-            downgradeVersion, requiresRuntime);
+            downgradeVersion, requiresRuntime ? StubCondition.REQUIRES_RUNTIME : StubCondition.ALWAYS);
+    }
+
+    /** condition-carrying form — scan handlers */
+    public CtorRewrite(Type[] toArgs, int[] keep, Method[] argMethods, int[][] argFrom,
+                       Method pre, int[] preFrom, Method post, int[] postFrom,
+                       boolean downgradeVersion, StubCondition condition) {
+        this(toArgs, keep, wrap(argMethods), argFrom,
+            pre == null ? null : new MethodRef(pre), preFrom,
+            post == null ? null : new MethodRef(post), postFrom,
+            downgradeVersion, condition);
     }
 
     /** index-loading form — no reflective objects needed */
     public CtorRewrite(Type[] toArgs, int[] keep, MethodRef[] argMethods, int[][] argFrom,
                        MethodRef pre, int[] preFrom, MethodRef post, int[] postFrom,
                        boolean downgradeVersion, boolean requiresRuntime) {
-        super(requiresRuntime);
+        this(toArgs, keep, argMethods, argFrom, pre, preFrom, post, postFrom, downgradeVersion,
+            requiresRuntime ? StubCondition.REQUIRES_RUNTIME : StubCondition.ALWAYS);
+    }
+
+    /** index-loading form — no reflective objects needed */
+    public CtorRewrite(Type[] toArgs, int[] keep, MethodRef[] argMethods, int[][] argFrom,
+                       MethodRef pre, int[] preFrom, MethodRef post, int[] postFrom,
+                       boolean downgradeVersion, StubCondition condition) {
+        super(condition);
         this.downgradeVersion = downgradeVersion;
         this.toArgs = toArgs;
         this.keep = keep;

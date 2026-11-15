@@ -28,6 +28,18 @@ public interface TypeRemap {
     ClassStubEntry stubFor(Type type);
 
     /**
+     * The generated gained-supertype dispatch owner for {@code type} —
+     * when the type is an interface that gained members inside this
+     * provider's boundary — or null. Like {@link #stubFor} this is emission
+     * data only: the interface itself is real at the target and never
+     * remaps; the returned owner carries the {@code instanceof}/{@code
+     * checkcast}/member-call routing for the classes that gained it.
+     */
+    default String gainedFor(Type type) {
+        return null;
+    }
+
+    /**
      * Reports {@code type} as landing in transformed output with no stub, so
      * the coverage report and warning set record it.
      */

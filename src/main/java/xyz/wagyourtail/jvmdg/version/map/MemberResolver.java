@@ -45,6 +45,9 @@ public interface MemberResolver {
     /** Raw modify lookup for the indy bootstrap path — no wildcard fallback. */
     MethodRef rawModify(MemberNameAndDesc member);
 
+    /** bsm member → {@code @IndyDesugar} handler lookup — indy-site only, no wildcard fallback */
+    MethodRef rawIndyDesugar(MemberNameAndDesc member);
+
     /**
      * Rebuilds the member key with adapter (fake) desc types translated back
      * to their real JDK types — registered members are keyed in real types.

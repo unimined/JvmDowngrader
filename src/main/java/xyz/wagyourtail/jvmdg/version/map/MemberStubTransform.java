@@ -5,10 +5,13 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.config.ManifestConfigReader;
 import xyz.wagyourtail.jvmdg.config.ScopedRule;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.version.ModifyUtils;
+import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.util.*;
 
@@ -30,10 +33,23 @@ public class MemberStubTransform {
             InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
             MemberNameAndDesc member = new MemberNameAndDesc(indy.bsm.getName(), Type.getMethodType(indy.bsm.getDesc()));
 
-            MethodRef m = mr.rawModify(member);
+            // indy-site desugars are boundary-registered: a bsm whose class
+            // can't exist on the target (StringConcatFactory on 8) must
+            // desugar even when indys are otherwise kept, so every indy
+            // site is offered to a registered @IndyDesugar first — handlers
+            // that only apply under --noIndy gate on flags.noIndy and leave
+            // the site untouched. Raw @Modify on the bsm member is the
+            // fallback for boundary-time call-site surgery.
+            MethodRef m = mr.rawIndyDesugar(member);
             if (m != null && !vetoed(mr, rule, indy.bsm.getOwner(), indy.bsm.getName(),
                 Type.getMethodType(indy.bsm.getDesc()), m.jeps, true, classNode, method, warnings)) {
-                invokeModify(m, method, index, classNode, extra, mr, member, warnings);
+                invokeIndyDesugar(m, method, index, classNode, extra, mr, member, warnings);
+            } else {
+                m = mr.rawModify(member);
+                if (m != null && !vetoed(mr, rule, indy.bsm.getOwner(), indy.bsm.getName(),
+                    Type.getMethodType(indy.bsm.getDesc()), m.jeps, true, classNode, method, warnings)) {
+                    invokeModify(m, method, index, classNode, extra, mr, member, warnings);
+                }
             }
         } else {
             MemberNameAndDesc member;
@@ -128,17 +144,40 @@ public class MemberStubTransform {
                     return;
                 }
                 InsnList insnList = new InsnList();
+                if (newMin.callerClass) {
+                    // caller-sensitive stubs resolve through the callsite's own loader
+                    insnList.add(new LdcInsnNode(Type.getObjectType(classNode.name)));
+                }
                 if (newMin.downgradeVersion) {
                     insnList.add(new LdcInsnNode(mr.provider().inputVersion));
                 }
                 MethodRef m = newMin.handler;
-                insnList.add(new MethodInsnNode(
-                    Opcodes.INVOKESTATIC,
-                    m.member.getOwner().getInternalName(),
-                    m.member.getName(),
-                    m.member.getDesc().getDescriptor(),
-                    m.itf
-                ));
+                // override-preserving dispatch: virtual/interface sites on an
+                // instance-method stub are emitted as invokedynamic — the
+                // DispatchRuntime bootstrap resolves the receiver's own
+                // member via findVirtual and falls back to the impl handle,
+                // no $Ov$ marker needed. invokespecial stays on impl
+                // (super.m must not re-enter the receiver's own m) and
+                // abstractDefault was returned above.
+                boolean dispatch = (insn.getOpcode() == Opcodes.INVOKEVIRTUAL
+                    || insn.getOpcode() == Opcodes.INVOKEINTERFACE)
+                    && DispatchSites.isInstanceStub(newMin, member);
+                if (dispatch) {
+                    // the impl is resolved reflectively at runtime — no
+                    // bytecode edge exists for shading's closure to follow,
+                    // so the site declares it like an authored
+                    // @ReflectionReferences
+                    addReflectionRef(method, m, mr.provider().downgrader, mr.provider().inputVersion, warnings);
+                }
+                insnList.add(dispatch
+                    ? DispatchSites.insn(member, m, mr.provider(), warnings)
+                    : new MethodInsnNode(
+                        Opcodes.INVOKESTATIC,
+                        m.member.getOwner().getInternalName(),
+                        m.member.getName(),
+                        m.member.getDesc().getDescriptor(),
+                        m.itf
+                    ));
                 if (!returnType.equals(m.member.getDesc().getReturnType())) {
                     if (m.member.getDesc().getReturnType() == Type.VOID_TYPE) {
                         // a void-returning stub cannot fabricate the original
@@ -159,6 +198,24 @@ public class MemberStubTransform {
                 }
                 method.instructions.remove(insn);
                 return;
+            }
+            if ((insn.getOpcode() == Opcodes.INVOKEVIRTUAL
+                    || insn.getOpcode() == Opcodes.INVOKEINTERFACE)
+                && mr.provider() != null) {
+                // signature-polymorphic owner — the member-stub lookup
+                // missed, so an @Adapter(signaturePolymorphic=…)-listed name
+                // emits an invokedynamic whose bootstrap derives the impl
+                // signature from the callsite's name+desc at link time
+                // (VarHandle's access modes). Unlisted names (equals & co.)
+                // keep the normal path.
+                ClassStubEntry poly = mr.provider().classStubs.get(
+                    mr.provider().unstubClass(Type.getObjectType(owner)));
+                if (poly != null && poly.polymorphic != null
+                    && poly.polymorphicNames.contains(member.getName())) {
+                    method.instructions.set(insn, DispatchSites.polymorphicInsn(
+                        poly, (MethodInsnNode) insn, mr.provider(), warnings));
+                    return;
+                }
             }
             }
             MethodRef m = mr.getModifyFor(member, insn.getOpcode(), warnings);
@@ -187,8 +244,46 @@ public class MemberStubTransform {
                     }
                 }
                 invokeModify(m, method, invokeIndex, classNode, extra, mr, member, warnings);
+            } else if (insn.getOpcode() == Opcodes.INVOKEINTERFACE && mr.provider() != null
+                && mr.provider().gained.containsKey(owner)
+                && gainedDispatchable(mr.provider(), owner, siteName, ((MethodInsnNode) insn).desc)) {
+                // gained-supertype member call — the receiver's class gained
+                // the implements edge inside this boundary, so the JDK member
+                // carries the call routed through the interface's generated
+                // dispatcher; the class's own version is the membership
+                // ceiling. The dispatch name encodes the site desc —
+                // erased-shape overloads collide otherwise — and args go as
+                // Object since site arg types are post-remap. Sites whose
+                // member isn't in the dispatcher's universe (inherited
+                // members, post-remap descs) stay on the member-stub/native
+                // path — the dispatcher never generated a method for them
+                Type site = Type.getMethodType(((MethodInsnNode) insn).desc);
+                InsnList out = new InsnList();
+                out.add(new LdcInsnNode(classNode.version));
+                out.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+                    GainedSites.dispatchOwner(owner),
+                    GainedSites.dispatchName(siteName, site.getDescriptor()),
+                    GainedSites.dispatchDesc(site), false));
+                if (GainedSites.isRef(site.getReturnType())) {
+                    out.add(new TypeInsnNode(Opcodes.CHECKCAST, site.getReturnType().getInternalName()));
+                }
+                method.instructions.insertBefore(insn, out);
+                method.instructions.remove(insn);
             }
         }
+    }
+
+    /**
+     * Whether the interface's generated dispatcher declares a method for
+     * {@code name desc} — the {@code gained-calls} member universe loaded
+     * into {@link VersionProvider#gainedMembers}. Sites compute the key
+     * from their own (post-remap) desc: adapter-remapped signatures miss
+     * here the same way they miss in {@link GainedSites#dispatchName} —
+     * the member can't be invoked with adapter-typed args anyway.
+     */
+    private static boolean gainedDispatchable(VersionProvider vp, String owner, String name, String desc) {
+        Set<String> members = vp.gainedMembers.get(owner);
+        return members != null && members.contains(name + " " + desc);
     }
 
     /** reflectively invokes a {@code @Modify} handler with its declared parameter subset; failures warn, never sink */
@@ -196,7 +291,14 @@ public class MemberStubTransform {
                                      Set<ClassNode> extra, MemberResolver mr, MemberNameAndDesc member, Set<String> warnings) {
         try {
             java.lang.reflect.Method m = modify.method();
-            Object[] modifyArgs = new Object[] { method, index, classNode, extra, mr.provider().downgrader.flags.debugNoSynthetic };
+            Flags flags = mr.provider().downgrader.flags;
+            AbstractInsnNode insn = method.instructions.get(index);
+            Object[] modifyArgs = new Object[] { method, index, classNode, extra,
+                flags.debugNoSynthetic,
+                new xyz.wagyourtail.jvmdg.version.ModifyContext(flags, classNode, method, index, extra,
+                    flags.debugNoSynthetic,
+                    insn instanceof InvokeDynamicInsnNode ? (InvokeDynamicInsnNode) insn : null,
+                    mr.provider()::unstubClass) };
             int[] sigIdx = ModifyUtils.matchModifyParams(m);
             List<Object> takeArgs = new ArrayList<>();
             for (int idx : sigIdx) {
@@ -209,6 +311,73 @@ public class MemberStubTransform {
             String ownerName = modify.member.getOwner().getInternalName();
             warnings.add("modify " + ownerName.substring(ownerName.lastIndexOf('/') + 1)
                 + "." + modify.member.getName() + " failed on " + member.getName()
+                + member.getDesc() + ": " + e);
+        }
+    }
+
+    /**
+     * Declares {@code impl} on {@code method} via a {@code @ReflectionReferences}
+     * {@code @Ref} entry — merging into an existing annotation when the method
+     * already carries one — so the shade closure keeps the member the dispatch
+     * site resolves reflectively (its only other bytecode edge is the
+     * class-level {@code implOwner} bsm arg).
+     */
+    public static void addReflectionRef(MethodNode method, MethodRef impl, ClassDowngrader downgrader, int version, Set<String> warnings) {
+        // the api index keys members in post-remap (stand-in) vocabulary —
+        // the impl's registered desc is real-JDK, so the ref must carry the
+        // same chain remap the api jar's own members undergo or shade
+        // pruning can't match it
+        Type desc = impl.member.getDesc();
+        for (VersionProvider provider : downgrader.versionProviders(version)) {
+            // providers later in the chain may not have run their init stage
+            // yet — remap needs their stub table populated
+            provider.ensureInit(downgrader);
+            desc = provider.remap(desc, warnings);
+        }
+        org.objectweb.asm.tree.AnnotationNode ref =
+            new org.objectweb.asm.tree.AnnotationNode("Lxyz/wagyourtail/jvmdg/version/Ref;");
+        ref.values = Arrays.asList(
+            "value", "L" + impl.member.getOwner().getInternalName() + ";",
+            "member", impl.member.getName(),
+            "desc", desc.getDescriptor());
+        String rrDesc = "Lxyz/wagyourtail/jvmdg/version/ReflectionReferences;";
+        if (method.invisibleAnnotations == null) {
+            method.invisibleAnnotations = new ArrayList<>();
+        }
+        for (org.objectweb.asm.tree.AnnotationNode a : method.invisibleAnnotations) {
+            if (rrDesc.equals(a.desc)) {
+                for (int k = 0; k + 1 < a.values.size(); k += 2) {
+                    if ("value".equals(a.values.get(k))) {
+                        @SuppressWarnings("unchecked")
+                        List<Object> refs = (List<Object>) a.values.get(k + 1);
+                        refs.add(ref);
+                        return;
+                    }
+                }
+            }
+        }
+        org.objectweb.asm.tree.AnnotationNode rr =
+            new org.objectweb.asm.tree.AnnotationNode(rrDesc);
+        List<Object> refs = new ArrayList<>();
+        refs.add(ref);
+        rr.values = Arrays.<Object>asList("value", refs);
+        method.invisibleAnnotations.add(rr);
+    }
+
+    /** invokes an {@code @IndyDesugar} handler with the site-carrying context; failures warn, never sink */
+    private static void invokeIndyDesugar(MethodRef desugar, MethodNode method, int index, ClassNode classNode,
+                                          Set<ClassNode> extra, MemberResolver mr, MemberNameAndDesc member, Set<String> warnings) {
+        try {
+            Flags flags = mr.provider().downgrader.flags;
+            desugar.method().invoke(null, new xyz.wagyourtail.jvmdg.version.ModifyContext(flags, classNode,
+                method, index, extra, flags.debugNoSynthetic,
+                (InvokeDynamicInsnNode) method.instructions.get(index), mr.provider()::unstubClass));
+        } catch (Throwable e) {
+            // a failed desugar must not sink the whole class — warn and
+            // leave the indy unmodified
+            String ownerName = desugar.member.getOwner().getInternalName();
+            warnings.add("indyDesugar " + ownerName.substring(ownerName.lastIndexOf('/') + 1)
+                + "." + desugar.member.getName() + " failed on " + member.getName()
                 + member.getDesc() + ": " + e);
         }
     }
@@ -372,6 +541,22 @@ public class MemberStubTransform {
         try {
             if (included(mr, rule, owner, name, desc)) {
                 return false;
+            }
+            // jvmdg impl classes (shared tables, api impls, the core itself)
+            // are the interception layer: a BEHAVIOR stub emitted inside one
+            // loops back into the impl it delegates to — e.g.
+            // ReflectionTable.getInterfaces calls Class.getInterfaces, which
+            // would dispatch right back into ReflectionTable.getInterfaces.
+            // the real member exists at target — keep the native callsite.
+            // MISSING_API stubs still emit — the impl can't conjure a member
+            // the target lacks.
+            if (classNode.name.startsWith("xyz/wagyourtail/jvmdg/") && flags != null &&
+                mr.provider() != null &&
+                mr.provider().stubRegistry.kindOf(
+                    new FullyQualifiedMemberNameAndDesc(Type.getObjectType(owner), name, desc),
+                    modifyEntry, flags.classVersion) ==
+                    xyz.wagyourtail.jvmdg.version.StubKind.BEHAVIOR) {
+                return true;
             }
             xyz.wagyourtail.jvmdg.config.StubPolicy policy =
                 flags == null ? xyz.wagyourtail.jvmdg.config.StubPolicy.FULL : flags.stubPolicy;

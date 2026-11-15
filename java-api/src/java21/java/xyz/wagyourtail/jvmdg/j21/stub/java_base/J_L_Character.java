@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.RequiresResource;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -19,7 +20,7 @@ public class J_L_Character {
 
     @RequiresResource("unicode/emoji-data.txt")
     private static void readData() throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(J_L_Character.class.getResourceAsStream("/unicode/emoji-data.txt"))))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(Utils.openResource(J_L_Character.class, "/unicode/emoji-data.txt"))))) {
             Map<String, List<int[]>> data = new HashMap<>();
             // read data
             reader.lines().forEach(e -> {

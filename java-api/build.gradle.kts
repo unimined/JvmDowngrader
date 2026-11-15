@@ -66,17 +66,32 @@ val coverage = sourceSets.create("coverage") {
 }
 
 dependencies {
-    implementation(project(":"))
-
-    implementation(rootProject.sourceSets.getByName("shared").output)
+    // classpath-only V52 compiles of the root project's main/shared sources —
+    // the project jar dependency would cycle (root's jar is self-downgraded
+    // using this project's selfHostApiJar). these dirs carry identical APIs
+    // at v52 so the pre-27 toolchains keep working; ASM was previously
+    // transitive through project(":") so it's declared explicitly now
+    implementation(
+        files(rootProject.layout.buildDirectory.dir("classes-v52/main"))
+            .builtBy(":compileMainV52")
+    )
+    implementation(
+        files(rootProject.layout.buildDirectory.dir("classes-v52/shared"))
+            .builtBy(":compileSharedV52")
+    )
+    implementation(libs.asm)
+    implementation(libs.asm.tree)
+    implementation(libs.asm.commons)
+    implementation(libs.asm.util)
 }
 
 for (vers in fromVersion..toVersion) {
     tasks.getByName("compileJava${vers.ordinal + 1}Java") {
         this as JavaCompile
         if (vers < JavaVersion.VERSION_1_9) {
-            // javac < 8 can't read the shared set's v52 classes (main is now
-            // Java 8). `--release` on a newer toolchain keeps the same
+            // javac < 8 can't read the shared set's v52 classes (self-host
+            // downgrades shared back to mainVersion pre-publish). `--release`
+            // on a newer toolchain keeps the same
             // target version AND the ct.sym API-surface guard (only APIs of
             // the version each set downgrades to are visible).
             options.release.set((vers - 1).majorVersion.toInt())
@@ -152,9 +167,11 @@ val genCtSym = tasks.register<GenerateCtSymTask>("genCtSym") {
 
 val coverageReport = tasks.register<CoverageRunTask>("coverageReport") {
     group = "jvmdg"
-    dependsOn(testJar, genCtSym, tasks.getByName("compileCoverageJava"))
+    dependsOn(testJar, genCtSym, tasks.getByName("compileCoverageJava"), "genStubIndex")
     apiJar.set(testJar.get().archiveFile.get().asFile)
-    classpath = coverage.runtimeClasspath
+    // the generated-artifact dir rides the classpath so registered handlers
+    // pointing at generated classes ($jvmdg$fwd/$retro/$dispatch) resolve
+    classpath = coverage.runtimeClasspath + files(layout.buildDirectory.dir("generated/stubindex"))
     ctSym.set(genCtSym.get().ctSym)
     javaVersion = toVersion - 1
 }
@@ -178,11 +195,25 @@ val genStubIndex = tasks.register<JavaExec>("genStubIndex") {
     args = listOf(
         stubIndexDir.get().file("META-INF/jvmdg/stubs.idx").asFile.absolutePath,
         project.version.toString(),
-        genCtSym.get().ctSym.get().asFile.absolutePath
+        genCtSym.get().ctSym.get().asFile.absolutePath,
+        stubIndexDir.get().file("META-INF/jvmdg/retrotypes").asFile.absolutePath,
+        stubIndexDir.get().asFile.absolutePath,
+        stubIndexDir.get().file("META-INF/jvmdg/excludes").asFile.absolutePath,
+        stubIndexDir.get().file("META-INF/jvmdg/wraps").asFile.absolutePath,
+        layout.buildDirectory.dir("generated/gen-src").get().asFile.absolutePath,
+        stubIndexDir.get().file("META-INF/jvmdg/gained").asFile.absolutePath,
+        stubIndexDir.get().file("META-INF/jvmdg/gained-calls").asFile.absolutePath,
+        stubIndexDir.get().file("xyz/wagyourtail/jvmdg/stub/reflection.idx").asFile.absolutePath
     )
     inputs.file(genCtSym.flatMap { it.ctSym })
     dependsOn(genCtSym)
     outputs.dir(stubIndexDir)
+    // generated output accumulates across runs otherwise — a renamed
+    // stub or a removed generator would leave stale classes in the jar
+    doFirst {
+        delete(stubIndexDir)
+        delete(layout.buildDirectory.dir("generated/gen-src"))
+    }
     javaLauncher = javaToolchains.launcherFor {
         languageVersion.set(JavaLanguageVersion.of((toVersion - 1).majorVersion))
         vendor.set(JvmVendorSpec.AZUL)
@@ -191,8 +222,9 @@ val genStubIndex = tasks.register<JavaExec>("genStubIndex") {
 
 tasks.jar {
     dependsOn(coverageReport)
+    dependsOn(":selfDowngradeShared")
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
-    from(rootProject.sourceSets.getByName("shared").output)
+    from(zipTree(rootProject.layout.buildDirectory.file("selfhost/shared-downgraded-8.jar")))
     from(genStubIndex)
     from(coverageReport.get().coverageReports) {
         into("META-INF/coverage")
@@ -214,9 +246,24 @@ tasks.jar {
     }
 }
 
-val testJar = tasks.register<Jar>("testJar") {
+// self-host input for the root project's selfDowngrade execs — providers +
+// stubs + idx with raw (stubToVersion) shared classes inside; only ever
+// loaded by the self-host exec on a stubToVersion launcher, never shipped
+val selfHostApiJar = tasks.register<Jar>("selfHostApiJar") {
     from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
     from(rootProject.sourceSets.getByName("shared").output)
+    from(sourceSets.main.get().output)
+    from(genStubIndex)
+    destinationDirectory = layout.buildDirectory.dir("selfhost")
+
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+}
+
+val testJar = tasks.register<Jar>("testJar") {
+    dependsOn(":selfDowngradeShared")
+    from(*((fromVersion..toVersion).map { sourceSets["java${it.ordinal + 1}"].output }).toTypedArray())
+    from(zipTree(rootProject.layout.buildDirectory.file("selfhost/shared-downgraded-8.jar")))
     from(sourceSets.main.get().output)
     from(genStubIndex)
 

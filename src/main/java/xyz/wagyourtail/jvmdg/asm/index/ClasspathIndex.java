@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.asm.index;
 
 import org.objectweb.asm.ClassReader;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.asm.info.ClassInfo;
 
@@ -56,7 +57,7 @@ public class ClasspathIndex {
         SoftReference<ClassInfo> cached = loaderInfos.get(internalName);
         ClassInfo info = cached == null ? null : cached.get();
         if (info == null && cached != MISS) {
-            try (InputStream is = classLoader.getResourceAsStream(internalName + ".class")) {
+            try (InputStream is = Utils.openResource(classLoader, internalName + ".class")) {
                 cached = is == null ? MISS : new SoftReference<>(ClassInfo.of(new ClassReader(is)));
             }
             SoftReference<ClassInfo> prev = loaderInfos.putIfAbsent(internalName, cached);

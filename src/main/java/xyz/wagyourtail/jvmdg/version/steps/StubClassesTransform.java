@@ -6,11 +6,14 @@ import xyz.wagyourtail.jvmdg.version.DowngradeContext;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * {@link VersionProvider#stubClasses} as a stage transform — the class-level
- * stub pass (supertypes, annotations, signatures). Not extras-wrapped, per
- * the legacy sequencing.
+ * stub pass (supertypes, annotations, signatures, {@code $Marker}/{@code Ov}
+ * interface injection). Not extras-wrapped, per the legacy sequencing; the
+ * resolver pair comes from the context the same way
+ * {@link InsertAbstractsTransform} obtains it.
  */
 public class StubClassesTransform extends StepTransform {
 
@@ -21,7 +24,14 @@ public class StubClassesTransform extends StepTransform {
     @Override
     public ClassNode apply(ClassNode node, TransformContext ctx) throws IOException {
         DowngradeContext dc = DowngradeContext.get(ctx);
-        return provider.stubClasses(node, dc.enableRuntime, dc.warnings(node.name));
+        Set<ClassNode> extra = ctx.extras.asSet();
+        Set<String> warnings = dc.warnings(node.name);
+        return provider.stubClasses(
+            node, dc.enableRuntime,
+            provider.memberResolver(extra, dc.getReadOnly, warnings),
+            provider.superTypeResolver(extra, dc.getReadOnly, warnings),
+            warnings
+        );
     }
 
 }

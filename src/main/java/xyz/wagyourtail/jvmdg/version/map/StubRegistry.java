@@ -74,6 +74,8 @@ public class StubRegistry {
         public final Map<MemberNameAndDesc, CtorEntry> ctor = new HashMap<>();
         /** null key = class-level {@code @Modify} ({@code Ref.member} unset) — catches every member insn on the owner */
         public final Map<MemberNameAndDesc, MethodRef> memberModify = new HashMap<>();
+        /** bsm member → {@code @IndyDesugar} handler; consulted at indy sites only — never at direct invokes */
+        public final Map<MemberNameAndDesc, MethodRef> indyDesugars = new HashMap<>();
     }
 
     /** Registration path — creates the owner's entry on first write. */

@@ -2,18 +2,22 @@ package xyz.wagyourtail.jvmdg.compile.jar;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.SimpleRemapper;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.cli.Flags;
+import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.compile.shade.ReferenceIndex;
 import xyz.wagyourtail.jvmdg.compile.shade.ShadeContext;
 import xyz.wagyourtail.jvmdg.compile.shade.ShadeRegistrar;
 import xyz.wagyourtail.jvmdg.pipeline.Stage;
 import xyz.wagyourtail.jvmdg.pipeline.TransformContext;
+import xyz.wagyourtail.jvmdg.pipeline.TransformContributor;
 import xyz.wagyourtail.jvmdg.pipeline.TransformPipeline;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.DowngradeRegistrar;
+import xyz.wagyourtail.jvmdg.version.PipelineRegistrar;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -69,6 +73,8 @@ public class PipelineJarStep extends JarStep {
         Collections.synchronizedList(new ArrayList<ClassNode>());
     private final ConcurrentHashMap<Integer, List<ClassNode>> slotVariants =
         new ConcurrentHashMap<Integer, List<ClassNode>>();
+    private final List<JarEntry> serviceEntries =
+        Collections.synchronizedList(new ArrayList<JarEntry>());
 
     private ShadeContext shadeContext;
     private TransformContext transformContext;
@@ -97,6 +103,12 @@ public class PipelineJarStep extends JarStep {
     @Override
     public JarEntry visitEntry(JarEntry entry, StepContext ctx) throws IOException {
         if (!entry.name.endsWith(".class")) {
+            if (entry.name.startsWith("META-INF/services/") && !entry.name.endsWith("/")) {
+                // defer to endFused — provider lines need the shade remapper,
+                // which doesn't exist until the closure barrier runs
+                serviceEntries.add(entry);
+                return null;
+            }
             return entry;
         }
         ClassNode node = ASMUtils.bytesToClassNode(entry.bytes());
@@ -132,12 +144,27 @@ public class PipelineJarStep extends JarStep {
 
         List<Stage> stages = new ArrayList<Stage>();
         if (ctx.downgrader != null) {
-            DowngradeRegistrar downgrade = new DowngradeRegistrar(
+            // version-chain registrars — a future UpgradeRegistrar slots in
+            // beside this one; TransformContributor anchors order the chains
+            PipelineRegistrar downgrade = new DowngradeRegistrar(
                 ctx.downgrader, false, memoized(ctx.extraRead));
             downgrade.install(tctx);
             Set<Integer> inputVersions = new LinkedHashSet<Integer>();
+            List<String> preview = null;
             for (ClassNode node : finals) {
-                inputVersions.add(node.version);
+                if (Utils.isPreviewVersion(node.version)) {
+                    if (preview == null) {
+                        preview = new ArrayList<String>();
+                    }
+                    preview.add(node.name);
+                }
+                // the registrar routes on the major — collect it masked
+                inputVersions.add(Utils.majorClassVersion(node.version));
+            }
+            if (preview != null && !flags.allowPreview) {
+                throw new IllegalArgumentException("input contains " + preview.size() +
+                    " preview-compiled classes (javac --enable-preview, minor 0xFFFF), " +
+                    "e.g. " + preview.get(0) + " — rerun with --allowPreview to process them");
             }
             if (inputVersions.size() == 1) {
                 stages.addAll(downgrade.stages(inputVersions.iterator().next()));
@@ -152,6 +179,11 @@ public class PipelineJarStep extends JarStep {
         shade.install(tctx);
         this.shadeContext = shade.context();
         stages.addAll(shade.stages());
+
+        // TransformContributor POST_EMIT — after the last assembled stage;
+        // downgrader may be null on pure-shade runs
+        TransformContributor.invoke(
+            TransformContributor.Anchor.POST_EMIT, ctx.downgrader, stages);
 
         TransformPipeline pipeline = new TransformPipeline().addStages(stages);
 
@@ -198,6 +230,20 @@ public class PipelineJarStep extends JarStep {
         for (Map.Entry<String, ClassNode> e : shade.context().emitted.entrySet()) {
             ctx.sink.putIfAbsent(e.getKey(),
                 ASMUtils.classNodeToBytes(e.getValue(), ClassWriter.COMPUTE_MAXS));
+        }
+        // deferred input service files: remap provider/interface names through
+        // the slot-0 prefix map, merging into any api-side copy of the same
+        // service (one output file per interface — input providers lead)
+        SimpleRemapper servicesRemapper = shade.context().remappers.get(0);
+        for (JarEntry e : serviceEntries) {
+            Map.Entry<String, byte[]> mapped = ApiShader.mapServiceEntry(
+                e.name, e.bytes(), servicesRemapper, shade.context().apiClasses);
+            if (mapped == null) {
+                continue;
+            }
+            byte[] existing = tctx.resources().get(mapped.getKey());
+            tctx.resources().put(mapped.getKey(), existing == null ? mapped.getValue()
+                : ApiShader.mergeServices(mapped.getValue(), existing));
         }
         for (Map.Entry<String, byte[]> e : tctx.resources().entrySet()) {
             ctx.sink.put(e.getKey(), e.getValue());

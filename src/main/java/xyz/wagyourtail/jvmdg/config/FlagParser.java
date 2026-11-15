@@ -108,6 +108,19 @@ public abstract class FlagParser {
         }
     };
 
+    /** {@link ShadeReflection} — {@code none|usedOwners|all} (case-insensitive). */
+    public static final FlagParser SHADE_REFLECTION = new FlagParser() {
+        @Override
+        public Object parseScalar(String raw) {
+            for (ShadeReflection s : ShadeReflection.values()) {
+                if (s.name().replace("_", "").equalsIgnoreCase(raw.trim().replace("_", ""))) {
+                    return s;
+                }
+            }
+            throw new IllegalArgumentException("expected none|usedOwners|all, got '" + raw + "'");
+        }
+    };
+
     // ---- collection parsers ----
 
     /** Base for {@code Set}-typed fields: elements add into a LinkedHashSet. */

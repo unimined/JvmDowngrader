@@ -7,7 +7,9 @@ import xyz.wagyourtail.jvmdg.pipeline.ExtrasApplyTransform;
 import xyz.wagyourtail.jvmdg.pipeline.Stage;
 import xyz.wagyourtail.jvmdg.pipeline.StageHook;
 import xyz.wagyourtail.jvmdg.pipeline.TransformContext;
+import xyz.wagyourtail.jvmdg.pipeline.TransformContributor;
 import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.steps.*;
 
 import java.lang.reflect.Method;
@@ -15,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -36,7 +39,7 @@ import java.util.Set;
  * gets a {@link ProviderStep} instead — its custom orchestration can't be
  * decomposed.
  */
-public class DowngradeRegistrar {
+public class DowngradeRegistrar implements PipelineRegistrar {
 
     private final ClassDowngrader downgrader;
     private final DowngradeContext context;
@@ -47,6 +50,7 @@ public class DowngradeRegistrar {
     }
 
     /** Binds this registrar's run state into the pipeline context. */
+    @Override
     public DowngradeRegistrar install(TransformContext ctx) {
         context.install(ctx);
         return this;
@@ -56,13 +60,19 @@ public class DowngradeRegistrar {
      * The stage list for a class at {@code inputVersion}, ordered
      * input → target. Throws when no provider chain covers the input.
      */
+    @Override
     public List<Stage> stages(int inputVersion) {
         List<Stage> stages = new ArrayList<Stage>();
+        contribute(TransformContributor.Anchor.BEFORE_VERSION_CHAIN, stages);
+        // mask the 0xFFFF preview minor up front — provider lookup, variant
+        // capture labels, and the version window all work in majors
+        inputVersion = Utils.majorClassVersion(inputVersion);
         int version = inputVersion;
         for (final VersionProvider provider : downgrader.versionProviders(inputVersion)) {
             stages.add(stageFor(provider, version, inputVersion, false));
             version = provider.outputVersion;
         }
+        contribute(TransformContributor.Anchor.AFTER_VERSION_CHAIN, stages);
         return stages;
     }
 
@@ -79,10 +89,11 @@ public class DowngradeRegistrar {
      * caller's job — seed pre-run nodes into {@code TransformPipeline#variants()}
      * at their class-file versions.
      */
+    @Override
     public List<Stage> stages(Set<Integer> inputVersions) {
         List<VersionProvider> providers = new ArrayList<VersionProvider>();
         for (Integer v : inputVersions) {
-            for (VersionProvider p : downgrader.versionProviders(v)) {
+            for (VersionProvider p : downgrader.versionProviders(Utils.majorClassVersion(v))) {
                 if (!providers.contains(p)) {
                     providers.add(p);
                 }
@@ -95,6 +106,7 @@ public class DowngradeRegistrar {
             }
         });
         List<Stage> stages = new ArrayList<Stage>();
+        contribute(TransformContributor.Anchor.BEFORE_VERSION_CHAIN, stages);
         for (VersionProvider provider : providers) {
             // -1 inputVersion: the multiReleaseOriginal input-boundary
             // capture can't run here — a class's own input version is lost
@@ -103,7 +115,13 @@ public class DowngradeRegistrar {
             // seed input-state variants into the pipeline instead.
             stages.add(stageFor(provider, provider.inputVersion, -1, true));
         }
+        contribute(TransformContributor.Anchor.AFTER_VERSION_CHAIN, stages);
         return stages;
+    }
+
+    /** {@link TransformContributor#invoke} bound to this run's downgrader. */
+    private void contribute(TransformContributor.Anchor anchor, List<Stage> stages) {
+        TransformContributor.invoke(anchor, downgrader, stages);
     }
 
     private Stage stageFor(final VersionProvider provider, int version, int inputVersion, boolean filtered) {
@@ -119,14 +137,16 @@ public class DowngradeRegistrar {
             stage.filter(new Function<ClassNode, Boolean>() {
                 @Override
                 public Boolean apply(ClassNode node) {
-                    return node.version == provider.inputVersion;
+                    // major-compare: a preview class (minor 0xFFFF) enters
+                    // its major's boundary stage when allowPreview let it in
+                    return Utils.majorClassVersion(node.version) == provider.inputVersion;
                 }
             });
         } else {
             stage.precondition(new ClassPrecondition() {
                 @Override
                 public void check(ClassNode node) {
-                    if (node.version != provider.inputVersion) {
+                    if (Utils.majorClassVersion(node.version) != provider.inputVersion) {
                         throw new IllegalArgumentException("Class " + node.name + " is not version " + provider.inputVersion);
                     }
                 }

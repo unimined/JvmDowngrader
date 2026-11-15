@@ -9,18 +9,31 @@ import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
-import xyz.wagyourtail.jvmdg.version.Modify;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.version.IndyDesugar;
+import xyz.wagyourtail.jvmdg.version.ModifyContext;
 import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.Stub;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.TypeDescriptor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class J_L_R_ObjectMethods {
 
-    @Modify(ref = @Ref(value = "java/lang/runtime/ObjectMethods", member = "bootstrap", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"))
-    public static void bootstrap(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
-        var indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
+    @IndyDesugar(ref = @Ref(value = "java/lang/runtime/ObjectMethods", member = "bootstrap", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"))
+    public static void bootstrap(ModifyContext ctx) {
+        MethodNode mnode = ctx.method;
+        ClassNode cnode = ctx.node;
+        boolean noSynthetic = ctx.noSynthetic;
+        var indy = ctx.indy;
         var recordClass = (Type) indy.bsmArgs[0];
         var fieldNames = (String) indy.bsmArgs[1];
         var getters = new ArrayList<Handle>();
@@ -44,6 +57,116 @@ public class J_L_R_ObjectMethods {
             )
         );
         mnode.instructions.remove(indy);
+    }
+
+    private static final MethodHandle RECORD_EQUALS;
+    private static final MethodHandle RECORD_HASHCODE;
+    private static final MethodHandle RECORD_TOSTRING;
+
+    static {
+        try {
+            RECORD_EQUALS = MethodHandles.lookup().findStatic(J_L_R_ObjectMethods.class,
+                "recordEquals", MethodType.methodType(boolean.class, Class.class, MethodHandle[].class,
+                    Object.class, Object.class));
+            RECORD_HASHCODE = MethodHandles.lookup().findStatic(J_L_R_ObjectMethods.class,
+                "recordHashCode", MethodType.methodType(int.class, MethodHandle[].class, Object.class));
+            RECORD_TOSTRING = MethodHandles.lookup().findStatic(J_L_R_ObjectMethods.class,
+                "recordToString", MethodType.methodType(String.class, String.class, String.class,
+                    MethodHandle[].class, Object.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    /**
+     * Runtime impl for a direct {@code ObjectMethods.bootstrap} invoke —
+     * the indy callsite path is desugared by {@link #bootstrap(ModifyContext)}.
+     * Builds a {@link ConstantCallSite} whose target is a bound static
+     * helper {@code asType}'d onto the requested callsite type; getters
+     * are adapted to {@code (Object)Object} (asType boxes primitives).
+     */
+    @Stub(ref = @Ref(value = "java/lang/runtime/ObjectMethods", member = "bootstrap", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/TypeDescriptor;Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/invoke/MethodHandle;)Ljava/lang/Object;"))
+    public static Object bootstrapStub(MethodHandles.Lookup lookup, String name, TypeDescriptor type, Class<?> recordClass, String names, MethodHandle... getters) throws Throwable {
+        MethodHandle target;
+        switch (name) {
+            case "equals":
+                target = MethodHandles.insertArguments(RECORD_EQUALS, 0, recordClass,
+                    (Object) getters);
+                break;
+            case "hashCode":
+                target = MethodHandles.insertArguments(RECORD_HASHCODE, 0, (Object) getters);
+                break;
+            case "toString":
+                target = MethodHandles.insertArguments(RECORD_TOSTRING, 0,
+                    recordClass.getSimpleName(), names, (Object) getters);
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown ObjectMethods bootstrap: " + name);
+        }
+        return new ConstantCallSite(target.asType((MethodType) type));
+    }
+
+    private static Object get(MethodHandle getter, Object self) throws Throwable {
+        return getter.asType(MethodType.methodType(Object.class, Object.class)).invoke(self);
+    }
+
+    public static boolean recordEquals(Class<?> recordClass, MethodHandle[] getters, Object self,
+                                       Object other) throws Throwable {
+        if (self == other) return true;
+        if (other == null || !recordClass.isInstance(other)) return false;
+        for (MethodHandle getter : getters) {
+            Class<?> rt = getter.type().returnType();
+            Object a = get(getter, self);
+            Object b = get(getter, other);
+            // JDK record semantics: float/double compare via wrapper
+            // compare (NaN equal, -0.0 != 0.0); everything else
+            // value-equals after boxing
+            if (rt == float.class) {
+                if (Float.compare((Float) a, (Float) b) != 0) return false;
+            } else if (rt == double.class) {
+                if (Double.compare((Double) a, (Double) b) != 0) return false;
+            } else if (!Objects.equals(a, b)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static int recordHashCode(MethodHandle[] getters, Object self) throws Throwable {
+        int hash = 0;
+        for (MethodHandle getter : getters) {
+            Class<?> rt = getter.type().returnType();
+            Object v = get(getter, self);
+            int c;
+            if (rt == boolean.class) {
+                c = (Boolean) v ? 1231 : 1237;
+            } else if (rt == byte.class || rt == short.class || rt == int.class) {
+                c = ((Number) v).intValue();
+            } else if (rt == char.class) {
+                c = (Character) v;
+            } else if (rt == long.class) {
+                c = Long.hashCode((Long) v);
+            } else if (rt == float.class) {
+                c = Float.hashCode((Float) v);
+            } else if (rt == double.class) {
+                c = Double.hashCode((Double) v);
+            } else {
+                c = v == null ? 0 : v.hashCode();
+            }
+            hash = 31 * hash + c;
+        }
+        return hash;
+    }
+
+    public static String recordToString(String simpleName, String names, MethodHandle[] getters,
+                                        Object self) throws Throwable {
+        StringBuilder sb = new StringBuilder(simpleName).append('[');
+        String[] parts = names.isEmpty() ? new String[0] : names.split(";");
+        for (int i = 0; i < getters.length; i++) {
+            if (i > 0) sb.append(", ");
+            sb.append(parts[i]).append('=').append(get(getters[i], self));
+        }
+        return sb.append(']').toString();
     }
 
     private static void makeEquals(ClassNode cnode, String mname, String desc, Type recordClass, ArrayList<Handle> getters, boolean noSynthetic) {

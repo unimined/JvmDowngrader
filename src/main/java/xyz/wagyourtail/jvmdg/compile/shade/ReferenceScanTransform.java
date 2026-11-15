@@ -1,10 +1,15 @@
 package xyz.wagyourtail.jvmdg.compile.shade;
 
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.pipeline.ClassTransform;
 import xyz.wagyourtail.jvmdg.pipeline.TransformContext;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
+import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
 /**
  * Feeds each post-version-chain class into the input {@link ReferenceIndex}
@@ -31,13 +36,41 @@ public class ReferenceScanTransform implements ClassTransform {
             return node;
         }
         final ShadeContext shade = context;
-        context.inputIndex.add(node, context.positionOf(node, ctx.flags), new RefExtractor.Filter() {
+        final int position = context.positionOf(node, ctx.flags);
+        context.inputIndex.add(node, position, new RefExtractor.Filter() {
             @Override
             public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
+                // side-channel: every extracted ref — jdk ones included —
+                // feeds Shade-Reflection: usedOwners rooting at closure time
+                shade.noteInputRef(position, member);
                 return shade.apiClasses.contains(member.getOwner());
             }
         });
+        noteDynamicSites(shade, node, position);
         return node;
+    }
+
+    /**
+     * Records members containing calls into a dynamic reflection entry
+     * point ({@code Class.forName}, {@code Lookup.find*}, reflective
+     * {@code invoke}/{@code newInstance}) — {@code Shade-Reflection} below
+     * {@code all} warns on these at the closure barrier.
+     */
+    public static void noteDynamicSites(ShadeContext context, ClassNode node, int position) {
+        Type owner = Type.getObjectType(node.name);
+        for (MethodNode m : node.methods) {
+            for (AbstractInsnNode insn : m.instructions) {
+                if ((insn instanceof MethodInsnNode || insn instanceof FieldInsnNode)
+                    && ShadeContext.REFL_DISPATCH_OWNERS.contains(
+                        insn instanceof MethodInsnNode ? ((MethodInsnNode) insn).owner
+                            : ((FieldInsnNode) insn).owner)) {
+                    context.noteDynamicSite(position,
+                        new MemberNameAndDesc(m.name, Type.getMethodType(m.desc))
+                            .toFullyQualified(owner));
+                    break;
+                }
+            }
+        }
     }
 
     @Override

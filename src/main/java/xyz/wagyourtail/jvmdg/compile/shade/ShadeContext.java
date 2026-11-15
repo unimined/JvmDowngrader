@@ -11,7 +11,10 @@ import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +55,63 @@ public class ShadeContext {
 
     /** position → prefix remap for that position's required api types. */
     public final Map<Integer, SimpleRemapper> remappers = new HashMap<Integer, SimpleRemapper>();
+
+    /** owners whose member callsites resolve the target reflectively at runtime */
+    public static final Set<String> REFL_DISPATCH_OWNERS = new HashSet<String>(Arrays.asList(
+        "java/lang/Class", "java/lang/invoke/MethodHandles$Lookup",
+        "java/lang/reflect/Method", "java/lang/reflect/Constructor",
+        "java/lang/reflect/Field", "java/lang/invoke/MethodHandle"));
+
+    /**
+     * position → every ref the input extracted at that slot — jdk and api
+     * alike, captured as a side-channel of the scan filter (the index itself
+     * retains only api refs). {@code Shade-Reflection: usedOwners} roots
+     * reflection-table impls from these.
+     */
+    private final Map<Integer, Set<FullyQualifiedMemberNameAndDesc>> inputRefs =
+        new HashMap<Integer, Set<FullyQualifiedMemberNameAndDesc>>();
+
+    /** position → input members calling a dynamic reflection entry point. */
+    private final Map<Integer, Set<FullyQualifiedMemberNameAndDesc>> dynamicSites =
+        new HashMap<Integer, Set<FullyQualifiedMemberNameAndDesc>>();
+
+    private static <T> void note(Map<Integer, Set<T>> map, int position, T value) {
+        synchronized (map) {
+            Set<T> s = map.get(position);
+            if (s == null) {
+                s = new HashSet<T>();
+                map.put(position, s);
+            }
+            s.add(value);
+        }
+    }
+
+    private static <T> Set<T> at(Map<Integer, Set<T>> map, int position) {
+        synchronized (map) {
+            Set<T> s = map.get(position);
+            return s == null ? Collections.<T>emptySet() : Collections.unmodifiableSet(s);
+        }
+    }
+
+    /** Records {@code ref} as extracted from the input at {@code position} (pre-filter). */
+    public void noteInputRef(int position, FullyQualifiedMemberNameAndDesc ref) {
+        note(inputRefs, position, ref);
+    }
+
+    /** Every extracted input ref at {@code position} — empty when none. */
+    public Set<FullyQualifiedMemberNameAndDesc> inputRefsAt(int position) {
+        return at(inputRefs, position);
+    }
+
+    /** Records an input member that calls a dynamic reflection entry point. */
+    public void noteDynamicSite(int position, FullyQualifiedMemberNameAndDesc member) {
+        note(dynamicSites, position, member);
+    }
+
+    /** Input members calling dynamic reflection entry points at {@code position}. */
+    public Set<FullyQualifiedMemberNameAndDesc> dynamicSitesAt(int position) {
+        return at(dynamicSites, position);
+    }
 
     /**
      * Prefixed api classes ready for output — jar-relative path → node.

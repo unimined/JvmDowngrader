@@ -99,6 +99,7 @@ public @interface BoundFlag {
         WILDCARD_MAP(FlagParser.WILDCARD_MAP),
         STUB_POLICY(FlagParser.STUB_POLICY),
         ON_MISSING_API(FlagParser.ON_MISSING_API),
+        SHADE_REFLECTION(FlagParser.SHADE_REFLECTION),
         INTERNAL(null);
 
         final FlagParser instance;

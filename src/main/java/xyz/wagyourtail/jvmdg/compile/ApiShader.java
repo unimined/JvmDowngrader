@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.compile;
 
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.*;
+import org.objectweb.asm.commons.SimpleRemapper;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
@@ -23,6 +24,7 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -367,6 +369,89 @@ public class ApiShader {
             }
         }
         return byType;
+    }
+
+    /**
+     * One shaded output entry for a {@code META-INF/services/<iface>} provider
+     * file, or null when the file can't survive the shade: the service
+     * interface is an api class the closure pruned (nobody can load it), or
+     * no provider line remains. Provider lines naming an emitted api class
+     * carry the prefix; lines naming a pruned api class are dropped (the
+     * class is absent — keeping the line would crash {@code ServiceLoader});
+     * {@code #} comments, blanks and names outside the api set pass through.
+     * The file is renamed when the interface itself is an emitted api class
+     * so {@code ServiceLoader.load(prefixedInterface)} still resolves it.
+     */
+    public static Map.Entry<String, byte[]> mapServiceEntry(String name, byte[] bytes,
+            @Nullable SimpleRemapper remapper, Set<Type> apiClasses) {
+        String ifaceInternal = name.substring("META-INF/services/".length()).replace('.', '/');
+        String outName = name;
+        if (apiClasses.contains(Type.getObjectType(ifaceInternal))) {
+            String mapped = remapper == null ? null : remapper.map(ifaceInternal);
+            if (mapped == null) {
+                return null;
+            }
+            outName = "META-INF/services/" + mapped.replace('/', '.');
+        }
+        String content = new String(bytes, StandardCharsets.UTF_8);
+        StringBuilder out = new StringBuilder(content.length());
+        Set<String> seen = new HashSet<>();
+        for (String line : content.split("\n", -1)) {
+            int hash = line.indexOf('#');
+            String provider = (hash < 0 ? line : line.substring(0, hash)).trim();
+            if (provider.isEmpty()) {
+                out.append(line).append('\n');
+                continue;
+            }
+            String internal = provider.replace('.', '/');
+            String mapped = remapper == null ? null : remapper.map(internal);
+            if (mapped != null) {
+                provider = mapped.replace('/', '.');
+            } else if (apiClasses.contains(Type.getObjectType(internal))) {
+                continue;
+            }
+            if (!seen.add(provider)) {
+                continue;
+            }
+            out.append(provider);
+            if (hash >= 0) {
+                out.append(' ').append(line.substring(hash));
+            }
+            out.append('\n');
+        }
+        if (seen.isEmpty()) {
+            return null;
+        }
+        out.setLength(out.length() - 1);
+        return new AbstractMap.SimpleImmutableEntry<>(
+            outName, out.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Union of two provider files for the same service — the input jar and an
+     * api jar can both carry {@code META-INF/services/<iface>} as separate
+     * classpath resources, but a merged output jar holds exactly one file, so
+     * the provider sets merge: {@code first}'s providers lead (input precedes
+     * the api jars on a classpath, preserving {@code ServiceLoader} order),
+     * deduped by provider name. Comment lines are dropped — they carry no
+     * semantics.
+     */
+    public static byte[] mergeServices(byte[] first, byte[] second) {
+        StringBuilder out = new StringBuilder(first.length + second.length);
+        Set<String> seen = new LinkedHashSet<>();
+        for (byte[] bytes : new byte[][]{first, second}) {
+            for (String line : new String(bytes, StandardCharsets.UTF_8).split("\n", -1)) {
+                int hash = line.indexOf('#');
+                String provider = (hash < 0 ? line : line.substring(0, hash)).trim();
+                if (!provider.isEmpty() && seen.add(provider)) {
+                    out.append(provider).append('\n');
+                }
+            }
+        }
+        if (out.length() > 0) {
+            out.setLength(out.length() - 1);
+        }
+        return out.toString().getBytes(StandardCharsets.UTF_8);
     }
 
 }

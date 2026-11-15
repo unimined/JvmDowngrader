@@ -4,10 +4,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j21.stub.java_base.J_U_SequencedCollection;
+import xyz.wagyourtail.jvmdg.j21.stub.java_base.J_U_SequencedMap;
 
 import java.util.*;
 
-public class ReverseMap<K, V, T extends Map<K, V>> implements Map<K, V> {
+public class ReverseMap<K, V, T extends Map<K, V>> implements Map<K, V>, J_U_SequencedMap.Marker {
     public final T original;
 
     public ReverseMap(T original) {

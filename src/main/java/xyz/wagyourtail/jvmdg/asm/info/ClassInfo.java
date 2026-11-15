@@ -241,7 +241,7 @@ public class ClassInfo {
         return new IOFunction<String, ClassInfo>() {
             @Override
             public ClassInfo apply(String name) throws IOException {
-                try (InputStream is = loader.getResourceAsStream(name + ".class")) {
+                try (InputStream is = Utils.openResource(loader, name + ".class")) {
                     if (is == null) return null;
                     ClassReader cr = new ClassReader(is);
                     return of(cr);

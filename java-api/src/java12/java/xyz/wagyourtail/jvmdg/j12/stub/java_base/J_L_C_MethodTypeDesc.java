@@ -24,6 +24,10 @@ public interface J_L_C_MethodTypeDesc extends J_L_C_ConstantDesc, J_L_I_TypeDesc
     }
 
     @Override
+        // for generics
+    MethodType resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
+
+    @Override
     J_L_C_ClassDesc returnType();
 
     @Override

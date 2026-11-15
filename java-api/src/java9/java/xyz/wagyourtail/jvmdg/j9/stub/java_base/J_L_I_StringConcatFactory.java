@@ -3,10 +3,18 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
+import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.version.IndyDesugar;
 import xyz.wagyourtail.jvmdg.version.JEP;
-import xyz.wagyourtail.jvmdg.version.Modify;
+import xyz.wagyourtail.jvmdg.version.ModifyContext;
 import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.Stub;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -14,9 +22,12 @@ import java.util.Deque;
 @JEP(280)
 public class J_L_I_StringConcatFactory {
 
-    @Modify(ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcat", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
-    public static void makeConcat(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
-        InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
+    @IndyDesugar(ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcat", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
+    public static void makeConcat(ModifyContext ctx) {
+        MethodNode mnode = ctx.method;
+        ClassNode cnode = ctx.node;
+        boolean noSynthetic = ctx.noSynthetic;
+        InvokeDynamicInsnNode indy = ctx.indy;
         Type[] args = Type.getArgumentTypes(indy.desc);
         char[] chars = new char[args.length];
         for (int j = 0; j < args.length; j++) {
@@ -27,9 +38,12 @@ public class J_L_I_StringConcatFactory {
         mnode.instructions.remove(indy);
     }
 
-    @Modify(ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcatWithConstants", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
-    public static void makeConcatWithConstants(MethodNode mnode, int i, ClassNode cnode, boolean noSynthetic) {
-        InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) mnode.instructions.get(i);
+    @IndyDesugar(ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcatWithConstants", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
+    public static void makeConcatWithConstants(ModifyContext ctx) {
+        MethodNode mnode = ctx.method;
+        ClassNode cnode = ctx.node;
+        boolean noSynthetic = ctx.noSynthetic;
+        InvokeDynamicInsnNode indy = ctx.indy;
         Type[] args = Type.getArgumentTypes(indy.desc);
         Deque<Object> bsmArgs = new ArrayDeque<>(Arrays.asList(indy.bsmArgs));
         String chars = (String) bsmArgs.removeFirst();
@@ -66,6 +80,72 @@ public class J_L_I_StringConcatFactory {
      *  INVOKEVIRTUAL java/lang/String.concat (Ljava/lang/String;)Ljava/lang/String;
      *  ARETURN
      */
+    private static final MethodHandle CONCAT;
+    private static final MethodHandle CONCAT_CONST;
+
+    static {
+        try {
+            CONCAT = MethodHandles.lookup().findStatic(J_L_I_StringConcatFactory.class, "concat",
+                MethodType.methodType(String.class, Object[].class));
+            CONCAT_CONST = MethodHandles.lookup().findStatic(J_L_I_StringConcatFactory.class,
+                "concatWithConstants", MethodType.methodType(String.class, String.class,
+                    Object[].class, Object[].class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    /**
+     * Runtime impl for a direct {@code makeConcat} invoke — the indy
+     * callsite path is desugared by {@link #makeConcat(ModifyContext)}.
+     * The callsite's target is a {@code concat(Object[])} spreader
+     * {@code asType}'d onto the callsite desc, so primitives auto-box.
+     */
+    @Stub(ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcat", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;"))
+    public static CallSite makeConcatStub(MethodHandles.Lookup lookup, String name, MethodType concatType) {
+        return new ConstantCallSite(CONCAT
+            .asCollector(Object[].class, concatType.parameterCount())
+            .asType(concatType));
+    }
+
+    @Stub(ref = @Ref(value = "java/lang/invoke/StringConcatFactory", member = "makeConcatWithConstants", desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;"))
+    public static CallSite makeConcatWithConstantsStub(MethodHandles.Lookup lookup, String name, MethodType concatType, String recipe, Object... constants) {
+        MethodHandle bound = MethodHandles.insertArguments(CONCAT_CONST, 0, recipe,
+            (Object) constants);
+        return new ConstantCallSite(bound
+            .asCollector(Object[].class, concatType.parameterCount())
+            .asType(concatType));
+    }
+
+    public static String concat(Object[] args) {
+        StringBuilder sb = new StringBuilder();
+        for (Object arg : args) {
+            sb.append(arg);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * StringConcatFactory recipe expansion: {@code \\u0001} consumes the
+     * next dynamic arg, {@code \\u0002} the next constant, everything else
+     * is literal text.
+     */
+    public static String concatWithConstants(String recipe, Object[] constants, Object[] args) {
+        StringBuilder sb = new StringBuilder();
+        int ai = 0, ci = 0;
+        for (int i = 0; i < recipe.length(); i++) {
+            char c = recipe.charAt(i);
+            if (c == '\u0001') {
+                sb.append(args[ai++]);
+            } else if (c == '\u0002') {
+                sb.append(constants[ci++]);
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
     private static InsnList makeConcatInternal(String args, Deque<Type> types) {
         InsnList list = new InsnList();
         if (types.isEmpty()) {

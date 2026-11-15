@@ -12,24 +12,15 @@ import java.util.*;
 @Adapter(value = "java/util/SequencedMap", target = "java/util/Map")
 public class J_U_SequencedMap {
 
+    /**
+     * Opt-in {@code java/util/SequencedMap} membership for types that
+     * implement neither the real interface nor this stub — see
+     * {@link J_U_SequencedCollection.Marker}.
+     */
+    public interface Marker {
+    }
+
     private J_U_SequencedMap() {
-    }
-
-    public static boolean jvmdg$instanceof(Object obj) {
-        return obj instanceof LinkedHashMap<?, ?> ||
-            obj instanceof SortedMap<?, ?> ||
-            obj instanceof ReverseMap<?, ?, ?> ||
-            obj instanceof UnmodifiableSequencedMap<?, ?, ?>;
-    }
-
-    public static Map<?, ?> jvmdg$checkcast(Object obj) {
-        if (!jvmdg$instanceof(obj)) {
-            throw new ClassCastException();
-        }
-        if (obj instanceof Map<?, ?>) {
-            return (Map<?, ?>) obj;
-        }
-        throw new ClassCastException();
     }
 
     /**

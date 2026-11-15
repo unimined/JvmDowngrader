@@ -1,116 +1,89 @@
 package xyz.wagyourtail.jvmdg.stub.all.stub;
 
-import org.objectweb.asm.Type;
-import xyz.wagyourtail.jvmdg.ClassDowngrader;
-import xyz.wagyourtail.jvmdg.util.IOFunction;
-import xyz.wagyourtail.jvmdg.util.Pair;
+import xyz.wagyourtail.jvmdg.stub.ReflectionTable;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
-import xyz.wagyourtail.jvmdg.version.VersionProvider;
-import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
-import xyz.wagyourtail.jvmdg.version.map.StubEntry;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.*;
 
+/**
+ * Caller-sensitive {@link Class} reflection stubs — thin delegates into the
+ * ASM-free {@link ReflectionTable} runtime layer. The callsite carries the
+ * authoring version in via {@code downgradeVersion}'s trailing int; the
+ * one-arg {@code forName} also carries the containing class itself via
+ * {@code callerClass}'s {@code ldc}, so resolution happens against the
+ * callsite's own class loader rather than this class's.
+ */
 public class J_L_Class {
-
-    static final IOFunction<Type, Set<MemberNameAndDesc>> getMethods = new IOFunction<Type, Set<MemberNameAndDesc>>() {
-        @Override
-        public Set<MemberNameAndDesc> apply(Type type) throws IOException {
-            try {
-                Class<?> clazz = Class.forName(type.getClassName());
-                Set<MemberNameAndDesc> methods = new HashSet<>();
-                for (Method declaredMethod : clazz.getDeclaredMethods()) {
-                    if (Modifier.isAbstract(declaredMethod.getModifiers()) || Modifier.isPrivate(declaredMethod.getModifiers()))
-                        continue;
-                    MemberNameAndDesc member = new MemberNameAndDesc(declaredMethod.getName(), Type.getType(declaredMethod));
-                    methods.add(member);
-                }
-                return methods;
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    };
-    static final IOFunction<Type, List<Pair<Type, Boolean>>> getSuperTypes = new IOFunction<Type, List<Pair<Type, Boolean>>>() {
-        @Override
-        public List<Pair<Type, Boolean>> apply(Type type) throws IOException {
-            try {
-                Class<?> clazz = Class.forName(type.getClassName());
-                List<Pair<Type, Boolean>> parents = new ArrayList<>();
-                parents.add(new Pair<>(Type.getType(clazz.getSuperclass()), Boolean.FALSE));
-                for (Class<?> i : clazz.getInterfaces()) {
-                    parents.add(new Pair<>(Type.getType(i), Boolean.TRUE));
-                }
-                return parents;
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    };
 
     //TODO: FIELD STUBS
 
-    @Stub(ref = @Ref("java/lang/Class"), downgradeVersion = true, requiresRuntime = true)
-    public static Class<?> forName(String className, int origVersion) throws ClassNotFoundException {
-        List<VersionProvider> versionProviders = ClassDowngrader.getCurrentVersionDowngrader().versionProviders(origVersion);
-        Type classType = Type.getObjectType(className.replace('.', '/'));
-        for (VersionProvider vp : versionProviders) {
-            if (vp.classStubs.containsKey(classType)) {
-                return Class.forName(vp.classStubs.get(classType).target.getInternalName().replace('/', '.'));
-            }
-        }
-        return Class.forName(className);
+    @Stub(ref = @Ref("java/lang/Class"), downgradeVersion = true, callerClass = true)
+    public static Class<?> forName(String className, Class<?> caller, int origVersion) throws ClassNotFoundException {
+        return ReflectionTable.forName(className, caller, origVersion);
     }
 
-    @Stub(ref = @Ref("java/lang/Class"), downgradeVersion = true, requiresRuntime = true)
+    @Stub(ref = @Ref("java/lang/Class"), downgradeVersion = true)
     public static Class<?> forName(String className, boolean initialize, ClassLoader loader, int origVersion) throws ClassNotFoundException {
-        List<VersionProvider> versionProviders = ClassDowngrader.getCurrentVersionDowngrader().versionProviders(origVersion);
-        Type classType = Type.getObjectType(className.replace('.', '/'));
-        for (VersionProvider vp : versionProviders) {
-            if (vp.classStubs.containsKey(classType)) {
-                return Class.forName(vp.classStubs.get(classType).target.getInternalName().replace('/', '.'), initialize, loader);
-            }
-        }
-        return Class.forName(className, initialize, loader);
+        return ReflectionTable.forName(className, initialize, loader, origVersion);
     }
 
-    @Stub(requiresRuntime = true, downgradeVersion = true)
-    public static Method[] getMethods(Class<?> clazz, int origVersion) {
-        Type target;
-        if (clazz.isAnnotationPresent(Stub.class)) {
-            target = Type.getObjectType(clazz.getAnnotation(Stub.class).ref().value());
-        } else {
-            target = Type.getType(clazz);
-        }
-        List<VersionProvider> versionProviders = ClassDowngrader.getCurrentVersionDowngrader().versionProviders(origVersion);
-        List<Method> methods = new ArrayList<>(Arrays.asList(clazz.getMethods()));
-        for (VersionProvider vp : versionProviders) {
-            Set<String> warnings = new HashSet<>();
-            if (vp.classStubs.containsKey(target)) {
-                try {
-                    ClassDowngrader downgrader = ClassDowngrader.getCurrentVersionDowngrader();
-                    List<StubEntry> targets = vp.getStubMapper(target, downgrader.isInterface(downgrader.target, target, warnings), getMethods, getSuperTypes).getStubTargets();
-                    for (StubEntry t : targets) {
-                        if (!methods.contains(t.handler.method())) {
-                            methods.add(t.handler.method());
-                        }
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            if (!warnings.isEmpty()) {
-                for (String warning : warnings) {
-                    System.err.println(warning);
-                }
-            }
-        }
-        return methods.toArray(new Method[0]);
+    @Stub(downgradeVersion = true)
+    public static Method getMethod(Class<?> clazz, String name, Class<?>[] parameterTypes, int origVersion) throws NoSuchMethodException {
+        return ReflectionTable.getMethod(clazz, name, parameterTypes, origVersion);
     }
 
+    @Stub(downgradeVersion = true)
+    public static Method getDeclaredMethod(Class<?> clazz, String name, Class<?>[] parameterTypes, int origVersion) throws NoSuchMethodException {
+        return ReflectionTable.getDeclaredMethod(clazz, name, parameterTypes, origVersion);
+    }
+
+    @Stub(downgradeVersion = true)
+    public static java.lang.reflect.Constructor<?> getConstructor(Class<?> clazz, Class<?>[] parameterTypes, int origVersion) throws NoSuchMethodException {
+        return ReflectionTable.getConstructor(clazz, parameterTypes, origVersion);
+    }
+
+    @Stub(downgradeVersion = true)
+    public static java.lang.reflect.Constructor<?> getDeclaredConstructor(Class<?> clazz, Class<?>[] parameterTypes, int origVersion) throws NoSuchMethodException {
+        return ReflectionTable.getDeclaredConstructor(clazz, parameterTypes, origVersion);
+    }
+
+    /**
+     * {@code Class.getInterfaces} — the runtime list adjusted to the
+     * authored view: {@code @GainedInterfaces}-recorded injections and
+     * {@code $Ov$} markers filtered, {@code $Marker} entries replaced by
+     * their stand-in, and interfaces the class gained in
+     * {@code (runningJvm, origVersion]} appended as stand-ins. Stand-ins
+     * resolve against the callsite's loader ({@code callerClass}) so the
+     * returned {@code Class} objects are identity-equal to the ones the
+     * callsite's own {@code ldc}s produce.
+     */
+    // owner derives from the self param — an explicit ref would keep self
+    // in the member key and no callsite would ever match
+    @Stub(downgradeVersion = true, callerClass = true)
+    public static Class<?>[] getInterfaces(Class<?> clazz, Class<?> caller, int origVersion) {
+        return ReflectionTable.getInterfaces(clazz, caller, origVersion);
+    }
+
+    /** {@code Class.getGenericInterfaces} — same adjustments on the generic view. */
+    @Stub(downgradeVersion = true, callerClass = true)
+    public static java.lang.reflect.Type[] getGenericInterfaces(Class<?> clazz, Class<?> caller, int origVersion) {
+        return ReflectionTable.getGenericInterfaces(clazz, caller, origVersion);
+    }
+
+    /**
+     * Real-only: the member table answers singular lookups for stubbed
+     * members, but a whole-class enumeration can't honestly synthesize
+     * missing members — deferred to CG-3d's filter machinery if needed.
+     */
+    @Stub
+    public static Method[] getMethods(Class<?> clazz) {
+        return clazz.getMethods();
+    }
+
+    @Stub
+    public static Method[] getDeclaredMethods(Class<?> clazz) {
+        return clazz.getDeclaredMethods();
+    }
 
 }

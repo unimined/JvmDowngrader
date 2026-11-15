@@ -106,6 +106,7 @@ public class TestCtorRewrite implements Opcodes {
             }
             @Override public MethodRef getModifyFor(MemberNameAndDesc member, int opcode, Set<String> warnings) { return null; }
             @Override public MethodRef rawModify(MemberNameAndDesc member) { return null; }
+            @Override public MethodRef rawIndyDesugar(MemberNameAndDesc member) { return null; }
             @Override public MemberNameAndDesc unstubMember(String name, Type desc) {
                 return new MemberNameAndDesc(name, desc);
             }
@@ -526,11 +527,15 @@ public class TestCtorRewrite implements Opcodes {
             @Override public Class<? extends Annotation> annotationType() { return Stub.class; }
             @Override public Ref ref() { return null; }
             @Override public boolean downgradeVersion() { return false; }
+            @Override public boolean callerClass() { return false; }
             @Override public boolean requiresRuntime() { return false; }
             @Override public boolean noSpecial() { return false; }
             @Override public String[] excludeChild() { return new String[0]; }
             @Override public xyz.wagyourtail.jvmdg.version.StubKind kind() {
                 return xyz.wagyourtail.jvmdg.version.StubKind.AUTO;
+            }
+            @Override public xyz.wagyourtail.jvmdg.version.StubCondition condition() {
+                return xyz.wagyourtail.jvmdg.version.StubCondition.ALWAYS;
             }
         };
     }

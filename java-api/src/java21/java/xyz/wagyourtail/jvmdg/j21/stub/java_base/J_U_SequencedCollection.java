@@ -2,7 +2,6 @@ package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.exc.PartialStubError;
 import xyz.wagyourtail.jvmdg.j21.impl.ReverseCollection;
-import xyz.wagyourtail.jvmdg.j21.impl.UnmodifiableSequencedCollection;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -13,25 +12,16 @@ import java.util.*;
 @Adapter(value = "java/util/SequencedCollection", target = "java/util/Collection")
 public class J_U_SequencedCollection {
 
+    /**
+     * Opt-in {@code java/util/SequencedCollection} membership for types that
+     * implement neither the real interface nor this stub — jvmdg's sequenced
+     * impls ({@code ReverseCollection}, {@code UnmodifiableSequencedCollection})
+     * declare it here; the {@code RetroTypes} table lists it for every adapter.
+     */
+    public interface Marker {
+    }
+
     private J_U_SequencedCollection() {
-    }
-
-    public static boolean jvmdg$instanceof(Object obj) {
-        Class<?> declaringClass = obj.getClass().getDeclaringClass();
-        return obj instanceof List<?> ||
-            obj instanceof LinkedHashSet<?> ||
-            obj instanceof Deque<?> ||
-            obj instanceof SortedSet<?> ||
-            obj instanceof ReverseCollection<?, ?> ||
-            obj instanceof UnmodifiableSequencedCollection<?, ?> ||
-            (declaringClass != null && declaringClass.isAssignableFrom(LinkedHashMap.class));
-    }
-
-    public static <E> Collection<E> jvmdg$checkcast(Object obj) {
-        if (!(obj instanceof Collection<?>)) {
-            throw new ClassCastException();
-        }
-        return (Collection<E>) obj;
     }
 
     @Stub
@@ -51,7 +41,7 @@ public class J_U_SequencedCollection {
         throw PartialStubError.create();
     }
 
-    @Stub(excludeChild = "java/util/Deque")
+    @Stub
     public static <E> void addFirst(Collection<E> self, E e) {
         if (self instanceof ReverseCollection<E, ?> rev) {
             addLast(rev.original, e);
@@ -67,7 +57,7 @@ public class J_U_SequencedCollection {
         throw PartialStubError.create();
     }
 
-    @Stub(excludeChild = "java/util/Deque")
+    @Stub
     public static <E> void addLast(Collection<E> self, E e) {
         if (self instanceof ReverseCollection<E, ?> rev) {
             addFirst(rev.original, e);
@@ -86,7 +76,7 @@ public class J_U_SequencedCollection {
         throw PartialStubError.create();
     }
 
-    @Stub(excludeChild = "java/util/Deque")
+    @Stub
     public static <E> E getFirst(Collection<E> self) {
         if (self.isEmpty()) {
             throw new NoSuchElementException();
@@ -99,7 +89,7 @@ public class J_U_SequencedCollection {
         return self.iterator().next();
     }
 
-    @Stub(excludeChild = "java/util/Deque")
+    @Stub
     public static <E> E getLast(Collection<E> self) {
         if (self.isEmpty()) {
             throw new NoSuchElementException();
@@ -129,7 +119,7 @@ public class J_U_SequencedCollection {
         }
     }
 
-    @Stub(excludeChild = "java/util/Deque")
+    @Stub
     public static <E> E removeFirst(Collection<E> self) {
         checkEmptyRemovable(self);
         if (self instanceof List<E> list) {
@@ -143,7 +133,7 @@ public class J_U_SequencedCollection {
         return e;
     }
 
-    @Stub(excludeChild = "java/util/Deque")
+    @Stub
     public static <E> E removeLast(Collection<E> self) {
         checkEmptyRemovable(self);
         if (self instanceof List<E> list) {

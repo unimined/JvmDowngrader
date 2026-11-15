@@ -27,6 +27,8 @@ public class ClassMapping implements MemberResolver {
 
     private final Coverage coverage;
     private final MemberStubTransform memberStubTransform = new MemberStubTransform();
+    /** lazily resolved {@code classStubs[current].mode == OWN_INTERFACE} for the noSpecial derivation */
+    private Boolean ownInterfaceOwner;
 
     public ClassMapping(final Coverage coverage, final Lazy<List<ClassMapping>> parents, final Type current, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> members, VersionProvider vp) {
         this.parents = parents;
@@ -170,6 +172,21 @@ public class ClassMapping implements MemberResolver {
         stubsForWrite().memberModify.put(member, method);
     }
 
+    public void addIndyDesugar(MemberNameAndDesc member, Method method) {
+        addIndyDesugar(member, new MethodRef(method));
+    }
+
+    public void addIndyDesugar(MemberNameAndDesc member, MethodRef method) {
+        if (vp.shouldSkip(method)) {
+            return;
+        }
+        int modifiers = method.modifiers;
+        if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
+            throw new RuntimeException("@IndyDesugar " + method + " must be public static");
+        }
+        stubsForWrite().indyDesugars.put(member, method);
+    }
+
     public void warnMember(MemberNameAndDesc member, Set<String> warnings, boolean invoke_static) {
         FullyQualifiedMemberNameAndDesc fqn = member.toFullyQualified(current);
         String mod = coverage.checkMember(fqn);
@@ -196,6 +213,12 @@ public class ClassMapping implements MemberResolver {
     public MethodRef rawModify(MemberNameAndDesc member) {
         StubRegistry.Owner stubs = stubs();
         return stubs == null ? null : stubs.memberModify.get(member);
+    }
+
+    @Override
+    public MethodRef rawIndyDesugar(MemberNameAndDesc member) {
+        StubRegistry.Owner stubs = stubs();
+        return stubs == null ? null : stubs.indyDesugars.get(member);
     }
 
     public StubEntry getParentStubFor(MemberNameAndDesc member, boolean runtimeAvailable, int opcode, Set<String> warnings) {
@@ -277,14 +300,15 @@ public class ClassMapping implements MemberResolver {
                     return null;
                 }
             }
-            if (!runtimeAvailable && entry.requiresRuntime) {
-                warnings.add(entry.handler + " requires runtime transformation but runtime is not available...");
+            if (!entry.condition.active(runtimeAvailable, vp.allowPreview())) {
+                warnings.add(entry.handler + " is condition " + entry.condition +
+                    " but the run does not satisfy it...");
                 return null;
             }
             // NEWINVOKESPECIAL is the <init> flavour of invokespecial — a
             // ctor handle must respect noSpecial the same way
             if ((opcode == Opcodes.H_INVOKESPECIAL || opcode == Opcodes.H_NEWINVOKESPECIAL)
-                && entry.noSpecial) {
+                && (entry.noSpecial || ownInterfaceOwner())) {
                 return null;
             }
             return entry;
@@ -293,13 +317,43 @@ public class ClassMapping implements MemberResolver {
         }
     }
 
+    /**
+     * {@code current} is an OWN_INTERFACE adapter's source type — its
+     * stand-in interface keeps real default bodies at the target version,
+     * so an {@code invokespecial X.super.m()} site resolves to the
+     * interface default and must never be rerouted through the impl-adapter
+     * dispatch (that would fire the object's own override instead of the
+     * super impl). Member stubs under such an owner behave as if
+     * {@code noSpecial = true}; the annotation attr is only needed for
+     * members whose owner isn't a class-stubbed type.
+     */
+    private boolean ownInterfaceOwner() {
+        if (ownInterfaceOwner == null) {
+            // member stubs under an own-interface adapter register keyed by
+            // the STAND-IN type (the adapter class itself), while classStubs
+            // keys by the source type — so this resolves by stubType, not by
+            // map key
+            boolean found = false;
+            for (ClassStubEntry cs : vp.classStubs.values()) {
+                if (cs.mode == xyz.wagyourtail.jvmdg.version.Adapter.Mode.OWN_INTERFACE
+                    && cs.stubType.equals(current)) {
+                    found = true;
+                    break;
+                }
+            }
+            ownInterfaceOwner = found;
+        }
+        return ownInterfaceOwner;
+    }
+
     @Override
     public CtorEntry getCtorFor(MemberNameAndDesc member, boolean runtimeAvailable, Set<String> warnings) {
         try {
             StubRegistry.Owner stubs = stubs();
             CtorEntry entry = stubs == null ? null : stubs.ctor.get(member);
-            if (entry != null && !runtimeAvailable && entry.requiresRuntime) {
-                warnings.add(member + " requires runtime transformation but runtime is not available...");
+            if (entry != null && !entry.condition.active(runtimeAvailable, vp.allowPreview())) {
+                warnings.add(member + " is condition " + entry.condition +
+                    " but the run does not satisfy it...");
                 return null;
             }
             return entry;

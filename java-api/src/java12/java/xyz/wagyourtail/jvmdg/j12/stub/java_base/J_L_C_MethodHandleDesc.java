@@ -82,6 +82,10 @@ public interface J_L_C_MethodHandleDesc extends J_L_C_ConstantDesc {
     J_L_C_MethodTypeDesc invocationType();
 
     @Override
+        // for generics
+    MethodHandle resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException;
+
+    @Override
     boolean equals(Object o);
 
     class AsType extends J_L_C_DynamicConstantDesc<MethodHandle> implements J_L_C_MethodHandleDesc {

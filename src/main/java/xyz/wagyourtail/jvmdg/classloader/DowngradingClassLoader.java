@@ -84,6 +84,9 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
      * transformed (UnsupportedClassVersionError on old JVMs). These packages
      * are loaded child-first so they are defined by this loader and every
      * class literal inside them routes through {@link #transformClass}.
+     * {@code gen.} holds the generated dispatchers — their defining loader
+     * is also the context {@code RetroTypes} resolves reflective api
+     * classes through, so they must be defined here, not by the parent.
      *
      * <p>Shared packages (util, exc, version, the stub annotations under
      * {@code stub.} itself) deliberately stay parent-first: they must keep
@@ -95,7 +98,7 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
             return false;
         }
         String rest = name.substring("xyz.wagyourtail.jvmdg.".length());
-        if (rest.startsWith("providers.") || rest.startsWith("stub.all.")) {
+        if (rest.startsWith("providers.") || rest.startsWith("stub.all.") || rest.startsWith("gen.")) {
             return true;
         }
         // versioned packages: j8., j9., j10., ...
@@ -145,7 +148,7 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
                     try {
                         URL url = findResource(s + ".class");
                         if (url == null) return null;
-                        return Utils.readAllBytes(url.openStream());
+                        return Utils.readAllBytes(Utils.openUncached(url));
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }

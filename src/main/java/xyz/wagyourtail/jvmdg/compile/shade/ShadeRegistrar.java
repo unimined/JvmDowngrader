@@ -69,6 +69,7 @@ public class ShadeRegistrar {
         stages.add(new Stage("shade:closure").onEnter(new ShadeClosureBarrier(context)));
         stages.add(new Stage("shade:inline").transform(new ShadeInlineTransform(context)));
         stages.add(new Stage("shade:prefix").transform(new ShadePrefixTransform(context)));
+        stages.add(new Stage("shade:reflection-fold").transform(new ShadeReflectionFoldTransform(context)));
         stages.add(new Stage("shade:module-info").transform(new ShadeModuleInfoTransform()));
         return stages;
     }

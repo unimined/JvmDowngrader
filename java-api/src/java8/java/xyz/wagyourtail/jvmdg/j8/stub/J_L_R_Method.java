@@ -8,10 +8,9 @@ import java.lang.reflect.Modifier;
 
 public class J_L_R_Method {
 
-    @Stub
-    public static int getParameterCount(Method self) {
-        return self.getParameterTypes().length;
-    }
+    // getParameterCount lives in stub/all (view-aware, j7-safe via
+    // getParameterTypes().length) — a second registration here would
+    // collide on the same callsite member at the 52->51 boundary.
 
     @Stub
     public static boolean isDefault(Method self) {
