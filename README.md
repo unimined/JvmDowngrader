@@ -173,6 +173,30 @@ This is the expected usage of these functions.
 
 `jvmdg.dg` has optional parameter, `shade: Boolean`, turn this to false if you plan on shadow'ing this configuration and
 running `shadeDowngradedApi`, as otherwise there may be duplicate jvmdg-api classes.
+
+### Scoped flag specs
+
+For multi-target builds (or plugins building on jvmdg) the extension carries named
+`FlagsSpec`s — standalone bundles of all the same flags, conventioned to the global
+`jvmdg` values so explicit sets win:
+
+```gradle
+jvmdg.spec("test") {
+    downgradeTo = JavaVersion.VERSION_11
+    enabled = false // declared but inert — check this before using the spec
+}
+
+// bind a task to a spec's flags
+task downgradeTest(type: xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles) {
+    inputCollection = sourceSets.test.runtimeClasspath
+    convention(jvmdg.specs["test"])
+    onlyIf { jvmdg.specs["test"].enabled.get() }
+}
+```
+
+Specs can also chain each other — `spec("b") { convention(spec("a")) }` —
+and plugin authors can create their own standalone specs with
+`objects.newInstance(FlagsSpec::class.java)`.
 ie. `jvmdg.dg(configurations.downgrade, false)`
 
 you may have to include whatever configuration you're downgrading in ShadowJar yourself.

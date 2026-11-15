@@ -118,6 +118,23 @@ val downgradeFiles by tasks.creating(DowngradeFiles::class) {
     downgradeTo = JavaVersion.VERSION_1_8
 }
 
+// scoped flag specs: a named FlagsSpec conventions the jvmdg
+// extension's values; explicit sets win
+val scoped = jvmdg.spec("test-scoped") {
+    enabled.set(false)
+    downgradeTo.set(JavaVersion.VERSION_11)
+}
+
+tasks.register("verifyScopedSpec") {
+    doLast {
+        check(!scoped.enabled.get()) { "spec enabled should be false" }
+        check(scoped.downgradeTo.get() == JavaVersion.VERSION_11) { "spec downgradeTo should be 11" }
+        // unset flags inherit the extension's conventions
+        check(scoped.logLevel.get() == "INFO") { "spec logLevel should inherit jvmdg" }
+    }
+}
+tasks.named("build") { dependsOn("verifyScopedSpec") }
+
 val shadeFiles by tasks.creating(ShadeFiles::class) {
     dependsOn(downgradeFiles)
     inputCollection = downgradeFiles.outputCollection

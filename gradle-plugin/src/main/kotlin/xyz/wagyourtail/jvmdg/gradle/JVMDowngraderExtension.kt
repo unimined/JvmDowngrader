@@ -4,6 +4,7 @@ import groovy.lang.Closure
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
 import org.gradle.api.JavaVersion
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
@@ -12,6 +13,7 @@ import org.gradle.jvm.tasks.Jar
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
+import xyz.wagyourtail.jvmdg.gradle.flags.FlagsSpec
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.convention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
@@ -26,6 +28,8 @@ import javax.inject.Inject
 
 val Project.jvmdg
     get() = project.extensions.getByType(JVMDowngraderExtension::class.java)
+
+private val API_EXTRACTION_LOCK = Any()
 
 abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val project: Project): ShadeFlags by project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as ShadeFlags {
     @get:Internal
@@ -48,13 +52,53 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         }
     }
 
+    /**
+     * Named [FlagsSpec]s for multi-target/multi-scope builds —
+     * `jvmdg.spec("test") { downgradeTo.set(JavaVersion.VERSION_11) }`
+     * or `jvmdg.specs.create("test") { }`. Every spec conventions this
+     * extension's flag values, so global settings flow through and
+     * per-spec sets win. Specs do nothing on their own — bind them to
+     * a task with `convention(jvmdg.specs["test"])` inside the task's
+     * configuration, or read them from another plugin's wiring.
+     *
+     * @since 2.1.0
+     */
+    @get:Internal
+    val specs: NamedDomainObjectContainer<FlagsSpec> = project.objects
+        .domainObjectContainer(FlagsSpec::class.java)
+        .also { container ->
+            container.configureEach { spec ->
+                spec.convention(this@JVMDowngraderExtension)
+            }
+        }
+
+    /**
+     * Get or create a named [FlagsSpec] in [specs].
+     * @since 2.1.0
+     */
+    fun spec(name: String): FlagsSpec = specs.maybeCreate(name)
+
+    /**
+     * Configure a named [FlagsSpec] in [specs], creating it if needed.
+     * @since 2.1.0
+     */
+    fun spec(name: String, action: FlagsSpec.() -> Unit): FlagsSpec =
+        specs.maybeCreate(name).apply(action)
+
     init {
         downgradeTo.convention(JavaVersion.VERSION_1_8).finalizeValueOnRead()
+        // the provider captures only serializable values (project dir,
+        // version string, refresh flag) — capturing `project` here
+        // poisons configuration-cache serialization when a task input
+        // chains this convention
+        val apiJarDir = project.layout.projectDirectory.asFile
+        val implVersion = version
+        val refreshDependencies = project.gradle.startParameter.isRefreshDependencies
         apiJar.convention(project.provider {
-            val apiJar = project.file(".gradle").resolve("jvmdg/java-api-${version}.jar")
-            if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
-                synchronized(project) {
-                    if (!apiJar.exists() || project.gradle.startParameter.isRefreshDependencies) {
+            val apiJar = apiJarDir.resolve(".gradle/jvmdg/java-api-${implVersion}.jar")
+            if (!apiJar.exists() || refreshDependencies) {
+                synchronized(API_EXTRACTION_LOCK) {
+                    if (!apiJar.exists() || refreshDependencies) {
                         apiJar.parentFile.mkdirs()
                         JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar")
                             .use { stream ->
