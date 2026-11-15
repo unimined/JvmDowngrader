@@ -9,6 +9,7 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 import xyz.wagyourtail.jvmdg.ClassDowngrader
@@ -40,7 +41,21 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
 
     @get:Internal
     val outputMap: Map<File, File>
-        get() = inputCollection.associateWith { temporaryDir.resolve(it.name) }
+        get() = inputCollection.mappedOutputs()
+
+    /**
+     * Disambiguated output paths — inputs sharing a file name get
+     * `-1`, `-2`, … suffixes so their outputs cannot overwrite
+     * each other.
+     */
+    private fun FileCollection.mappedOutputs(): Map<File, File> {
+        val seen = mutableMapOf<String, Int>()
+        return associateWith { f ->
+            val idx = seen.getOrDefault(f.name, 0)
+            seen[f.name] = idx + 1
+            temporaryDir.resolve(if (idx == 0) f.name else "${f.name}-$idx")
+        }
+    }
 
     /**
      * this is the true output, gradle just doesn't have a
@@ -48,10 +63,10 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
      */
     @get:Internal
     val outputCollection: FileCollection by lazy {
-        val fd = inputCollection.map { it to temporaryDir.resolve(it.name) }
+        val fd = inputCollection.mappedOutputs()
 
-        outputs.dirs(*fd.filter { it.first.isDirectory }.map { it.second }.toTypedArray())
-        outputs.files(*fd.filter { it.first.isFile }.map { it.second }.toTypedArray())
+        outputs.dirs(*fd.filter { it.key.isDirectory }.values.toTypedArray())
+        outputs.files(*fd.filter { it.key.isFile }.values.toTypedArray())
 
         outputs.files
     }
@@ -65,6 +80,18 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
         convention(project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as ShadeFlags)
     }
 
+    /**
+     * Bind a [org.gradle.api.tasks.SourceSet]'s compiled class dirs as
+     * inputs — typically chained on a `DowngradeFiles` task over the
+     * same source set.
+     *
+     * @since 2.1.0
+     */
+    fun sourceSet(name: String) {
+        inputCollection = project.extensions.getByType(SourceSetContainer::class.java)
+            .getByName(name).output.classesDirs
+    }
+
     @TaskAction
     fun doDowngrade() {
         val toDowngrade = inputCollection.map { it.toPath() }.filter { it.exists() }
@@ -74,7 +101,7 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
 
             outputs.files.forEach { it.deleteRecursively() }
 
-            val downgraded = toDowngrade.map { temporaryDir.resolve(it.name) }.map {
+            val downgraded = toDowngrade.map { outputMap[it.toFile()] ?: temporaryDir.resolve(it.name) }.map {
                 if (it.extension == "jar" || it.extension == "zip") {
                     val fs = Utils.openZipFileSystem(it.toPath(), true)
                     fileSystems.add(fs)

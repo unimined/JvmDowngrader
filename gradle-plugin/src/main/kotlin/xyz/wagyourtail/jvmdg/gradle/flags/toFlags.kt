@@ -49,6 +49,9 @@ fun convention(self: DowngradeFlags, target: DowngradeFlags) = with(self) {
     if (this is ShadeFlags && target is ShadeFlags) {
         shadeInlining.convention(target.shadeInlining)
     }
+    if (self is EnabledFlag && target is EnabledFlag) {
+        self.enabled.convention(target.enabled)
+    }
 }
 
 fun DowngradeFlags.convention(target: DowngradeFlags) {

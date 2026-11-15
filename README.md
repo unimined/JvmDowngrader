@@ -77,10 +77,10 @@ jvmdg.multiReleaseVersions = [].toSet()
 You can see more of what these values mean
 by [checking the docs on the flags classes](gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/flags)
 
-This will create a default downgrade task for `jar` (or `shadowJar` if present) called `downgradeJar` that will
-downgrade the output to java 8 by default.
+Once the `java` plugin is applied, this will register a default downgrade task for `jar` (or `shadowJar` if present)
+called `downgradeJar` that will downgrade the output to java 8 by default.
 as well as a `shadeDowngradedApi` to then insert the required classes for not having a runtime dependency on the api
-jar.
+jar. (Without `java`, no tasks are registered — the flags/spec/`dg` surfaces still work.)
 
 you can change the downgrade version by doing:
 
@@ -129,7 +129,14 @@ task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeJar) 
 task downgradeFileCollection(type: xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles) {
     inputCollection = files("file1.jar", "file2.jar")
     downgradeTo = JavaVersion.VERSION_1_8 // default
-    classpath = sourceSets.main.runtimeClasspath // default
+    classpath = sourceSets.main.runtimeClasspath // default when java plugin is present, else empty
+}
+
+// or bind a source set directly — its output classes dirs become the
+// inputs and its runtimeClasspath the member-resolution classpath:
+task downgradeTestClasses(type: xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles) {
+    sourceSet "test"
+    downgradeTo = JavaVersion.VERSION_1_8
 }
 
 // get the output with
@@ -210,6 +217,39 @@ ie. `jvmdg.dg(configurations.downgrade, false)`
 
 you may have to include whatever configuration you're downgrading in ShadowJar yourself.
 I do not automatically make the configuration shadowed into your output.
+
+### Embedding jvmdg in your own plugin
+
+The plugin is deliberately consumable without its task surface: `apply` only
+registers the shared flag defaults and the `jvmdg` extension, and the default
+tasks only appear once `java` is applied. The pieces meant for embedders:
+
+- **`jvmdg.specs` / `jvmdg.spec("name")`** — per-scope `FlagsSpec`s that
+  convention the global extension; your own scopes (source sets, environments,
+  variants) get `own set > spec > global > built-in` precedence for free.
+- **`spec.enabled`** — specs can be declared but inert; gate bound tasks with
+  `onlyIf { spec.enabled.get() }` (Gradle task types can't carry an `enabled`
+  *property* — the name is already a plain boolean on `Task`).
+- **`convention(spec)`** — binds any `DowngradeFlags` carrier (a task, a
+  transform's params, another spec) to a spec: set values win, unset values
+  keep their existing conventions. `enabled` flows when both ends are
+  `EnabledFlag`s.
+- **`toFlags()`** — converts any flags carrier to the engine's `cli.Flags`;
+  engine entry points are `ClassDowngrader`, `PathDowngrader` (dirs),
+  `ZipDowngrader` (jars) and `ApiShader` (stub shading).
+- **`jvmdg.javaApi`** — a resolvable `jvmdgApi` configuration carrying the
+  `jvmdowngrader-java-api` artifact at this plugin's version, for consumers
+  that prefer lazy maven resolution over the bundled api jar extraction:
+  `spec.apiJar.addAll(jvmdg.javaApi.map { it.files })`.
+- **Compile-vs-emit is yours** — jvmdg only knows the *emit* level
+  (`downgradeTo`); what java level you compile at, and how a user asks for a
+  higher compile level, is the consuming plugin's schema (e.g. unimined's
+  `source`/`target` pair).
+- **Supported input majors are a release property** — downgrading is a pure
+  bytecode transform (inputs are never `defineClass`'d; api stubs load
+  through a downgrading classloader), so there is no "build JVM ≥ source"
+  requirement. The ceiling is the `VersionProvider` coverage and bundled ASM
+  in the jvmdg release itself — document yours accordingly.
 
 #### Including newer dependencies on lower java version building
 

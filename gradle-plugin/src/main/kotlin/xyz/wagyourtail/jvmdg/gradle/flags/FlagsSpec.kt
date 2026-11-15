@@ -28,7 +28,7 @@ import javax.inject.Inject
 abstract class FlagsSpec @Inject constructor(
     @get:Internal
     private val name: String
-) : ShadeFlags, Named {
+) : ShadeFlags, Named, EnabledFlag {
 
     override fun getName(): String = name
 
@@ -42,7 +42,7 @@ abstract class FlagsSpec @Inject constructor(
      */
     @get:Input
     @get:Optional
-    abstract val enabled: Property<Boolean>
+    abstract override val enabled: Property<Boolean>
 
     init {
         enabled.convention(true)

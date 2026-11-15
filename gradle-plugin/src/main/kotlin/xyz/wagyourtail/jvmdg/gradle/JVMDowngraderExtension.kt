@@ -1,14 +1,18 @@
 package xyz.wagyourtail.jvmdg.gradle
 
 import groovy.lang.Closure
+import groovy.lang.DelegatesTo
 import groovy.transform.stc.ClosureParams
 import groovy.transform.stc.SimpleType
+import org.gradle.api.Action
 import org.gradle.api.JavaVersion
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.NamedDomainObjectProvider
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
@@ -35,22 +39,22 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
     @get:Internal
     val version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.7.0")
 
+    /**
+     * The default `downgradeJar` task — registered only once the `java`
+     * plugin is present, since it wraps `shadowJar`/`jar`. Embedders
+     * that never apply `java` get no task noise from this plugin.
+     */
     @get:Internal
-    val defaultTask = project.tasks.register("downgradeJar", DowngradeJar::class.java).apply {
-        configure {
-            val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
-            it.inputFile.set(jar.archiveFile)
-            it.archiveClassifier.set("downgraded")
-        }
-    }
+    lateinit var defaultTask: TaskProvider<DowngradeJar>
+        private set
 
+    /**
+     * The default `shadeDowngradedApi` task — registered only once the
+     * `java` plugin is present.
+     */
     @get:Internal
-    val defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeJar::class.java).apply {
-        configure {
-            it.inputFile.set(defaultTask.get().archiveFile)
-            it.archiveClassifier.set("downgraded-shaded")
-        }
-    }
+    lateinit var defaultShadeTask: TaskProvider<ShadeJar>
+        private set
 
     /**
      * Named [FlagsSpec]s for multi-target/multi-scope builds —
@@ -84,6 +88,22 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
      */
     fun spec(name: String, action: FlagsSpec.() -> Unit): FlagsSpec =
         specs.maybeCreate(name).apply(action)
+
+    /**
+     * Groovy/Java-friendly [Action] overload of [spec].
+     * @since 2.1.0
+     */
+    fun spec(name: String, action: Action<FlagsSpec>): FlagsSpec =
+        specs.maybeCreate(name).also { action.execute(it) }
+
+    /**
+     * Groovy-friendly [Closure] overload of [spec] — the closure's
+     * delegate is the spec (`DELEGATE_FIRST`), so bare flag names
+     * resolve.
+     * @since 2.1.0
+     */
+    fun spec(name: String, @DelegatesTo(FlagsSpec::class) action: Closure<*>): FlagsSpec =
+        specs.maybeCreate(name).also { action.delegatingTo(it) }
 
     init {
         downgradeTo.convention(JavaVersion.VERSION_1_8).finalizeValueOnRead()
@@ -124,6 +144,24 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         shadeInlining.convention(true).finalizeValueOnRead()
         multiReleaseOriginal.convention(false).finalizeValueOnRead()
         multiReleaseVersions.convention(emptySet()).finalizeValueOnRead()
+
+        // only register the default tasks where they can work — they wrap
+        // `jar`/`shadowJar` outputs, so without the java plugin there is
+        // nothing to bind; deferring registration also keeps the task list
+        // clean for embedders that only want the flags/dg surfaces
+        project.pluginManager.withPlugin("java") {
+            defaultTask = project.tasks.register("downgradeJar", DowngradeJar::class.java)
+            defaultTask.configure { task ->
+                val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
+                task.inputFile.set(jar.archiveFile)
+                task.archiveClassifier.set("downgraded")
+            }
+            defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeJar::class.java)
+            defaultShadeTask.configure { task ->
+                task.inputFile.set(defaultTask.flatMap { it.archiveFile })
+                task.archiveClassifier.set("downgraded-shaded")
+            }
+        }
     }
 
     @get:Internal
@@ -146,6 +184,27 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
     fun getDowngradedApi(version: JavaVersion): Set<File> = downgradedApis[version]
 
     /**
+     * A resolvable configuration carrying the `jvmdowngrader-java-api`
+     * artifact, for consumers that prefer lazy maven resolution over
+     * the bundled api jar ([apiJar]'s resource extraction). Wire it
+     * into flags with `apiJar.addAll(javaApi.map { it.files })` — or
+     * set a spec's `apiJar` the same way for a scoped api.
+     *
+     * @since 2.1.0
+     */
+    @get:Internal
+    val javaApi: NamedDomainObjectProvider<Configuration> =
+        project.configurations.register("jvmdgApi") {
+            it.isCanBeConsumed = false
+            it.isCanBeResolved = true
+            it.isVisible = false
+            it.description = "JvmDowngrader java-api stub jar"
+            it.defaultDependencies { deps ->
+                deps.add(project.dependencies.create("xyz.wagyourtail.jvmdowngrader:jvmdowngrader-java-api:$version"))
+            }
+        }
+
+    /**
      * Like [dg] but binds the transforms to a [ShadeFlags] source —
      * typically a named [FlagsSpec] from [specs]:
      * `jvmdg.dg(configurations.test, jvmdg.specs["test"])`. The spec's
@@ -157,6 +216,33 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
     @JvmOverloads
     fun dg(dep: Configuration, spec: ShadeFlags, shade: Boolean = true) {
         dg(dep, shade) { convention(spec) }
+    }
+
+    /**
+     * Groovy/Java-friendly [Action] overload of [dg].
+     * @since 2.1.0
+     */
+    fun dg(dep: Configuration, shade: Boolean, config: Action<DowngradeFlags>) =
+        dg(dep, shade) { config.execute(this) }
+
+    /**
+     * Groovy-friendly [Closure] overloads of [dg] — the closure's
+     * delegate is the transform flags (`DELEGATE_FIRST`), so bare
+     * flag names resolve.
+     * @since 2.1.0
+     */
+    fun dg(dep: Configuration, config: Closure<*>) = dg(dep, true, config)
+
+    /**
+     * @since 2.1.0
+     */
+    fun dg(dep: Configuration, shade: Boolean, config: Closure<*>) =
+        dg(dep, shade) { config.delegatingTo(this) }
+
+    private fun <T> Closure<*>.delegatingTo(target: T) {
+        delegate = target
+        resolveStrategy = Closure.DELEGATE_FIRST
+        call(target)
     }
 
     @JvmOverloads
