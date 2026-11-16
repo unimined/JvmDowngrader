@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.classloader;
 import xyz.wagyourtail.jvmdg.classloader.providers.ClassLoaderResourceProvider;
 import xyz.wagyourtail.jvmdg.classloader.providers.JarFileResourceProvider;
 import xyz.wagyourtail.jvmdg.collection.FlatMapEnumeration;
-import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.Closeable;
@@ -111,21 +110,14 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
 
     @Override
     protected Enumeration<URL> findResources(final String name) {
-        return new FlatMapEnumeration<>(Collections.enumeration(name.startsWith("META-INF/versions/") ? Collections.singleton("") : multiVersionPrefixes()), new Function<String, Enumeration<URL>>() {
-            @Override
-            public Enumeration<URL> apply(final String prefix) {
-                return new FlatMapEnumeration<>(Collections.enumeration(delegates), new Function<ResourceProvider, Enumeration<URL>>() {
-                    @Override
-                    public Enumeration<URL> apply(ResourceProvider resourceProvider) {
-                        try {
-                            return resourceProvider.getResources(prefix + name);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                });
-            }
-        });
+        return new FlatMapEnumeration<>(Collections.enumeration(name.startsWith("META-INF/versions/") ? Collections.singleton("") : multiVersionPrefixes()), prefix ->
+            new FlatMapEnumeration<>(Collections.enumeration(delegates), resourceProvider -> {
+                try {
+                    return resourceProvider.getResources(prefix + name);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }));
     }
 
     @Override

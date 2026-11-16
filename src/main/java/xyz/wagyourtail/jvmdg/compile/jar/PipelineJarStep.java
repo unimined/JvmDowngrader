@@ -120,14 +120,8 @@ public class PipelineJarStep extends JarStep {
         }
         if (slot != 0 && entry.name.startsWith("META-INF/versions/")) {
             // versioned entry: shaded in place at its slot, never downgraded
-            List<ClassNode> list = slotVariants.get(slot);
-            if (list == null) {
-                list = Collections.synchronizedList(new ArrayList<ClassNode>());
-                List<ClassNode> prev = slotVariants.putIfAbsent(slot, list);
-                if (prev != null) {
-                    list = prev;
-                }
-            }
+            List<ClassNode> list = slotVariants.computeIfAbsent(slot,
+                k -> Collections.synchronizedList(new ArrayList<ClassNode>()));
             list.add(node);
         } else {
             finals.add(node);
@@ -323,21 +317,18 @@ public class PipelineJarStep extends JarStep {
     private static Function<String, ClassNode> memoized(final Function<String, byte[]> extraRead) {
         final Map<String, Object> cache = new HashMap<String, Object>();
         final Object miss = new Object();
-        return new Function<String, ClassNode>() {
-            @Override
-            public ClassNode apply(String s) {
-                Object cached = cache.get(s);
-                if (cached == null) {
-                    try {
-                        byte[] out = extraRead.apply(s);
-                        cached = out == null ? miss : (Object) ASMUtils.bytesToClassNode(out);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                    cache.put(s, cached);
+        return s -> {
+            Object cached = cache.get(s);
+            if (cached == null) {
+                try {
+                    byte[] out = extraRead.apply(s);
+                    cached = out == null ? miss : (Object) ASMUtils.bytesToClassNode(out);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-                return cached == miss ? null : (ClassNode) cached;
+                cache.put(s, cached);
             }
+            return cached == miss ? null : (ClassNode) cached;
         };
     }
 

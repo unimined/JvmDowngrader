@@ -419,12 +419,7 @@ public final class ReflectionTable {
     }
 
     private static <V> List<V> listFor(Map<String, List<V>> map, String key) {
-        List<V> l = map.get(key);
-        if (l == null) {
-            map.putIfAbsent(key, new CopyOnWriteArrayList<V>());
-            l = map.get(key);
-        }
-        return l;
+        return map.computeIfAbsent(key, k -> new CopyOnWriteArrayList<V>());
     }
 
     /**

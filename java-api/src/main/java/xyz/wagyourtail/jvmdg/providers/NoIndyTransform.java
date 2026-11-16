@@ -233,12 +233,7 @@ public class NoIndyTransform implements ClassTransform {
         Map<MemberNameAndDesc, List<MethodRef>> union = new HashMap<>();
         List<Map.Entry<Integer, VersionProvider>> providers =
             new ArrayList<>(downgrader.providers().entrySet());
-        providers.sort(new Comparator<Map.Entry<Integer, VersionProvider>>() {
-            @Override
-            public int compare(Map.Entry<Integer, VersionProvider> a, Map.Entry<Integer, VersionProvider> b) {
-                return b.getKey() - a.getKey();
-            }
-        });
+        providers.sort(Map.Entry.comparingByKey(Comparator.reverseOrder()));
         for (Map.Entry<Integer, VersionProvider> e : providers) {
             try {
                 e.getValue().ensureInit(downgrader);

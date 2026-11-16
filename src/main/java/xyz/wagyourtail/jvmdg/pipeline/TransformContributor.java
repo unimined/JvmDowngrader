@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.pipeline;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -60,12 +59,7 @@ public interface TransformContributor {
         for (TransformContributor c : ServiceLoader.load(TransformContributor.class, loader)) {
             contributors.add(c);
         }
-        Collections.sort(contributors, new Comparator<TransformContributor>() {
-            @Override
-            public int compare(TransformContributor a, TransformContributor b) {
-                return a.getClass().getName().compareTo(b.getClass().getName());
-            }
-        });
+        contributors.sort(Comparator.comparing(c -> c.getClass().getName()));
         for (TransformContributor c : contributors) {
             c.contribute(anchor, downgrader, out);
         }

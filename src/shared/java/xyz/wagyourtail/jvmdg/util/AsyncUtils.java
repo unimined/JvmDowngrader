@@ -13,7 +13,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class AsyncUtils {
-    // basically a fork-join pool similar to the commonPool, since java 7 doesn't include it.
+    // a dedicated pool rather than commonPool: jar-walk tasks block on
+    // subtask futures, and a private pool keeps that nested blocking off
+    // the shared pool other libraries in an embedded JVM (gradle daemon,
+    // ide) may be using
     private static final ForkJoinPool pool = new ForkJoinPool(Math.min(Math.max(1, Runtime.getRuntime().availableProcessors() - 1), Short.MAX_VALUE), ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
 
     @SafeVarargs
@@ -76,64 +79,32 @@ public class AsyncUtils {
         };
     }
 
-    private static <T> Future<Void> asVoidFuture(final Future<List<T>> future) {
-        return new Future<Void>() {
-            @Override
-            public boolean cancel(boolean mayInterruptIfRunning) {
-                return future.cancel(mayInterruptIfRunning);
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return future.isCancelled();
-            }
-
-            @Override
-            public boolean isDone() {
-                return future.isDone();
-            }
-
-            @Override
-            public Void get() throws InterruptedException, ExecutionException {
-                future.get();
-                return null;
-            }
-
-            @Override
-            public Void get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-                future.get(timeout, unit);
-                return null;
-            }
-        };
-    }
-
     public static <T> Future<Void> forEachAsync(final Collection<T> paths, final IOConsumer<T> fileVisitor) {
-        final Queue<Future<Void>> futures = new ArrayDeque<>();
+        List<CompletableFuture<Void>> futures = new ArrayList<>(paths.size());
         for (final T path : paths) {
-            futures.add(pool.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        fileVisitor.accept(path);
-                    } catch (IOException e) {
-                        Utils.<RuntimeException>sneakyThrow(e);
-                    }
+            futures.add(CompletableFuture.runAsync(() -> {
+                try {
+                    fileVisitor.accept(path);
+                } catch (IOException e) {
+                    Utils.<RuntimeException>sneakyThrow(e);
                 }
-            }, (Void) null));
+            }, pool));
         }
-        return asVoidFuture(waitForFutures(futures));
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
     public static Future<Void> runAll(Runnable... runnables) {
-        final Queue<Future<Void>> futures = new ArrayDeque<>();
+        List<CompletableFuture<Void>> futures = new ArrayList<>(runnables.length);
         for (final Runnable runnable : runnables) {
-            futures.add(pool.submit(runnable, (Void) null));
+            futures.add(CompletableFuture.runAsync(runnable, pool));
         }
-        return asVoidFuture(waitForFutures(futures));
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
     public static Future<Void> visitPathsAsync(final Path start, final IOFunction<Path, Boolean> folderVisitor, final IOConsumer<Path> fileVisitor) throws IOException {
-        final Queue<Future<Void>> futures = new ArrayDeque<>();
+        final List<CompletableFuture<Void>> futures = new ArrayList<>();
+        // walkFileTree rather than Files.walk — preVisitDirectory's
+        // SKIP_SUBTREE pruning has no stream equivalent
         Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
 
             @Override
@@ -146,37 +117,32 @@ public class AsyncUtils {
                 if (dir.equals(start)) {
                     return FileVisitResult.CONTINUE;
                 }
-                futures.add(pool.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            visitPathsAsync(dir, folderVisitor, fileVisitor).get();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        } catch (ExecutionException | IOException e) {
-                            Utils.<RuntimeException>sneakyThrow(e);
-                        }
+                futures.add(CompletableFuture.runAsync(() -> {
+                    try {
+                        visitPathsAsync(dir, folderVisitor, fileVisitor).get();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException(e);
+                    } catch (ExecutionException | IOException e) {
+                        Utils.<RuntimeException>sneakyThrow(e);
                     }
-                }, (Void) null));
+                }, pool));
                 return FileVisitResult.SKIP_SUBTREE;
             }
 
             @Override
             public FileVisitResult visitFile(final Path file, BasicFileAttributes attrs) {
-                futures.add(pool.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            fileVisitor.accept(file);
-                        } catch (IOException e) {
-                            Utils.<RuntimeException>sneakyThrow(e);
-                        }
+                futures.add(CompletableFuture.runAsync(() -> {
+                    try {
+                        fileVisitor.accept(file);
+                    } catch (IOException e) {
+                        Utils.<RuntimeException>sneakyThrow(e);
                     }
-                }, (Void) null));
+                }, pool));
                 return FileVisitResult.CONTINUE;
             }
         });
-        return asVoidFuture(waitForFutures(futures));
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
 }

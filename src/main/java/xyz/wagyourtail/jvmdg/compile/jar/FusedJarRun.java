@@ -2,8 +2,6 @@ package xyz.wagyourtail.jvmdg.compile.jar;
 
 import xyz.wagyourtail.jvmdg.compile.shade.IndexScanner;
 import xyz.wagyourtail.jvmdg.util.AsyncUtils;
-import xyz.wagyourtail.jvmdg.util.IOConsumer;
-import xyz.wagyourtail.jvmdg.util.IOFunction;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -38,40 +36,30 @@ public final class FusedJarRun {
             step.prepareFused(inputRoot, ctx);
         }
         try {
-            AsyncUtils.visitPathsAsync(inputRoot, new IOFunction<Path, Boolean>() {
-
-                @Override
-                public Boolean apply(Path path) throws IOException {
-                    JarEntry dir = new JarEntry(IndexScanner.internalPath(inputRoot.relativize(path)), path);
-                    for (JarStep step : steps) {
-                        if (!step.visitDirectory(dir, ctx)) {
-                            return true;
-                        }
-                    }
-                    ctx.sink.mkdir(dir.name);
-                    return true;
-                }
-
-            }, new IOConsumer<Path>() {
-
-                @Override
-                public void accept(Path path) throws IOException {
-                    JarEntry cur = new JarEntry(IndexScanner.internalPath(inputRoot.relativize(path)), path);
-                    for (JarStep step : steps) {
-                        if (cur == null) {
-                            break;
-                        }
-                        cur = step.visitEntry(cur, ctx);
-                    }
-                    if (cur != null) {
-                        if (cur.data != null) {
-                            ctx.sink.put(cur.name, cur.data);
-                        } else {
-                            ctx.sink.copy(cur.name, cur.source);
-                        }
+            AsyncUtils.visitPathsAsync(inputRoot, path -> {
+                JarEntry dir = new JarEntry(IndexScanner.internalPath(inputRoot.relativize(path)), path);
+                for (JarStep step : steps) {
+                    if (!step.visitDirectory(dir, ctx)) {
+                        return true;
                     }
                 }
-
+                ctx.sink.mkdir(dir.name);
+                return true;
+            }, path -> {
+                JarEntry cur = new JarEntry(IndexScanner.internalPath(inputRoot.relativize(path)), path);
+                for (JarStep step : steps) {
+                    if (cur == null) {
+                        break;
+                    }
+                    cur = step.visitEntry(cur, ctx);
+                }
+                if (cur != null) {
+                    if (cur.data != null) {
+                        ctx.sink.put(cur.name, cur.data);
+                    } else {
+                        ctx.sink.copy(cur.name, cur.source);
+                    }
+                }
             }).get();
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);

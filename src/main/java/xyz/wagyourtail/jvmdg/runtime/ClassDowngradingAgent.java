@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.runtime;
 import org.objectweb.asm.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
-import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.IOException;
@@ -132,28 +131,25 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             // bootstrap loads (loader == null) have no ClassLoader to read
             // resources through; use the bootstrap-delegating loader instead
             final ClassLoader resourceLoader = loader == null ? ClassDowngrader.bootstrapClassLoader : loader;
-            Map<String, byte[]> outputs = Bootstrap.currentVersionDowngrader.downgrade(resolvedName, bytes, true, new Function<String, byte[]>() {
-                @Override
-                public byte[] apply(String s) {
-                    try {
-                        if (loader != null && Bootstrap.flags.downgradeFromMultiReleases) {
-                            for (Integer version : multiVersions()) {
-                                try (InputStream stream = openResource(resourceLoader, "META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + s + ".class")) {
-                                    if (stream != null) {
-                                        return Utils.readAllBytes(stream);
-                                    }
+            Map<String, byte[]> outputs = Bootstrap.currentVersionDowngrader.downgrade(resolvedName, bytes, true, s -> {
+                try {
+                    if (loader != null && Bootstrap.flags.downgradeFromMultiReleases) {
+                        for (Integer multiVersion : multiVersions()) {
+                            try (InputStream stream = openResource(resourceLoader, "META-INF/versions/" + Utils.classVersionToMajorVersion(multiVersion) + "/" + s + ".class")) {
+                                if (stream != null) {
+                                    return Utils.readAllBytes(stream);
                                 }
                             }
                         }
-                        try (InputStream stream = openResource(resourceLoader, s + ".class")) {
-                            if (stream != null) {
-                                return Utils.readAllBytes(stream);
-                            }
-                        }
-                        return null;
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
                     }
+                    try (InputStream stream = openResource(resourceLoader, s + ".class")) {
+                        if (stream != null) {
+                            return Utils.readAllBytes(stream);
+                        }
+                    }
+                    return null;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
             LOGGER.trace("transform size for " + resolvedName.get() + ": " + (outputs == null ? null : outputs.size()));

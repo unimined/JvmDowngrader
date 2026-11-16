@@ -57,14 +57,14 @@ public final class JarEntrySink {
     /** Writes everything to {@code outRoot} in sorted order and pins timestamps. */
     public void flush(Path outRoot) throws IOException {
         List<String> sortedDirs = new ArrayList<>(dirs);
-        Collections.sort(sortedDirs);
+        sortedDirs.sort(java.util.Comparator.naturalOrder());
         for (String d : sortedDirs) {
             Files.createDirectories(outRoot.resolve(d));
         }
         List<String> order = new ArrayList<>(writes.size() + copies.size());
         order.addAll(writes.keySet());
         order.addAll(copies.keySet());
-        Collections.sort(order);
+        order.sort(java.util.Comparator.naturalOrder());
         for (String rel : order) {
             Path p = outRoot.resolve(rel);
             Path parent = p.getParent();

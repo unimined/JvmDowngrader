@@ -4,7 +4,6 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.util.AsyncUtils;
-import xyz.wagyourtail.jvmdg.util.IOConsumer;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.IOException;
@@ -63,38 +62,32 @@ public final class IndexScanner {
     public static void scanRoot(final ReferenceIndex index, final Path root, final RefExtractor.Filter filter) throws IOException, ExecutionException, InterruptedException {
         // pass 1: derive (type, slot) targets from paths; dedup by (type, slot)
         final ConcurrentMap<Path, Type> targets = new ConcurrentHashMap<>();
-        AsyncUtils.visitPathsAsync(root, null, new IOConsumer<Path>() {
-            @Override
-            public void accept(Path path) throws IOException {
-                if (path.getFileName().toString().equals("module-info.class")) {
-                    return;
-                }
-                Path rel = root.relativize(path);
-                int slot = slotOf(rel);
-                if (slot != 0) {
-                    rel = rel.subpath(3, rel.getNameCount());
-                }
-                String pathStr = internalPath(rel);
-                if (pathStr.endsWith(".class")) {
-                    pathStr = pathStr.substring(0, pathStr.length() - 6);
-                    targets.put(path, Type.getObjectType(pathStr));
-                }
+        AsyncUtils.visitPathsAsync(root, null, path -> {
+            if (path.getFileName().toString().equals("module-info.class")) {
+                return;
+            }
+            Path rel = root.relativize(path);
+            int slot = slotOf(rel);
+            if (slot != 0) {
+                rel = rel.subpath(3, rel.getNameCount());
+            }
+            String pathStr = internalPath(rel);
+            if (pathStr.endsWith(".class")) {
+                pathStr = pathStr.substring(0, pathStr.length() - 6);
+                targets.put(path, Type.getObjectType(pathStr));
             }
         }).get();
 
         // pass 2: parse + add each target
-        AsyncUtils.forEachAsync(targets.keySet(), new IOConsumer<Path>() {
-            @Override
-            public void accept(Path path) throws IOException {
-                int slot = slotOf(root.relativize(path));
-                try (InputStream stream = Files.newInputStream(path)) {
-                    ClassNode node = ASMUtils.bytesToClassNode(Utils.readAllBytes(stream));
-                    Type type = Type.getObjectType(node.name);
-                    if (!type.equals(targets.get(path))) {
-                        throw new IllegalStateException("Expected path to match class name: " + path + " != " + type.getInternalName());
-                    }
-                    index.add(node, slot, filter);
+        AsyncUtils.forEachAsync(targets.keySet(), path -> {
+            int slot = slotOf(root.relativize(path));
+            try (InputStream stream = Files.newInputStream(path)) {
+                ClassNode node = ASMUtils.bytesToClassNode(Utils.readAllBytes(stream));
+                Type type = Type.getObjectType(node.name);
+                if (!type.equals(targets.get(path))) {
+                    throw new IllegalStateException("Expected path to match class name: " + path + " != " + type.getInternalName());
                 }
+                index.add(node, slot, filter);
             }
         }).get();
     }

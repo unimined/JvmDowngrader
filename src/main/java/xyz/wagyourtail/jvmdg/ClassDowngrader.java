@@ -195,25 +195,16 @@ public class ClassDowngrader implements Closeable {
         return type;
     }
 
-    private static final Comparator<ClassNode> CLASS_NODE_NAME_ORDER = new Comparator<ClassNode>() {
-        @Override
-        public int compare(ClassNode a, ClassNode b) {
-            return a.name.compareTo(b.name);
-        }
-    };
+    private static final Comparator<ClassNode> CLASS_NODE_NAME_ORDER =
+        Comparator.comparing(c -> c.name);
 
     /**
      * multi-release captures share the class name but differ in {@code version}
      * — name alone would dedup them away (dropping the final output when a
      * capture lands first).
      */
-    private static final Comparator<ClassNode> CLASS_NODE_NAME_VERSION_ORDER = new Comparator<ClassNode>() {
-        @Override
-        public int compare(ClassNode a, ClassNode b) {
-            int c = a.name.compareTo(b.name);
-            return c != 0 ? c : Integer.compare(a.version, b.version);
-        }
-    };
+    private static final Comparator<ClassNode> CLASS_NODE_NAME_VERSION_ORDER =
+        Comparator.comparing((ClassNode c) -> c.name).thenComparingInt(c -> c.version);
 
     protected Set<ClassNode> downgrade(ClassNode clazz, boolean enableRuntime, Function<String, ClassNode> getReadOnly) throws IOException {
         // the registrar emits one stage per provider boundary; sequential
@@ -281,24 +272,19 @@ public class ClassDowngrader implements Closeable {
             // scoped to this call — the underlying source may return different
             // bytes for the same name in later calls (e.g. a different loader).
             final Map<String, Object> originalCache = new HashMap<>();
-            Set<ClassNode> extra = downgrade(node, enableRuntime, new Function<String, ClassNode>() {
-
-                private final Object miss = new Object();
-
-                @Override
-                public ClassNode apply(String s) {
-                    Object cached = originalCache.get(s);
-                    if (cached == null) {
-                        try {
-                            byte[] out = getExtraRead.apply(s);
-                            cached = out == null ? miss : ASMUtils.bytesToClassNode(out);
-                        } catch (Exception e) {
-                            throw new RuntimeException(e);
-                        }
-                        originalCache.put(s, cached);
+            final Object miss = new Object();
+            Set<ClassNode> extra = downgrade(node, enableRuntime, s -> {
+                Object cached = originalCache.get(s);
+                if (cached == null) {
+                    try {
+                        byte[] out = getExtraRead.apply(s);
+                        cached = out == null ? miss : ASMUtils.bytesToClassNode(out);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
                     }
-                    return cached == miss ? null : (ClassNode) cached;
+                    originalCache.put(s, cached);
                 }
+                return cached == miss ? null : (ClassNode) cached;
             });
             boolean hasVersions = false;
             for (ClassNode c : extra) {

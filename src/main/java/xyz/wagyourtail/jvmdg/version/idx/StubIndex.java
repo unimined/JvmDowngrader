@@ -84,23 +84,13 @@ public class StubIndex {
     public static final byte[] MAGIC = {'J', 'V', 'M', 'D', 'G', 'I', 'D', 'X'};
     public static final int FORMAT_VERSION = 7;
 
-    private static final Comparator<FullyQualifiedMemberNameAndDesc> FQ_ORDER = new Comparator<FullyQualifiedMemberNameAndDesc>() {
-        @Override
-        public int compare(FullyQualifiedMemberNameAndDesc a, FullyQualifiedMemberNameAndDesc b) {
-            return a.toString().compareTo(b.toString());
-        }
-    };
+    private static final Comparator<FullyQualifiedMemberNameAndDesc> FQ_ORDER =
+        Comparator.comparing(Object::toString);
 
-    private static final Comparator<MemberNameAndDesc> MEMBER_ORDER = new Comparator<MemberNameAndDesc>() {
-        @Override
-        public int compare(MemberNameAndDesc a, MemberNameAndDesc b) {
-            int c = a.getName().compareTo(b.getName());
-            if (c != 0) return c;
-            c = a.getDesc().getDescriptor().compareTo(b.getDesc().getDescriptor());
-            if (c != 0) return c;
-            return Boolean.compare(a.isIgnoreReturnValue(), b.isIgnoreReturnValue());
-        }
-    };
+    private static final Comparator<MemberNameAndDesc> MEMBER_ORDER =
+        Comparator.comparing(MemberNameAndDesc::getName)
+            .thenComparing(m -> m.getDesc().getDescriptor())
+            .thenComparing(MemberNameAndDesc::isIgnoreReturnValue);
 
     private StubIndex() {
     }
@@ -121,12 +111,8 @@ public class StubIndex {
         public final Map<String, StubRegistry.Owner> owners = new TreeMap<>();
         public final Map<FullyQualifiedMemberNameAndDesc, Integer> memberSince = new TreeMap<>(FQ_ORDER);
         public final Map<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind> memberKind = new TreeMap<>(FQ_ORDER);
-        public final Map<Type, ClassStubEntry> classStubs = new TreeMap<>(new Comparator<Type>() {
-            @Override
-            public int compare(Type a, Type b) {
-                return a.getInternalName().compareTo(b.getInternalName());
-            }
-        });
+        public final Map<Type, ClassStubEntry> classStubs = new TreeMap<>(
+            Comparator.comparing(Type::getInternalName));
     }
 
     // ---------- write ----------
@@ -134,12 +120,7 @@ public class StubIndex {
     /** serialize the given providers' registries; providers are emitted sorted by class name */
     public static void write(Path out, String jvmdgVersion, List<VersionProvider> providers) throws IOException {
         List<VersionProvider> sorted = new ArrayList<>(providers);
-        sorted.sort(new Comparator<VersionProvider>() {
-            @Override
-            public int compare(VersionProvider a, VersionProvider b) {
-                return a.getClass().getName().compareTo(b.getClass().getName());
-            }
-        });
+        sorted.sort(Comparator.comparing(p -> p.getClass().getName()));
         if (out.getParent() != null) Files.createDirectories(out.getParent());
         DataOutputStream o = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(out)));
         try {
@@ -158,12 +139,7 @@ public class StubIndex {
     private static void writeProvider(DataOutputStream o, VersionProvider vp) throws IOException {
         o.writeUTF(vp.getClass().getName());
         List<Map.Entry<Type, ClassStubEntry>> stubs = new ArrayList<>(vp.classStubs.entrySet());
-        stubs.sort(new Comparator<Map.Entry<Type, ClassStubEntry>>() {
-            @Override
-            public int compare(Map.Entry<Type, ClassStubEntry> a, Map.Entry<Type, ClassStubEntry> b) {
-                return a.getKey().getInternalName().compareTo(b.getKey().getInternalName());
-            }
-        });
+        stubs.sort(Comparator.comparing(e -> e.getKey().getInternalName()));
         o.writeShort(stubs.size());
         for (Map.Entry<Type, ClassStubEntry> e : stubs) {
             ClassStubEntry s = e.getValue();
@@ -209,14 +185,7 @@ public class StubIndex {
             }
             o.writeShort(owner.memberModify.size());
             List<Map.Entry<MemberNameAndDesc, MethodRef>> modifies = new ArrayList<>(owner.memberModify.entrySet());
-            modifies.sort(new Comparator<Map.Entry<MemberNameAndDesc, MethodRef>>() {
-                @Override
-                public int compare(Map.Entry<MemberNameAndDesc, MethodRef> a, Map.Entry<MemberNameAndDesc, MethodRef> b) {
-                    if (a.getKey() == null) return b.getKey() == null ? 0 : -1;
-                    if (b.getKey() == null) return 1;
-                    return MEMBER_ORDER.compare(a.getKey(), b.getKey());
-                }
-            });
+            modifies.sort(Map.Entry.comparingByKey(Comparator.nullsFirst(MEMBER_ORDER)));
             for (Map.Entry<MemberNameAndDesc, MethodRef> m : modifies) {
                 if (m.getKey() == null) {
                     o.writeByte(0);
@@ -234,13 +203,7 @@ public class StubIndex {
         }
         List<Map.Entry<FullyQualifiedMemberNameAndDesc, Integer>> since =
             new ArrayList<>(vp.stubRegistry.memberSince.entrySet());
-        since.sort(new Comparator<Map.Entry<FullyQualifiedMemberNameAndDesc, Integer>>() {
-            @Override
-            public int compare(Map.Entry<FullyQualifiedMemberNameAndDesc, Integer> a,
-                               Map.Entry<FullyQualifiedMemberNameAndDesc, Integer> b) {
-                return FQ_ORDER.compare(a.getKey(), b.getKey());
-            }
-        });
+        since.sort(Map.Entry.comparingByKey(FQ_ORDER));
         o.writeShort(since.size());
         for (Map.Entry<FullyQualifiedMemberNameAndDesc, Integer> e : since) {
             writeFQMND(o, e.getKey());
@@ -248,13 +211,7 @@ public class StubIndex {
         }
         List<Map.Entry<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind>> kinds =
             new ArrayList<>(vp.stubRegistry.memberKind.entrySet());
-        kinds.sort(new Comparator<Map.Entry<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind>>() {
-            @Override
-            public int compare(Map.Entry<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind> a,
-                               Map.Entry<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind> b) {
-                return FQ_ORDER.compare(a.getKey(), b.getKey());
-            }
-        });
+        kinds.sort(Map.Entry.comparingByKey(FQ_ORDER));
         o.writeShort(kinds.size());
         for (Map.Entry<FullyQualifiedMemberNameAndDesc, xyz.wagyourtail.jvmdg.version.StubKind> e : kinds) {
             writeFQMND(o, e.getKey());
@@ -264,12 +221,7 @@ public class StubIndex {
 
     private static <V> List<Map.Entry<MemberNameAndDesc, V>> sorted(Map<MemberNameAndDesc, V> map) {
         List<Map.Entry<MemberNameAndDesc, V>> list = new ArrayList<>(map.entrySet());
-        list.sort(new Comparator<Map.Entry<MemberNameAndDesc, V>>() {
-            @Override
-            public int compare(Map.Entry<MemberNameAndDesc, V> a, Map.Entry<MemberNameAndDesc, V> b) {
-                return MEMBER_ORDER.compare(a.getKey(), b.getKey());
-            }
-        });
+        list.sort(Map.Entry.comparingByKey(MEMBER_ORDER));
         return list;
     }
 

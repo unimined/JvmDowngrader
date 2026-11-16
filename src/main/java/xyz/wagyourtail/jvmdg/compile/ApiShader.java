@@ -15,7 +15,6 @@ import xyz.wagyourtail.jvmdg.compile.shade.RefExtractor;
 import xyz.wagyourtail.jvmdg.compile.shade.ReferenceIndex;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.AsyncUtils;
-import xyz.wagyourtail.jvmdg.util.IOConsumer;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
@@ -177,7 +176,7 @@ public class ApiShader {
         for (FullyQualifiedMemberNameAndDesc m : flags.debugSkipStub) {
             skip.add(m.toString());
         }
-        Collections.sort(skip);
+        skip.sort(java.util.Comparator.naturalOrder());
         sb.append(skip);
         try {
             // first 14 hex chars (was: first 7 digest bytes)
@@ -213,20 +212,17 @@ public class ApiShader {
     }
 
     private static void collectClassTypes(final Path root, final Set<Type> out) throws IOException, ExecutionException, InterruptedException {
-        AsyncUtils.visitPathsAsync(root, null, new IOConsumer<Path>() {
-            @Override
-            public void accept(Path path) throws IOException {
-                if (path.getFileName().toString().equals("module-info.class")) {
-                    return;
-                }
-                Path rel = root.relativize(path);
-                if (IndexScanner.isMultiRelease(rel)) {
-                    rel = rel.subpath(3, rel.getNameCount());
-                }
-                String pathStr = IndexScanner.internalPath(rel);
-                if (pathStr.endsWith(".class")) {
-                    out.add(Type.getObjectType(pathStr.substring(0, pathStr.length() - 6)));
-                }
+        AsyncUtils.visitPathsAsync(root, null, path -> {
+            if (path.getFileName().toString().equals("module-info.class")) {
+                return;
+            }
+            Path rel = root.relativize(path);
+            if (IndexScanner.isMultiRelease(rel)) {
+                rel = rel.subpath(3, rel.getNameCount());
+            }
+            String pathStr = IndexScanner.internalPath(rel);
+            if (pathStr.endsWith(".class")) {
+                out.add(Type.getObjectType(pathStr.substring(0, pathStr.length() - 6)));
             }
         }).get();
     }

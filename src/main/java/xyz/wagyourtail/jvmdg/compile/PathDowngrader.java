@@ -96,38 +96,35 @@ public class PathDowngrader {
             for (int j = downgrader.maxVersion(); j >= 52; j--) {
                 multiReleasePaths.add("META-INF/versions/" + Utils.classVersionToMajorVersion(j));
             }
-            final Function<String, byte[]> extraRead = new Function<String, byte[]>() {
-                @Override
-                public byte[] apply(String s) {
-                    try {
-                        // multi-version
-                        if (downgrader.flags.downgradeFromMultiReleases) {
-                            for (String pth : multiReleasePaths) {
-                                for (Path in : inputRoots) {
-                                    Path p = in.resolve(pth).resolve(s + ".class");
-                                    if (Files.exists(p)) {
-                                        return Files.readAllBytes(p);
-                                    }
+            final Function<String, byte[]> extraRead = s -> {
+                try {
+                    // multi-version
+                    if (downgrader.flags.downgradeFromMultiReleases) {
+                        for (String pth : multiReleasePaths) {
+                            for (Path in : inputRoots) {
+                                Path p = in.resolve(pth).resolve(s + ".class");
+                                if (Files.exists(p)) {
+                                    return Files.readAllBytes(p);
                                 }
                             }
                         }
-
-                        // main version
-                        for (Path in : inputRoots) {
-                            Path p = in.resolve(s + ".class");
-                            if (Files.exists(p)) {
-                                return Files.readAllBytes(p);
-                            }
-                        }
-
-                        URL url = extraClasspath.getResource(s + ".class");
-                        if (url == null) return null;
-                        try (InputStream is = Utils.openUncached(url)) {
-                            return Utils.readAllBytes(is);
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
                     }
+
+                    // main version
+                    for (Path in : inputRoots) {
+                        Path p = in.resolve(s + ".class");
+                        if (Files.exists(p)) {
+                            return Files.readAllBytes(p);
+                        }
+                    }
+
+                    URL url = extraClasspath.getResource(s + ".class");
+                    if (url == null) return null;
+                    try (InputStream is = Utils.openUncached(url)) {
+                        return Utils.readAllBytes(is);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             };
 

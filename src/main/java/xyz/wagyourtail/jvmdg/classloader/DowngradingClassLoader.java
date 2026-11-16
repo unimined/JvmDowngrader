@@ -2,7 +2,6 @@ package xyz.wagyourtail.jvmdg.classloader;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
-import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.Closeable;
@@ -142,16 +141,13 @@ public class DowngradingClassLoader extends ResourceClassLoader implements Close
         }
         String internalName = name.replace('.', '/');
         try {
-            Map<String, byte[]> outputs = currentVersionDowngrader().downgrade(new AtomicReference<>(internalName), classBytes, true, new Function<String, byte[]>() {
-                @Override
-                public byte[] apply(String s) {
-                    try {
-                        URL url = findResource(s + ".class");
-                        if (url == null) return null;
-                        return Utils.readAllBytes(Utils.openUncached(url));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+            Map<String, byte[]> outputs = currentVersionDowngrader().downgrade(new AtomicReference<>(internalName), classBytes, true, s -> {
+                try {
+                    URL url = findResource(s + ".class");
+                    if (url == null) return null;
+                    return Utils.readAllBytes(Utils.openUncached(url));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
             if (outputs == null) {

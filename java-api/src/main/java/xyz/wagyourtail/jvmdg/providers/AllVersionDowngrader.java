@@ -28,12 +28,7 @@ public abstract class AllVersionDowngrader extends VersionProvider {
         for (ReflectionContributor c : ServiceLoader.load(ReflectionContributor.class, loader)) {
             out.add(c);
         }
-        Collections.sort(out, new Comparator<ReflectionContributor>() {
-            @Override
-            public int compare(ReflectionContributor a, ReflectionContributor b) {
-                return a.getClass().getName().compareTo(b.getClass().getName());
-            }
-        });
+        out.sort(Comparator.comparing(c -> c.getClass().getName()));
         return Collections.unmodifiableList(out);
     }
 

@@ -16,7 +16,6 @@ import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -173,13 +172,8 @@ public final class GenContext {
             if (contributors.isEmpty()) {
                 continue;
             }
-            Collections.sort(contributors, new Comparator<Map.Entry<String, Integer>>() {
-                @Override
-                public int compare(Map.Entry<String, Integer> x, Map.Entry<String, Integer> y) {
-                    int c = y.getValue() - x.getValue();
-                    return c != 0 ? c : x.getKey().compareTo(y.getKey());
-                }
-            });
+            contributors.sort(Map.Entry.<String, Integer>comparingByValue()
+                .reversed().thenComparing(Map.Entry.comparingByKey()));
             Set<String> seen = new HashSet<>();
             List<String[]> pairs = new ArrayList<>();
             for (Map.Entry<String, Integer> c : contributors) {

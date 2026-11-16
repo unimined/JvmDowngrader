@@ -14,8 +14,6 @@ import xyz.wagyourtail.jvmdg.version.steps.*;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -99,12 +97,7 @@ public class DowngradeRegistrar implements PipelineRegistrar {
                 }
             }
         }
-        Collections.sort(providers, new Comparator<VersionProvider>() {
-            @Override
-            public int compare(VersionProvider a, VersionProvider b) {
-                return Integer.compare(b.inputVersion, a.inputVersion);
-            }
-        });
+        providers.sort((a, b) -> Integer.compare(b.inputVersion, a.inputVersion));
         List<Stage> stages = new ArrayList<Stage>();
         contribute(TransformContributor.Anchor.BEFORE_VERSION_CHAIN, stages);
         for (VersionProvider provider : providers) {
@@ -134,14 +127,9 @@ public class DowngradeRegistrar implements PipelineRegistrar {
             stage.capture(version);
         }
         if (filtered) {
-            stage.filter(new Function<ClassNode, Boolean>() {
-                @Override
-                public Boolean apply(ClassNode node) {
-                    // major-compare: a preview class (minor 0xFFFF) enters
-                    // its major's boundary stage when allowPreview let it in
-                    return Utils.majorClassVersion(node.version) == provider.inputVersion;
-                }
-            });
+            // major-compare: a preview class (minor 0xFFFF) enters
+            // its major's boundary stage when allowPreview let it in
+            stage.filter(node -> Utils.majorClassVersion(node.version) == provider.inputVersion);
         } else {
             stage.precondition(new ClassPrecondition() {
                 @Override

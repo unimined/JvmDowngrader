@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,28 +54,18 @@ public class ShadeClosureBarrier implements StageHook {
 
     /** Deterministic ordering for entry types that aren't Comparable — by their string forms. */
     private static final Comparator<FullyQualifiedMemberNameAndDesc> FQN_ORDER =
-        new Comparator<FullyQualifiedMemberNameAndDesc>() {
-            @Override
-            public int compare(FullyQualifiedMemberNameAndDesc a, FullyQualifiedMemberNameAndDesc b) {
-                return a.toString().compareTo(b.toString());
-            }
-        };
+        Comparator.comparing(Object::toString);
 
     private static List<FullyQualifiedMemberNameAndDesc> sortFqns(Set<FullyQualifiedMemberNameAndDesc> in) {
         List<FullyQualifiedMemberNameAndDesc> out = new ArrayList<FullyQualifiedMemberNameAndDesc>(in);
-        Collections.sort(out, FQN_ORDER);
+        out.sort(FQN_ORDER);
         return out;
     }
 
     /** byType entries sorted by owner internal name — FQN/Type aren't Comparable. */
     private static List<Map.Entry<Type, Set<MemberNameAndDesc>>> sortTypes(Map<Type, Set<MemberNameAndDesc>> byType) {
         List<Map.Entry<Type, Set<MemberNameAndDesc>>> out = new ArrayList<Map.Entry<Type, Set<MemberNameAndDesc>>>(byType.entrySet());
-        Collections.sort(out, new Comparator<Map.Entry<Type, Set<MemberNameAndDesc>>>() {
-            @Override
-            public int compare(Map.Entry<Type, Set<MemberNameAndDesc>> a, Map.Entry<Type, Set<MemberNameAndDesc>> b) {
-                return a.getKey().getInternalName().compareTo(b.getKey().getInternalName());
-            }
-        });
+        out.sort(Comparator.comparing(e -> e.getKey().getInternalName()));
         return out;
     }
 
@@ -297,7 +286,7 @@ public class ShadeClosureBarrier implements StageHook {
             } catch (IOException e) {
                 throw new RuntimeException("Failed to list api services " + dir, e);
             }
-            Collections.sort(files);
+            files.sort(java.util.Comparator.naturalOrder());
             for (Path file : files) {
                 try {
                     Map.Entry<String, byte[]> mapped = ApiShader.mapServiceEntry(

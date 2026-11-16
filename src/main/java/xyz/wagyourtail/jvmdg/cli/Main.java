@@ -566,28 +566,25 @@ public class Main {
                 final ThreadGroup group = new ThreadGroup("jvmdg:" + m[0]);
                 final ByteArrayOutputStream buf = router.register(group);
                 final ClassDowngrader downgrader = currentVersionDowngrader;
-                Thread worker = new Thread(group, new Runnable() {
-                    @Override
-                    public void run() {
-                        int exit = 0;
-                        String main = m[0];
+                Thread worker = new Thread(group, () -> {
+                    int exit = 0;
+                    String main = m[0];
+                    try {
+                        invokeMain(Class.forName(main, false, downgrader.getClassLoader()), bootstrapArgs);
+                    } catch (InvocationTargetException e) {
+                        e.getCause().printStackTrace();
+                        exit = 1;
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                        exit = 1;
+                    } finally {
                         try {
-                            invokeMain(Class.forName(main, false, downgrader.getClassLoader()), bootstrapArgs);
-                        } catch (InvocationTargetException e) {
-                            e.getCause().printStackTrace();
-                            exit = 1;
-                        } catch (Throwable t) {
-                            t.printStackTrace();
-                            exit = 1;
-                        } finally {
-                            try {
-                                emit(realOut, main, buf, exit);
-                            } catch (IOException e) {
-                                realOut.println("===JVMDG-BEGIN " + main);
-                                realOut.println("===JVMDG-EXIT 1");
-                            }
-                            permits.release();
+                            emit(realOut, main, buf, exit);
+                        } catch (IOException e) {
+                            realOut.println("===JVMDG-BEGIN " + main);
+                            realOut.println("===JVMDG-EXIT 1");
                         }
+                        permits.release();
                     }
                 });
                 workers.add(worker);
