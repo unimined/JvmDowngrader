@@ -41,7 +41,8 @@ abstract class DowngradeJar: Jar(), DowngradeFlags, FlagsConvention {
         group = "JVMDowngrader"
         description = "Downgrades the jar to the specified version"
         convention(project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as DowngradeFlags)
-        classpath = project.extensions.getByType(SourceSetContainer::class.java).getByName("main").compileClasspath
+        classpath = project.extensions.findByType(SourceSetContainer::class.java)
+            ?.findByName("main")?.compileClasspath ?: project.files()
     }
 
 
