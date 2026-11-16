@@ -1,20 +1,18 @@
 package xyz.wagyourtail.jvmdg.version.map;
 
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 /**
  * Naming contract for generated gained-supertype dispatchers —
  * {@code xyz/wagyourtail/jvmdg/gen/gained/<mangled-I>} plus its {@code $Wrap}
  * sibling — shared by the api-jar generator (emit side) and the transforms
- * (site side) without either depending on the other. Member dispatch
- * methods are {@code <name>$<mangled-desc>} where the mangle is an
- * injective encoding of the member's real descriptor: erased-shape
- * overloads ({@code forEachRemaining(Consumer)} vs
- * {@code forEachRemaining(DoubleConsumer)}) are common on gained
- * interfaces, so the name has to carry the desc to stay unique. Sites
- * compute the same name from their own (post-remap) desc — an adapter
- * remapping inside the member's signature makes the names diverge, which
- * is honest: the member can't be invoked with adapter-typed args anyway.
+ * (site side) without either depending on the other. Member call sites are
+ * {@code invokedynamic} bootstrapped by {@link #GAINED_BSM} — the row-keyed
+ * {@code "name desc"} rides the bootstrap args, so erased-shape overloads
+ * ({@code forEachRemaining(Consumer)} vs
+ * {@code forEachRemaining(DoubleConsumer)}) stay distinct without a
+ * name-mangle.
  */
 public final class GainedSites {
 
@@ -38,56 +36,57 @@ public final class GainedSites {
         return sb.append(internalName.substring(last)).toString();
     }
 
+    public static boolean isRef(Type t) {
+        return t.getSort() == Type.OBJECT || t.getSort() == Type.ARRAY;
+    }
+
+    /** internal name of the shared (ASM-free) gained-dispatch runtime */
+    public static final String RUNTIME = "xyz/wagyourtail/jvmdg/stub/GainedRuntime";
+
     /**
-     * The dispatcher's dispatch-method name for a member site:
-     * {@code <name>$<mangled-desc>}. {@code desc} is whatever the site
-     * carries — the generator passes the real member descriptor.
+     * Whether {@code owner} (the containing class) is dispatch machinery —
+     * the shared {@code xyz/wagyourtail/jvmdg/stub/} runtime classes and the
+     * generated siblings {@link StructuralRemapTransform#isGeneratedDispatch}
+     * already covers. An indy emitted inside them bootstraps through the
+     * very code path executing it — {@code GainedRuntime.bootstrap} calling
+     * {@code List.subList} re-linked through {@code bootstrap} and recursed
+     * to {@link BootstrapMethodError} — so machinery classes keep the
+     * native site (all their members resolve natively anyway).
      */
-    public static String dispatchName(String name, String desc) {
-        return name + "$" + mangleDesc(desc);
+    public static boolean isDispatchMachinery(String owner) {
+        return owner.startsWith("xyz/wagyourtail/jvmdg/stub/")
+            || StructuralRemapTransform.isGeneratedDispatch(owner);
     }
 
     /**
-     * Injective descriptor → legal-method-name encoding. JVM unqualified
-     * names forbid {@code . ; [ / < >}; descriptors only contain {@code ;}
-     * {@code /} {@code [} of those, and {@code $} is the escape leader.
-     * {@code (} {@code )} are legal and left raw for readability.
+     * The bootstrap an indy-mode gained callsite names:
+     * {@code (Lookup, String, MethodType, String, String, int)CallSite} on
+     * {@link #RUNTIME} — args are {@code iName}, the row-keyed
+     * {@code "name desc"} member, and the calling class's authored version
+     * (the membership ceiling, moved out of the callsite signature).
      */
-    public static String mangleDesc(String desc) {
-        StringBuilder sb = new StringBuilder(desc.length() + 8);
-        for (int i = 0; i < desc.length(); i++) {
-            char c = desc.charAt(i);
-            switch (c) {
-                case '$': sb.append("$$"); break;
-                case ';': sb.append("$S"); break;
-                case '/': sb.append("$P"); break;
-                case '[': sb.append("$A"); break;
-                default: sb.append(c);
-            }
-        }
-        return sb.toString();
-    }
+    public static final org.objectweb.asm.Handle GAINED_BSM = new org.objectweb.asm.Handle(
+        Opcodes.H_INVOKESTATIC, RUNTIME, "bootstrap",
+        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;" +
+            "Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/invoke/CallSite;",
+        false);
 
     /**
-     * The erased-shape descriptor a site emits and the dispatcher declares:
-     * {@code (Ljava/lang/Object;<args>I)<ret>} where every reference arg
-     * becomes {@code Object} (site arg types are post-remap, so only the
-     * sort survives contract), primitives stay primitive, and the return
-     * is {@code Object} for reference returns (the site checkcasts),
-     * primitive for primitives, {@code V} for void.
+     * The erased-shape descriptor an indy gained callsite emits:
+     * {@code (Ljava/lang/Object;<args>)<ret>} with reference args erased
+     * to {@code Object} (site arg types are post-remap, so only the sort
+     * survives contract), primitives raw, and reference returns as
+     * {@code Object} (the site still checkcasts) — the membership
+     * ceiling rides the bootstrap args instead of the signature.
      */
-    public static String dispatchDesc(Type siteDesc) {
+    public static String indyDesc(Type siteDesc) {
         StringBuilder sb = new StringBuilder("(Ljava/lang/Object;");
         for (Type a : siteDesc.getArgumentTypes()) {
             sb.append(isRef(a) ? "Ljava/lang/Object;" : a.getDescriptor());
         }
-        sb.append("I)");
+        sb.append(')');
         Type ret = siteDesc.getReturnType();
         return sb.append(isRef(ret) ? "Ljava/lang/Object;" : ret.getDescriptor()).toString();
-    }
-
-    public static boolean isRef(Type t) {
-        return t.getSort() == Type.OBJECT || t.getSort() == Type.ARRAY;
     }
 
     private GainedSites() {

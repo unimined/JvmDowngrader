@@ -246,40 +246,59 @@ public class MemberStubTransform {
                 invokeModify(m, method, invokeIndex, classNode, extra, mr, member, warnings);
             } else if (insn.getOpcode() == Opcodes.INVOKEINTERFACE && mr.provider() != null
                 && mr.provider().gained.containsKey(owner)
-                && gainedDispatchable(mr.provider(), owner, siteName, ((MethodInsnNode) insn).desc)) {
-                // gained-supertype member call — the receiver's class gained
-                // the implements edge inside this boundary, so the JDK member
-                // carries the call routed through the interface's generated
-                // dispatcher; the class's own version is the membership
-                // ceiling. The dispatch name encodes the site desc —
-                // erased-shape overloads collide otherwise — and args go as
-                // Object since site arg types are post-remap. Sites whose
-                // member isn't in the dispatcher's universe (inherited
+                && gainedDispatchable(mr.provider(), owner, siteName, ((MethodInsnNode) insn).desc)
+                && !GainedSites.isDispatchMachinery(classNode.name)) {
+                // gained-supertype member call — emitted as an indy whose
+                // GainedRuntime bootstrap resolves the receiver per class
+                // (guardWithTest native-I fast path + PIC row resolution);
+                // the class's authored version rides the bootstrap args as
+                // the membership ceiling and "name desc" is the row key. Sites
+                // whose member isn't in the dispatch universe (inherited
                 // members, post-remap descs) stay on the member-stub/native
-                // path — the dispatcher never generated a method for them
+                // path; dispatch-machinery classes keep the native site —
+                // their members all resolve natively and an indy inside
+                // them would bootstrap through the code executing it.
+                // --noIndy lowers the site via GainedRuntimeDesugar to the
+                // same RetroTypes.gainedCall tail.
                 Type site = Type.getMethodType(((MethodInsnNode) insn).desc);
                 InsnList out = new InsnList();
-                out.add(new LdcInsnNode(classNode.version));
-                out.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-                    GainedSites.dispatchOwner(owner),
-                    GainedSites.dispatchName(siteName, site.getDescriptor()),
-                    GainedSites.dispatchDesc(site), false));
+                out.add(new org.objectweb.asm.tree.InvokeDynamicInsnNode(
+                    siteName, GainedSites.indyDesc(site), GainedSites.GAINED_BSM,
+                    owner, siteName + " " + site.getDescriptor(), mr.provider().inputVersion));
                 if (GainedSites.isRef(site.getReturnType())) {
                     out.add(new TypeInsnNode(Opcodes.CHECKCAST, site.getReturnType().getInternalName()));
                 }
                 method.instructions.insertBefore(insn, out);
                 method.instructions.remove(insn);
+                // stub impls this member's gained-calls rows can resolve to
+                // are reached reflectively by the bootstrap — no bytecode
+                // edge — so declare them like the member-stub indy path does
+                Map<String, Set<String>> stubSites = mr.provider().gainedStubSites.get(owner);
+                if (stubSites != null) {
+                    Set<String> impls = stubSites.get(siteName + " " + site.getDescriptor());
+                    if (impls != null) {
+                        for (String impl : impls) {
+                            int paren = impl.indexOf('(');
+                            int dot = impl.lastIndexOf('.', paren);
+                            if (paren < 0 || dot < 0) continue;
+                            addReflectionRef(method, new FullyQualifiedMemberNameAndDesc(
+                                Type.getObjectType(impl.substring(0, dot)),
+                                impl.substring(dot + 1, paren),
+                                Type.getMethodType(impl.substring(paren))),
+                                mr.provider().downgrader, mr.provider().inputVersion, warnings);
+                        }
+                    }
+                }
             }
         }
     }
 
     /**
-     * Whether the interface's generated dispatcher declares a method for
-     * {@code name desc} — the {@code gained-calls} member universe loaded
-     * into {@link VersionProvider#gainedMembers}. Sites compute the key
-     * from their own (post-remap) desc: adapter-remapped signatures miss
-     * here the same way they miss in {@link GainedSites#dispatchName} —
-     * the member can't be invoked with adapter-typed args anyway.
+     * Whether {@code name desc} is in the gained-calls member universe
+     * loaded into {@link VersionProvider#gainedMembers} — the row keys the
+     * indy bootstrap resolves. Sites compute the key from their own
+     * (post-remap) desc: adapter-remapped signatures miss here, which is
+     * honest — the member can't be invoked with adapter-typed args anyway.
      */
     private static boolean gainedDispatchable(VersionProvider vp, String owner, String name, String desc) {
         Set<String> members = vp.gainedMembers.get(owner);
@@ -323,11 +342,20 @@ public class MemberStubTransform {
      * class-level {@code implOwner} bsm arg).
      */
     public static void addReflectionRef(MethodNode method, MethodRef impl, ClassDowngrader downgrader, int version, Set<String> warnings) {
+        addReflectionRef(method, impl.member, downgrader, version, warnings);
+    }
+
+    /**
+     * {@link #addReflectionRef(MethodNode, MethodRef, ClassDowngrader, int, Set)}
+     * for impls known only as a member triple — e.g. the
+     * {@code owner.name(desc)} stub sites a gained-calls row resolves to.
+     */
+    public static void addReflectionRef(MethodNode method, FullyQualifiedMemberNameAndDesc impl, ClassDowngrader downgrader, int version, Set<String> warnings) {
         // the api index keys members in post-remap (stand-in) vocabulary —
         // the impl's registered desc is real-JDK, so the ref must carry the
         // same chain remap the api jar's own members undergo or shade
         // pruning can't match it
-        Type desc = impl.member.getDesc();
+        Type desc = impl.getDesc();
         for (VersionProvider provider : downgrader.versionProviders(version)) {
             // providers later in the chain may not have run their init stage
             // yet — remap needs their stub table populated
@@ -337,8 +365,8 @@ public class MemberStubTransform {
         org.objectweb.asm.tree.AnnotationNode ref =
             new org.objectweb.asm.tree.AnnotationNode("Lxyz/wagyourtail/jvmdg/version/Ref;");
         ref.values = Arrays.asList(
-            "value", "L" + impl.member.getOwner().getInternalName() + ";",
-            "member", impl.member.getName(),
+            "value", "L" + impl.getOwner().getInternalName() + ";",
+            "member", impl.getName(),
             "desc", desc.getDescriptor());
         String rrDesc = "Lxyz/wagyourtail/jvmdg/version/ReflectionReferences;";
         if (method.invisibleAnnotations == null) {

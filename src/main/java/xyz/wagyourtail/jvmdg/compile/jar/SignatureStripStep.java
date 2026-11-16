@@ -11,9 +11,16 @@ import java.io.IOException;
  */
 public class SignatureStripStep extends JarStep {
 
+    /** {@link StepContext#data} key: set when any signature file was dropped — ManifestStep strips {@code Sealed:} attrs in response. */
+    public static final String SIGNATURE_STRIPPED = "jvmdg.signatureStripped";
+
     @Override
     public JarEntry visitEntry(JarEntry entry, StepContext ctx) throws IOException {
-        return ManifestUtils.isSignatureFile(entry.name) ? null : entry;
+        if (!ManifestUtils.isSignatureFile(entry.name)) {
+            return entry;
+        }
+        ctx.data.put(SIGNATURE_STRIPPED, Boolean.TRUE);
+        return null;
     }
 
 }

@@ -128,6 +128,32 @@ public final class DispatchRuntime {
     }
 
     /**
+     * Reflective-path resolution caches — the {@code --noIndy}/gained-fallback
+     * callers hit {@link #dispatchStub} per invocation, and uncached
+     * {@code ownMember} (two {@code getMethod} probes with desc parsing) +
+     * {@code resolveImpl} (up to three {@code getDeclaredMethod} probes plus an
+     * access crack) cost 113ns–22µs per call megamorphic. Keyed per class so
+     * entries die with their classloader — no leak — and misses cache as
+     * {@code Optional.empty} so a memberless receiver or unresolvable impl
+     * skips the reflective probes on repeat calls.
+     */
+    private static final ClassValue<java.util.concurrent.ConcurrentHashMap<String, java.util.Optional<java.lang.reflect.Method>>> MEMBER_CACHE =
+        new ClassValue<java.util.concurrent.ConcurrentHashMap<String, java.util.Optional<java.lang.reflect.Method>>>() {
+            @Override
+            protected java.util.concurrent.ConcurrentHashMap<String, java.util.Optional<java.lang.reflect.Method>> computeValue(Class<?> type) {
+                return new java.util.concurrent.ConcurrentHashMap<>();
+            }
+        };
+
+    private static final ClassValue<java.util.concurrent.ConcurrentHashMap<String, java.util.Optional<java.lang.reflect.Method>>> IMPL_CACHE =
+        new ClassValue<java.util.concurrent.ConcurrentHashMap<String, java.util.Optional<java.lang.reflect.Method>>>() {
+            @Override
+            protected java.util.concurrent.ConcurrentHashMap<String, java.util.Optional<java.lang.reflect.Method>> computeValue(Class<?> type) {
+                return new java.util.concurrent.ConcurrentHashMap<>();
+            }
+        };
+
+    /**
      * The reflective half of the dispatch — the {@code D:} stub site that
      * {@code gained-calls} fallback rows resolve to. The receiver's own
      * non-JDK member wins when the class declares one — the same contract
@@ -157,22 +183,30 @@ public final class DispatchRuntime {
     public static Object dispatchStub(String member, Class<?> implOwner, String implSig,
                                       Object self, Object[] args, ClassLoader cl) throws Throwable {
         int sp = member.indexOf(' ');
-        java.lang.reflect.Method m = ownMember(self.getClass(),
-            member.substring(0, sp), member.substring(sp + 1), cl);
+        final Class<?> rc = self.getClass();
+        final String name = member.substring(0, sp);
+        final String desc = member.substring(sp + 1);
+        java.util.Optional<java.lang.reflect.Method> cached = MEMBER_CACHE.get(rc).computeIfAbsent(member,
+            k -> java.util.Optional.ofNullable(ownMember(rc, name, desc, cl)));
+        java.lang.reflect.Method m = cached.orElse(null);
         if (m != null && !isJdk(m.getDeclaringClass())) {
-            try {
-                // a public member on a non-public class needs the access
-                // crack — if the runtime refuses (a sealed JDK module), the
-                // receiver can't serve the member anyway, so the impl answers
+            // a public member on a non-public class needs the access crack;
+            // a refusal (e.g. a security-manager denial) is surfaced — the
+            // receiver declared the member, so silently serving the impl
+            // would mask an override it couldn't honor
+            if (!java.lang.reflect.Modifier.isPublic(m.getModifiers())
+                || !java.lang.reflect.Modifier.isPublic(m.getDeclaringClass().getModifiers())) {
                 m.setAccessible(true);
-                int n = m.getParameterCount();
-                return RetroTypes.invokeResolved(m, self,
-                    n == args.length ? args : java.util.Arrays.copyOf(args, n));
-            } catch (RuntimeException e) {
-                // fall through to the impl
             }
+            int n = m.getParameterCount();
+            // slice only when the member takes fewer params — padding with
+            // nulls on n > args.length would mask the arity mismatch the
+            // invoke then reports
+            return RetroTypes.invokeResolved(m, self,
+                n < args.length ? java.util.Arrays.copyOf(args, n) : args);
         }
-        java.lang.reflect.Method impl = resolveImpl(implOwner, implSig);
+        java.lang.reflect.Method impl = IMPL_CACHE.get(implOwner).computeIfAbsent(implSig,
+            k -> java.util.Optional.ofNullable(resolveImpl(implOwner, k))).orElse(null);
         if (impl == null) {
             throw MissingStubError.create(
                 implOwner.getName().replace('.', '/') + "." + implSig);
@@ -279,7 +313,7 @@ public final class DispatchRuntime {
         private final MethodHandle impl;
         private final Class<?> implOwner;
         private final String implSig;
-        private MethodHandle implResolved;
+        private volatile MethodHandle implResolved;
 
         Pic(MethodHandles.Lookup caller, String name, MethodType site, MethodType member,
             MethodHandle impl, Class<?> implOwner, String implSig) {
@@ -287,7 +321,7 @@ public final class DispatchRuntime {
             this.name = name;
             this.site = site;
             this.member = member;
-            this.impl = impl == null ? null : impl.asType(site);
+            this.impl = impl == null ? null : MethodHandles.explicitCastArguments(impl, site);
             this.implOwner = implOwner;
             this.implSig = implSig;
         }
@@ -323,7 +357,9 @@ public final class DispatchRuntime {
                     site.parameterList().subList(site.parameterCount() - extras,
                         site.parameterCount()));
             }
-            return mh.asType(site);
+            // explicitCastArguments, not asType — asType on a varargs-declared
+            // member collects a trailing Object site-arg into Object[]{arg}
+            return MethodHandles.explicitCastArguments(mh, site);
         }
 
         /** the impl handle — lazily resolved when it arrived as owner+sig */
@@ -335,7 +371,7 @@ public final class DispatchRuntime {
                 java.lang.reflect.Method m = resolveImpl(implOwner, implSig);
                 if (m != null) {
                     try {
-                        implResolved = IMPL_LOOKUP.unreflect(m).asType(site);
+                        implResolved = MethodHandles.explicitCastArguments(IMPL_LOOKUP.unreflect(m), site);
                     } catch (Throwable ignore) {
                     }
                 }

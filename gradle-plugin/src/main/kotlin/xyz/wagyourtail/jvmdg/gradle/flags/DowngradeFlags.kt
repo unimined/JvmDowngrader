@@ -141,6 +141,7 @@ interface DowngradeFlags {
     @get:Optional
     val noIndy: Property<Boolean>
 
+
     /**
      * accept preview-compiled input class files (javac --enable-preview sets
      * the class-file minor version to 0xFFFF) and activate PREVIEW-condition

@@ -13,6 +13,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -93,11 +94,14 @@ public final class DerivedGained {
     }
 
     /**
-     * Fold one gained-calls resource's member keys into
-     * {@link VersionProvider#gainedMembers} — every {@code "name desc"} a
-     * dispatcher can serve, un-windowed since the dispatcher class covers
-     * all ceilings; a missing resource just means no gained calls (older
-     * api jar).
+     * Fold one gained-calls resource into the transform-side tables:
+     * {@link VersionProvider#gainedMembers} gets every {@code "name desc"}
+     * a dispatcher can serve (un-windowed since the dispatcher class covers
+     * all ceilings), and {@link VersionProvider#gainedStubSites} gets the
+     * {@code >stubSite} impls each member's rows can resolve to — the
+     * runtime reaches them reflectively, so indy emission must declare
+     * them for shading's closure. A missing resource just means no gained
+     * calls (older api jar).
      */
     private static void readCallMembers(VersionProvider vp, String resource) throws IOException {
         ClassLoader cl = vp.getClass().getClassLoader();
@@ -117,6 +121,31 @@ public final class DerivedGained {
                         continue;
                     }
                     vp.gainedMembers.computeIfAbsent(parts[0], k -> new HashSet<String>()).add(parts[1]);
+                    if (parts.length < 3) {
+                        continue;
+                    }
+                    // each T= entry resolves per-ceiling as
+                    // ver:D|ver:D>stubSite|ver:-; collect every stub site
+                    // the member can fall back to (the D: prefix marks a
+                    // dispatchable impl — the ref wants the method itself)
+                    for (String entry : parts[2].split(",")) {
+                        int eq = entry.indexOf('=');
+                        if (eq < 0) {
+                            continue;
+                        }
+                        for (String res : entry.substring(eq + 1).split("\\|")) {
+                            int gt = res.indexOf('>');
+                            if (gt < 0) {
+                                continue;
+                            }
+                            String site = res.substring(gt + 1);
+                            if (site.startsWith("D:")) {
+                                site = site.substring(2);
+                            }
+                            vp.gainedStubSites.computeIfAbsent(parts[0], k -> new HashMap<String, Set<String>>())
+                                .computeIfAbsent(parts[1], k -> new HashSet<String>()).add(site);
+                        }
+                    }
                 }
             }
         }

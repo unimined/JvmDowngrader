@@ -724,4 +724,87 @@ public class TestStructuralRemapTransform {
         assertTrue(t.remapClassCalls("com/example/Owner", m, 65).isEmpty());
     }
 
+    // --- gained-element array stores ---------------------------------------
+    //
+    // aastore into an I-component array is the one place the runtime DOES
+    // check the gained edge — a raw member throws ArrayStoreException. The
+    // Analyzer (BasicValue) types the array operand; a gained element type
+    // routes the stored value through the dispatcher's jvmdg$aastore wrap.
+
+    /** {@code static void m(AutoCloseable[] a, Object v) { a[0] = v; } } */
+    private static MethodNode storeMethod(String arrayDesc) {
+        MethodNode m = new MethodNode(Opcodes.ASM9, Opcodes.ACC_STATIC, "m",
+            "(" + arrayDesc + "Ljava/lang/Object;)V", null, null);
+        m.instructions = new InsnList();
+        m.instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
+        m.instructions.add(new InsnNode(Opcodes.ICONST_0));
+        m.instructions.add(new VarInsnNode(Opcodes.ALOAD, 1));
+        m.instructions.add(new InsnNode(Opcodes.AASTORE));
+        m.instructions.add(new InsnNode(Opcodes.RETURN));
+        m.maxLocals = 2;
+        m.maxStack = 4;
+        return m;
+    }
+
+    @Test
+    public void aastoreIntoGainedElementArrayRoutesToWrapHelper() {
+        StructuralRemapTransform t = new StructuralRemapTransform(remapWithGained());
+        MethodNode m = storeMethod("[Ljava/lang/AutoCloseable;");
+        java.util.Map<AbstractInsnNode, InsnList> map = t.remapClassCalls("com/example/Owner", m, 65);
+        InsnList out = map.get(m.instructions.get(3));
+        assertNotNull(out, "aastore into a gained-element array must route the value");
+        assertEquals(65, intOperand(out.get(0)), "the authored ceiling");
+        MethodInsnNode call = (MethodInsnNode) out.get(1);
+        assertEquals("jvmdg$aastore", call.name);
+        assertEquals(AC_DISP, call.owner);
+        assertEquals("(Ljava/lang/Object;I)Ljava/lang/AutoCloseable;", call.desc);
+        assertFalse(call.itf);
+        assertEquals(Opcodes.AASTORE, out.get(2).getOpcode(),
+            "the native store runs after the value is wrapped");
+    }
+
+    @Test
+    public void aastoreIntoPlainObjectArrayNotRouted() {
+        StructuralRemapTransform t = new StructuralRemapTransform(remapWithGained());
+        MethodNode m = storeMethod("[Ljava/lang/Object;");
+        assertTrue(t.remapClassCalls("com/example/Owner", m, 65).isEmpty(),
+            "an Object[] store has no gained element check to emulate");
+    }
+
+    @Test
+    public void aastoreIntoMultiDimGainedArrayNotRouted() {
+        // AutoCloseable[][] — the stored value is an AutoCloseable[]; member
+        // arrays can't be fabricated into I[] so there is no wrap to emit
+        StructuralRemapTransform t = new StructuralRemapTransform(remapWithGained());
+        MethodNode m = storeMethod("[[Ljava/lang/AutoCloseable;");
+        assertTrue(t.remapClassCalls("com/example/Owner", m, 65).isEmpty());
+    }
+
+    @Test
+    public void aastoreBeneathCatchAllTopValueIsNotRouted() {
+        // a catch-all handler makes Analyzer push a null-typed TOP value for
+        // the caught exception (BasicValue.REFERENCE_VALUE semantics) — a
+        // store+load spreads it to the aastore's array slot, where the
+        // consumer must skip it rather than dereference a null frame value
+        StructuralRemapTransform t = new StructuralRemapTransform(remapWithGained());
+        MethodNode m = new MethodNode(Opcodes.ASM9, Opcodes.ACC_STATIC, "m", "()V", null, null);
+        LabelNode l0 = new LabelNode(), l1 = new LabelNode(), h = new LabelNode();
+        m.instructions = new InsnList();
+        m.instructions.add(l0);
+        m.instructions.add(new InsnNode(Opcodes.NOP));
+        m.instructions.add(l1);
+        m.instructions.add(h);
+        m.instructions.add(new VarInsnNode(Opcodes.ASTORE, 0));
+        m.instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
+        m.instructions.add(new InsnNode(Opcodes.ICONST_0));
+        m.instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
+        m.instructions.add(new InsnNode(Opcodes.AASTORE));
+        m.instructions.add(new InsnNode(Opcodes.RETURN));
+        m.tryCatchBlocks = Collections.singletonList(new TryCatchBlockNode(l0, l1, h, null));
+        m.maxLocals = 1;
+        m.maxStack = 3;
+        assertTrue(t.remapClassCalls("com/example/Owner", m, 65).isEmpty(),
+            "a TOP-valued store operand has no element type to route");
+    }
+
 }

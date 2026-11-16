@@ -142,17 +142,32 @@ public final class RetroTypes {
     /** JDK member internal name → runtime class (bootstrap-loaded, loader-safe to cache globally) */
     private static final Map<String, Class<?>> MEMBER_CLASSES = new ConcurrentHashMap<>();
 
-    /** context loader → impl internal name → member-typed ctor (impl classes are loader-bound: the same impl name under two loaders is a different type, and a ctor from the wrong loader mints objects the caller's trailing CHECKCAST rejects) */
-    private static final Map<ClassLoader, Map<String, java.lang.reflect.Constructor<?>>> IMPL_CTORS = new ConcurrentHashMap<>();
+    /** context class → impl internal name → member-typed ctor (impl classes are loader-bound: the same impl name under two loaders is a different type, and a ctor from the wrong loader mints objects the caller's trailing CHECKCAST rejects). ClassValue-keyed so the cache releases with the context's loader — a strong ClassLoader-keyed map would pin the loader forever. */
+    private static final ClassValue<Map<String, java.lang.reflect.Constructor<?>>> IMPL_CTORS =
+        new ClassValue<Map<String, java.lang.reflect.Constructor<?>>>() {
+            @Override
+            protected Map<String, java.lang.reflect.Constructor<?>> computeValue(Class<?> context) {
+                return new ConcurrentHashMap<>();
+            }
+        };
 
-    /** context loader → dispatcher binary name → {@code X$jvmdg$retro.wrap} handle, or {@link #NO_DISPATCHER} */
-    private static final Map<ClassLoader, Map<String, Object>> DISPATCHERS = new ConcurrentHashMap<>();
+    /** context class → {@code <context>$jvmdg$retro.wrap} handle, or {@link #NO_DISPATCHER} — the dispatcher name derives from the context class, so one value per key. ClassValue-keyed so the handle releases with the context's loader. */
+    private static final ClassValue<Object> DISPATCHERS = new ClassValue<Object>() {
+        @Override
+        protected Object computeValue(Class<?> context) {
+            try {
+                Class<?> dc = Class.forName(context.getName() + "$jvmdg$retro", false,
+                    context.getClassLoader());
+                return MethodHandles.publicLookup().findStatic(dc, "wrap",
+                    MethodType.methodType(Object.class, Object.class));
+            } catch (Throwable e) {
+                return NO_DISPATCHER;
+            }
+        }
+    };
 
-    /** sentinel for "no generated dispatcher in this loader" — a null can't live in a CHM */
+    /** sentinel for "no generated dispatcher for this context" — a null can't live in a ClassValue */
     private static final Object NO_DISPATCHER = new Object();
-
-    /** map-key stand-in for the bootstrap loader in {@link #DISPATCHERS} (a null can't key a CHM) */
-    private static final ClassLoader BOOTSTRAP_KEY = new ClassLoader() {};
 
     /** one wraps-resource row: {@code stub} = adapter name for the already-adapted passthrough */
     private static final class WrapRow {
@@ -210,25 +225,12 @@ public final class RetroTypes {
      * affected classes; the resource path already satisfies that.
      */
     public static void register(String retroInternalName, Iterable<String> implementedBy) {
-        Set<String> set = MEMBERSHIP.get(retroInternalName);
-        if (set == null) {
-            set = ConcurrentHashMap.newKeySet();
-            Set<String> prev = MEMBERSHIP.putIfAbsent(retroInternalName, set);
-            if (prev != null) {
-                set = prev;
-            }
-        }
+        Set<String> set = MEMBERSHIP.computeIfAbsent(retroInternalName,
+            k -> ConcurrentHashMap.newKeySet());
         for (String name : implementedBy) {
             set.add(name);
-            Set<String> retro = MEMBER_OF.get(name);
-            if (retro == null) {
-                retro = ConcurrentHashMap.newKeySet();
-                Set<String> prev = MEMBER_OF.putIfAbsent(name, retro);
-                if (prev != null) {
-                    retro = prev;
-                }
-            }
-            retro.add(retroInternalName);
+            MEMBER_OF.computeIfAbsent(name, k -> ConcurrentHashMap.newKeySet())
+                .add(retroInternalName);
         }
     }
 
@@ -239,25 +241,12 @@ public final class RetroTypes {
      * and tests may call this before first use.
      */
     public static void gainedRegister(String i, String memberInternalName, int since) {
-        Map<String, Integer> members = GAINED.get(i);
-        if (members == null) {
-            members = new ConcurrentHashMap<>();
-            Map<String, Integer> raced = GAINED.putIfAbsent(i, members);
-            if (raced != null) {
-                members = raced;
-            }
-        }
+        Map<String, Integer> members = GAINED.computeIfAbsent(i, k -> new ConcurrentHashMap<>());
         Integer cur = members.get(memberInternalName);
         if (cur == null || since < cur) {
             members.put(memberInternalName, since);
-            Map<String, Integer> ifaces = GAINED_BY_MEMBER.get(memberInternalName);
-            if (ifaces == null) {
-                ifaces = new ConcurrentHashMap<>();
-                Map<String, Integer> raced = GAINED_BY_MEMBER.putIfAbsent(memberInternalName, ifaces);
-                if (raced != null) {
-                    ifaces = raced;
-                }
-            }
+            Map<String, Integer> ifaces = GAINED_BY_MEMBER.computeIfAbsent(memberInternalName,
+                k -> new ConcurrentHashMap<>());
             Integer icur = ifaces.get(i);
             if (icur == null || since < icur) {
                 ifaces.put(i, since);
@@ -281,6 +270,11 @@ public final class RetroTypes {
             cl = ClassLoader.getSystemClassLoader();
         }
         for (String[] row : readRows(RESOURCE, cl)) {
+            if (row.length < 2) {
+                // no member column — a single-field row would register the
+                // retro name as a member of itself
+                continue;
+            }
             List<String> names = new ArrayList<>();
             for (String name : row[row.length - 1].split(",")) {
                 name = name.trim();
@@ -304,14 +298,8 @@ public final class RetroTypes {
                 }
             }
             String retro = row[0].trim();
-            List<WrapRow> rows = WRAPS.get(retro);
-            if (rows == null) {
-                rows = Collections.synchronizedList(new ArrayList<WrapRow>());
-                List<WrapRow> raced = WRAPS.putIfAbsent(retro, rows);
-                if (raced != null) {
-                    rows = raced;
-                }
-            }
+            List<WrapRow> rows = WRAPS.computeIfAbsent(retro,
+                k -> Collections.synchronizedList(new ArrayList<WrapRow>()));
             rows.add(new WrapRow(row[1].trim(),
                 members.toArray(new String[0]), impls.toArray(new String[0])));
         }
@@ -346,24 +334,11 @@ public final class RetroTypes {
                 }
                 String iface = row[0].trim();
                 String member = row[1].trim();
-                List<GainedRow> list = GAINED_CALLS.get(iface) == null
-                    ? null : GAINED_CALLS.get(iface).get(member);
-                if (list == null) {
-                    list = new ArrayList<>();
-                    Map<String, List<GainedRow>> byMember = GAINED_CALLS.get(iface);
-                    if (byMember == null) {
-                        byMember = new ConcurrentHashMap<>();
-                        Map<String, List<GainedRow>> raced = GAINED_CALLS.putIfAbsent(iface, byMember);
-                        if (raced != null) {
-                            byMember = raced;
-                        }
-                    }
-                    List<GainedRow> raced = byMember.putIfAbsent(member, list);
-                    if (raced != null) {
-                        list = raced;
-                        continue;
-                    }
-                }
+                // computeIfAbsent keeps the raced winner's list and still
+                // parses this row into it — the old putIfAbsent skip dropped
+                // a raced-out row's resolutions entirely
+                List<GainedRow> list = GAINED_CALLS.computeIfAbsent(iface, k -> new ConcurrentHashMap<>())
+                    .computeIfAbsent(member, k -> Collections.synchronizedList(new ArrayList<GainedRow>()));
                 parseGainedRows(row[2].trim(), list);
             }
         }
@@ -383,27 +358,39 @@ public final class RetroTypes {
             int[] vers = new int[res.length];
             String[] decls = new String[res.length];
             String[] stubs = new String[res.length];
-            for (int i = 0; i < res.length; i++) {
-                String r = res[i];
+            // malformed resolutions are skipped and the arrays compacted —
+            // a default {0,null,null} slot would satisfy vers[k] <= ceiling
+            // and break the selection loop with a spurious AbstractMethodError
+            int n = 0;
+            for (String r : res) {
                 int c = r.indexOf(':');
                 if (c <= 0) {
-                    break;
+                    continue;
                 }
+                int v;
                 try {
-                    vers[i] = Integer.parseInt(r.substring(0, c));
+                    v = Integer.parseInt(r.substring(0, c));
                 } catch (NumberFormatException e) {
-                    break;
+                    continue;
                 }
+                vers[n] = v;
                 String body = r.substring(c + 1);
                 int gt = body.indexOf('>');
                 if (gt >= 0) {
-                    decls[i] = body.substring(0, gt).equals("-") ? null : body.substring(0, gt);
-                    stubs[i] = body.substring(gt + 1);
+                    decls[n] = body.substring(0, gt).equals("-") ? null : body.substring(0, gt);
+                    stubs[n] = body.substring(gt + 1);
                 } else {
-                    decls[i] = body.equals("-") ? null : body;
+                    decls[n] = body.equals("-") ? null : body;
                 }
+                n++;
             }
-            out.add(new GainedRow(t, vers, decls, stubs));
+            if (n == 0) {
+                continue;
+            }
+            out.add(new GainedRow(t,
+                java.util.Arrays.copyOf(vers, n),
+                java.util.Arrays.copyOf(decls, n),
+                java.util.Arrays.copyOf(stubs, n)));
         }
     }
 
@@ -586,23 +573,11 @@ public final class RetroTypes {
      */
     public static void gainedCallRegister(String i, String member, String t,
                                           int[] vers, String[] declarers, String[] stubs) {
-        Map<String, List<GainedRow>> byMember = GAINED_CALLS.get(i);
-        if (byMember == null) {
-            byMember = new ConcurrentHashMap<>();
-            Map<String, List<GainedRow>> raced = GAINED_CALLS.putIfAbsent(i, byMember);
-            if (raced != null) {
-                byMember = raced;
-            }
-        }
-        List<GainedRow> list = byMember.get(member);
-        if (list == null) {
-            list = new ArrayList<>();
-            List<GainedRow> raced = byMember.putIfAbsent(member, list);
-            if (raced != null) {
-                list = raced;
-            }
-        }
-        list.add(new GainedRow(t, vers, declarers, stubs));
+        GAINED_CALLS.computeIfAbsent(i, k -> new ConcurrentHashMap<>())
+            // synchronizedList — dispatchers may register from their own
+            // clinits on different threads (same shape as WRAPS)
+            .computeIfAbsent(member, k -> Collections.synchronizedList(new ArrayList<GainedRow>()))
+            .add(new GainedRow(t, vers, declarers, stubs));
     }
 
     /**
@@ -673,6 +648,173 @@ public final class RetroTypes {
      */
     public static Object gainedCall(String i, String member, Object self, Object[] args, int ceiling) throws Throwable {
         return gainedCall(i, member, self, args, ceiling, RetroTypes.class);
+    }
+
+    /**
+     * The handle form of {@link #gainedCall}'s row resolution — resolves
+     * the member-T walk, ceiling row selection and declarer/stub binding
+     * for receiver class {@code rc} ONCE, returning an
+     * {@code (Object self, Object[] args)Object}-typed handle the
+     * {@link GainedRuntime} PIC caches per receiver class. {@code null}
+     * means the row is unresolvable at {@code ceiling} (the caller then
+     * emits the {@link AbstractMethodError} tail).
+     */
+    @xyz.wagyourtail.jvmdg.version.ReflectionReferences({
+        // HandlesHolder reaches these via findStatic — no bytecode edge
+        // for the shade index, so declare them or pruning drops them
+        @xyz.wagyourtail.jvmdg.version.Ref(value = "Lxyz/wagyourtail/jvmdg/stub/RetroTypes;",
+            member = "invokeResolved",
+            desc = "(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"),
+        @xyz.wagyourtail.jvmdg.version.Ref(value = "Lxyz/wagyourtail/jvmdg/stub/RetroTypes;",
+            member = "invokeSelfStub",
+            desc = "(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"),
+        @xyz.wagyourtail.jvmdg.version.Ref(value = "Lxyz/wagyourtail/jvmdg/stub/DispatchRuntime;",
+            member = "dispatchStub",
+            desc = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/ClassLoader;)Ljava/lang/Object;")
+    })
+    static java.lang.invoke.MethodHandle gainedCallHandle(String i, String member, Class<?> rc,
+                                                          int ceiling, ClassLoader cl) {
+        RESOURCES.get();
+        Map<String, List<GainedRow>> byMember = GAINED_CALLS.get(i);
+        List<GainedRow> rows = byMember == null ? null : byMember.get(member);
+        if (rows == null || rc == null) {
+            return null;
+        }
+        Set<String> names = new HashSet<>();
+        for (GainedRow r : rows) {
+            names.add(r.t);
+        }
+        String t = gainedMemberName(rc, names);
+        if (t == null) {
+            return null;
+        }
+        GainedRow row = null;
+        for (GainedRow r : rows) {
+            if (r.t.equals(t)) {
+                row = r;
+                break;
+            }
+        }
+        if (row == null) {
+            return null;
+        }
+        for (int k = row.vers.length - 1; k >= 0; k--) {
+            if (row.vers[k] <= ceiling) {
+                if (row.declarers[k] != null) {
+                    java.lang.reflect.Method m = resolveGained(row.declarers[k], member, cl);
+                    if (m != null) {
+                        return HandlesHolder.INVOKE_RESOLVED.bindTo(m);
+                    }
+                }
+                if (row.stubs[k] != null) {
+                    java.lang.invoke.MethodHandle h = stubHandle(row.stubs[k], member, cl);
+                    if (h != null) {
+                        return h;
+                    }
+                }
+                break;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Resolve a {@code gained-calls} stub site to an
+     * {@code (Object self, Object[] args)Object} handle — {@code D:}
+     * rows route into {@link DispatchRuntime#dispatchStub} with the
+     * member+impl bound, plain {@code owner.name(desc)} rows resolve the
+     * impl method once (literal → shade-prefixed → stand-in-mapped
+     * signature, same order {@link #invokeStub} uses) and bind a
+     * self-prepending adapter.
+     */
+    private static java.lang.invoke.MethodHandle stubHandle(String site, String member,
+                                                            ClassLoader cl) {
+        if (site.startsWith("D:")) {
+            // dispatchStub(member, impl, self, args, cl) — member+impl lead,
+            // the context loader binds at its own slot
+            return java.lang.invoke.MethodHandles.insertArguments(
+                java.lang.invoke.MethodHandles.insertArguments(
+                    HandlesHolder.DISPATCH_STUB, 0, member, site.substring(2)),
+                2, cl);
+        }
+        java.lang.reflect.Method m;
+        try {
+            m = resolveStubMethod(site, cl);
+        } catch (Throwable t) {
+            m = null;
+        }
+        return m == null ? null : HandlesHolder.INVOKE_SELF_STUB.bindTo(m);
+    }
+
+    /**
+     * {@code owner.name(desc)} → the declared impl {@link java.lang.reflect.Method}
+     * — literal descriptor first, shade-prefixed second, stand-in-mapped
+     * last (identical to {@link #invokeStub}'s resolution order).
+     */
+    private static java.lang.reflect.Method resolveStubMethod(String site, ClassLoader cl)
+        throws ClassNotFoundException, NoSuchMethodException {
+        int p = site.indexOf('(');
+        int dot = site.lastIndexOf('.', p);
+        String owner = site.substring(0, dot);
+        String name = site.substring(dot + 1, p);
+        String desc = site.substring(p);
+        Class<?> s = Class.forName(owner.replace('/', '.'), true, cl);
+        java.lang.reflect.Method m = null;
+        try {
+            m = s.getDeclaredMethod(name, paramClasses(desc, cl));
+        } catch (Throwable literal) {
+        }
+        if (m == null) {
+            String prefixed = apiPrefixed(desc, s);
+            if (!prefixed.equals(desc)) {
+                try {
+                    m = s.getDeclaredMethod(name, paramClasses(prefixed, cl));
+                } catch (Throwable shaded) {
+                }
+            }
+        }
+        if (m == null) {
+            m = s.getDeclaredMethod(name,
+                ReflectionTable.paramClasses(desc, s.getClassLoader()));
+        }
+        try {
+            m.setAccessible(true);
+        } catch (RuntimeException e) {
+        }
+        return m;
+    }
+
+    /** {@code self} + {@code args} packing for resolved self-first stub impls */
+    static Object invokeSelfStub(java.lang.reflect.Method m, Object self, Object[] args)
+        throws Throwable {
+        Object[] callArgs = new Object[args.length + 1];
+        callArgs[0] = self;
+        System.arraycopy(args, 0, callArgs, 1, args.length);
+        return invokeResolved(m, null, callArgs);
+    }
+
+    /** bound {@link java.lang.invoke.MethodHandle}s for the handle-resolution paths — resolved once in clinit */
+    private static final class HandlesHolder {
+        private static final java.lang.invoke.MethodHandle INVOKE_RESOLVED;
+        private static final java.lang.invoke.MethodHandle INVOKE_SELF_STUB;
+        private static final java.lang.invoke.MethodHandle DISPATCH_STUB;
+
+        static {
+            try {
+                MethodHandles.Lookup l = MethodHandles.lookup();
+                INVOKE_RESOLVED = l.findStatic(RetroTypes.class, "invokeResolved",
+                    java.lang.invoke.MethodType.methodType(Object.class,
+                        java.lang.reflect.Method.class, Object.class, Object[].class));
+                INVOKE_SELF_STUB = l.findStatic(RetroTypes.class, "invokeSelfStub",
+                    java.lang.invoke.MethodType.methodType(Object.class,
+                        java.lang.reflect.Method.class, Object.class, Object[].class));
+                DISPATCH_STUB = l.findStatic(DispatchRuntime.class, "dispatchStub",
+                    java.lang.invoke.MethodType.methodType(Object.class, String.class,
+                        String.class, Object.class, Object[].class, ClassLoader.class));
+            } catch (Throwable t) {
+                throw new ExceptionInInitializerError(t);
+            }
+        }
     }
 
     /**
@@ -988,36 +1130,14 @@ public final class RetroTypes {
     }
 
     /**
-     * {@code <context>$jvmdg$retro.wrap} handle for {@code context}'s
-     * loader, or {@link #NO_DISPATCHER} — cached per (loader, dispatcher
-     * binary name). The dispatcher name derives from the context class
-     * itself, so a prefixed jar's adapter resolves its own prefixed
-     * dispatcher and no resource row is needed for the lookup.
+     * {@code <context>$jvmdg$retro.wrap} handle for {@code context}, or
+     * {@link #NO_DISPATCHER} — cached per context class. The dispatcher
+     * name derives from the context class itself, so a prefixed jar's
+     * adapter resolves its own prefixed dispatcher and no resource row is
+     * needed for the lookup.
      */
     private static Object dispatcher(Class<?> context) {
-        ClassLoader cl = context.getClassLoader();
-        ClassLoader key = cl == null ? BOOTSTRAP_KEY : cl;
-        Map<String, Object> cache = DISPATCHERS.get(key);
-        if (cache == null) {
-            cache = new ConcurrentHashMap<>();
-            Map<String, Object> raced = DISPATCHERS.putIfAbsent(key, cache);
-            if (raced != null) {
-                cache = raced;
-            }
-        }
-        String name = context.getName() + "$jvmdg$retro";
-        Object d = cache.get(name);
-        if (d == null) {
-            try {
-                Class<?> dc = Class.forName(name, false, cl);
-                d = MethodHandles.publicLookup().findStatic(dc, "wrap",
-                    MethodType.methodType(Object.class, Object.class));
-            } catch (Throwable e) {
-                d = NO_DISPATCHER;
-            }
-            cache.putIfAbsent(name, d);
-        }
-        return d;
+        return DISPATCHERS.get(context);
     }
 
     /**
@@ -1042,16 +1162,13 @@ public final class RetroTypes {
 
     /** JDK member class for a wrap pair — absent on this runtime → {@code null} (pair skipped) */
     private static Class<?> memberClass(String internalName) {
-        Class<?> cached = MEMBER_CLASSES.get(internalName);
-        if (cached == null) {
+        return MEMBER_CLASSES.computeIfAbsent(internalName, k -> {
             try {
-                cached = Class.forName(internalName.replace('/', '.'));
+                return Class.forName(k.replace('/', '.'));
             } catch (ClassNotFoundException e) {
-                return null;
+                return null; // uncached — misses re-probe on each call
             }
-            MEMBER_CLASSES.put(internalName, cached);
-        }
-        return cached;
+        });
     }
 
     private static Object newImpl(String implInternalName, Class<?> member, Object obj, String retroInternalName, Class<?> context) {
@@ -1062,33 +1179,36 @@ public final class RetroTypes {
         if (cl == null) {
             cl = ClassLoader.getSystemClassLoader();
         }
-        Map<String, java.lang.reflect.Constructor<?>> ctors = IMPL_CTORS.get(cl);
-        if (ctors == null) {
-            ctors = new ConcurrentHashMap<>();
-            Map<String, java.lang.reflect.Constructor<?>> raced = IMPL_CTORS.putIfAbsent(cl, ctors);
-            if (raced != null) {
-                ctors = raced;
-            }
-        }
-        java.lang.reflect.Constructor<?> ctor = ctors.get(implInternalName);
-        if (ctor == null) {
-            try {
-                ctor = Class.forName(implInternalName.replace('/', '.'), false, cl)
-                    .getDeclaredConstructor(member);
-                ctor.setAccessible(true);
-            } catch (ReflectiveOperationException e) {
-                throw new ClassCastException(
-                    "class " + obj.getClass().getName() + " cannot be cast to class " +
-                        retroInternalName.replace('/', '.') + " (" + implInternalName.replace('/', '.') + " unresolvable)");
-            }
-            ctors.putIfAbsent(implInternalName, ctor);
-        }
+        final ClassLoader fcl = cl;
+        java.lang.reflect.Constructor<?> ctor = IMPL_CTORS.get(context)
+            // computeIfAbsent also dedups a concurrent resolution — the
+            // get→putIfAbsent form let two threads both Class.forName
+            .computeIfAbsent(implInternalName, k -> {
+                try {
+                    java.lang.reflect.Constructor<?> c = Class.forName(
+                        implInternalName.replace('/', '.'), false, fcl)
+                        .getDeclaredConstructor(member);
+                    c.setAccessible(true);
+                    return c;
+                } catch (ReflectiveOperationException e) {
+                    ClassCastException cce = new ClassCastException(
+                        "class " + obj.getClass().getName() + " cannot be cast to class " +
+                            retroInternalName.replace('/', '.') + " (" + implInternalName.replace('/', '.') + " unresolvable)");
+                    cce.initCause(e);
+                    throw cce;
+                }
+            });
         try {
             return ctor.newInstance(obj);
         } catch (ReflectiveOperationException e) {
-            throw new ClassCastException(
+            ClassCastException cce = new ClassCastException(
                 "class " + obj.getClass().getName() + " cannot be cast to class " +
                     retroInternalName.replace('/', '.'));
+            // an InvocationTargetException's cause is the impl ctor's own
+            // thrown exception — chain it or the real failure is invisible
+            cce.initCause(e instanceof java.lang.reflect.InvocationTargetException
+                && e.getCause() != null ? e.getCause() : e);
+            throw cce;
         }
     }
 

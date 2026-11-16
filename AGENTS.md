@@ -149,11 +149,17 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
                   alone — scan/idx load paths must emit identically, so
                   never gate on idx-derived fields; gained-supertype
                   interfaces route the same sites to their gen/gained/<I>
-                  dispatcher via TypeRemap.gainedFor with the authored
-                  class version as ceiling; remapClassCalls is an
-                  Analyzer/SourceInterpreter pass routing ldc'd-retro
-                  Class.isInstance/cast/isAssignableFrom receivers through
-                  the same dispatchers too) + MemberResolver/TypeRemap
+                  structural helpers via TypeRemap.gainedFor with the
+                  authored class version as ceiling; remapClassCalls runs
+                  over MethodAnalysis — the per-method lazily-computed
+                  fused Analyzer artifact (FusedValue = producers+type in
+                  one pass; share the holder with any consumer needing
+                  stack info — class queries route ldc'd-retro
+                  Class.isInstance/cast/isAssignableFrom receivers, and
+                  aastore sites whose array element type is a gained
+                  interface route the value through jvmdg$aastore so raw
+                  members wrap instead of ArrayStoreException-ing) +
+                  MemberResolver/TypeRemap
                   (ClassMapping implements both — resolver graph only);
                   INVOKEVIRTUAL/INVOKEINTERFACE sites resolved to an
                   instance stub emit an invokedynamic bootstrapped by
@@ -228,19 +234,31 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
                   adapter/marker/impl-member instanceofs → table tails;
                   isAssignableFrom) + GainedDispatchGenerator
                   (xyz/wagyourtail/jvmdg/gen/gained/<mangled-I> — one
-                  dispatcher per gained-supertype interface + its $Wrap
+                  helper class per gained-supertype interface + its $Wrap
                   sibling; a gained supertype is a JDK class that acquired
-                  an interface after the target: sites on it can't verify
-                  so instanceof/checkcast/invokeinterface route through
-                  here, each carrying a trailing int ceiling = the calling
-                  class's authored version; member methods are
-                  <name>$<mangled-desc> against erased-shape overloads,
-                  fast-path self instanceof I → I.m then tail-call
+                  an interface after the target: instanceof/checkcast/
+                  class-query sites can't verify so they route to the
+                  jvmdg$isInstance/cast/isAssignableFrom/isArrayInstance/
+                  isArrayAssignableFrom structural methods, each carrying
+                  a trailing int ceiling = the calling class's authored
+                  version; member-CALL sites instead emit an
+                  invokedynamic bootstrapped by stub/GainedRuntime
+                  (bsmArgs = srcName, "name desc", ceiling — desc erases
+                  ref types to Object + trailing checkcast) since the
+                  generated dispatcher's catch(LinkageError)-per-call cost
+                  measured ~200-600x the PIC path on missing-I targets;
+                  dispatch machinery (stub/ + gen/ + $jvmdg$/$Ov$ owners,
+                  GainedSites.isDispatchMachinery) emits neither —
+                  indy inside bootstrap self-recurses and its member calls
+                  all resolve natively anyway; --noIndy lowers the site
+                  via stub/all/GainedRuntimeDesugar → invokestatic
                   RetroTypes.gainedCall; $Wrap supplies the real I-typed
-                  checkcast result since member objects can't implement I;
-                  member methods declare @ReflectionReferences for the
-                  gainedCall-resolved stub sites — reflective reach has no
-                  bytecode edge for the shade closure; ref descs carry the
+                  checkcast result since member objects can't implement I,
+                  its members pack self/args and tail-call
+                  RetroTypes.gainedCall directly, declaring
+                  @ReflectionReferences for the gainedCall-resolved stub
+                  sites — reflective reach has no bytecode edge for the
+                  shade closure; ref descs carry the
                   provider-chain remap since the api index keys members in
                   post-remap stand-in vocabulary) + MemberForwarderGenerator
                   (<adapter>$jvmdg$fwd — one class per OWN_INTERFACE adapter;

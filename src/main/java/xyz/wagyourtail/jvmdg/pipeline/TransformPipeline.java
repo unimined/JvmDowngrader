@@ -67,6 +67,13 @@ public final class TransformPipeline {
             // classes that join the remaining stages
             TransformWorklist next = new TransformWorklist();
             ctx.extras = next;
+            // stage-boundary invalidation: method-derived artifacts must not
+            // survive into a stage that sees post-mutation bytecode
+            for (Object artifact : ctx.data.values()) {
+                if (artifact instanceof StageScoped) {
+                    ((StageScoped) artifact).stageBoundary();
+                }
+            }
             if (stage.onEnter != null) {
                 stage.onEnter.run(ctx);
             }
@@ -114,6 +121,13 @@ public final class TransformPipeline {
             current = next.drain();
             if (stage.onExit != null) {
                 stage.onExit.run(ctx);
+            }
+        }
+        // run ends: release stage-scoped artifacts so post-run consumers of
+        // ctx.data can't read the last stage's pre-mutation analyses
+        for (Object artifact : ctx.data.values()) {
+            if (artifact instanceof StageScoped) {
+                ((StageScoped) artifact).stageBoundary();
             }
         }
         ctx.current = null;

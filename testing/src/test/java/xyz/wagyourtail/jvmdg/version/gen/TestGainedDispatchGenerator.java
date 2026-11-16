@@ -60,8 +60,8 @@ public class TestGainedDispatchGenerator {
 
             new GainedDispatchGenerator().generate(ctx);
 
-            Path emitted = out.resolve("xyz/wagyourtail/jvmdg/gen/gained/T_GainedIface.class");
-            assertTrue(Files.exists(emitted), "dispatcher emitted");
+            Path emitted = out.resolve("xyz/wagyourtail/jvmdg/gen/gained/T_GainedIface$Wrap.class");
+            assertTrue(Files.exists(emitted), "$Wrap emitted");
             ClassReader cr = new ClassReader(Files.readAllBytes(emitted));
             ClassNode node = new ClassNode();
             cr.accept(node, 0);

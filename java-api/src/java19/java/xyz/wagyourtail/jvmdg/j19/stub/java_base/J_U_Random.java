@@ -5,6 +5,7 @@ import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serial;
 import java.util.Objects;
 import java.util.Random;
@@ -39,7 +40,7 @@ public class J_U_Random {
         }
 
         @Serial
-        private void writeObject(ObjectInputStream s) throws NotSerializableException {
+        private void writeObject(ObjectOutputStream s) throws NotSerializableException {
             throw new NotSerializableException("not serializable");
         }
 

@@ -45,7 +45,29 @@ public class TestClasspathIndex {
         ClasspathIndex index = new ClasspathIndex(counting);
         assertNull(index.loaderInfo("no/such/Clazz"));
         assertNull(index.loaderInfo("no/such/Clazz"));
-        assertEquals(1, resourceReads.get(), "miss must be read at most once");
+        // misses re-probe by design — permanently caching a null result
+        // poisoned stub lookup for the downgrader's lifetime whenever a
+        // transient resource failure raced the lookup — 2 calls x 1 probe
+        assertEquals(2, resourceReads.get(), "miss must re-probe on each lookup");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void loaderInfoReplacesDeadSoftReference() throws Exception {
+        ClasspathIndex index = new ClasspathIndex(getClass().getClassLoader());
+        // plant a GC-cleared ref the way heap pressure leaves one behind —
+        // the old putIfAbsent install kept serving the dead slot as a miss
+        java.lang.reflect.Field f = ClasspathIndex.class.getDeclaredField("loaderInfos");
+        f.setAccessible(true);
+        java.util.Map<String, java.lang.ref.SoftReference<ClassInfo>> map =
+            (java.util.Map<String, java.lang.ref.SoftReference<ClassInfo>>) f.get(index);
+        java.lang.ref.SoftReference<ClassInfo> dead = new java.lang.ref.SoftReference<>(null);
+        dead.clear();
+        map.put("java/lang/String", dead);
+        ClassInfo info = index.loaderInfo("java/lang/String");
+        assertNotNull(info, "dead soft-reference slot must be replaced, not served as a miss");
+        assertEquals("java/lang/String", info.getName());
+        assertSame(info, index.loaderInfo("java/lang/String"));
     }
 
     @Test

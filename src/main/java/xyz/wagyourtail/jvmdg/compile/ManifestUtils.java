@@ -35,7 +35,22 @@ public final class ManifestUtils {
         if (!path.startsWith("META-INF/")) {
             return false;
         }
-        return path.endsWith(".SF") || path.endsWith(".RSA") || path.endsWith(".DSA") || path.endsWith(".EC");
+        String upper = path.toUpperCase(java.util.Locale.ROOT);
+        return upper.endsWith(".SF") || upper.endsWith(".RSA") || upper.endsWith(".DSA") || upper.endsWith(".EC");
+    }
+
+    /**
+     * Strips {@code Sealed:} from the main attributes and every per-entry
+     * {@code Name:} section. Only meaningful while the jar carried signing —
+     * once signature files are dropped the seal just rejects injected
+     * (downgraded/api/lambda-impl) classes at runtime with
+     * {@code SecurityException}, so transformed output drops it too.
+     */
+    public static void stripSealedAttributes(Manifest manifest) {
+        manifest.getMainAttributes().remove(Attributes.Name.SEALED);
+        for (Attributes attrs : manifest.getEntries().values()) {
+            attrs.remove(Attributes.Name.SEALED);
+        }
     }
 
     /**

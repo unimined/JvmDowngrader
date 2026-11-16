@@ -28,13 +28,10 @@ import java.util.concurrent.ConcurrentMap;
  * <p>The {@link #working} layer indexes generated/transformed nodes by name
  * for the resolver's "check extras" lookups (replacing linear scans).
  *
- * <p>Thread-safe; misses are cached so repeated queries for absent classes
- * don't re-read resources.
+ * <p>Thread-safe; hits are softly memoized, misses re-probe each call so a
+ * transient resource failure can't permanently mark a live class absent.
  */
 public class ClasspathIndex {
-
-    /** negative-cache sentinel: ConcurrentHashMap cannot store null */
-    private static final SoftReference<ClassInfo> MISS = new SoftReference<>(null);
 
     private final ClassLoader classLoader;
 
@@ -50,21 +47,27 @@ public class ClasspathIndex {
 
     /**
      * ClassInfo for a class resolvable through the downgrader's classloader,
-     * or null. Results (including misses) are memoized for the lifetime of
-     * this index; hits are soft so they can be re-parsed after GC pressure.
+     * or null. Hits are memoized (softly, so they can be re-parsed after GC
+     * pressure); misses are deliberately NOT cached — a transient resource
+     * miss (racing jar close, fs blip) must not poison the class for the
+     * index's lifetime, and re-probing an absent class is a cheap map lookup.
+     *
+     * <p>Care is taken on the install path: a map slot holding a
+     * GC-cleared {@link SoftReference} must be swapped out atomically —
+     * {@code putIfAbsent} alone would keep returning the dead ref and
+     * permanently report a live class as missing.
      */
     public ClassInfo loaderInfo(String internalName) throws IOException {
         SoftReference<ClassInfo> cached = loaderInfos.get(internalName);
         ClassInfo info = cached == null ? null : cached.get();
-        if (info == null && cached != MISS) {
+        if (info == null) {
             try (InputStream is = Utils.openResource(classLoader, internalName + ".class")) {
-                cached = is == null ? MISS : new SoftReference<>(ClassInfo.of(new ClassReader(is)));
+                if (is == null) return null;
+                cached = new SoftReference<>(ClassInfo.of(new ClassReader(is)));
             }
-            SoftReference<ClassInfo> prev = loaderInfos.putIfAbsent(internalName, cached);
-            if (prev != null) {
-                cached = prev;
-            }
-            info = cached.get();
+            final SoftReference<ClassInfo> fresh = cached;
+            info = loaderInfos.compute(internalName, (k, prev) ->
+                prev != null && prev.get() != null ? prev : fresh).get();
         }
         return info;
     }

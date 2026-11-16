@@ -11,6 +11,7 @@ public record FlagsAndRunner(JavaRunner.JavaVersion targetVersion, Flags flags) 
         if (flags.noIndy) {
             sb.append("-noindy");
         }
+
         if (!flags.debugSkipStubs.isEmpty()) {
             sb.append("-fake-");
             for (int i : flags.debugSkipStubs) {

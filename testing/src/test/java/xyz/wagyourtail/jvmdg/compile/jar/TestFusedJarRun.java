@@ -155,6 +155,59 @@ public class TestFusedJarRun {
     }
 
     @Test
+    public void signedSealedJarLosesSealedAttrs() throws IOException {
+        Path in = input(), out = dir.resolve("out");
+        Files.createDirectories(in.resolve("META-INF"));
+        java.util.jar.Manifest mf = new java.util.jar.Manifest();
+        mf.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
+        mf.getMainAttributes().put(java.util.jar.Attributes.Name.SEALED, "true");
+        java.util.jar.Attributes pkg = new java.util.jar.Attributes();
+        pkg.put(java.util.jar.Attributes.Name.SEALED, "true");
+        mf.getEntries().put("a/", pkg);
+        Files.write(in.resolve("META-INF/MANIFEST.MF"), manifestBytes(mf));
+        Files.write(in.resolve("META-INF/TEST.SF"), "sig".getBytes(StandardCharsets.UTF_8));
+
+        List<JarStep> steps = new ArrayList<>();
+        steps.add(new SignatureStripStep());
+        steps.add(new ManifestStep());
+        FusedJarRun.run(in, steps, ctx(in), out);
+
+        assertFalse(Files.exists(out.resolve("META-INF/TEST.SF")));
+        java.util.jar.Manifest outMf = new java.util.jar.Manifest(
+            Files.newInputStream(out.resolve("META-INF/MANIFEST.MF")));
+        assertNull(outMf.getMainAttributes().getValue(java.util.jar.Attributes.Name.SEALED),
+            "a dropped signature kills the seal — strip it or injected classes fail to load");
+        assertNull(outMf.getEntries().get("a/").getValue(java.util.jar.Attributes.Name.SEALED));
+        assertTrue(Files.exists(out.resolve("a/b/c.txt")), "regular entries pass through");
+    }
+
+    @Test
+    public void unsignedSealedJarKeepsSeal() throws IOException {
+        Path in = input(), out = dir.resolve("out");
+        Files.createDirectories(in.resolve("META-INF"));
+        java.util.jar.Manifest mf = new java.util.jar.Manifest();
+        mf.getMainAttributes().put(java.util.jar.Attributes.Name.MANIFEST_VERSION, "1.0");
+        mf.getMainAttributes().put(java.util.jar.Attributes.Name.SEALED, "true");
+        Files.write(in.resolve("META-INF/MANIFEST.MF"), manifestBytes(mf));
+
+        List<JarStep> steps = new ArrayList<>();
+        steps.add(new SignatureStripStep());
+        steps.add(new ManifestStep());
+        FusedJarRun.run(in, steps, ctx(in), out);
+
+        java.util.jar.Manifest outMf = new java.util.jar.Manifest(
+            Files.newInputStream(out.resolve("META-INF/MANIFEST.MF")));
+        assertEquals("true", outMf.getMainAttributes().getValue(java.util.jar.Attributes.Name.SEALED),
+            "unsigned+sealed inputs keep their seal — nothing was stripped");
+    }
+
+    private static byte[] manifestBytes(java.util.jar.Manifest mf) throws IOException {
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        mf.write(bos);
+        return bos.toByteArray();
+    }
+
+    @Test
     public void writeShadowsCopyAtSamePath() throws IOException {
         Path in = input(), out = dir.resolve("out");
         List<JarStep> steps = new ArrayList<>();

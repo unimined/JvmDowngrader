@@ -231,3 +231,22 @@ all Ljava/time/format/DateTimeFormatter;localizedBy;(Ljava/util/Locale;)Ljava/ti
 55-shade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@meaningful ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
 55-downgrade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@boundary ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
 55-shade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@boundary ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+
+# Executors.newVirtualThreadPerTaskExecutor/newThreadPerTaskExecutor: the
+# trivial probe prints the executor's Object.toString — the impl class name
+# differs by construction (JDK-internal ThreadPerTaskExecutor vs jvmdg's
+# j21.impl counterpart, which norm maps to IMPL). The behavioral contract —
+# per-task threads, virtual-thread factory — is covered by the manual
+# ExecutorTests probes instead.
+52-downgrade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+52-shade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+52-downgrade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+52-shade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+55-downgrade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+55-shade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+55-downgrade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+55-shade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+61-downgrade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+61-shade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+61-downgrade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+61-shade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#

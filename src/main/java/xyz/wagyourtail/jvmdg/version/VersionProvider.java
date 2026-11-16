@@ -21,6 +21,7 @@ import xyz.wagyourtail.jvmdg.version.map.DispatchSites;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberStubTransform;
+import xyz.wagyourtail.jvmdg.version.map.MethodAnalyses;
 import xyz.wagyourtail.jvmdg.version.map.MethodRef;
 import xyz.wagyourtail.jvmdg.version.map.StructuralRemapTransform;
 import xyz.wagyourtail.jvmdg.version.map.StubEntry;
@@ -67,8 +68,28 @@ public abstract class VersionProvider implements TypeRemap {
      * path instead of calling a method the dispatcher never generated.
      */
     public final Map<String, Set<String>> gainedMembers = new LinkedHashMap<>();
+    /**
+     * {@code I → "name desc" → stub-site impls} every gained-calls row can
+     * resolve to at any ceiling ({@code owner.name(desc)} in registered
+     * vocabulary). Gained indy sites resolve these reflectively in
+     * {@code GainedRuntime}/{@code RetroTypes}, leaving no bytecode edge —
+     * emission declares them via {@code @ReflectionReferences} so the
+     * shade closure keeps the impl class.
+     */
+    public final Map<String, Map<String, Set<String>>> gainedStubSites = new LinkedHashMap<>();
     public final Map<Type, ClassMapping> stubMappings = new LinkedHashMap<>();
     private final StructuralRemapTransform structuralRemap = new StructuralRemapTransform(this);
+    /**
+     * The run-scoped method-analysis store, injected by
+     * {@code StubMethodsTransform} on each apply — the store is
+     * ctx-shared and {@link MethodNode}-identity-keyed, so it is never
+     * nulled back out: applies run concurrently on one provider and a
+     * {@code finally}-clear would race a sibling's {@code stubMethod}.
+     * Volatile so a sibling thread's injection is visible; a late reader
+     * just falls back to a fresh holder. Engine-internal; not for
+     * provider code.
+     */
+    public volatile MethodAnalyses methodAnalyses;
     /** registered @Stub/@Modify entries for this provider's input version, keyed by stubbed owner */
     public final StubRegistry stubRegistry = new StubRegistry();
     public final int inputVersion;
@@ -822,8 +843,13 @@ public abstract class VersionProvider implements TypeRemap {
         } catch (xyz.wagyourtail.jvmdg.config.ManifestConfigReader.ConfigException e) {
             throw new IllegalStateException(e.getMessage(), e);
         }
+        // methodAnalyses is injected per-apply by StubMethodsTransform when a
+        // shared run-scoped store exists; legacy callers get a private holder
+        StructuralRemapTransform.MethodAnalysis methodAnalysis = methodAnalyses != null ?
+            methodAnalyses.getOrCreate(owner.name, method) :
+            structuralRemap.analysis(owner.name, method);
         java.util.Map<AbstractInsnNode, org.objectweb.asm.tree.InsnList> classCallRewrites =
-            structuralRemap.remapClassCalls(owner.name, method, owner.version);
+            structuralRemap.remapClassCalls(methodAnalysis, this.inputVersion);
         for (int i = 0; i < method.instructions.size(); i++) {
             AbstractInsnNode insn = method.instructions.get(i);
             org.objectweb.asm.tree.InsnList routed = classCallRewrites.remove(insn);
@@ -832,7 +858,7 @@ public abstract class VersionProvider implements TypeRemap {
                 method.instructions.remove(insn);
                 continue;
             }
-            org.objectweb.asm.tree.InsnList replacement = structuralRemap.remapInsn(insn, warnings, owner.version, owner.name);
+            org.objectweb.asm.tree.InsnList replacement = structuralRemap.remapInsn(insn, warnings, this.inputVersion, owner.name);
             if (replacement != null) {
                 method.instructions.insert(insn, replacement);
                 method.instructions.remove(insn);

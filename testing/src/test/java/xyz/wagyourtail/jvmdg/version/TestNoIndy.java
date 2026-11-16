@@ -54,6 +54,11 @@ public class TestNoIndy {
         "t/Boot", "condy",
         "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)" +
             "Ljava/lang/Object;", false);
+    private static final Handle GAINED_BSM = new Handle(Opcodes.H_INVOKESTATIC,
+        "xyz/wagyourtail/jvmdg/stub/GainedRuntime", "bootstrap",
+        "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;" +
+            "Ljava/lang/invoke/MethodType;Ljava/lang/String;Ljava/lang/String;I)" +
+            "Ljava/lang/invoke/CallSite;", false);
 
     private static Flags flags(int version) {
         Flags f = new Flags();
@@ -288,6 +293,49 @@ public class TestNoIndy {
 
         Map<String, ClassNode> out = downgrade(Opcodes.V11, caller);
         assertNoIndyOrCondy(out);
+    }
+
+    @Test
+    public void gainedIndyDesugarsToGainedCall() throws Exception {
+        ClassNode caller = node(Opcodes.V12, Opcodes.ACC_PUBLIC, "t/Gained");
+        MethodNode m = method(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "idx",
+            "(Ljava/lang/Object;Ljava/lang/Object;)I");
+        m.instructions.add(new VarInsnNode(Opcodes.ALOAD, 0));
+        m.instructions.add(new VarInsnNode(Opcodes.ALOAD, 1));
+        // gained-site shape: receiver + ref args erased to Object,
+        // primitive return kept; iName/member/ceiling ride bsmArgs
+        m.instructions.add(new InvokeDynamicInsnNode("indexOf",
+            "(Ljava/lang/Object;Ljava/lang/Object;)I", GAINED_BSM,
+            "java/util/List", "indexOf (Ljava/lang/Object;)I", 52));
+        m.instructions.add(new InsnNode(Opcodes.IRETURN));
+        caller.methods.add(m);
+
+        Map<String, ClassNode> out = downgrade(Opcodes.V11, caller);
+        assertNoIndyOrCondy(out);
+        MethodNode idx = null;
+        for (MethodNode mn : out.get("t/Gained").methods) {
+            if (mn.name.equals("idx")) idx = mn;
+        }
+        assertNotNull(idx);
+        boolean callsGained = false;
+        boolean sawIName = false;
+        boolean sawMember = false;
+        boolean sawUnbox = false;
+        for (AbstractInsnNode i : idx.instructions) {
+            if (i instanceof LdcInsnNode) {
+                if ("java/util/List".equals(((LdcInsnNode) i).cst)) sawIName = true;
+                if ("indexOf (Ljava/lang/Object;)I".equals(((LdcInsnNode) i).cst)) sawMember = true;
+            }
+            if (i instanceof MethodInsnNode) {
+                MethodInsnNode mi = (MethodInsnNode) i;
+                if (mi.owner.equals("xyz/wagyourtail/jvmdg/stub/RetroTypes")
+                    && mi.name.equals("gainedCall")) callsGained = true;
+                if (mi.name.equals("intValue")) sawUnbox = true;
+            }
+        }
+        assertTrue(callsGained, "gained indy must lower to RetroTypes.gainedCall");
+        assertTrue(sawIName && sawMember, "bsmArg constants must ride the emitted sequence");
+        assertTrue(sawUnbox, "primitive return must unbox the Object result");
     }
 
     @Test

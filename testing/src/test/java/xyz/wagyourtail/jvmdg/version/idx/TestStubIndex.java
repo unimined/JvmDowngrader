@@ -5,6 +5,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
@@ -573,13 +574,15 @@ public class TestStubIndex {
 
     /**
      * Gained-supertype site routing end-to-end: a V65 class's
-     * {@code instanceof}/{@code checkcast}/{@code invokeinterface}/
-     * {@code Class}-query sites on {@code AutoCloseable} route through the
-     * generated dispatcher with the class's authored version as the
-     * ceiling; a non-gained interface's sites stay native.
+     * {@code instanceof}/{@code checkcast}/{@code Class}-query sites on
+     * {@code AutoCloseable} route through the generated class's
+     * {@code jvmdg$*} structural helpers with the class's authored
+     * version as the ceiling, its {@code invokeinterface} member call
+     * emits a {@code GainedRuntime}-bootstrapped indy, and a non-gained
+     * interface's sites stay native.
      */
     @Test
-    public void gainedInterfaceSitesRouteThroughDispatcher() throws Exception {
+    public void gainedInterfaceSitesRouteThroughHelpersAndIndy() throws Exception {
         try (ClassDowngrader d = apiJarDowngrader()) {
             VersionProvider vp = null;
             for (VersionProvider p : d.versionProviders(Opcodes.V21)) {
@@ -646,9 +649,26 @@ public class TestStubIndex {
             assertEquals(Arrays.asList(
                     disp + ".jvmdg$isInstance(Ljava/lang/Object;I)Z",
                     disp + ".jvmdg$cast(Ljava/lang/Object;I)Ljava/lang/AutoCloseable;",
-                    disp + ".close$()V(Ljava/lang/Object;I)V",
                     disp + ".jvmdg$isInstance(Ljava/lang/Object;I)Z"),
-                calls, "every gained site routes to the interface's dispatcher");
+                calls, "structural gained sites route to the helper methods");
+            // the member call emits the gained indy: erased desc +
+            // bsmArgs (iName, "name desc", authored-version ceiling)
+            InvokeDynamicInsnNode gainedIndy = null;
+            for (int i = 0; i < m.instructions.size(); i++) {
+                org.objectweb.asm.tree.AbstractInsnNode insn = m.instructions.get(i);
+                if (insn instanceof InvokeDynamicInsnNode) {
+                    gainedIndy = (InvokeDynamicInsnNode) insn;
+                }
+            }
+            assertNotNull(gainedIndy, "the gained member call must emit an invokedynamic");
+            assertEquals("close", gainedIndy.name);
+            assertEquals("(Ljava/lang/Object;)V", gainedIndy.desc);
+            assertEquals("xyz/wagyourtail/jvmdg/stub/GainedRuntime",
+                gainedIndy.bsm.getOwner());
+            assertEquals("bootstrap", gainedIndy.bsm.getName());
+            assertEquals("java/lang/AutoCloseable", gainedIndy.bsmArgs[0]);
+            assertEquals("close ()V", gainedIndy.bsmArgs[1]);
+            assertEquals(Opcodes.V21, gainedIndy.bsmArgs[2]);
             // the native invokeinterface on the non-gained Appendable survives
             boolean nativeLeft = false;
             for (int i = 0; i < m.instructions.size(); i++) {

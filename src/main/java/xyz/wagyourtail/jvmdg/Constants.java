@@ -32,6 +32,7 @@ public class Constants {
     public static final String NO_INDY = "jvmdg.noIndy";
     public static final String ALLOW_PREVIEW = "jvmdg.allowPreview";
 
+
     public static final String SHADE_INLINING = "jvmdg.shadeInlining";
     public static final String SHADE_REFLECTION = "jvmdg.shadeReflection";
     public static final String SHADE_KEEP_REFLECTION = "jvmdg.shadeKeepReflection";

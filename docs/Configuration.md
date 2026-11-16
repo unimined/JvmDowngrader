@@ -79,6 +79,7 @@ separator), `wildcard-map` (comma-separated patterns).
 | `Multi-Release-Versions` | `--multiRelease` / `-mr` | `jvmdg.multiReleaseVersions` | `multiReleaseVersions` | version-set |
 | `Multi-Release-Inputs` | `--multiReleaseInputs` / `-mri` | — | `downgradeFromMultiReleases` | const-true / bool |
 | `No-Indy` | `--noIndy` | `jvmdg.noIndy` | `noIndy` | const-true / bool |
+
 | `Allow-Preview` | `--allowPreview` | `jvmdg.allowPreview` | `allowPreview` | const-true / bool |
 | `Shade-Prefix` | — | — | `shadePrefix` | string |
 | `Shade-Reflection` | `--shadeReflection` | `jvmdg.shadeReflection` | `shadeReflection` | `none`/`usedOwners`/`all` |
@@ -114,6 +115,16 @@ bootstrap sites (string concat, lambdas/methodrefs, records, pattern
 switches, `ConstantDynamic`) are desugared to ordinary method calls,
 generated helper classes, or constant-folding fields at transform time.
 Observable behavior is unchanged; only the linkage mechanism differs.
+
+Calls on *gained* interfaces (interfaces a JDK class acquired after the
+target version — e.g. `StringBuffer`→`Comparable` on Java 8, `System.Logger`
+on Java 8) always route through an `invokedynamic` bootstrap
+(`GainedRuntime.bootstrap`): the member resolves once per receiver class
+into a polymorphic inline cache, and receivers that natively implement the
+interface keep a guarded near-native fast path. `instanceof`/`checkcast`
+still go through the generated `gen/gained/<I>` structural methods +
+`$Wrap` delegator, and `--noIndy` lowers gained sites to the
+`RetroTypes.gainedCall` reflective tail. Observable behavior is unchanged.
 
 `Allow-Preview` accepts input classes compiled `javac --enable-preview`
 (minor version `0xFFFF`): they route to the provider for their major

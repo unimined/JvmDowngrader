@@ -24,6 +24,7 @@ import xyz.wagyourtail.jvmdg.version.idx.StubIndexWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -46,14 +47,6 @@ public class ApiCoverageChecker {
     );
 
     public static void main(String[] args) throws IOException, URISyntaxException {
-//        var home = Path.of(System.getProperty("java.home")).resolve("lib/ct.sym");
-//        if (!Files.exists(home)) {
-//            System.err.println("Failed to find \"" + home + "\" for coverage. Please ensure you are using a JDK and not a JRE.");
-//            System.exit(1);
-//        }
-//
-//        System.out.println("Found \"" + home + "\" for coverage.");
-
         File ctSym = new File(args[0]);
         if (!ctSym.exists()) {
             System.err.println("Failed to find \"" + ctSym + "\" for coverage. Please provide as first arg.");
@@ -76,19 +69,32 @@ public class ApiCoverageChecker {
                 }
             }
 
-//            var current = Runtime.version().feature();
-//            var currentModules = Path.of(URI.create("jrt:/"));
-//            versions.computeIfAbsent(current, k -> new ArrayList<>()).add(currentModules);
-
             var classes = new HashMap<String, Pair<String, ClassNode>>();
 
             var max = versions.keySet().stream().max(Integer::compareTo).orElseThrow();
             // load initial classes
             compare(versions.get(max), classes, new ArrayList<>());
 
+            // known-missing allowlist — honestly-declared coverage gaps; rows
+            // are `Lowner;name;desc` FQMNDs (+ `Lowner;` for whole classes).
+            // Missing members outside it are the report's signal.
+            Set<String> knownMissing = new HashSet<>();
+            try (var km = ApiCoverageChecker.class.getResourceAsStream("/known-missing.txt")) {
+                if (km != null) {
+                    new java.io.BufferedReader(new java.io.InputStreamReader(km, StandardCharsets.UTF_8))
+                        .lines().map(String::trim)
+                        .filter(l -> !l.isEmpty() && !l.startsWith("#"))
+                        .forEach(knownMissing::add);
+                }
+            }
+
             versions.keySet().stream().sorted((a, b) -> -a.compareTo(b)).skip(1).forEach(v -> {
                 var missingStubs = new ArrayList<MemberInfo>();
                 var parentOnlyStubs = new ArrayList<MemberInfo>();
+                var availableStubs = new ArrayList<MemberInfo>();
+                var gainedStubs = new ArrayList<MemberInfo>();
+                var superNames = new HashMap<Type, Set<String>>();
+                var matrix = new ArrayList<String>();
 
                 var stubVersion = v + 1;
                 var availableStubCount = 0;
@@ -213,18 +219,21 @@ public class ApiCoverageChecker {
                             if (stubClassTypes.containsKey(stub.getOwner())) {
                                 if (stubClassMethods.remove(member.toFullyQualified(stubClassTypes.get(stub.getOwner())))) {
                                     availableStubCount++;
+                                    availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                     continue;
                                 }
                             }
 
                             if (stubProvider.getMethodStubMap().containsKey(member)) {
                                 availableStubCount++;
+                                availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                 unmatchedStubs.remove(stubProvider.getMethodStubMap().get(member).handler.method());
                                 continue;
                             }
 
                             if (stubProvider.getFieldStubMap().containsKey(member)) {
                                 availableStubCount++;
+                                availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                 FieldStubEntry fe = stubProvider.getFieldStubMap().get(member);
                                 unmatchedStubs.remove(fe.getter == null ? null : fe.getter.handler.method());
                                 continue;
@@ -232,12 +241,14 @@ public class ApiCoverageChecker {
 
                             if (stubProvider.getMethodModifyMap().containsKey(member)) {
                                 availableStubCount++;
+                                availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                 unmatchedStubs.remove(stubProvider.getMethodModifyMap().get(member).method());
                                 continue;
                             }
 
                             if (stubProvider.getCtorMap().containsKey(member)) {
                                 availableStubCount++;
+                                availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                 for (MethodRef hm : stubProvider.getCtorMap().get(member).methods()) {
                                     unmatchedStubs.remove(hm.method());
                                 }
@@ -271,17 +282,23 @@ public class ApiCoverageChecker {
                         } else {
                             if (versionProvider.classStubs.containsKey(stub.getOwner())) {
                                 availableStubCount++;
+                                availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                 continue;
                             }
                         }
 
-                        missingStubCount++;
-                        missingStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                        if (stub.getName() != null && gainedCovered(versionProvider, stub, superNames)) {
+                            gainedStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                        } else {
+                            missingStubCount++;
+                            missingStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                        }
 
                     }
 
                     var total = availableStubCount + onlyOnParentStubCount + missingStubCount;
                     System.out.println("Version " + stubVersion + " has " + availableStubCount + " available stubs, " +
+                            gainedStubs.size() + " gained-covered stubs, " +
                         onlyOnParentStubCount + " only on parent stubs, and " + missingStubCount + " missing stubs. Total: " + total +
                         " (kinds: missingApi=" + kindCounts.getOrDefault(xyz.wagyourtail.jvmdg.version.StubKind.MISSING_API, 0) +
                         ", behavior=" + kindCounts.getOrDefault(xyz.wagyourtail.jvmdg.version.StubKind.BEHAVIOR, 0) +
@@ -292,6 +309,39 @@ public class ApiCoverageChecker {
 
                     var parentOnly = Path.of("./coverage/" + stubVersion + "/parentOnly.txt");
                     writeList(parentOnlyStubs, parentOnly);
+
+                    var available = Path.of("./coverage/" + stubVersion + "/available.txt");
+                    writeList(availableStubs, available);
+
+                    var gained = Path.of("./coverage/" + stubVersion + "/gained.txt");
+                    writeList(gainedStubs, gained);
+
+                    var known = Path.of("./coverage/" + stubVersion + "/knownMissing.txt");
+                    writeList(missingStubs.stream()
+                        .filter(m -> knownMissing.contains(m.fqm().toString()))
+                        .collect(Collectors.toList()), known);
+
+                    for (MemberInfo m : availableStubs) {
+                        matrix.add(matrixRow(m, "stub"));
+                    }
+                    for (MemberInfo m : parentOnlyStubs) {
+                        matrix.add(matrixRow(m, "parent"));
+                    }
+                    for (MemberInfo m : gainedStubs) {
+                        matrix.add(matrixRow(m, "gained"));
+                    }
+                    for (MemberInfo m : missingStubs) {
+                        matrix.add(matrixRow(m,
+                            knownMissing.contains(m.fqm().toString()) ? "knownMissing" : "missing"));
+                    }
+                    Collections.sort(matrix);
+                    var matrixFile = Path.of("./coverage/" + stubVersion + "/coverage-matrix.txt");
+                    try (var w = Files.newBufferedWriter(matrixFile, StandardCharsets.UTF_8)) {
+                        for (String row : matrix) {
+                            w.write(row);
+                            w.write('\n');
+                        }
+                    }
 
                     var unmatched = Path.of("./coverage/" + stubVersion + "/unmatched.txt");
                     writeList(
@@ -316,6 +366,63 @@ public class ApiCoverageChecker {
             });
 
         }
+    }
+
+    /**
+     * {@code module;owner;name;desc;kind=status} — see audit M-4B. Owner is
+     * the internal name (no {@code L…;}) so naive {@code ;}-splitting works;
+     * {@code name} is empty for class-level rows.
+     */
+    private static String matrixRow(MemberInfo m, String kind) {
+        FullyQualifiedMemberNameAndDesc fqm = m.fqm();
+        return m.module() + ";" + fqm.getOwner().getInternalName() + ";" +
+            (fqm.getName() == null ? "" : fqm.getName() + ";" + fqm.getDesc().getDescriptor()) +
+            ";kind=" + kind;
+    }
+
+    /**
+     * Is {@code stub} callable at runtime through the gained-interface
+     * machinery despite having no registered stub? True when a gained
+     * interface dispatches the member signature ({@code gainedMembers}) and
+     * the owner's source-version supertype closure contains a class that
+     * acquired that interface ({@code gained}) — calls then route to the
+     * {@code gen/gained/<I>} dispatcher or a stub impl instead of NSME-ing.
+     */
+    private static boolean gainedCovered(xyz.wagyourtail.jvmdg.version.VersionProvider vp,
+                                         FullyQualifiedMemberNameAndDesc stub,
+                                         Map<Type, Set<String>> superNames) {
+        if (vp.gained.isEmpty()) {
+            return false;
+        }
+        Type owner = stub.getOwner();
+        Set<String> names = superNames.computeIfAbsent(owner, o -> {
+            Set<String> ns = new HashSet<>();
+            ns.add(o.getInternalName());
+            try {
+                List<Pair<Type, Boolean>> supers = vp.downgrader.getSupertypes(
+                        vp.inputVersion, o, new HashSet<>());
+                if (supers != null) {
+                    for (Pair<Type, Boolean> p : supers) {
+                        ns.add(p.getFirst().getInternalName());
+                    }
+                }
+            } catch (IOException ignored) {
+            }
+            return ns;
+        });
+        String nameDesc = stub.getName() + " " + stub.getDesc().getDescriptor();
+        for (Map.Entry<String, Set<String>> g : vp.gained.entrySet()) {
+            Set<String> members = vp.gainedMembers.get(g.getKey());
+            if (members == null || !members.contains(nameDesc)) {
+                continue;
+            }
+            for (String t : g.getValue()) {
+                if (names.contains(t)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static void writeList(List<MemberInfo> missing, Path outputFile) throws IOException {

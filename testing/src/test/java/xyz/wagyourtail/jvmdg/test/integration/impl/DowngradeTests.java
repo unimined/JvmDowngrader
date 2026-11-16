@@ -104,6 +104,12 @@ public class DowngradeTests extends BaseIntegrationTests {
                 e.shadeInlining = true;
                 e.noIndy = true;
             }))
+            // gained-supertype member calls are unconditionally indy —
+            // the base variants exercise the PIC on every version; V1_8
+            // covers the missing-interface path (StringBuffer gained
+            // Comparable at j11 → PIC row resolution), V11/V21 cover the
+            // native-interface guardWithTest fast path; --noIndy variants
+            // cover the GainedRuntimeDesugar reflective tail
         ).filter(e -> launchersByVersion.containsKey(e.targetVersion()));
     }
 

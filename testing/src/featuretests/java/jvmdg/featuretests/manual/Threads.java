@@ -45,25 +45,25 @@ public class Threads {
     }
 
     @FeatureTest
-    static void executor() throws InterruptedException {
-        // Executors.newVirtualThreadPerTaskExecutor isn't stubbed; the
-        // supported executor-ish surface is ofVirtual().factory()
+    static void executor() throws InterruptedException, java.util.concurrent.ExecutionException {
+        // Executors.newVirtualThreadPerTaskExecutor — each task on a fresh
+        // virtual thread; tasks report their own isVirtual so the probe
+        // proves the fake-virtual-thread backing, not just "it ran"
         java.util.List<String> sb = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
-        java.util.concurrent.ThreadFactory f = Thread.ofVirtual().factory();
+        java.util.concurrent.ExecutorService es =
+            java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
         CountDownLatch latch = new CountDownLatch(2);
-        Thread a = f.newThread(() -> {
-            sb.add("a");
+        es.submit(() -> {
+            sb.add("a" + Thread.currentThread().isVirtual());
             latch.countDown();
         });
-        Thread b = f.newThread(() -> {
-            sb.add("b");
+        es.submit(() -> {
+            sb.add("b" + Thread.currentThread().isVirtual());
             latch.countDown();
         });
-        a.start();
-        b.start();
         latch.await();
-        a.join();
-        b.join();
+        es.shutdown();
+        es.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS);
         // order of a/b is racy — print sorted
         java.util.List<String> sorted = new java.util.ArrayList<>(sb);
         java.util.Collections.sort(sorted);

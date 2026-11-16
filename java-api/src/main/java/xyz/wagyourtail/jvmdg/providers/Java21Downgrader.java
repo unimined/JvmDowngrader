@@ -44,7 +44,7 @@ public class Java21Downgrader extends AllVersionDowngrader {
         stub(J_U_R_Pattern.class);
         // ConcurrentSkipListMap
         // DelayQueue
-        // Executors
+        stub(J_U_C_Executors.class);
         // DecapsulateException
         // KEM
         // KEMSpi

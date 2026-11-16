@@ -213,7 +213,10 @@ fun selfDowngrade(name: String, inputJar: TaskProvider<Jar>): TaskProvider<JavaE
             inputJar.get().archiveFile.get().asFile.absolutePath,
             out.absolutePath
         )
-        inputs.files(inputJar.flatMap { it.archiveFile }, apiJar.flatMap { it.archiveFile })
+        // the tool classpath is the transform itself — self-downgraded jars
+        // must rebuild when it changes or they ship stale machinery
+        inputs.files(inputJar.flatMap { it.archiveFile }, apiJar.flatMap { it.archiveFile },
+            sourceSets["main"].output, sourceSets["shared"].output)
         outputs.file(out)
         javaLauncher = javaToolchains.launcherFor {
             languageVersion.set(JavaLanguageVersion.of(stubToVersion.toInt()))

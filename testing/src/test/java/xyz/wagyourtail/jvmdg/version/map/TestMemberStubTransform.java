@@ -5,6 +5,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 import java.util.HashSet;
@@ -207,6 +208,74 @@ public class TestMemberStubTransform implements Opcodes {
 
         AbstractInsnNode out = m.instructions.get(2);
         assertSame(site, out, "unlisted member keeps the original callsite");
+    }
+
+    /**
+     * Gained-supertype member calls emit an invokedynamic naming
+     * {@link GainedSites#GAINED_BSM} — the ceiling rides the bootstrap args.
+     */
+    @Test
+    public void gainedSiteEmitsIndy() {
+        gainedSiteCase("foo/Caller", true);
+    }
+
+    /**
+     * A gained callsite inside the dispatch machinery itself stays native —
+     * an indy emitted there bootstraps through the code executing it.
+     */
+    @Test
+    public void gainedSiteInMachineryStaysNative() {
+        gainedSiteCase("xyz/wagyourtail/jvmdg/stub/GainedRuntime", false);
+    }
+
+    private void gainedSiteCase(String callerName, boolean expectIndy) {
+        TestProvider vp = new TestProvider();
+        vp.gained.computeIfAbsent("java/lang/Comparable", k -> new HashSet<>())
+            .add("java/lang/StringBuffer");
+        vp.gainedMembers.computeIfAbsent("java/lang/Comparable", k -> new HashSet<>())
+            .add("compareTo (Ljava/lang/Object;)I");
+        Flags flags = new Flags();
+        flags.classVersion = Opcodes.V1_8;
+        vp.downgrader = ClassDowngrader.downgradeTo(flags);
+
+        MethodInsnNode site = new MethodInsnNode(INVOKEINTERFACE, "java/lang/Comparable",
+            "compareTo", "(Ljava/lang/Object;)I", true);
+        MethodNode m = new MethodNode(ACC_PUBLIC | ACC_STATIC, "m", "()V", null, null);
+        m.instructions = new InsnList();
+        m.instructions.add(new VarInsnNode(ALOAD, 0));
+        m.instructions.add(new VarInsnNode(ALOAD, 1));
+        m.instructions.add(site);
+        m.instructions.add(new InsnNode(POP));
+        m.instructions.add(new InsnNode(RETURN));
+        ClassNode c = new ClassNode(Opcodes.ASM9);
+        c.version = Opcodes.V21;
+        c.name = callerName;
+        c.superName = "java/lang/Object";
+        c.methods.add(m);
+
+        Set<String> warnings = new HashSet<>();
+        new MemberStubTransform().transformInsn(resolver(null, vp), m,
+            m.instructions.indexOf(site), c, new HashSet<ClassNode>(), true, warnings, null);
+
+        AbstractInsnNode call = m.instructions.get(2);
+        if (expectIndy) {
+            assertTrue(call instanceof InvokeDynamicInsnNode,
+                "gained call must emit invokedynamic, got " + call);
+            InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) call;
+            assertEquals("compareTo", indy.name, "site name is the member name");
+            assertEquals("(Ljava/lang/Object;Ljava/lang/Object;)I", indy.desc,
+                "erased site desc: Object receiver + Object arg, primitive ret stays");
+            assertEquals(GainedSites.GAINED_BSM, indy.bsm);
+            assertEquals("java/lang/Comparable", indy.bsmArgs[0], "bsmArg0 is the gained interface");
+            assertEquals("compareTo (Ljava/lang/Object;)I", indy.bsmArgs[1],
+                "bsmArg1 is the row-keyed member");
+            assertEquals(Opcodes.V21, indy.bsmArgs[2],
+                "bsmArg2 is the calling class's authored version ceiling");
+            // int return is primitive — no checkcast, POP follows the call
+            assertEquals(POP, m.instructions.get(3).getOpcode());
+        } else {
+            assertSame(site, call, "machinery class keeps the original invokeinterface");
+        }
     }
 
     @Test

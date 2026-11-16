@@ -40,6 +40,7 @@ public class Java9Downgrader extends AllVersionDowngrader {
         stub(J_L_Process.class);
         stub(J_L_ProcessBuilder.class);
         stub(J_L_ProcessHandle.class);
+        stub(J_L_R_Reference.class);
         stub(J_L_Runtime.class);
         stub(J_L_Runtime.Version.class);
         stub(J_L_Short.class);
