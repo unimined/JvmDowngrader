@@ -1,238 +1,212 @@
 # Bytecode Manipulation
 
-This document describes the way in which JvmDowngrader manipulates the bytecode of Java class files.
+What JvmDowngrader does to class bytes: the transform model, the emission
+rules every transform obeys, and the per-version structural edits. This is
+the internals doc — not the authoring guide and not the machine overview.
 
-## Overview
+## Where the rest lives
 
-JvmDowngrader starts by initializing
-a [VersionProvider](/src/main/java/xyz/wagyourtail/jvmdg/version/VersionProvider.java) which is used to provide a
-downgrade between 2 sequential java versions.
-This process is then chained until the desired version is reached.
+* [Architecture.md](Architecture.md) — the 3.0 machine: pipeline engine,
+  stage list, worklist traversal, and the dispatch machinery
+  (`DispatchRuntime`, `$jvmdg$retro`/`gained` dispatchers, reflection stubs).
+* [Stubs.md](Stubs.md) — authoring guide: `@Stub`/`@Adapter`/`@Modify`/
+  `@IndyDesugar`/ctor-rewrite registrations and their annotation knobs.
+* [Configuration.md](Configuration.md) — every flag/sysprop/config key.
+* [Coverage.md](Coverage.md) — stub coverage state and the coverage report.
+* [AGENTS.md](../AGENTS.md) — the full agent-facing repo map.
 
-The VersionProvider loads "Stubs", "Adapter" and "Modify" transforms which are used in the process of downgrading the
-bytecode.
-The "Stubs" are simple method replacements, that replace either a method call or a field access with a call to a static
-method.
-The "Modify" transforms allow for more complex changes to the bytecode, such as replacing InvokeDynamic calls with a
-newly constructed private
-method in the target class.
-The "Adapter" transform replaces all class references with the target class.
+## The model
 
-## Pipeline architecture (3.0)
+All transforms operate on ASM tree-api `ClassNode`s — bytes are parsed once
+into a name-keyed worklist, mutated in place (or swapped), and serialized
+once at the end. A transform may also append helper classes to the run's
+extra set; `ExtrasApplyTransform` rejoins them to the worklist so downstream
+stages see them. Hierarchy queries go through the memoized
+[`ClasspathIndex`](/src/main/java/xyz/wagyourtail/jvmdg/asm/index/ClasspathIndex.java)
+/`ClassMapping` resolver graph — never `Class.forName`.
 
-As of 3.0 the per-provider `VersionProvider.downgrade` chain runs inside a
-version-agnostic engine ([`pipeline/`](/src/main/java/xyz/wagyourtail/jvmdg/pipeline/)).
-The engine knows nothing about Java versions — it executes an ordered list of
-`Stage`s over a name-keyed `TransformWorklist` of `ClassNode`s:
+Registered content is scanned once per provider by
+[`StubScanner`](/src/main/java/xyz/wagyourtail/jvmdg/version/StubScanner.java)
+into [`StubRegistry`](/src/main/java/xyz/wagyourtail/jvmdg/version/map/StubRegistry.java)
+(frozen at stage entry), or idx-loaded from `META-INF/jvmdg/stubs.idx` when
+the api jar ships one. The per-boundary stage decomposition
+(`ProviderInit → StubClasses → StubMethods → InsertAbstracts →
+OtherTransforms → FlushWarnings`) is Architecture.md's business; what each
+registration kind does to the bytes is below.
 
-- Each `Stage` carries `ClassTransform`s applied to every class, optional
-  `onEnter`/`onExit` `StageHook`s (whole-set barriers), a `precondition`
-  (single-version runs), a `filter` (union runs — a class only passes through
-  stages whose provider input-version it currently matches), and
-  `captureLabels` that snapshot deep copies into `TransformContext.variants`
-  for multi-release emission.
-- [`DowngradeRegistrar`](/src/main/java/xyz/wagyourtail/jvmdg/version/DowngradeRegistrar.java)
-  emits the stage list: one stage per provider boundary, decomposed into
-  [`version/steps/`](/src/main/java/xyz/wagyourtail/jvmdg/version/steps/) —
-  `ProviderInit` (ensureInit + version stamp + module-info requires) →
-  `StubClasses` → `StubMethods` → `InsertAbstracts` → `OtherTransforms` →
-  `FlushWarnings`. A provider that overrides `downgrade` wholesale keeps its
-  own `ProviderStep` instead.
-- Registered `@Stub`/`@Modify`/`@Adapter` content is scanned once per provider
-  by [`StubScanner`](/src/main/java/xyz/wagyourtail/jvmdg/version/StubScanner.java)
-  into a [`StubRegistry`](/src/main/java/xyz/wagyourtail/jvmdg/version/map/StubRegistry.java)
-  (per-owner store, frozen at stage entry) and applied by
-  [`MemberStubTransform`](/src/main/java/xyz/wagyourtail/jvmdg/version/map/MemberStubTransform.java)
-  /[`StructuralRemapTransform`](/src/main/java/xyz/wagyourtail/jvmdg/version/map/StructuralRemapTransform.java).
-  Hierarchy queries resolve through the memoized
-  [`ClasspathIndex`](/src/main/java/xyz/wagyourtail/jvmdg/asm/index/ClasspathIndex.java)
-  instead of re-parsing class bytes per lookup.
-- Extras (`jvmdg$…` helper classes) produced by transforms are applied by
-  `ExtrasApplyTransform` and rejoin the worklist for downstream stages.
-- Jar runs traverse entries once through a `JarStep` chain in
-  [`compile/jar/`](/src/main/java/xyz/wagyourtail/jvmdg/compile/jar/)
-  (`SignatureStrip → Manifest → MultiReleaseRoute → ClassDowngrade`, or
-  `PipelineJarStep` for the fused whole-set downgrade+shade), emitting via a
-  sorted, timestamp-pinned `JarEntrySink`.
-- Shading is a second registrar ([`ShadeRegistrar`](/src/main/java/xyz/wagyourtail/jvmdg/compile/shade/ShadeRegistrar.java)):
-  `scan` indexes post-downgrade references into a
-  [`ReferenceIndex`](/src/main/java/xyz/wagyourtail/jvmdg/compile/shade/ReferenceIndex.java),
-  a closure `StageHook` barrier computes the reachable api set + inline
-  candidates + per-slot prefix remappers + emitted api classes, then
-  `inline`/`prefix`/`module-info` stages apply them.
+## Emission rules
 
-Two engine invariants matter to every transform author:
+These hold across every transform, hand-written or generated:
 
-- **No `COMPUTE_FRAMES`.** Transforms hand-author `FrameNode`s; writers use
-  `COMPUTE_MAXS`. The maintained frames are what later analysis stages rely
-  on.
-- **Determinism.** Names of synthesized classes/members are pure functions of
-  (class, site); output is a sorted write with pinned timestamps.
+* **No `COMPUTE_FRAMES`, ever.** Writers run with `ClassWriter.COMPUTE_MAXS`
+  only (`ClassDowngrader`, `PipelineJarStep`). New insns either leave
+  existing frames untouched or hand-author `FrameNode`s at the insertion
+  point — the maintained frames are what later analysis stages (e.g.
+  `remapClassCalls`, fusion preflights) consume.
+* **Deterministic names.** Every synthesized class/member name is a pure
+  function of (class, site): `jvmdg$indy$<name>$<n>`,
+  `jvmdg$handle$<name>$<n>`, `jvmdg$methodtype$<n>`,
+  `jvmdowngrader$nest$<owner>$<member>`, `<Owner>$jvmdg$StaticDefaults`,
+  `jvmdowngrader$construct$<caller>$<n>`. No global counters, no
+  traversal-order dependence; jar output is a sorted, timestamp-pinned
+  write.
+* **No reflection on stub classes from emitters.** Class loading on the
+  transform path sees pre-downgrade api classes (or misses synthetic test
+  fixtures entirely), so everything an emitter needs — the
+  stub-is-interface `itf` bit, hook members, impl mappings — is baked into
+  the registry at scan/idx-load time.
+* **Preview classes.** `ClassNode.version` is `minor << 16 | major`;
+  `javac --enable-preview` sets minor `0xFFFF`. All version compares go
+  through `Utils.majorClassVersion` (major-masked). Preview input is a hard
+  error unless `--allowPreview`, in which case it routes through its
+  major's provider chain and `StubCondition.PREVIEW` registrations
+  activate.
+* **Verifier-gated surgery.** Constructor rewrites prove the `NEW`/`DUP`
+  allocation shape (and `this()`/`super()` delegation) before splicing;
+  unproven shapes are left unchanged with a warning rather than emitting
+  broken bytecode.
 
-## Version Provider
+## Transform taxonomy
 
-Classes can be added for processing in the VersionProvider's init method by calling `stub(Class<?>)` this will parse
-them for
-`@Stub`, `@DefaultImpl`, `@Modify`, `@Adapter` and the `@InitRewrite`/`@InitArg`/`@InitPre`/`@InitPost`/`@InitFactory`
-constructor annotations and add them to the appropriate lists.
+Each registration kind maps to a distinct bytecode effect:
 
-Additionally, the version provider allows for other wider scale transforms that need to be done in order to downgrade
-the bytecode by extending the
-`otherTransforms` method.
-
-### Stubs
-
-To create a stub, a method must be `public static` and annotated with [`@Stub`](/src/shared/java/xyz/wagyourtail/jvmdg/version/Stub.java).
-the `@Stub` annotation by default will use the first argument of the method as the target class and treat it as a
-instance method replacement.
-If the method is static, the `@Stub` annotation must be provided with an `@Ref` argument that specifies the target
-class, this will treat the method as a static method replacement.
-
-In some rare circumstances the target class should be different from the first argument, in that case (or when any
-argument is needed to have it's type changed), the argument
-may be annotated with `@Coerce` which will change the type of the argument to the specified type.
-
-Stubs have several other fields that change their behavior:
-
-* `abstractDefault` indicates if a method was abstract in the target version but now has a default implementation,
-  this is used to determine if classes extending the target class need to also insert a reference to the stub.
-  references to this method will not be replaced with the stub, and are handled specially as described below.
-* `requiresRuntime` indicates if the stub requires the JVMDowngrader runtime in order to work as intended,
-  mostly for things like reflection and runtime class definition.
-* `noSpecial` indicates that the stub should not be used for `INVOKESPECIAL` calls.
-* `downgradeVersion` adds an extra argument to the stub for the original version of the class, this is useful for
-  multi-version stubs, such as reflection.
-* `excludeChild` prevent a stub from being applied to a child-class of the target. for example, `String#isEmpty` is
-  since java 6, but `CharSequence#isEmpty` is since java 15.
-
-### Default implementations
-
-[`@DefaultImpl`](/src/shared/java/xyz/wagyourtail/jvmdg/version/DefaultImpl.java) covers the `abstractDefault` case on
-its own annotation: the JDK added a `default` body (or a formerly abstract member gained one in a later release),
-but implementors compiled for the older shape lack it. The stub is emitted into each implementor that needs it as a
-real `public` method; `invokeinterface`/`invokevirtual` callsites stay byte-identical and resolve to the inserted
-bridge at runtime, and only `invokespecial` (`Interface.super.m()`) rewrites to the stub `invokestatic`.
-
-### Constructor rewrites
-
-Constructor handling lives on a dedicated annotation family registered into a per-owner `ctor` map — `@Stub` is
-rejected on `<init>`. All of it is verifier-gated: `NEW`/`DUP` allocation sites and `this()`/`super()` delegation
-calls are proven before surgery; shapes that can't be proven are left unchanged with a warning rather than
-producing broken bytecode. `X::new` method references (`H_NEWINVOKESPECIAL` impl handles in `invokedynamic`
-bootstrap args) route through the same map — a `jvmdg$handle$` static wrapper replays the rewrite or calls the
-factory so constructor method-refs downgrade correctly.
-
-* [`@InitRewrite`](/src/shared/java/xyz/wagyourtail/jvmdg/version/InitRewrite.java) — class-level (repeatable via
-  `@InitRewrites`, which is also the explicit boxing for source sets below Java 8) declares one rewrite:
-  `ref` is the original `<init>` ref, `to` the descriptor of the replacement constructor of the same class, and
-  `keep` maps each `to` argument to an original argument index or a converter-produced slot (`-1` = converter).
-* [`@InitArg`](/src/shared/java/xyz/wagyourtail/jvmdg/version/InitArg.java) — method-level (repeatable): a
-  `public static` converter producing one `to` argument from original args (`from`, `target`/`owner` disambiguate
-  overloads and the `keep` slot via `slot`).
-* [`@InitPre`](/src/shared/java/xyz/wagyourtail/jvmdg/version/InitPre.java) — method-level (repeatable): runs
-  before the retargeted `<init>` (e.g. range checks) from original args.
-* [`@InitPost`](/src/shared/java/xyz/wagyourtail/jvmdg/version/InitPost.java) — method-level (repeatable): a tail
-  invoked after the retargeted constructor — signature `(ConstructedType, keptArgs…)` — e.g. `initCause` chaining.
-* [`@InitFactory`](/src/shared/java/xyz/wagyourtail/jvmdg/version/InitFactory.java) — replaces construction
-  outright: `new X(args)` becomes `X stub(args)` (the method must be `public static` and return the constructed
-  object). Delegation shapes are always left unchanged — an uninitialised `this` can't be passed out.
-
-See `J_L_IndexOutOfBoundsException` (j9/j16), `J_U_NoSuchElementException`, `J_I_FileReader`/`J_I_FileWriter`,
-`J_U_BigInteger`, and the j10 `J_I_PrintStream`/`J_U_Formatter` charset overloads for examples.
-
-### Modify
-
-The `@Modify` annotation is used to replace a specific instruction with a new instruction or list of instructions.
-The `@Modify` annotation is provided with a `@Ref` argument that specifies the target class, method and descriptor.
-the method must be `public static`; its parameters are a subsequence of
-`MODIFY_SIG` — `MethodNode mnode, int i, ClassNode cnode, Set<ClassNode> extra, boolean noSynthetic`
-— declared in order (a handler may take just `(mnode, i)`, or all five; the
-`noSynthetic` flag mirrors the debug flag for generated members).
-
-This is used to replace `INVOKEDYNAMIC` calls and other multi-insn rewrites the declarative annotations can't
-express. Constructors no longer use `@Modify` — the `@InitRewrite`/`@InitFactory` family above covers them.
-
-### Adapter
-
-The `@Adapter` annotation is used to replace all references to a class with a different class.
-By default, it replaces the `value` class with the one it's annotated on, but it can be provided with a `target` class.
-there is also a `keepInterface` field, if the stub is an interface, it can optionally be completely removed from classes
-referencing it.
-
-### Choosing a stub form
-
-| Need | Use |
+| Kind | Effect on input bytes |
 |---|---|
-| Replace a call/field access with a static helper | `@Stub` (default choice) |
-| Emit a fallback for a method that's `default`-only on newer Java | `@DefaultImpl` |
-| Replace `new X(args)` with `X stub(args)` (factory; can't apply to `this()`/`super()` delegation) | `@InitFactory` |
-| Retarget `<init>` to another ctor of the same class | `@InitRewrite` (+ `@InitArg`/`@InitPre`/`@InitPost`) |
-| Replace an instruction sequence (indy, multi-insn rewrite) | `@Modify` |
-| Redirect every reference to a class type | `@Adapter` |
-| Make a stub argument/return type differ from the target's | `@Coerce` on the parameter |
-| Tag a stub with the JEP it implements (enables `debug --skipJEP`) | `@JEP(<n>)` on the member |
-| Pull a non-class resource into shaded output when a member is used | `@RequiresResource("path")` |
-| Declare reflection-only references the index should see | `@ReflectionReferences({@Ref(...)})` |
-| Keep a jvmdg-internal public member on a stub/adapter class out of the `unmatched.txt` coverage ratchet | `@Internal` (`@CoverageIgnore` is a deprecated alias) |
+| member `@Stub` | callsite or field access rewritten — `invokestatic` to the impl, or an `invokedynamic` dispatch site |
+| class `@Stub` / `@Adapter` | every occurrence of the JDK type remapped to the stand-in type (descriptors, signatures, insns, annotations, frames) |
+| `@Modify` | handler invoked at the matched insn index; splices arbitrary replacement insns |
+| `@IndyDesugar` | rewrites (or removes) an indy site whose bootstrap is versioned out |
+| ctor family (`@InitRewrite`/`@InitFactory`/…) | proven `NEW`/`DUP`+`<init>` sequences retargeted or replaced by a factory `invokestatic` |
+| `otherTransforms` | per-boundary structural edits — the versioned list below |
 
-`@JEP` values are the JEP number that introduced the member — the audit test
-cross-checks them against the provider's JEP table, so an untagged newer-API
-stub fails the suite rather than silently skipping `--skipJEP` filtering.
+### Member stubs → invokestatic / invokedynamic
 
-`@Internal` is only for public members that genuinely don't mirror a JDK
-member (internal ctors, helper defaults, adapter record components). Members
-that *do* mirror the JDK are excluded from `unmatched.txt` automatically:
-the checker resolves each registered site against the target surface and
-each adapter member against its own version's surface, including inherited
-declarations and covariant returns — so BEHAVIOR stubs and covariant
-redeclarations need no marker at all. Putting `@Internal` (or
-`@CoverageIgnore`) on a `@Stub`/`@Modify` member fails registration.
+How a resolved stub member is emitted depends on the callsite opcode:
 
-### RequiresResource
+* `INVOKESTATIC` / field access → straight `invokestatic` to the impl.
+* `INVOKEVIRTUAL` / `INVOKEINTERFACE` → an `invokedynamic` bootstrapped by
+  `xyz/wagyourtail/jvmdg/stub/DispatchRuntime.bootstrap`; bsmArgs carry the
+  member `MethodType` + the impl as an owner `Class` + `"name desc"` string
+  (resolved lazily at link, so no `Handle` constant poisons `<clinit>` under
+  `--noIndy`), and a per-callsite `ClassValue` PIC resolves the receiver's
+  own member at link time so user overrides win.
+  `@Adapter(signaturePolymorphic=…)` owners (VarHandle's access modes) get
+  the second contract instead — `DispatchSites.polymorphicInsn` — where the
+  site name carries the erased signature and the adapter's own
+  `jvmdg$bootstrap` hook derives the impl.
+* `INVOKESPECIAL` → keeps an `invokestatic` to the impl (no dispatch —
+  `super`/private calls have a fixed target).
+* `abstractDefault` / `@DefaultImpl` members → no callsite rewrite at all:
+  a real `public` method is inserted into each implementor that lacks it
+  (the `InsertAbstracts` stage), and only `invokespecial`
+  (`Interface.super.m()`) routes to the stub impl.
+* `X::new` method refs (`H_NEWINVOKESPECIAL` impl handles in indy bsmArgs)
+  → `jvmdowngrader$construct$<caller>$<n>` static wrappers that replay the
+  ctor rewrite or call the factory; other rewritten handle kinds get
+  `jvmdowngrader$call$<caller>$<n>`.
 
-This annotation is a hint to the Shading Api task that the class or method requires a resource from the api jar in order
-to operate.
-such as emoji data in the java 21 `Character` class.
+### Class stubs / adapters → type remap + wrap dispatch
 
-### InvokeDynamic Method Insertion
+`StructuralRemapTransform` does the mechanical type-slot remap for
+class-stubbed and adapted types. The sites a remap alone can't fix route
+to generated dispatchers:
 
-If a stub does not exactly match the method descriptor of an invokedynamic method it is replacing, it may be necessary
-to wrap it with another method to adapt the types.
-This is done automatically while stubbing handles in InvokeDynamic arguments.
+* `instanceof`/`checkcast`/class-query sites on stubbed types → a single
+  `invokestatic` to the stub's generated `<stubType>$jvmdg$retro`
+  dispatcher — `.wrap` for `OWN_INTERFACE` adaptation, `.cast`/
+  `.isInstance`/array forms elsewhere.
+* Gained supertypes (a JDK class that acquired an interface after the
+  target) → `xyz/wagyourtail/jvmdg/gen/gained/<I>` structural helpers for
+  type tests; member calls go through `invokedynamic` bootstrapped by
+  `stub/GainedRuntime` with the calling class's authored version as a
+  trailing ceiling arg.
+* `ldc`'d retro `Class.isInstance`/`cast`/`isAssignableFrom` receivers are
+  routed through the same dispatchers by the `remapClassCalls`
+  `Analyzer`/`SourceInterpreter` pass.
 
-### Abstract Method Insertion
+### `@IndyDesugar` → indy site rewrite
 
-The providers also scan the classpath to determine the inheritance hierarchy of the target class.
-This is then used to insert abstractDefault stubs into classes that extend the target class of those stubs that do not
-already implement the stubbed method themselves, or in a super class.
+When a callsite's *bootstrap* is itself versioned out, the registered
+`@IndyDesugar` handler rewrites the site — usually to a synthesized
+`jvmdg$…` `invokestatic`, sometimes to inline insns:
 
-### Other Transforms
+* j8 `LambdaMetafactory.metafactory`/`altMetafactory` → spins a real inner
+  class implementing the SAM (`makeLambdaInnerClass`) and replaces the site.
+* j9 `StringConcatFactory.makeConcat[WithConstants]` → splices an inline
+  `StringBuilder` append chain.
+* j16 `ObjectMethods.bootstrap` (record `equals`/`hashCode`/`toString`).
+* j21 `SwitchBootstraps.typeSwitch`/`enumSwitch` → a generated private
+  static method replaying the label semantics (`makeSwitchInternal`).
+* j23 `SwitchBootstraps.typeSwitch` → *normalizer*, not a desugar: j23+
+  javac emits the site with the labels' common supertype as selector and
+  drops the callsite cast, so the handler rewrites `indy.desc` back to the
+  pre-23 `(Ljava/lang/Object;I)I` shape the j21 handler consumes.
+* `ldc <ConstantDynamic>` with a versioned bsm is re-emitted through the
+  same machinery (`stubCondy`); typeSwitch *label* types are preserved
+  (`stubBSMArgs`' `preserveLabels`) so the emitted switch can route stubbed
+  labels through `RetroTypes` by name.
 
-The `otherTransforms` method is used to apply wider scale transforms to the bytecode, such as replacing all references
-to a class with a different class. It is an overload chain on `VersionProvider`
-— the fullest form receives
-`(clazz, extra, getReadOnly, warnings, enableRuntime, memberResolver, superTypeResolver)`
-and each narrower overload delegates down to `otherTransforms(clazz)`; override
-the narrowest that has the context you need.
-the current list of transforms is:
-* Java 25->24
-  * Create static main methods to call instance main methods.
-* Java 17->16
-  * Remove `ACC_SEALED` and add `@PermittedSubClasses` annotation
-* Java 16->15
-  * Remove `ACC_RECORD` and add `@RecordComponents` annotation
-* Java 15->14
-  * Insert synthetic "bridge" methods for private access from handles in nestmates.
-* Java 11->10
-  * Add a `@NestHost` annotation to nest members
-  * Add a `@NestMembers` annotation to nest hosts
-  * Insert synthetic "bridge" methods so that private fields/methods can be called from nest members.
-  * Replace Constant Dynamic calls with `INVOKEDYNAMIC`
-* Java 9->8
-  * Make private interface methods use `INVOKESPECIAL` instead of `INVOKEINTERFACE`.
-* Java 8->7
-  * Move private/default methods in interfaces to a `$jvmdg$StaticDefaults` inner class.
-* Java 7->6
-  * replace INDY method calls with some *fun* `MethodHandle` stuff.
-* Java 6->5 
-  * remove frames
+Under `--noIndy` the union of every provider's `indyDesugars` runs
+newest→oldest until no `InvokeDynamicInsnNode`/`ConstantDynamic` remains —
+normalizers like j23 `typeSwitch` run ahead of older real desugars — and
+unregistered bsms fall back to the generic `jvmdg$indy$` callsite-field
+lowering (the same shape as the j7→6 boundary below).
+
+## Multi-release snapshots
+
+`Stage.captureLabels` deep-copy the whole class set at stage entry into
+`TransformPipeline.variants()`. `PipelineJarStep` then emits each captured
+variant at `META-INF/versions/<slot>/` alongside the fully-downgraded
+finals — that's the `--multiRelease` implementation. `MultiReleaseRouteStep`
+does the inverse on input: `META-INF/versions/N/` classes are dropped unless
+`downgradeFromMultiReleases` is set (re-anchored to their stripped path,
+prefer-highest source per name) or `multiReleaseOriginal` keeps them in the
+output (verbatim, or tagged at their slot for in-place shading).
+
+## Per-version `otherTransforms`
+
+The structural edits each provider applies, verified against
+[`java-api/…/providers/`](/java-api/src/main/java/xyz/wagyourtail/jvmdg/providers/).
+Boundaries not listed run no `otherTransforms` — they're pure
+stub/registration boundaries.
+
+* **25 → 24** — instance-`main` support (JEP 512 launch forms):
+  `addMissingMains` synthesizes `public static void main(String[])` launchers
+  for static/instance/no-arg main shapes; `renameInstanceMains` renames
+  instance `main` to `jvmdg$instanceMain` and retargets non-static callsites.
+* **23 → 22** — `typeSwitch` site normalization (via `@IndyDesugar`, above).
+* **21 → 20** — `typeSwitch`/`enumSwitch` indy desugar (above).
+* **17 → 16** — `unseal`: the `permittedSubclasses` attribute is moved to a
+  runtime `@PermittedSubClasses` annotation and dropped from the class.
+* **16 → 15** — `recordRemover`: `ACC_RECORD` stripped; `recordComponents`
+  re-encoded as a `@RecordComponents` annotation.
+* **15 → 14** — `fixHandleAccessNests`: private members reached through
+  indy bsm/Handle bsmArgs by nestmates get
+  `jvmdowngrader$handleNest$<owner>$<member>` accessor methods on the owner
+  and the handles retargeted.
+* **11 → 10** — `fixNests`: `nestHostClass`/`nestMembers` attributes moved
+  to `@NestHost`/`@NestMembers` annotations, and private cross-nest-member
+  field/method insns rewritten to `jvmdowngrader$nest$<owner>$[get$|set$]<name>`
+  accessors (`<init>` is made package-private instead). `replaceCondy`:
+  `ldc <ConstantDynamic>` → `invokedynamic` via
+  `J_L_I_ConstantBootstraps.ldcCondyToIndy`, condy bsmArgs flattened via
+  `nestedCondyInIndy`. `fixPrivateMethodsInInterfaces`: `invokeinterface`
+  self-calls to private interface methods — including `LambdaMetafactory`
+  impl handles — rewritten to `invokespecial`.
+* **9 → 8** — none (`otherTransforms` is a no-op; the private-interface-
+  method fix lives at 11 → 10 where it normalizes the shape).
+* **8 → 7** — `downgradeInterfaces`: interface static/default/private
+  methods are moved to a `<I>$jvmdg$StaticDefaults` inner class (abstract
+  decls written back for defaults), callsites retargeted (`invokestatic`
+  owner swap; `invokespecial` → `invokestatic` with the receiver as arg 0;
+  indy `Handle` args likewise), and implementors missing a default get a
+  synthetic bridge to the moved body.
+* **7 → 6** — indy lowering: each distinct indy becomes a
+  `jvmdg$indy$<name>$<n>` `CallSite` field + same-named private static
+  method doing `callSite.getTarget().invokeExact(args)`; the bootstrap is
+  replayed once in `<clinit>`. `ldc <Handle>` → `jvmdg$handle$<name>$<n>`
+  fields resolved via `Lookup.findGetter`/`findVirtual`/…; `ldc <method
+  Type>` → `jvmdg$methodtype$<n>` fields; a `jvmdg$lookup` `Lookup` field
+  backs both. Resolved members are recorded via `@ReflectionReferences` on
+  `<clinit>` so the shade closure keeps them.
+* **6 → 5** — all stack-map `FRAME` insns removed.

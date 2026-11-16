@@ -12,7 +12,10 @@ each `VersionProvider` boundary decomposes into ordered stages (stub classes,
 stub methods, abstract insertion, other transforms) executed over the whole
 class set, and shading composes as a second stage list on the same engine:
 reference scan → reachable-set closure → inline/prefix of just the api
-classes you use. See [docs/Bytecode Manipulation.md](docs/Bytecode%20Manipulation.md).
+classes you use. See [docs/Architecture.md](docs/Architecture.md) for how the
+machine works, [docs/Bytecode Manipulation.md](docs/Bytecode%20Manipulation.md)
+for the bytecode-level emission rules, and [docs/Stubs.md](docs/Stubs.md) for
+authoring stubs.
 
 ### After downgrading you must either shade, or add the api jar to the classpath at runtime.
 
@@ -113,6 +116,33 @@ Optionally, you can also depend on the shadeDowngradedApi task when running buil
 ```gradle
 assemble.dependsOn shadeDowngradedApi
 ```
+
+### Minimal output size
+
+For the smallest shaded jar (apps that only need bytecode/language desugaring,
+not polyfilled APIs):
+
+```gradle
+jvmdg {
+    stubPolicy = "mechanical"        // keep only LANGUAGE desugars; no behavior/missing-API impls
+    onMissingApi = "warn"            // report unstubbed callsites instead of aborting
+    shadeReflection = "none"         // ship no reflection.idx rows
+}
+```
+
+Which target is smallest depends on the input bytecode shape:
+
+- **Pre-Java-8-style input** (no lambdas, method refs, or interface methods):
+  `downgradeTo = JavaVersion.VERSION_1_5` — the 6→5 boundary strips all
+  stack-map frames, and there is nothing left to lower.
+- **Modern bytecode** (lambdas, `::` refs, interface defaults): keep the
+  default Java 8 target. Each lambda desugars into a generated inner class,
+  each remaining indy into a field+method — hundreds of bytes per site vs.
+  ~20 for the native indy. Do **not** set `noIndy` here: it runs the union
+  of all desugars including `LambdaMetafactory` → inner class, at any target.
+
+`debugSkipStub`/`includeStub` (`--skipStub`/`--includeStub` on the CLI) surgically drop
+or restore individual stub registrations on top of that.
 
 ### Custom Tasks
 

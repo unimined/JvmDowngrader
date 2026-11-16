@@ -52,12 +52,21 @@ behaviors are honest approximations or divergences:
 * **Virtual threads are emulated, not scheduled.** `Thread.ofVirtual()` /
   `ofPlatform()` / `startVirtualThread()` / `isVirtual()` /
   `Thread.Builder` produce a `FakeVirtualThread` — a real daemon platform
-  thread. There is no carrier scheduling, no pinning semantics, and the
-  threads are visible to `ThreadMXBean` (real virtual threads are
-  invisible). `Executors.newVirtualThreadPerTaskExecutor()` /
-  `newThreadPerTaskExecutor()` run a `ThreadPerTaskExecutor` (one real
-  thread per task). Programs that rely on virtual-thread scalability —
-  tens of thousands of parked VTs — will exhaust OS threads.
+  thread (the parity ceiling: `join()`/`isAlive()` are final natives that
+  only work on really-started threads). There is no carrier scheduling, no
+  pinning semantics, and the threads are visible to `ThreadMXBean` (real
+  virtual threads are invisible).
+  `Executors.newVirtualThreadPerTaskExecutor()` runs a
+  `VirtualThreadPoolExecutor` — a private cached pool of
+  `FakeVirtualThread` carriers that grows on demand and retires idle
+  workers after 60s, so short task bursts amortize OS-thread churn; under
+  sustained all-blocking load it degenerates to one OS thread per task.
+  Tasks on one carrier share its identity and `ThreadLocal` map — fresh
+  vthread identity per task is not emulated.
+  `newThreadPerTaskExecutor()` runs a `ThreadPerTaskExecutor` (one real
+  factory thread per task — its literal contract). Programs that rely on
+  virtual-thread scalability — tens of thousands of concurrently-parked
+  VTs — will still exhaust OS threads.
 * **`MissingStubError` ≠ `NoSuchMethodError`.** Unstubbed members that
   hit a stub body, a dispatch miss, or a `--noIndy` lowered call site
   throw `jvmdg`'s `MissingStubError` (an `Error`), while members that
@@ -87,6 +96,21 @@ behaviors are honest approximations or divergences:
   up to `@`; VMs with exotic `RuntimeMXBean` name formats can throw
   `NumberFormatException`. Prefer `ProcessHandle.current().pid()` (real
   on j9+) where available.
+* **Stack traces leak internals inconsistently.** `StackWalker` frames
+  are filtered of jvmdg machinery; `Throwable.getStackTrace()` is not —
+  stub/dispatch frames can appear there. Don't match stack frames by
+  class name in downgraded code.
+* **Reflection answers are a synthesized authored view, partially.**
+  `Class.getInterfaces`/`getGenericInterfaces` report the authored
+  hierarchy (machinery types filtered, gained stand-ins surfaced);
+  `getMethods`/`getDeclaredMethods` pass through real members only, so
+  members added by gained interfaces are honestly missing there.
+  `getName`/`getModule`/`getClassLoader` on wrapped/adapted objects report
+  the impl/adapter class and its loader, not the JDK type's.
+* **Serialization is partial.** Lambdas get full `SerializedLambda`
+  machinery; adapter/wrap objects are honestly not `Serializable`.
+* **Unsafe/VarHandle.** `Unsafe` members are unstubbed (honest-miss);
+  VarHandle is reimplemented on `sun.misc.Unsafe` where available.
 * **`java.version` / `Runtime.version()` report the real runtime** by
   design — feature-detection code sees the true target-JVM capability,
   not the authored source version.

@@ -164,7 +164,8 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
                   INVOKEVIRTUAL/INVOKEINTERFACE sites resolved to an
                   instance stub emit an invokedynamic bootstrapped by
                   stub/DispatchRuntime (DispatchSites owns the contract):
-                  bsmArgs carry the member MethodType + impl Handle; a
+                  bsmArgs carry the member MethodType + impl owner Class +
+                  "name desc" String (lazy — no Handle constant); a
                   per-callsite ClassValue PIC resolves the receiver's own
                   member via findVirtual — user overrides win, no marker
                   interface is injected; the site also declares the impl
