@@ -3,6 +3,7 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Stub;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -21,10 +22,11 @@ public class J_U_Optional {
 
     @Stub
     public static <T> Optional<T> or(Optional<T> optional, Supplier<? extends Optional<? extends T>> supplier) {
+        Objects.requireNonNull(supplier);
         if (optional.isPresent()) {
             return optional;
         } else {
-            Optional<? extends T> result = supplier.get();
+            Optional<? extends T> result = Objects.requireNonNull(supplier.get());
             return (Optional<T>) result;
         }
     }

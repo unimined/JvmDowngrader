@@ -11,7 +11,12 @@ import xyz.wagyourtail.jvmdg.util.Consumer;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
-import java.beans.XMLDecoder;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,7 +52,7 @@ public class Flags {
     /**
      * sets if the logger should use ansi colors for the console to look pretty
      */
-    public boolean logAnsiColors = Boolean.getBoolean(System.getProperty(Constants.LOG_ANSI_COLORS, "true"));
+    public boolean logAnsiColors = Boolean.parseBoolean(System.getProperty(Constants.LOG_ANSI_COLORS, "true"));
     /**
      * sets the log level
      *
@@ -81,7 +86,7 @@ public class Flags {
      *
      * @since 1.2.0
      */
-    public boolean shadeInlining = Boolean.getBoolean(System.getProperty(Constants.SHADE_INLINING, "true"));
+    public boolean shadeInlining = Boolean.parseBoolean(System.getProperty(Constants.SHADE_INLINING, "true"));
     /**
      * this skips applying stubs for the specified input class version, this will still apply the
      * {@link xyz.wagyourtail.jvmdg.version.VersionProvider#otherTransforms(ClassNode, Set, Function, Set)}
@@ -139,13 +144,13 @@ public class Flags {
     public boolean downgradeFromMultiReleases = false;
 
     public Flags() {
-        getIgnoreWarnings();
+        loadIgnoreWarnings();
     }
 
     public Flags copy() {
         Flags flags = new Flags();
         flags.classVersion = classVersion;
-        flags.api = api;
+        flags.api = api == null ? null : new ArrayList<>(api);
         flags.quiet = quiet;
         flags.logAnsiColors = logAnsiColors;
         flags.logLevel = logLevel;
@@ -286,36 +291,41 @@ public class Flags {
      * internal method to check if a class should be ignored for missing class/member warnings
      */
     public boolean checkInIgnoreWarnings(String className) {
-        // find the entry that is <= the className, because a treeSet is sorted, this is either className,
-        // a prefix of classname, a random other string that is less than className, ie. "aaa" < "bbb", or null if there
-        // is no entries that are <= className in the map
+        if (className.isEmpty()) {
+            return false;
+        }
+        // find entries that are <= the className; any matching candidate is a
+        // prefix of className. a nearer non-matching entry must not shadow a
+        // broader one (eg. "a/b/**" should still match "a/b/c/d" even when
+        // "a/b/c" is also registered), so walk the floor chain until the first
+        // character can't match anymore.
         Map.Entry<String, Flags.WildcardType> entry = ignoreWarningsIn.floorEntry(className);
-        if (entry != null && className.startsWith(entry.getKey())) {
-            switch (entry.getValue()) {
-                case NONE:
-                    if (className.equals(entry.getKey())) {
-                        return true;
-                    }
-                    return true;
-                case SINGLE:
-                    int lastSlash = className.lastIndexOf('/');
-                    if (lastSlash == -1) {
-                        return true;
-                    }
-                    String parent = className.substring(0, lastSlash + 1);
-                    String value = entry.getKey();
-                    if (!value.endsWith("/")) {
-                        value = value.substring(0, value.lastIndexOf('/') + 1);
-                    }
-                    if (parent.equals(value)) {
-                        return true;
-                    }
-                    break;
-                case DOUBLE:
-                    return true;
+        while (entry != null && entry.getKey().charAt(0) == className.charAt(0)) {
+            if (className.startsWith(entry.getKey()) && wildcardMatches(entry.getValue(), entry.getKey(), className)) {
+                return true;
             }
+            entry = ignoreWarningsIn.lowerEntry(entry.getKey());
         }
         return false;
+    }
+
+    private static boolean wildcardMatches(WildcardType type, String key, String className) {
+        switch (type) {
+            case NONE:
+                return className.equals(key);
+            case SINGLE:
+                int lastSlash = className.lastIndexOf('/');
+                if (lastSlash == -1) {
+                    return true;
+                }
+                String parent = className.substring(0, lastSlash + 1);
+                String value = key.endsWith("/") ? key : key.substring(0, key.lastIndexOf('/') + 1);
+                return parent.equals(value);
+            case DOUBLE:
+                return true;
+            default:
+                return false;
+        }
     }
 
     /* initialization methods */
@@ -359,14 +369,12 @@ public class Flags {
         return versions;
     }
 
-    private TreeMap<String, WildcardType> getIgnoreWarnings() {
+    private void loadIgnoreWarnings() {
         String ignoreWarnings = System.getProperty(Constants.IGNORE_WARNINGS);
-        if (ignoreWarnings == null) return new TreeMap<>();
-        TreeMap<String, WildcardType> map = new TreeMap<>();
+        if (ignoreWarnings == null) return;
         for (String s : ignoreWarnings.split(",")) {
             addIgnore(s);
         }
-        return map;
     }
 
     private URL getJavaApiFromShade() throws IOException {
@@ -391,12 +399,26 @@ public class Flags {
         if (version.contains("SNAPSHOT")) {
             // retrieve maven metadata
             URL url = URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/maven-metadata.xml").toURL();
-            // get actual latest
+            // get actual latest — parse as plain XML; XMLDecoder is a
+            // deserialization codec and unsafe on remote input
             try (InputStream in = url.openStream()) {
-                XMLDecoder decoder = new XMLDecoder(in);
-                Map<String, Object> metadata = (Map<String, Object>) decoder.readObject();
-                String snapshotVersion = ((Map<String, Object>) ((Map<String, Object>) metadata.get("versioning")).get("snapshot")).get("timestamp") + "-" + ((Map<String, Object>) ((Map<String, Object>) metadata.get("versioning")).get("snapshot")).get("buildNumber");
+                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+                dbf.setFeature("http://javax.xml.XMLConstants/feature/secure-processing", true);
+                try {
+                    dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+                } catch (ParserConfigurationException ignored) {
+                }
+                dbf.setExpandEntityReferences(false);
+                Document doc = dbf.newDocumentBuilder().parse(in);
+                NodeList timestamp = doc.getElementsByTagName("timestamp");
+                NodeList buildNumber = doc.getElementsByTagName("buildNumber");
+                if (timestamp.getLength() == 0 || buildNumber.getLength() == 0) {
+                    throw new IOException("maven-metadata.xml missing snapshot timestamp/buildNumber");
+                }
+                String snapshotVersion = timestamp.item(0).getTextContent().trim() + "-" + buildNumber.item(0).getTextContent().trim();
                 return URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + "-" + snapshotVersion + ".jar").toURL();
+            } catch (ParserConfigurationException | SAXException e) {
+                throw new IOException("failed to parse maven-metadata.xml", e);
             }
         } else {
             File file = Constants.DIR;
@@ -408,12 +430,37 @@ public class Flags {
             }
 
             URL url = URI.create("https://maven.wagyourtail.xyz/releases/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/jvmdowngrader-java-api-" + version + ".jar").toURL();
+            // fetch the published sha1 for integrity verification (optional —
+            // older artifacts may not publish one)
+            String expectedSha1 = null;
+            try (InputStream shaIn = URI.create(url.toString() + ".sha1").toURL().openStream()) {
+                expectedSha1 = readFirstToken(shaIn);
+            } catch (IOException ignored) {
+            }
             // download
             try (InputStream in = url.openStream()) {
                 Files.copy(in, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
+            if (expectedSha1 != null) {
+                try (InputStream verify = Files.newInputStream(file.toPath())) {
+                    if (!expectedSha1.equalsIgnoreCase(hash(verify))) {
+                        file.delete();
+                        throw new IOException("downloaded java-api jar failed sha1 verification: " + file);
+                    }
+                }
+            }
             return file.toURI().toURL();
         }
+    }
+
+    /** Reads the first whitespace-delimited token (maven {@code .sha1} files are "{@code <hex> <name>}"). */
+    private static String readFirstToken(InputStream in) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        int c;
+        while ((c = in.read()) != -1 && !Character.isWhitespace(c)) {
+            sb.append((char) c);
+        }
+        return sb.length() == 0 ? null : sb.toString();
     }
 
     private String hash(InputStream is) {
@@ -434,77 +481,6 @@ public class Flags {
         } catch (Exception e) {
             throw new RuntimeException("Failed to hash", e);
         }
-    }
-
-    public String serialize() {
-        List<String> args = new ArrayList<>();
-        if (classVersion != Opcodes.V1_8) {
-            args.add("--classVersion");
-            args.add(String.valueOf(classVersion));
-        }
-        if (quiet) args.add("--quiet");
-        if (!logAnsiColors) args.add("--noColor");
-        if (logLevel != Logger.Level.INFO) {
-            args.add("--logLevel");
-            args.add(logLevel.name());
-        }
-        for (Map.Entry<String, WildcardType> entry : ignoreWarningsIn.entrySet()) {
-            args.add("--ignoreWarningsIn");
-            String key = entry.getKey();
-            switch (entry.getValue()) {
-                case DOUBLE:
-                    key += "*";
-                case SINGLE:
-                    key += "*";
-                case NONE:
-            }
-            args.add(key);
-        }
-        if (multiReleaseOriginal) {
-            args.add("--multiReleaseOriginal");
-        }
-        for (Integer v : multiReleaseVersions) {
-            args.add("--multiRelease");
-            args.add(String.valueOf(v));
-        }
-        if (downgradeFromMultiReleases) {
-            args.add("--multiReleaseInputs");
-        }
-        if (!shadeInlining) {
-            args.add("--noInlining");
-        }
-        for (File a : api) {
-            args.add("--api");
-            // todo: escape spaces, but, how does that work with javac plugin args?
-            args.add(a.getAbsolutePath());
-        }
-        if (printDebug || !debugSkipStub.isEmpty() || !debugSkipStubs.isEmpty() || debugDumpClasses) {
-            args.add("debug");
-            if (printDebug) {
-                args.add("--print");
-            }
-            if (!debugSkipStub.isEmpty()) {
-                for (FullyQualifiedMemberNameAndDesc f : debugSkipStub) {
-                    args.add("--skipStub");
-                    args.add(f.toString());
-                }
-            }
-            if (!debugSkipStubs.isEmpty()) {
-                for (int i : debugSkipStubs) {
-                    args.add("--skipStubs");
-                    args.add(String.valueOf(i));
-                }
-            }
-            if (debugDumpClasses) {
-                args.add("--dumpClasses");
-            }
-        }
-        StringBuilder sb = new StringBuilder();
-        for (String arg : args) {
-            sb.append(arg).append(" ");
-        }
-        if (!args.isEmpty()) sb.deleteCharAt(sb.length() - 1);
-        return sb.toString();
     }
 
     public enum WildcardType {

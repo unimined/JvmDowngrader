@@ -55,16 +55,23 @@ public class AsyncUtils {
 
             @Override
             public List<T> get(long timeout, @NotNull TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-                List<T> list = new ArrayList<>();
-                long remainingMs = unit.toMillis(timeout);
-                while (!futures.isEmpty()) {
-                    Future<T> future = futures.poll();
-                    long start = System.currentTimeMillis();
-                    list.add(future.get(remainingMs, unit));
-                    remainingMs -= System.currentTimeMillis() - start;
+                List<T> done = result.get();
+                if (done != null) {
+                    return done;
                 }
-                result.set(list);
-                return list;
+                synchronized (futures) {
+                    List<T> list = new ArrayList<>();
+                    long nanos = unit.toNanos(timeout);
+                    // saturate: avoid overflow when adding nanoTime for huge timeouts (e.g. Long.MAX_VALUE)
+                    long deadline = nanos >= Long.MAX_VALUE / 2 ? Long.MAX_VALUE : System.nanoTime() + nanos;
+                    while (!futures.isEmpty()) {
+                        Future<T> future = futures.poll();
+                        long remaining = deadline - System.nanoTime();
+                        list.add(future.get(Math.max(remaining, 0), TimeUnit.NANOSECONDS));
+                    }
+                    result.compareAndSet(null, list);
+                    return result.get();
+                }
             }
         };
     }

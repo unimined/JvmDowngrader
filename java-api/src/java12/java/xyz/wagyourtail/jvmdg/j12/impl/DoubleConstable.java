@@ -19,6 +19,11 @@ public class DoubleConstable implements J_L_C_Constable, J_L_C_ConstantDesc {
     }
 
     @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
+
+    @Override
     public Double resolveConstantDesc(MethodHandles.Lookup lookup) {
         return value;
     }

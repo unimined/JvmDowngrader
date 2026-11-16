@@ -43,21 +43,39 @@ public interface J_L_ProcessHandle extends Comparable<J_L_ProcessHandle> {
     static J_L_ProcessHandle current() {
         String pidName = bean.getName();
         long pid = Long.parseLong(pidName.substring(0, pidName.indexOf('@')));
+        // the platform impl reads self-args internally, not via /proc — fall
+        // back to sun.java.command when /proc is unreadable/absent
+        String[] selfCmdline = selfCmdline();
         if (isUnix()) {
-            return new UnixProcessHandle(pid) {
+            return new UnixProcessHandle(pid, selfCmdline) {
                 @Override
                 public CompletableFuture<J_L_ProcessHandle> onExit() {
                     throw new IllegalStateException();
                 }
             };
         } else {
-            return new WindowsProcessHandle(pid) {
+            return new WindowsProcessHandle(pid, selfCmdline) {
                 @Override
                 public CompletableFuture<J_L_ProcessHandle> onExit() {
                     throw new IllegalStateException();
                 }
             };
         }
+    }
+
+    // argv[0] + "sun.java.command" (main class + app args) — approximates the
+    // full process cmdline; prefix args (-cp/-D/classpath) are absent, same
+    // as they are for the native Info.arguments() contract callers rely on
+    static String[] selfCmdline() {
+        String cmd = System.getProperty("sun.java.command");
+        if (cmd == null || cmd.isEmpty()) {
+            return null;
+        }
+        String[] parts = cmd.split(" ");
+        String[] cmdline = new String[parts.length + 1];
+        cmdline[0] = "java";
+        System.arraycopy(parts, 0, cmdline, 1, parts.length);
+        return cmdline;
     }
 
     static Stream<J_L_ProcessHandle> allProcesses() {

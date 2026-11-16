@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class J_U_Map {
 
-    @Stub(ref = @Ref("java/util/Map"))
+    @Stub(ref = @Ref("java/util/Map$Entry"))
     public static <K extends Comparable<? super K>, V> Comparator<Map.Entry<K, V>> comparingByKey() {
         return new Comparator<Map.Entry<K, V>>() {
             @Override
@@ -23,7 +23,7 @@ public class J_U_Map {
         };
     }
 
-    @Stub(ref = @Ref("java/util/Map"))
+    @Stub(ref = @Ref("java/util/Map$Entry"))
     public static <K, V extends Comparable<? super V>> Comparator<Map.Entry<K, V>> comparingByValue() {
         return new Comparator<Map.Entry<K, V>>() {
             @Override
@@ -33,7 +33,7 @@ public class J_U_Map {
         };
     }
 
-    @Stub(ref = @Ref("java/util/Map"))
+    @Stub(ref = @Ref("java/util/Map$Entry"))
     public static <K, V> Comparator<Map.Entry<K, V>> comparingByKey(final Comparator<? super K> cmp) {
         return new Comparator<Map.Entry<K, V>>() {
             @Override
@@ -43,7 +43,7 @@ public class J_U_Map {
         };
     }
 
-    @Stub(ref = @Ref("java/util/Map"))
+    @Stub(ref = @Ref("java/util/Map$Entry"))
     public static <K, V> Comparator<Map.Entry<K, V>> comparingByValue(final Comparator<? super V> cmp) {
         return new Comparator<Map.Entry<K, V>>() {
             @Override

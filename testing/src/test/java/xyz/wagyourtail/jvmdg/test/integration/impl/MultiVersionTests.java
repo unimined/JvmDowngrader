@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class MultiVersionTests extends BaseIntegrationTests {
@@ -95,7 +96,7 @@ public class MultiVersionTests extends BaseIntegrationTests {
                 (String it) -> originalLog.append(it).append("\n"),
                 (String it) -> originalLog.append(it).append("\n")
             );
-            assert exitCode != null;
+            assertNotNull(exitCode);
             originalResults.put(main, Map.entry(exitCode, originalLog.toString()));
         }
     }
@@ -120,7 +121,7 @@ public class MultiVersionTests extends BaseIntegrationTests {
                 (String it) -> fullDowngradeLog.append(it).append("\n"),
                 (String it) -> fullDowngradeLog.append(it).append("\n")
             );
-            assert exitCode != null;
+            assertNotNull(exitCode);
             fullDowngradeResults.put(main, Map.entry(exitCode, fullDowngradeLog.toString()));
         }
     }
@@ -166,7 +167,7 @@ public class MultiVersionTests extends BaseIntegrationTests {
             (String it) -> aboveTargetLog.append(it).append("\n")
         );
 
-        assert aboveTargetExitCode != null;
+        assertNotNull(aboveTargetExitCode);
         assertEquals(originalResult, Map.entry(aboveTargetExitCode, aboveTargetLog.toString()));
     }
 

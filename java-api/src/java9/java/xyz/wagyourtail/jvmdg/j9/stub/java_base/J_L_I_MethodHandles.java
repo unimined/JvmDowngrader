@@ -35,12 +35,32 @@ public class J_L_I_MethodHandles {
 
     @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
     public static MethodHandle arrayConstructor(Class<?> arrayClass) {
+        if (arrayClass == null || !arrayClass.isArray()) {
+            throw new IllegalArgumentException("not an array class: " + arrayClass);
+        }
         return MethodHandles.insertArguments(ArrayCtor, 0, arrayClass);
     }
 
 
     @Stub(ref = @Ref("java/lang/invoke/MethodHandles"))
     public static MethodHandles.Lookup privateLookupIn(Class<?> cls, MethodHandles.Lookup lookup) throws Throwable {
+        Objects.requireNonNull(cls);
+        Objects.requireNonNull(lookup);
+        if ((lookup.lookupModes() & MethodHandles.Lookup.PRIVATE) == 0) {
+            throw new IllegalArgumentException(lookup + " does not have private access");
+        }
+        if (cls.isPrimitive() || cls.isArray()) {
+            throw new IllegalArgumentException(cls + " is not a class with members");
+        }
+        // emulate the module system's refusal to private-lookup into packages
+        // that are not open to the caller (all java.* packages on pre-module
+        // runtimes)
+        Package pkg = cls.getPackage();
+        String pkgName = pkg != null ? pkg.getName() : "";
+        if (cls.getClassLoader() == null ||
+            pkgName.startsWith("java.") || pkgName.startsWith("jdk.") || pkgName.startsWith("sun.")) {
+            throw new IllegalAccessException("module java.base does not open " + pkgName + " to unnamed module");
+        }
         return (MethodHandles.Lookup) LookupCtor.invokeExact(cls);
     }
 
@@ -95,15 +115,6 @@ public class J_L_I_MethodHandles {
     }
 
     public static class Lookup {
-        private static final MethodHandle DefineClass;
-
-        static {
-            try {
-                DefineClass = IMPL_LOOKUP.findVirtual(ClassLoader.class, "defineClass", MethodType.methodType(Class.class, byte[].class, int.class, int.class));
-            } catch (NoSuchMethodException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-        }
 
         @Stub
         @JEP(193)
@@ -145,15 +156,15 @@ public class J_L_I_MethodHandles {
             Objects.requireNonNull(field);
             return J_L_I_VarHandle.of(field);
         }
-        @Stub(requiresRuntime = true)
+        @Stub
         public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] bytes) throws Throwable {
             Objects.requireNonNull(bytes);
-            ClassLoader loader = lookup.lookupClass().getClassLoader();
+            DefiningLoader loader = new DefiningLoader(lookup.lookupClass().getClassLoader());
             // check if classdowngrader is available
             try {
                 Class.forName("xyz.wagyourtail.jvmdg.ClassDowngrader");
             } catch (ClassNotFoundException e) {
-                return (Class<?>) DefineClass.invokeExact(loader, bytes, 0, bytes.length);
+                return loader.defineClass0(bytes, 0, bytes.length);
             }
             AtomicReference<String> name = new AtomicReference<>(null);
             Map<String, byte[]> classBytes = ClassDowngrader.getCurrentVersionDowngrader().downgrade(name, bytes, true, (s) -> {
@@ -169,13 +180,29 @@ public class J_L_I_MethodHandles {
             for (Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
                 if (entry.getKey().startsWith("META-INF/versions")) continue;
                 if (Objects.equals(entry.getKey(), name.get())) {
-                    c = (Class<?>) DefineClass.invokeExact(loader, entry.getValue(), 0, entry.getValue().length);
+                    c = loader.defineClass0(entry.getValue(), 0, entry.getValue().length);
                 } else {
-                    DefineClass.invokeExact(loader, entry.getValue(), 0, entry.getValue().length);
+                    loader.defineClass0(entry.getValue(), 0, entry.getValue().length);
                 }
             }
             if (c == null) throw new IllegalStateException("class " + name + " not found in outputs");
             return c;
+        }
+
+        /**
+         * Defines classes through a {@link ClassLoader} subclass because
+         * {@code defineClass} is protected; the deprecated
+         * {@code ClassLoader#defineClass(byte[], int, int)} that was used
+         * before no longer exists on JDK 11+.
+         */
+        private static class DefiningLoader extends ClassLoader {
+            DefiningLoader(ClassLoader parent) {
+                super(parent);
+            }
+
+            final Class<?> defineClass0(byte[] b, int off, int len) {
+                return super.defineClass(null, b, off, len);
+            }
         }
 
     }

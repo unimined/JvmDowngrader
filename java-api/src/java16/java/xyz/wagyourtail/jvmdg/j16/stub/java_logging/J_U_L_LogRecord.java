@@ -13,13 +13,14 @@ public class J_U_L_LogRecord {
     }
 
     @Stub
-    public static void setLongThreadID(LogRecord record, long threadID) {
+    public static LogRecord setLongThreadID(LogRecord record, long threadID) {
         if (threadID >= 0 && threadID <= Integer.MAX_VALUE) {
             record.setThreadID((int) threadID);
         } else {
             int hash = Long.hashCode(threadID);
             record.setThreadID(hash < 0 ? hash : (-1 - hash));
         }
+        return record;
     }
 
 }

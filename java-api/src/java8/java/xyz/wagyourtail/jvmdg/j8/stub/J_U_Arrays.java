@@ -100,13 +100,13 @@ public class J_U_Arrays {
 
     @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
-    public static <T> void parallelSort(T[] a) {
+    public static <T extends Comparable<? super T>> void parallelSort(T[] a) {
         parallelSort(a, 0, a.length);
     }
 
     @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
-    public static <T> void parallelSort(T[] a, int fromIndex, int toIndex) {
+    public static <T extends Comparable<? super T>> void parallelSort(T[] a, int fromIndex, int toIndex) {
         throw MissingStubError.create();
     }
 
@@ -160,12 +160,23 @@ public class J_U_Arrays {
 
     @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
-    public static void setAll(int[] array, J_U_F_IntUnaryOperator generator) {
-        setAll(array, 0, array.length, generator);
+    public static void parallelPrefix(int[] array, J_U_F_IntBinaryOperator op) {
+        parallelPrefix(array, 0, array.length, op);
     }
 
     @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
+    public static void parallelPrefix(int[] array, int fromIndex, int toIndex, J_U_F_IntBinaryOperator op) {
+        throw MissingStubError.create();
+    }
+
+    @JEP(103)
+    @Stub(ref = @Ref("java/util/Arrays"))
+    public static void setAll(int[] array, J_U_F_IntUnaryOperator generator) {
+        setAll(array, 0, array.length, generator);
+    }
+
+    // not a JDK member; impl helper for the 2-arg overload
     public static void setAll(int[] array, int fromIndex, int toIndex, J_U_F_IntUnaryOperator generator) {
         throw MissingStubError.create();
     }
@@ -178,7 +189,7 @@ public class J_U_Arrays {
 
     @JEP(103)
     @Stub(ref = @Ref("java/util/Arrays"))
-    public static <T> void parallelSetAll(T[] array, J_U_F_IntUnaryOperator generator) {
+    public static <T> void parallelSetAll(T[] array, J_U_F_IntFunction<? extends T> generator) {
         throw MissingStubError.create();
     }
 

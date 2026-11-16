@@ -22,4 +22,13 @@ public class FakeVirtualThread extends Thread {
         super.start(); // TODO: maybe some kind of pool?
     }
 
+    @Override
+    public String toString() {
+        // mirror VirtualThread: "VirtualThread[#<id>]/<state>", using getId()
+        // since threadId() doesn't exist on older runtimes
+        Thread.State s = getState();
+        return "VirtualThread[#" + getId() + "]/" +
+            (s == null ? "terminated" : s.name().toLowerCase(java.util.Locale.ROOT));
+    }
+
 }

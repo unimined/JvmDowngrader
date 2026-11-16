@@ -6,6 +6,7 @@ import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import java.util.AbstractCollection;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 public class ReverseCollection<E, T extends Collection<E>> extends AbstractCollection<E> implements Collection<E> {
     public final T original;
@@ -20,6 +21,7 @@ public class ReverseCollection<E, T extends Collection<E>> extends AbstractColle
         Object[] obj = original.toArray();
         return new Iterator<>() {
             int pos = original.size();
+            E last;
 
             @Override
             public boolean hasNext() {
@@ -28,7 +30,19 @@ public class ReverseCollection<E, T extends Collection<E>> extends AbstractColle
 
             @Override
             public E next() {
-                return (E) obj[--pos];
+                if (pos < 1) {
+                    throw new NoSuchElementException();
+                }
+                return last = (E) obj[--pos];
+            }
+
+            @Override
+            public void remove() {
+                if (last == null) {
+                    throw new IllegalStateException();
+                }
+                original.remove(last);
+                last = null;
             }
         };
     }

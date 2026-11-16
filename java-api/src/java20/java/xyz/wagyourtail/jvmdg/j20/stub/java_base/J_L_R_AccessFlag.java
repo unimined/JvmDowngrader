@@ -53,10 +53,12 @@ public enum J_L_R_AccessFlag {
         }
     ),
     FINAL(
-        Modifier.FINAL, true, Set.of(CLASS, FIELD, METHOD, INNER_CLASS),
+        Modifier.FINAL, true, Set.of(CLASS, FIELD, METHOD, INNER_CLASS, METHOD_PARAMETER),
         version -> {
             if (version == J_L_R_ClassFileFormatVersion.RELEASE_0) {
                 return Set.of(CLASS, FIELD, METHOD);
+            } else if (version.compareTo(J_L_R_ClassFileFormatVersion.RELEASE_8) >= 0) {
+                return Set.of(CLASS, FIELD, METHOD, INNER_CLASS, METHOD_PARAMETER);
             } else {
                 return Set.of(CLASS, FIELD, METHOD, INNER_CLASS);
             }
@@ -195,7 +197,7 @@ public enum J_L_R_AccessFlag {
         0x8000, false, Set.of(METHOD_PARAMETER, Location.MODULE, MODULE_REQUIRES, MODULE_EXPORTS, MODULE_OPENS),
         version -> {
             if (version.compareTo(J_L_R_ClassFileFormatVersion.RELEASE_9) >= 0) {
-                return Set.of(CLASS);
+                return Set.of(METHOD_PARAMETER, Location.MODULE, MODULE_REQUIRES, MODULE_EXPORTS, MODULE_OPENS);
             } else if (version == J_L_R_ClassFileFormatVersion.RELEASE_8) {
                 return Set.of(METHOD_PARAMETER);
             } else {

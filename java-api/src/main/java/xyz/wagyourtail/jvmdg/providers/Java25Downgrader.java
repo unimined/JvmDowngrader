@@ -66,7 +66,6 @@ public class Java25Downgrader extends AllVersionDowngrader {
                     MethodInsnNode min = (MethodInsnNode) insn;
                     if (min.getOpcode() != Opcodes.INVOKESTATIC && min.name.equals("main") && min.desc.equals("([Ljava/lang/String;)V")) {
                         min.name = "jvmdg$instanceMain";
-                        break;
                     }
                 }
             }

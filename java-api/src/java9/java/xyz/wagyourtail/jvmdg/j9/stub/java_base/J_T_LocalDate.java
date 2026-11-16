@@ -11,6 +11,13 @@ import java.util.stream.Stream;
 
 public class J_T_LocalDate {
 
+    // field stub for LocalDate.EPOCH (added in 9); desc=field descriptor
+    // marks the member as a field, non-void return registers it as the getter
+    @Stub(ref = @Ref(value = "Ljava/time/LocalDate;", member = "EPOCH", desc = "Ljava/time/LocalDate;"))
+    public static LocalDate EPOCH() {
+        return LocalDate.of(1970, 1, 1);
+    }
+
     @Stub(ref = @Ref("Ljava/time/LocalDate;"))
     public static LocalDate ofInstant(Instant instant, ZoneId zone) {
         ZonedDateTime zdt = instant.atZone(zone);

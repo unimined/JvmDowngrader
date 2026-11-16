@@ -31,7 +31,7 @@ public class J_L_R_AccessibleObject {
             }
             // if this object is an instance member, the given object
             // must be a subclass of the declaring class of this reflected object
-            if (!declaringClass.isAssignableFrom(obj.getClass())) {
+            if (!declaringClass.isAssignableFrom(target.getClass())) {
                 throw new IllegalArgumentException("object is not an instance of "
                     + declaringClass.getName());
             }
@@ -49,7 +49,7 @@ public class J_L_R_AccessibleObject {
         if (obj instanceof Constructor) {
             targetClass = declaringClass;
         } else {
-            targetClass = Modifier.isStatic(modifiers) ? null : obj.getClass();
+            targetClass = Modifier.isStatic(modifiers) ? null : target.getClass();
         }
 
 

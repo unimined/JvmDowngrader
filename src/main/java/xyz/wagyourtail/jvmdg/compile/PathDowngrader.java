@@ -2,9 +2,9 @@ package xyz.wagyourtail.jvmdg.compile;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.classloader.ResourceClassLoader;
-import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.util.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,9 +17,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 public class PathDowngrader {
@@ -85,13 +86,18 @@ public class PathDowngrader {
                 for (int j = downgrader.maxVersion(); j >= 52; j--) {
                     multiReleasePaths.add("META-INF/versions/" + Utils.classVersionToMajorVersion(j));
                 }
-                final Set<Path> visitedClasses = new HashSet<>();
+                final Set<Path> visitedClasses = Collections.newSetFromMap(new ConcurrentHashMap<Path, Boolean>());
+                // deterministic output: async consumers defer into these maps,
+                // then a single sorted write pass produces reproducible order
+                final Set<String> mkdirs = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+                final ConcurrentMap<String, byte[]> writes = new ConcurrentHashMap<>();
+                final ConcurrentMap<String, Path> copies = new ConcurrentHashMap<>();
 
                 AsyncUtils.visitPathsAsync(in, new IOFunction<Path, Boolean>() {
 
                     @Override
                     public Boolean apply(Path path) throws IOException {
-                        Files.createDirectories(out.resolve(in.relativize(path).toString()));
+                        mkdirs.add(in.relativize(path).toString());
                         return true;
                     }
 
@@ -100,16 +106,14 @@ public class PathDowngrader {
                     @Override
                     public void accept(Path path) throws IOException {
                         Path relativized = in.relativize(path);
-                        Path outFile = out.resolve(relativized.toString());
                         if (path.getFileName().toString().endsWith(".class")) {
 
                             if (relativized.startsWith("META-INF/versions")) {
                                 if (downgrader.flags.downgradeFromMultiReleases) {
                                     relativized = relativized.subpath(3, relativized.getNameCount());
-                                    outFile = out.resolve(relativized);
                                 } else if (downgrader.flags.multiReleaseOriginal) {
                                     // copy original
-                                    Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
+                                    copies.put(relativized.toString(), path);
                                     return;
                                 } else {
                                     return;
@@ -117,10 +121,9 @@ public class PathDowngrader {
                             }
 
                             // dont if already visited
-                            if (visitedClasses.contains(outFile)) {
+                            if (!visitedClasses.add(out.resolve(relativized.toString()))) {
                                 return;
                             }
-                            visitedClasses.add(outFile);
 
                             if (downgrader.flags.downgradeFromMultiReleases) {
                                 // prefer highest multi-release
@@ -175,48 +178,79 @@ public class PathDowngrader {
                                     }
                                 });
                                 if (outputs == null) {
-                                    Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
+                                    copies.put(relativized.toString(), path);
                                 } else {
                                     for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
-                                        String internal = entry.getKey();
-                                        Path p = out.resolve(internal + ".class");
-                                        Path parent = p.getParent();
-                                        if (parent != null) {
-                                            Files.createDirectories(parent);
-                                        }
-                                        Files.write(p, entry.getValue(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                                        writes.put(entry.getKey() + ".class", entry.getValue());
                                     }
                                 }
                             } catch (IllegalClassFormatException e) {
                                 throw new IOException("Failed to downgrade " + path, e);
                             }
-                        } else if (relativized.toString().equals("META-INF/MANIFEST.MF")) {
+                        } else if (ManifestUtils.MANIFEST_PATH.equals(
+                                relativized.toString().replace('\\', '/'))) {
                             // add version number to manifest
                             try (InputStream is = Files.newInputStream(path)) {
                                 Manifest manifest = new Manifest(is);
-                                Attributes attr = manifest.getMainAttributes();
-                                if (Flags.jvmdgVersion != null) {
-                                    attr.putValue("JvmDowngrader-Version", Flags.jvmdgVersion);
-                                    attr.putValue("JvmDowngrader-Downgrade-Target", String.valueOf(downgrader.flags.classVersion));
-                                }
-                                if (downgrader.flags.multiReleaseOriginal || !downgrader.flags.multiReleaseVersions.isEmpty()) {
-                                    attr.putValue("Multi-Release", "true");
-                                }
-
-                                try (OutputStream os = Files.newOutputStream(outFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-                                    manifest.write(os);
-                                }
+                                ManifestUtils.applyDowngradeAttributes(manifest, downgrader.flags);
+                                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                                manifest.write(bos);
+                                writes.put(ManifestUtils.MANIFEST_PATH, bos.toByteArray());
                             }
                         } else {
                             // strip signatures since downgraded classes will not have the same signatures
-                            if (relativized.toString().startsWith("META-INF/") && (path.toString().endsWith(".SF") || path.toString().endsWith(".DSA") || path.toString().endsWith(".RSA"))) {
+                            if (ManifestUtils.isSignatureFile(relativized.toString().replace('\\', '/'))) {
                                 return;
                             }
-                            Files.copy(path, outFile, StandardCopyOption.REPLACE_EXISTING);
+                            copies.put(relativized.toString(), path);
                         }
                     }
 
                 }).get();
+
+                // single sorted write pass: deterministic entry order
+                List<String> dirs = new ArrayList<>(mkdirs);
+                Collections.sort(dirs);
+                for (String d : dirs) {
+                    Files.createDirectories(out.resolve(d));
+                }
+                List<String> order = new ArrayList<>(writes.size() + copies.size());
+                order.addAll(writes.keySet());
+                order.addAll(copies.keySet());
+                Collections.sort(order);
+                for (String rel : order) {
+                    Path p = out.resolve(rel);
+                    Path parent = p.getParent();
+                    if (parent != null) {
+                        Files.createDirectories(parent);
+                    }
+                    byte[] data = writes.get(rel);
+                    if (data != null) {
+                        Files.write(p, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+                    } else {
+                        Files.copy(copies.get(rel), p, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                }
+                // inputs without a manifest still need one when multi-release
+                // output was requested, or the JVM ignores META-INF/versions
+                if (ManifestUtils.needsMultiRelease(downgrader.flags)) {
+                    Path mfPath = out.resolve(ManifestUtils.MANIFEST_PATH);
+                    if (!Files.exists(mfPath)) {
+                        Path parent = mfPath.getParent();
+                        if (parent != null) {
+                            Files.createDirectories(parent);
+                        }
+                        Manifest manifest = new Manifest();
+                        ManifestUtils.applyDowngradeAttributes(manifest, downgrader.flags);
+                        try (OutputStream os = Files.newOutputStream(mfPath, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                            manifest.write(os);
+                        }
+                    }
+                }
+
+                // pin after every write — including the synthesized manifest
+                // and its META-INF dir above — so no entry keeps wall-clock time
+                OutputUtils.pinTimestamps(out);
             }
         } catch (ExecutionException | InterruptedException | URISyntaxException e) {
             throw new RuntimeException(e);

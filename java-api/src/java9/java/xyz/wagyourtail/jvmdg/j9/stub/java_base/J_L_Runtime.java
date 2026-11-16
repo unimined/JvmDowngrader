@@ -261,7 +261,7 @@ public class J_L_Runtime {
             static final String PLUS_GROUP = "PLUS";
             static final String BUILD_GROUP = "BUILD";
             static final String OPT_GROUP = "OPT";
-            private static final String VNUM = "(?:1\\.)?(?<VNUM>[1-9][0-9]*(?:(?:\\.0)*[._][1-9][0-9]*)*)";
+            private static final String VNUM = "(?<VNUM>[1-9][0-9]*(?:(?:\\.0)*[._][1-9][0-9]*)*)";
             private static final String PRE = "(?:-(?<PRE>[a-zA-Z0-9-_]+?))?";
             private static final String BUILD = "(?:(?<PLUS>\\+|-b)(?<BUILD>[0-9]+)?)?";
             private static final String OPT = "(?:-(?<OPT>[-~a-zA-Z0-9.]+))?";

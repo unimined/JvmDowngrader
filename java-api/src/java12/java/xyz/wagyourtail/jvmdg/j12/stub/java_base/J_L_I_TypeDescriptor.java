@@ -137,12 +137,16 @@ public interface J_L_I_TypeDescriptor {
 
         @Stub(noSpecial = true)
         static OfMethod changeReturnType(@Coerce(OfMethod.class) Object self, OfField newReturnType) {
-            return jvmdg$checkcast(self).changeReturnType(newReturnType);
+            // callers pass the real F type (e.g. Class) which is not a
+            // J_L_I_TypeDescriptor$OfField, so wrap before the impl's bridge cast
+            return jvmdg$checkcast(self).changeReturnType(
+                J_L_I_TypeDescriptor.OfField.jvmdg$checkcast(newReturnType));
         }
 
         @Stub(noSpecial = true)
         static OfMethod changeParameterType(@Coerce(OfMethod.class) Object self, int index, OfField newParameterType) {
-            return jvmdg$checkcast(self).changeParameterType(index, newParameterType);
+            return jvmdg$checkcast(self).changeParameterType(index,
+                J_L_I_TypeDescriptor.OfField.jvmdg$checkcast(newParameterType));
         }
 
         @Stub(noSpecial = true)
@@ -152,6 +156,9 @@ public interface J_L_I_TypeDescriptor {
 
         @Stub(noSpecial = true)
         static OfMethod insertParameterTypes(@Coerce(OfMethod.class) Object self, int index, OfField... newParameterTypes) {
+            // the real MethodType bridge casts OfField[] -> Class[] which always
+            // fails; the impl's OfField[] -> ClassConstable[] bridge reproduces
+            // the same CCE
             return jvmdg$checkcast(self).insertParameterTypes(index, newParameterTypes);
         }
 

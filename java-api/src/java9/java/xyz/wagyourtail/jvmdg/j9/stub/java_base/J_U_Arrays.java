@@ -14,6 +14,8 @@ public class J_U_Arrays {
         long[] a, int aFromIndex, int aToIndex,
         long[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
@@ -35,6 +37,8 @@ public class J_U_Arrays {
         int[] a, int aFromIndex, int aToIndex,
         int[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
@@ -56,6 +60,8 @@ public class J_U_Arrays {
         short[] a, int aFromIndex, int aToIndex,
         short[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
@@ -77,6 +83,8 @@ public class J_U_Arrays {
         char[] a, int aFromIndex, int aToIndex,
         char[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
@@ -98,6 +106,8 @@ public class J_U_Arrays {
         byte[] a, int aFromIndex, int aToIndex,
         byte[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
@@ -119,6 +129,8 @@ public class J_U_Arrays {
         boolean[] a, int aFromIndex, int aToIndex,
         boolean[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
@@ -140,6 +152,8 @@ public class J_U_Arrays {
         double[] a, int aFromIndex, int aToIndex,
         double[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
@@ -149,7 +163,7 @@ public class J_U_Arrays {
             return true;
         }
         for (int i = 0; i < aLength; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i]) {
+            if (Double.compare(a[aFromIndex + i], b[bFromIndex + i]) != 0) {
                 return false;
             }
         }
@@ -161,6 +175,8 @@ public class J_U_Arrays {
         float[] a, int aFromIndex, int aToIndex,
         float[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
@@ -170,7 +186,7 @@ public class J_U_Arrays {
             return true;
         }
         for (int i = 0; i < aLength; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i]) {
+            if (Float.compare(a[aFromIndex + i], b[bFromIndex + i]) != 0) {
                 return false;
             }
         }
@@ -182,6 +198,8 @@ public class J_U_Arrays {
         Object[] a, int aFromIndex, int aToIndex,
         Object[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
@@ -224,6 +242,8 @@ public class J_U_Arrays {
         T[] b, int bFromIndex, int bToIndex,
         Comparator<? super T> comparator
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         if (aLength != bLength) {
@@ -265,6 +285,8 @@ public class J_U_Arrays {
         boolean[] a, int aFromIndex, int aToIndex,
         boolean[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -302,6 +324,8 @@ public class J_U_Arrays {
         byte[] a, int aFromIndex, int aToIndex,
         byte[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -339,6 +363,8 @@ public class J_U_Arrays {
         byte[] a, int aFromIndex, int aToIndex,
         byte[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -376,6 +402,8 @@ public class J_U_Arrays {
         short[] a, int aFromIndex, int aToIndex,
         short[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -413,6 +441,8 @@ public class J_U_Arrays {
         short[] a, int aFromIndex, int aToIndex,
         short[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -450,6 +480,8 @@ public class J_U_Arrays {
         char[] a, int aFromIndex, int aToIndex,
         char[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -487,6 +519,8 @@ public class J_U_Arrays {
         int[] a, int aFromIndex, int aToIndex,
         int[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -524,6 +558,8 @@ public class J_U_Arrays {
         int[] a, int aFromIndex, int aToIndex,
         int[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -561,6 +597,8 @@ public class J_U_Arrays {
         long[] a, int aFromIndex, int aToIndex,
         long[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -598,6 +636,8 @@ public class J_U_Arrays {
         long[] a, int aFromIndex, int aToIndex,
         long[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -635,6 +675,8 @@ public class J_U_Arrays {
         float[] a, int aFromIndex, int aToIndex,
         float[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -672,6 +714,8 @@ public class J_U_Arrays {
         double[] a, int aFromIndex, int aToIndex,
         double[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -716,6 +760,8 @@ public class J_U_Arrays {
         T[] a, int aFromIndex, int aToIndex,
         T[] b, int bFromIndex, int bToIndex
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -754,6 +800,8 @@ public class J_U_Arrays {
         T[] b, int bFromIndex, int bToIndex,
         Comparator<? super T> c
     ) {
+        ArraySupport.rangeCheck(a.length, aFromIndex, aToIndex);
+        ArraySupport.rangeCheck(b.length, bFromIndex, bToIndex);
         int aLength = aToIndex - aFromIndex;
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
@@ -1001,7 +1049,7 @@ public class J_U_Arrays {
             return -1;
         }
         for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) {
+            if (Float.compare(a[i], b[i]) != 0) {
                 return i;
             }
         }
@@ -1022,7 +1070,7 @@ public class J_U_Arrays {
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
         for (int i = 0; i < length; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i]) {
+            if (Float.compare(a[aFromIndex + i], b[bFromIndex + i]) != 0) {
                 return i;
             }
         }
@@ -1039,7 +1087,7 @@ public class J_U_Arrays {
             return -1;
         }
         for (int i = 0; i < length; i++) {
-            if (a[i] != b[i]) {
+            if (Double.compare(a[i], b[i]) != 0) {
                 return i;
             }
         }
@@ -1060,7 +1108,7 @@ public class J_U_Arrays {
         int bLength = bToIndex - bFromIndex;
         int length = Math.min(aLength, bLength);
         for (int i = 0; i < length; i++) {
-            if (a[aFromIndex + i] != b[bFromIndex + i]) {
+            if (Double.compare(a[aFromIndex + i], b[bFromIndex + i]) != 0) {
                 return i;
             }
         }

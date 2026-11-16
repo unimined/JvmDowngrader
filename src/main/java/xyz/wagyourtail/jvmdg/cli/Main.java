@@ -10,8 +10,11 @@ import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -24,6 +27,8 @@ import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
 
 public class Main {
     protected final Flags flags = new Flags();
@@ -70,6 +75,8 @@ public class Main {
             ),
             new Arguments("bootstrap", "Bootstraps a downgrading environment, unparsed args will get passed", null, null).addChildren(
                 new Arguments("--main", "Main class to run\n  (required)", new String[]{"-m"}, new String[]{"class"}),
+                new Arguments("--seqmain", "Like --main but run sequentially on the driver thread first\n  (for mains observing JVM-global state like the child process list)", null, new String[]{"class"}),
+                new Arguments("--batch", "Run every --main in one downgrading environment, framing each\n  (===JVMDG-BEGIN <name> / ===JVMDG-EXIT <code>)", null, null),
                 classpath,
                 new Arguments("", "Arguments for main run", new String[]{}, new String[]{"args..."})
             )
@@ -173,6 +180,7 @@ public class Main {
                     break;
                 case "--disable-inlining":
                     flags.shadeInlining = false;
+                    break;
                 case "--noColor":
                     flags.logAnsiColors = false;
                     break;
@@ -293,7 +301,11 @@ public class Main {
                         if (!Constants.DIR.exists() && !Constants.DIR.mkdirs()) {
                             throw new IOException("Failed to create directory: " + Constants.DIR);
                         }
-                        output = File.createTempFile(input.getName(), ".jar", Constants.DIR).getAbsoluteFile();
+                        String tempPrefix = input.getName();
+                        if (tempPrefix.length() < 3) {
+                            tempPrefix = tempPrefix + "___";
+                        }
+                        output = File.createTempFile(tempPrefix, ".jar", Constants.DIR).getAbsoluteFile();
                         output.deleteOnExit();
                         tempFiles.add(output);
                     } else {
@@ -408,14 +420,15 @@ public class Main {
     }
 
     public void bootstrap(Map<String, List<String[]>> args) throws Throwable {
-        if (!args.containsKey("--main")) {
+        if (!args.containsKey("--main") && !args.containsKey("--seqmain")) {
             throw new IllegalArgumentException("No main class specified");
         }
-        if (args.get("--main").size() > 1) {
-            throw new IllegalArgumentException("Multiple main classes specified");
+        boolean batch = args.containsKey("--batch");
+        int mainCount = (args.containsKey("--main") ? args.get("--main").size() : 0) + (args.containsKey("--seqmain") ? args.get("--seqmain").size() : 0);
+        if (mainCount > 1 && !batch) {
+            throw new IllegalArgumentException("Multiple main classes specified without --batch");
         }
-        String main = args.get("--main").get(0)[0];
-        String[] bootstrapArgs;
+        final String[] bootstrapArgs;
         if (args.containsKey("")) {
             bootstrapArgs = args.get("").get(0);
         } else {
@@ -426,11 +439,164 @@ public class Main {
 
         try (ClassDowngrader currentVersionDowngrader = ClassDowngrader.getCurrentVersionDowngrader(flags)) {
             currentVersionDowngrader.getClassLoader().addDelegate(classpath.toArray(new URL[0]));
-            invokeMain(Class.forName(main, false, currentVersionDowngrader.getClassLoader()), bootstrapArgs);
+            final PrintStream realOut = System.out;
+            if (!batch) {
+                if (args.containsKey("--main")) {
+                    for (String[] m : args.get("--main")) {
+                        invokeMain(Class.forName(m[0], false, currentVersionDowngrader.getClassLoader()), bootstrapArgs);
+                    }
+                }
+                if (args.containsKey("--seqmain")) {
+                    for (String[] m : args.get("--seqmain")) {
+                        invokeMain(Class.forName(m[0], false, currentVersionDowngrader.getClassLoader()), bootstrapArgs);
+                    }
+                }
+                return;
+            }
+            List<String[]> mains = args.containsKey("--main") ? args.get("--main") : Collections.<String[]>emptyList();
+            // sequential phase: runs before any worker thread exists, so a
+            // main enumerating children/threads sees only its own
+            if (args.containsKey("--seqmain")) {
+                PrintStream realErr = System.err;
+                for (String[] m : args.get("--seqmain")) {
+                    String name = m[0];
+                    ByteArrayOutputStream buf = new ByteArrayOutputStream();
+                    int exit = 0;
+                    PrintStream cap = new PrintStream(buf, true, "UTF-8");
+                    System.setOut(cap);
+                    System.setErr(cap);
+                    try {
+                        invokeMain(Class.forName(name, false, currentVersionDowngrader.getClassLoader()), bootstrapArgs);
+                    } catch (InvocationTargetException e) {
+                        e.getCause().printStackTrace(cap);
+                        exit = 1;
+                    } catch (Throwable t) {
+                        t.printStackTrace(cap);
+                        exit = 1;
+                    } finally {
+                        cap.flush();
+                        System.setOut(realOut);
+                        System.setErr(realErr);
+                    }
+                    emit(realOut, name, buf, exit);
+                }
+            }
+            int threads = Integer.getInteger("jvmdg.batch.threads",
+                Math.max(1, Math.min(mains.size(), Runtime.getRuntime().availableProcessors() / 4)));
+            final Router router = new Router(realOut);
+            System.setOut(new PrintStream(router, true, "UTF-8"));
+            System.setErr(new PrintStream(router, true, "UTF-8"));
+            final Semaphore permits = new Semaphore(threads);
+            final List<Thread> workers = new ArrayList<>();
+            for (final String[] m : mains) {
+                permits.acquire();
+                // own ThreadGroup so threads the main spawns inherit its routing
+                final ThreadGroup group = new ThreadGroup("jvmdg:" + m[0]);
+                final ByteArrayOutputStream buf = router.register(group);
+                final ClassDowngrader downgrader = currentVersionDowngrader;
+                Thread worker = new Thread(group, new Runnable() {
+                    @Override
+                    public void run() {
+                        int exit = 0;
+                        String main = m[0];
+                        try {
+                            invokeMain(Class.forName(main, false, downgrader.getClassLoader()), bootstrapArgs);
+                        } catch (InvocationTargetException e) {
+                            e.getCause().printStackTrace();
+                            exit = 1;
+                        } catch (Throwable t) {
+                            t.printStackTrace();
+                            exit = 1;
+                        } finally {
+                            try {
+                                emit(realOut, main, buf, exit);
+                            } catch (IOException e) {
+                                realOut.println("===JVMDG-BEGIN " + main);
+                                realOut.println("===JVMDG-EXIT 1");
+                            }
+                            permits.release();
+                        }
+                    }
+                });
+                workers.add(worker);
+                worker.start();
+            }
+            for (Thread worker : workers) {
+                worker.join();
+            }
         }
     }
 
-    private void invokeMain(Class<?> clazz, String[] bootstrapArgs) throws Throwable {
+    // emitted atomically so frames from parallel mains never interleave
+    private static void emit(PrintStream realOut, String name, ByteArrayOutputStream buf, int exit) throws IOException {
+        synchronized (realOut) {
+            realOut.println("===JVMDG-BEGIN " + name);
+            realOut.print(buf.toString("UTF-8"));
+            realOut.println("===JVMDG-EXIT " + exit);
+        }
+    }
+
+    /**
+     * Routes writes to the capturing buffer of the current thread's group (or
+     * any ancestor group — so threads a main spawns stay captured). Threads
+     * outside any registered group fall through to the real stream, where
+     * their output lands between frames and is ignored by the frame parser.
+     */
+    private static final class Router extends OutputStream {
+        private final PrintStream real;
+        private final Map<ThreadGroup, ByteArrayOutputStream> buffers = new ConcurrentHashMap<ThreadGroup, ByteArrayOutputStream>();
+
+        Router(PrintStream real) {
+            this.real = real;
+        }
+
+        ByteArrayOutputStream register(ThreadGroup group) {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            buffers.put(group, buf);
+            // intentionally never removed: threads still running after their
+            // frame was emitted keep routing into the dead buffer rather than
+            // leaking into another main's frame
+            return buf;
+        }
+
+        private OutputStream route() {
+            for (ThreadGroup g = Thread.currentThread().getThreadGroup(); g != null; g = g.getParent()) {
+                ByteArrayOutputStream buf = buffers.get(g);
+                if (buf != null) {
+                    return buf;
+                }
+            }
+            return real;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            route().write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            route().write(b, off, len);
+        }
+    }
+
+    // package-private: private would force a synthetic nestmate accessor on
+    // downgraded jars, leaking an extra frame into stack walks
+    void invokeMain(Class<?> clazz, String[] bootstrapArgs) throws Throwable {
+        // match `java -cp` semantics: the TCCL of the thread running main is
+        // the app's classloader, so ServiceLoader.load / resource lookups see
+        // the downgraded classpath (a plain launcher sets it to the app loader)
+        Thread thread = Thread.currentThread();
+        ClassLoader prevTccl = thread.getContextClassLoader();
+        thread.setContextClassLoader(clazz.getClassLoader());
+        try {
+            invokeMainImpl(clazz, bootstrapArgs);
+        } finally {
+            thread.setContextClassLoader(prevTccl);
+        }
+    }
+
+    void invokeMainImpl(Class<?> clazz, String[] bootstrapArgs) throws Throwable {
 //        0. A public static void main(String[] args) method
 //        1. A static void main(String[] args) method of non-private access (i.e., public, protected or package) declared in the launched class,
 //        2. A static void main() method of non-private access declared in the launched class,

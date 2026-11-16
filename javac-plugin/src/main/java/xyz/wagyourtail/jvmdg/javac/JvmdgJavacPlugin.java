@@ -78,7 +78,6 @@ public class JvmdgJavacPlugin extends Main implements Plugin, Closeable {
             throw new IOException("Failed to create directory: " + Constants.DIR);
         }
         Path files = Files.createTempDirectory(Constants.DIR.toPath(), "downgrade").toAbsolutePath();
-        System.out.println(files);
         files.toFile().deleteOnExit();
 
         targets.put(tempFiles.poll().toPath(), files);

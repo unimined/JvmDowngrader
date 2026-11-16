@@ -47,7 +47,7 @@ public class J_U_C_Future {
             while (true) {
                 try {
                     future.get();
-                    return null;
+                    throw new IllegalStateException("Task did not complete with exception");
                 } catch (InterruptedException e) {
                     interrupted = true;
                 } catch (ExecutionException e) {

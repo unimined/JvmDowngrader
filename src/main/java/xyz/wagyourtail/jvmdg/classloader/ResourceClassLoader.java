@@ -14,11 +14,14 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.jar.JarFile;
 
 public class ResourceClassLoader extends ClassLoader implements Closeable {
-    private final List<String> multiVersionList = new ArrayList<>();
-    private final List<ResourceProvider> delegates = new ArrayList<>();
+    // delegates are added while parallel downgrade tasks enumerate them —
+    // COW list so findResources never hits ConcurrentModificationException
+    private final List<ResourceProvider> delegates = new CopyOnWriteArrayList<>();
+    private volatile List<String> multiVersionList = null;
 
     public ResourceClassLoader(ClassLoader parent) {
         super(parent);
@@ -62,20 +65,24 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
     }
 
     protected List<String> multiVersionPrefixes() {
-        if (multiVersionList.isEmpty()) {
-            synchronized (multiVersionList) {
-                if (multiVersionList.isEmpty()) {
+        List<String> mv = multiVersionList;
+        if (mv == null) {
+            synchronized (this) {
+                mv = multiVersionList;
+                if (mv == null) {
+                    mv = new ArrayList<>();
                     for (int i = maxClassVersionSupported(); i >= 51; --i) {
                         if (i == 51) {
-                            multiVersionList.add("");
+                            mv.add("");
                         } else {
-                            multiVersionList.add("META-INF/versions/" + Utils.classVersionToMajorVersion(i) + "/");
+                            mv.add("META-INF/versions/" + Utils.classVersionToMajorVersion(i) + "/");
                         }
                     }
+                    multiVersionList = mv;
                 }
             }
         }
-        return multiVersionList;
+        return mv;
     }
 
     protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -98,7 +105,8 @@ public class ResourceClassLoader extends ClassLoader implements Closeable {
 
     @Override
     protected URL findResource(String name) {
-        return findResources(name).nextElement();
+        Enumeration<URL> resources = findResources(name);
+        return resources.hasMoreElements() ? resources.nextElement() : null;
     }
 
     @Override

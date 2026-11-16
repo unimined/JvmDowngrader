@@ -85,7 +85,10 @@ public class ClassDowngrader implements Closeable {
     }
 
     @NotNull
-    public static ClassDowngrader getCurrentVersionDowngrader() {
+    public static synchronized ClassDowngrader getCurrentVersionDowngrader() {
+        // synchronized: unsynchronized lazy init could construct the shared
+        // downgrader twice (leaking a classloader/providers) or publish a
+        // partially-constructed instance to racing callers
         if (currentVersionDowngrader == null) {
             Flags flags = new Flags();
             flags.classVersion = Utils.getCurrentClassVersion();
@@ -112,9 +115,9 @@ public class ClassDowngrader implements Closeable {
             for (VersionProvider provider : ServiceLoader.load(VersionProvider.class, classLoader)) {
                 if (downgraders.containsKey(provider.inputVersion)) {
                     VersionProvider prev = downgraders.get(provider.inputVersion);
-                    if (prev.priotity < provider.priotity) {
+                    if (prev.priority < provider.priority) {
                         downgraders.put(provider.inputVersion, provider);
-                    } else if (prev.priotity == provider.priotity) {
+                    } else if (prev.priority == provider.priority) {
                         logger.warn(
                             "Duplicate version providers with same priority for " + provider.inputVersion
                                 + " \"" + provider.getClass().getName() + "\" and \"" + prev.getClass().getName() + "\""
@@ -321,8 +324,8 @@ public class ClassDowngrader implements Closeable {
 
     public Map<String, byte[]> downgrade(/* in out */ AtomicReference<String> name, @NotNull byte[] bytes, boolean enableRuntime, final Function<String, byte[]> getExtraRead) throws IllegalClassFormatException {
         // check magic
-        if (bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE || bytes[2] != (byte) 0xBA ||
-            bytes[3] != (byte) 0xBE) {
+        if (bytes.length < 8 || bytes[0] != (byte) 0xCA || bytes[1] != (byte) 0xFE ||
+            bytes[2] != (byte) 0xBA || bytes[3] != (byte) 0xBE) {
             throw new IllegalClassFormatException(name.get());
         }
         // ignore minor version

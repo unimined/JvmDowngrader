@@ -251,7 +251,19 @@ public interface J_L_C_ClassDesc extends J_L_C_ConstantDesc, J_L_I_TypeDescripto
 
         @Override
         public String toString() {
-            return "ClassDesc[" + displayName() + "]";
+            if (isPrimitive()) {
+                return "PrimitiveClassDesc[" + displayName() + "]";
+            }
+            if (isArray()) {
+                int arrayCount = 0;
+                String desc = descriptor;
+                while (desc.charAt(arrayCount) == '[') {
+                    arrayCount++;
+                }
+                return "ArrayClassDesc[" + ofDescriptor(desc.substring(arrayCount)).displayName() +
+                    ", " + arrayCount + "]";
+            }
+            return "ClassOrInterfaceDesc[" + displayName() + "]";
         }
 
     }

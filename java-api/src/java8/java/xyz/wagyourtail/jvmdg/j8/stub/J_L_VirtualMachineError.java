@@ -31,25 +31,34 @@ public class J_L_VirtualMachineError {
         // stack: String, VirtualMachineError, Throwable
         // call initCause
         list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/VirtualMachineError", "initCause", "(Ljava/lang/Throwable;)Ljava/lang/Throwable;", false));
-        // stack: String
+        // stack: VirtualMachineError, String, VirtualMachineError (initCause returns this)
+        // drop initCause's return, then the surplus copied String
         list.add(new InsnNode(Opcodes.POP));
+        list.add(new InsnNode(Opcodes.POP));
+        // stack: VirtualMachineError
         mnode.instructions.insert(node, list);
         mnode.instructions.remove(node);
     }
 
     @Modify(ref = @Ref(value = "java/lang/VirtualMachineError", member = "<init>", desc = "(Ljava/lang/Throwable;)V"))
     public static void init2(MethodNode mnode, int i) {
-        // stack:  VirtualMachineError, Throwable
         MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
         InsnList list = new InsnList();
+        // stack: VirtualMachineError, Throwable
+        // Throwable(Throwable) sets detailMessage = cause == null ? null : cause.toString()
         list.add(new InsnNode(Opcodes.DUP2));
         // stack: VirtualMachineError, Throwable, VirtualMachineError, Throwable
-        list.add(new InsnNode(Opcodes.POP));
-        // stack: VirtualMachineError, Throwable, VirtualMachineError
-        // call init
-        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/VirtualMachineError", "<init>", "()V", false));
+        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "xyz/wagyourtail/jvmdg/j8/intl/ExceptionHelper", "causeMessage", "(Ljava/lang/Throwable;)Ljava/lang/String;", false));
+        // stack: VirtualMachineError, Throwable, VirtualMachineError, String
+        // call init(String)
+        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/VirtualMachineError", "<init>", "(Ljava/lang/String;)V", false));
         // stack: VirtualMachineError, Throwable
+        // call initCause
         list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/VirtualMachineError", "initCause", "(Ljava/lang/Throwable;)Ljava/lang/Throwable;", false));
+        // stack: VirtualMachineError, VirtualMachineError (initCause returns this)
+        list.add(new InsnNode(Opcodes.POP));
+        // stack: VirtualMachineError
+
         mnode.instructions.insert(node, list);
         mnode.instructions.remove(node);
     }

@@ -12,7 +12,7 @@ public class J_U_UUID {
 
     @Stub(ref = @Ref("java/util/UUID"))
     public static UUID ofEpochMillis(long j) {
-        if (j > 0x0000FFFFFFFFFFFFL) {
+        if (j < 0 || j > 0x0000FFFFFFFFFFFFL) {
             throw new IllegalArgumentException("Supplied timestamp: " + j + " does not fit in 48 bytes");
         }
         byte[] bytes = new byte[18];

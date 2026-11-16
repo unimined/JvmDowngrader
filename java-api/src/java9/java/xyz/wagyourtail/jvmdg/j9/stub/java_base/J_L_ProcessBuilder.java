@@ -40,6 +40,10 @@ public class J_L_ProcessBuilder {
                     CompletableFuture.runAsync(() -> {
                         try {
                             J_I_InputStream.transferTo(finalPrevOutput, nextInput);
+                            // the real pipeline wires OS fds so upstream exit
+                            // gives the downstream process stdin EOF; the pump
+                            // has to close the pipe write-end to match
+                            nextInput.close();
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }

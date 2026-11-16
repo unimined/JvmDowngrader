@@ -371,7 +371,7 @@ public class Java7Downgrader extends AllVersionDowngrader {
         private final Type type;
 
         public MethodTypeField(Type type, String name, Type methodType) {
-            super(Opcodes.ACC_PUBLIC, name, methodType.getDescriptor(), null, null);
+            super(Opcodes.ASM9, Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL, name, methodType.getDescriptor(), null, null);
             this.type = type;
         }
     }
