@@ -36,9 +36,9 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention
             _inputCollection = value
 
             // use _inputCollection to finalize it immediately
-            val fd = _inputCollection.map { it to temporaryDir.resolve(it.name) }
-            outputs.dirs(*fd.filter { it.first.isDirectory }.map { it.second }.toTypedArray())
-            outputs.files(*fd.filter { it.first.isFile }.map { it.second }.toTypedArray())
+            val fd = _inputCollection.mappedOutputs()
+            outputs.dirs(*fd.filter { it.key.isDirectory }.values.toTypedArray())
+            outputs.files(*fd.filter { it.key.isFile }.values.toTypedArray())
 
         }
 
@@ -48,7 +48,21 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention
 
     @get:Internal
     val outputMap: Map<File, File>
-        get() = inputCollection.associateWith { temporaryDir.resolve(it.name) }
+        get() = inputCollection.mappedOutputs()
+
+    /**
+     * Disambiguated output paths — inputs sharing a file name (e.g.
+     * two `main` dirs from different source sets) get `-1`, `-2`, …
+     * suffixes so their outputs cannot overwrite each other.
+     */
+    private fun FileCollection.mappedOutputs(): Map<File, File> {
+        val seen = mutableMapOf<String, Int>()
+        return associateWith { f ->
+            val idx = seen.getOrDefault(f.name, 0)
+            seen[f.name] = idx + 1
+            temporaryDir.resolve(if (idx == 0) f.name else "${f.name}-$idx")
+        }
+    }
 
     /**
      * this is the true output, gradle just doesn't have a
@@ -62,7 +76,21 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention
     init {
         group = "JVMDowngrader"
         convention(project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as DowngradeFlags)
-        classpath = project.extensions.getByType(SourceSetContainer::class.java).getByName("main").runtimeClasspath
+        classpath = project.extensions.findByType(SourceSetContainer::class.java)
+            ?.findByName("main")?.runtimeClasspath ?: project.files()
+    }
+
+    /**
+     * Bind a [org.gradle.api.tasks.SourceSet]'s compiled class dirs as
+     * inputs and its `runtimeClasspath` for member resolution — the
+     * "downgrade a source set's output" case.
+     *
+     * @since 2.1.0
+     */
+    fun sourceSet(name: String) {
+        val sourceSet = project.extensions.getByType(SourceSetContainer::class.java).getByName(name)
+        inputCollection = sourceSet.output.classesDirs
+        classpath = sourceSet.runtimeClasspath
     }
 
     @TaskAction
@@ -76,7 +104,7 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention
 
             outputs.files.forEach { it.deleteRecursively() }
 
-            val downgraded = toDowngrade.map { temporaryDir.resolve(it.name) }.map {
+            val downgraded = toDowngrade.map { outputMap[it.toFile()] ?: temporaryDir.resolve(it.name) }.map {
                 if (it.extension == "jar" || it.extension == "zip") {
                     val fs = Utils.openZipFileSystem(it.toPath(), true)
                     fileSystems.add(fs)

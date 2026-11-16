@@ -30,6 +30,8 @@ import java.util.jar.Manifest;
 
 public class ApiShader {
 
+    private static final Object API_DOWNGRADE_LOCK = new Object();
+
     @Deprecated
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
@@ -133,8 +135,19 @@ public class ApiShader {
                 }
                 String beforeExt = name.substring(0, idx);
                 String ext = name.substring(idx);
+                // the sha1 in the name makes the path content-addressed, so a
+                // hit is reusable; guard + lock since parallel transforms/tasks
+                // would otherwise race writing the same file
                 Path targetPath = file.toPath().resolveSibling(beforeExt + "-" + Utils.getShortSha1(file) + "-downgraded-" + flags.classVersion + ext);
-                ZipDowngrader.downgradeZip(downgrader, file.toPath(), new HashSet<URL>(), targetPath);
+                if (!Files.exists(targetPath)) {
+                    synchronized (API_DOWNGRADE_LOCK) {
+                        if (!Files.exists(targetPath)) {
+                            Path tmp = targetPath.resolveSibling(targetPath.getFileName() + ".tmp");
+                            ZipDowngrader.downgradeZip(downgrader, file.toPath(), new HashSet<URL>(), tmp);
+                            Files.move(tmp, targetPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    }
+                }
                 downgradedApis.add(targetPath);
             }
         } catch (NoSuchAlgorithmException nse) {

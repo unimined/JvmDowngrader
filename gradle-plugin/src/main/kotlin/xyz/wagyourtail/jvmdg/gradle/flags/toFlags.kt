@@ -49,6 +49,9 @@ fun convention(self: DowngradeFlags, target: DowngradeFlags) = with(self) {
     if (this is ShadeFlags && target is ShadeFlags) {
         shadeInlining.convention(target.shadeInlining)
     }
+    if (self is EnabledFlag && target is EnabledFlag) {
+        self.enabled.convention(target.enabled)
+    }
 }
 
 fun DowngradeFlags.convention(target: DowngradeFlags) {
@@ -57,7 +60,13 @@ fun DowngradeFlags.convention(target: DowngradeFlags) {
 
 interface FlagsConvention : DowngradeFlags {
 
-    @Deprecated("convention(jvmdg) is no longer nececairy when specifying a custom task")
+    /**
+     * Conventions this flags carrier's unset properties from
+     * [target] — the binding mechanism for spec-scoped flags:
+     * `convention(jvmdg.specs["name"])` inside a task makes the
+     * spec's values win while unset flags keep the current
+     * conventions.
+     */
     fun convention(target: DowngradeFlags) {
         convention(this, target)
     }
