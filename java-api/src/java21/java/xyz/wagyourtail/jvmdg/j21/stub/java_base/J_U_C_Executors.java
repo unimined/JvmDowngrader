@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j21.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.j21.impl.ThreadPerTaskExecutor;
+import xyz.wagyourtail.jvmdg.j21.impl.VirtualThreadPoolExecutor;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -12,7 +13,7 @@ public class J_U_C_Executors {
     @Stub(ref = @Ref(value = "Ljava/util/concurrent/Executors;", member = "newVirtualThreadPerTaskExecutor",
         desc = "()Ljava/util/concurrent/ExecutorService;"))
     public static ExecutorService newVirtualThreadPerTaskExecutor() {
-        return new ThreadPerTaskExecutor(J_L_Thread.ofVirtual().factory());
+        return new VirtualThreadPoolExecutor();
     }
 
     @Stub(ref = @Ref(value = "Ljava/util/concurrent/Executors;", member = "newThreadPerTaskExecutor",
