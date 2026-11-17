@@ -14,7 +14,14 @@ public class J_I_Console {
 
     static {
         try {
-            ISTTY = IMPL_LOOKUP.findStatic(Console.class, "istty", MethodType.methodType(boolean.class));
+            MethodHandle istty;
+            try {
+                istty = IMPL_LOOKUP.findStatic(Console.class, "istty", MethodType.methodType(boolean.class));
+            } catch (NoSuchMethodException e) {
+                // 17.0.17+/21.0.9+ console rework replaced istty() with per-fd checks
+                istty = IMPL_LOOKUP.findStatic(Console.class, "isStdoutTty", MethodType.methodType(boolean.class));
+            }
+            ISTTY = istty;
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
