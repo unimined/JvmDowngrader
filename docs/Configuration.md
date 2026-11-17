@@ -54,38 +54,40 @@ property. Value forms: `bool`, `int`, `enum` (`Log-Level`: `trace` `debug`
 opcode), `set` (comma/space/pipe-separated), `path-list` (platform path
 separator), `wildcard-map` (comma-separated patterns).
 
+<!-- flag-table:begin -->
 | Key | CLI flag | System property | Gradle DSL | Form |
 |---|---|---|---|---|
-| `Target` | `--classVersion` / `-c` | `jvmdg.classVersion` | `downgradeTo: JavaVersion` | java-version / int |
-| `Api` | `--api` / `-a` | `jvmdg.javaApi` | `apiJar` | path-list |
-| `Quiet` *(deprecated)* | `--quiet` / `-q` | `jvmdg.quiet` | `quiet` | const-true |
-| `Log-Ansi-Colors` | `--noColor` / `-nc` (const-false) | `jvmdg.logAnsiColors` | `logAnsiColors` | bool |
-| `Log-Level` | `--logLevel` / `-l` | `jvmdg.logLevel` | `logLevel` | enum |
-| `Ignore-Warnings-In` | `--ignoreWarningsIn` / `-i` | `jvmdg.ignoreWarnings` | `ignoreWarningsIn` | wildcard-map |
 | `Allow-Maven` | — | `jvmdg.maven` | `allowMaven` | bool |
-| `Print-Debug` *(deprecated)* | `debug --print` / `-p` | `jvmdg.debug` | `debug` | const-true |
-| `Shade-Inlining` | `--disable-inlining` (const-false) | `jvmdg.shadeInlining` | `shadeInlining` | bool |
-| `Exclude-Stub-Versions` | `debug --skipStubs` / `-s` | `jvmdg.debug.skipStubs` | `debugSkipStubs` | version-set |
-| `Exclude-Jeps` | `debug --skipJEP` / `-sj` | `jvmdg.debug.skipJeps` | `debugSkipJeps` | int-set |
-| `Debug-Dump-Classes` | `debug --dumpClasses` / `-d` | `jvmdg.debug.dumpClasses` | `debugDumpClasses` | const-true / bool |
-| `Exclude-Stubs` | `debug --skipStub` / `-ss` | `jvmdg.debug.skipStub` | `debugSkipStub` | member-set |
-| `Stub-Policy` | `--stubPolicy` | `jvmdg.stubPolicy` | `stubPolicy` | `full`/`noBehavior`/`mechanical` |
-| `On-Missing-Api` | `--onMissingApi` | `jvmdg.onMissingApi` | `onMissingApi` | `error`/`warn` |
-| `Include-Stubs` | `--includeStub` / `-is` | `jvmdg.includeStub` | `includeStub` | member-set |
-| `Debug-No-Synthetic` | `debug --noSynthetic` / `-ns` | `jvmdg.debug.noSynthetic` | `debugNoSynthetic` | const-true / bool |
+| `Allow-Preview` | `--allowPreview` (const-true) | `jvmdg.allowPreview` | `allowPreview` | bool |
+| `Api` | `--api` / `-a` | `jvmdg.javaApi` | `apiJar` | path-list |
+| `Debug-Dump-Classes` | `debug --dumpClasses` / `-d` (const-true) | `jvmdg.debug.dumpClasses` | `debugDumpClasses` | bool |
 | `Debug-No-Fuse` | — | `jvmdg.debug.noFuse` | `debugNoFuse` | bool |
 | `Debug-No-Stub-Idx` | — | `jvmdg.debug.noStubIdx` | `debugNoStubIdx` | bool |
-| `Multi-Release-Original` | `--multiReleaseOriginal` / `-mro` | `jvmdg.multiReleaseOriginal` | `multiReleaseOriginal` | const-true / bool |
+| `Debug-No-Synthetic` | `debug --noSynthetic` / `-ns` (const-true) | `jvmdg.debug.noSynthetic` | `debugNoSynthetic` | bool |
+| `Exclude-Jeps` | `debug --skipJEP` / `-sj` | `jvmdg.debug.skipJeps` | `debugSkipJeps` | int-set |
+| `Exclude-Stub-Versions` | `debug --skipStubs` / `-s` | `jvmdg.debug.skipStubs` | `debugSkipStubs` | version-set |
+| `Exclude-Stubs` | `debug --skipStub` / `-ss` | `jvmdg.debug.skipStub` | `debugSkipStub` | member-set |
+| `Ignore-Embedded-Rules` | `--ignoreEmbeddedRules` (const-true) | — | `ignoreEmbeddedRules` | bool |
+| `Ignore-Warnings-In` | `--ignoreWarningsIn` / `-i` | `jvmdg.ignoreWarnings` | `ignoreWarningsIn` | wildcard-map |
+| `Include-Stubs` | `--includeStub` / `-is` | `jvmdg.includeStub` | `includeStub` | member-set |
+| `Keep-Embedded-Rules` | `--keepEmbeddedRules` (const-true) | — | `keepEmbeddedRules` | bool |
+| `Log-Ansi-Colors` | `--noColor` / `-nc` (const-false) | `jvmdg.logAnsiColors` | `logAnsiColors` | bool |
+| `Log-Level` | `--logLevel` / `-l` | `jvmdg.logLevel` | `logLevel` | enum |
+| `Multi-Release-Inputs` | `--multiReleaseInputs` / `-mri` (const-true) | — | `downgradeFromMultiReleases` | bool |
+| `Multi-Release-Original` | `--multiReleaseOriginal` / `-mro` (const-true) | `jvmdg.multiReleaseOriginal` | `multiReleaseOriginal` | bool |
 | `Multi-Release-Versions` | `--multiRelease` / `-mr` | `jvmdg.multiReleaseVersions` | `multiReleaseVersions` | version-set |
-| `Multi-Release-Inputs` | `--multiReleaseInputs` / `-mri` | — | `downgradeFromMultiReleases` | const-true / bool |
-| `No-Indy` | `--noIndy` | `jvmdg.noIndy` | `noIndy` | const-true / bool |
-
-| `Allow-Preview` | `--allowPreview` | `jvmdg.allowPreview` | `allowPreview` | const-true / bool |
+| `No-Indy` | `--noIndy` (const-true) | `jvmdg.noIndy` | `noIndy` | bool |
+| `On-Missing-Api` | `--onMissingApi` | `jvmdg.onMissingApi` | `onMissingApi` | `error`/`warn` |
+| `Print-Debug` *(deprecated)* | `debug --print` / `-p` (const-true) | `jvmdg.debug` | `debug` | bool |
+| `Quiet` *(deprecated)* | `--quiet` / `-q` (const-true) | `jvmdg.quiet` | `quiet` | bool |
+| `Shade-Inlining` | `--disable-inlining` (const-false) | `jvmdg.shadeInlining` | `shadeInlining` | bool |
+| `Shade-Keep-Reflection` | `--shadeKeepReflection` | `jvmdg.shadeKeepReflection` | `shadeKeepReflection` | wildcard-map |
 | `Shade-Prefix` | — | — | `shadePrefix` | string |
 | `Shade-Reflection` | `--shadeReflection` | `jvmdg.shadeReflection` | `shadeReflection` | `none`/`usedOwners`/`all` |
-| `Shade-Keep-Reflection` | `--shadeKeepReflection` | `jvmdg.shadeKeepReflection` | `shadeKeepReflection` | wildcard-map |
-| `Ignore-Embedded-Rules` | `--ignoreEmbeddedRules` | — | `ignoreEmbeddedRules` | const-true / bool |
-| `Keep-Embedded-Rules` | `--keepEmbeddedRules` | — | `keepEmbeddedRules` | const-true / bool |
+| `Stub-Policy` | `--stubPolicy` | `jvmdg.stubPolicy` | `stubPolicy` | `full`/`noBehavior`/`mechanical` |
+| `Target` | `--classVersion` / `-c` | `jvmdg.classVersion` | `downgradeTo: JavaVersion` | java-version / int |
+
+<!-- flag-table:end -->
 
 CLI-only (not config keys): `--config`, `--target`, `--classpath`, `--prefix`,
 `--downgradedApi`, `bootstrap` args.
@@ -215,8 +217,15 @@ public boolean myFlag = false;
 
 That is the whole change for CLI/sysprop/config/copy/equals/toString/`--print`.
 Gradle needs only the typed `Property` declaration on `DowngradeFlags` (the DSL
-is a public API surface) — `toFlags()` resolves each bound `gradle` name to the
-like-named property, and each value converts through the flag's own `form`
-parser (`JavaVersion` properties map to class-version opcodes). A `gradle`
-name with no declared property fails fast at runtime and in
-`TestToFlags.everyBoundGradleNameHasAPropertyOnSomeInterface`.
+is a public API surface) plus the `gradle` name on the annotation — `toFlags()`
+resolves each bound `gradle` name to the like-named property, and each value
+converts through the flag's own `form` parser (`JavaVersion` properties map to
+class-version opcodes). Drift fails fast in both directions: a `gradle` name
+with no declared property throws at bind time
+(`TestToFlags.everyBoundGradleNameHasAPropertyOnSomeInterface`), and a
+declared property with no `gradle` binding throws for the same reason — an
+unbound DSL property would be silently ignored.
+
+The keys table above is generated from this metadata — after adding or
+renaming a flag, run `./gradlew :testing:genConfigDocs` to rewrite the marked
+section; `TestFlagBindings.configDocTableIsCurrent` fails while it's stale.

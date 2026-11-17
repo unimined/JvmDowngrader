@@ -47,6 +47,20 @@ public class TestFlagBindings {
     }
 
     @Test
+    public void configDocTableIsCurrent() throws Exception {
+        // docs/Configuration.md's flag table is generated from FlagBindings —
+        // regenerate it with ./gradlew :testing:genConfigDocs when this fails
+        Path doc = Path.of("docs", "Configuration.md");
+        if (!Files.exists(doc)) doc = Path.of("..", "docs", "Configuration.md");
+        assertTrue(Files.exists(doc), "docs/Configuration.md not found from " + Path.of("").toAbsolutePath());
+        assertEquals(
+            xyz.wagyourtail.jvmdg.test.docgen.ConfigDocTable.table().trim(),
+            xyz.wagyourtail.jvmdg.test.docgen.ConfigDocTable.currentSection(doc),
+            "docs/Configuration.md flag table is stale — run ./gradlew :testing:genConfigDocs"
+        );
+    }
+
+    @Test
     public void boundFieldsCoverCopyEqualsHash() {
         Flags a = new Flags();
         a.classVersion = 61;

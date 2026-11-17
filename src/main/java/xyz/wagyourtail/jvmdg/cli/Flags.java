@@ -40,7 +40,7 @@ public class Flags {
      * sets the target class version, default is {@link Opcodes#V1_8}
      */
     @BoundFlag(key = "Target", cli = "--classVersion", aliases = "-c", argNames = {"version"},
-        sysprop = Constants.CLASS_VERSION, gradle = "downgradeTo",
+        sysprop = Constants.CLASS_VERSION, gradle = "downgradeTo", gradleType = "JavaVersion",
         form = BoundFlag.Parser.JAVA_VERSION, legacyForm = BoundFlag.Parser.INT,
         doc = "Target version — java major in config, class version on CLI")
     public int classVersion = Opcodes.V1_8;
@@ -99,7 +99,7 @@ public class Flags {
     /**
      * sets if maven lookup is allowed for auto resolving {@link #api}
      */
-    @BoundFlag(key = "Allow-Maven", sysprop = Constants.ALLOW_MAVEN_LOOKUP,
+    @BoundFlag(key = "Allow-Maven", sysprop = Constants.ALLOW_MAVEN_LOOKUP, gradle = "allowMaven",
         doc = "Allow maven lookup for auto-resolving the api jar")
     public boolean allowMaven = false;
     /**
@@ -259,7 +259,7 @@ public class Flags {
      *
      * @since 3.0.0
      */
-    @BoundFlag(key = "Debug-No-Fuse", sysprop = Constants.DEBUG_NO_FUSE,
+    @BoundFlag(key = "Debug-No-Fuse", sysprop = Constants.DEBUG_NO_FUSE, gradle = "debugNoFuse",
         doc = "Disable fused transforms (sequential oracle path)")
     public boolean debugNoFuse = false;
 
@@ -267,7 +267,7 @@ public class Flags {
      * internal debugging flag, disable loading the {@code META-INF/jvmdg/stubs.idx}
      * index — forces the reflective stub scan even when the api jar ships an index
      */
-    @BoundFlag(key = "Debug-No-Stub-Idx", sysprop = Constants.DEBUG_NO_STUB_IDX,
+    @BoundFlag(key = "Debug-No-Stub-Idx", sysprop = Constants.DEBUG_NO_STUB_IDX, gradle = "debugNoStubIdx",
         doc = "Force reflective stub scan even when the api jar ships an index")
     public boolean debugNoStubIdx = false;
     /**
@@ -345,7 +345,7 @@ public class Flags {
      *
      * @since 3.0.0
      */
-    @BoundFlag(key = "Ignore-Embedded-Rules", cli = "--ignoreEmbeddedRules", cliConst = "true",
+    @BoundFlag(key = "Ignore-Embedded-Rules", cli = "--ignoreEmbeddedRules", cliConst = "true", gradle = "ignoreEmbeddedRules",
         doc = "Do not apply META-INF/jvmdg/*.mf rules embedded in input jars")
     public boolean ignoreEmbeddedRules = false;
 
@@ -355,7 +355,7 @@ public class Flags {
      *
      * @since 3.0.0
      */
-    @BoundFlag(key = "Keep-Embedded-Rules", cli = "--keepEmbeddedRules", cliConst = "true",
+    @BoundFlag(key = "Keep-Embedded-Rules", cli = "--keepEmbeddedRules", cliConst = "true", gradle = "keepEmbeddedRules",
         doc = "Copy META-INF/jvmdg/*.mf rules into the output instead of stripping them")
     public boolean keepEmbeddedRules = false;
 

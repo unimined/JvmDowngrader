@@ -60,10 +60,16 @@ public @interface BoundFlag {
     /** DowngradeFlags/ShadeFlags property name on the Gradle DSL; empty = not exposed. */
     String gradle() default "";
 
+    /**
+     * DSL property type shown in generated docs when it differs from the
+     * field type (e.g. {@code "JavaVersion"} for {@code downgradeTo}).
+     */
+    String gradleType() default "";
+
     /** May appear in a {@code Name:} scoped section of a config file. */
     boolean scoped() default false;
 
-    /** Deprecated option — kept for compat; excluded from generated docs. */
+    /** Deprecated option — kept for compat; marked deprecated in generated docs. */
     boolean deprecated() default false;
 
     /** One-line description for CLI help / generated config docs. */

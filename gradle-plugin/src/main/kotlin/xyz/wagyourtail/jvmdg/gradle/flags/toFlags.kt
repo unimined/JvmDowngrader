@@ -56,7 +56,41 @@ fun DowngradeFlags.toFlags(sources: MutableMap<String, FlagBindings.Source>? = n
         applyDsl(b, flags, value)
         sources?.put(b.field.name, FlagBindings.Source.GRADLE)
     }
+    assertDslMirror()
     return flags
+}
+
+/** DSL-side properties that aren't bound flags — the config-file input. */
+private val NON_FLAG_PROPS = setOf("config")
+
+private fun dslPropNames(): Set<String> {
+    val names = linkedSetOf<String>()
+    for (iface in FLAGS_INTERFACES) {
+        for (m in iface.methods) {
+            if (m.parameterCount != 0 || m.returnType == Void.TYPE) continue
+            if (!m.name.startsWith("get") && !m.name.startsWith("is")) continue
+            names += (m.name.removePrefix("get").removePrefix("is"))
+                .replaceFirstChar { it.lowercase() }
+        }
+    }
+    return names
+}
+
+/**
+ * Reverse mirror check: every `val` on DowngradeFlags/ShadeFlags must be
+ * reachable through some binding's `gradle` name — otherwise `toFlags()`
+ * silently drops the property's value (forward check only catches
+ * `gradle` names that *don't* resolve).
+ */
+private fun assertDslMirror() {
+    val bound = FlagBindings.ALL
+        .flatMap { b -> b.metas.map { it.gradle } }
+        .filterTo(linkedSetOf()) { it.isNotEmpty() }
+    for (name in dslPropNames()) {
+        check(name in bound || name in NON_FLAG_PROPS) {
+            "DSL property '$name' has no @BoundFlag gradle binding — it would be silently ignored"
+        }
+    }
 }
 
 private fun applyDsl(b: FlagBindings.Binding, f: Flags, value: Any) {
