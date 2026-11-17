@@ -10,7 +10,6 @@ import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.instrument.Instrumentation;
 import java.lang.instrument.UnmodifiableClassException;
 import java.lang.reflect.InvocationTargetException;
@@ -19,7 +18,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.CodeSource;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -63,15 +61,8 @@ public class Bootstrap {
     }
 
     public static String sha1(Path p) {
-        try (InputStream stream = Files.newInputStream(p)) {
-            MessageDigest digestSha1 = MessageDigest.getInstance("SHA-1");
-            digestSha1.update(Utils.readAllBytes(stream));
-            byte[] hashBytes = digestSha1.digest();
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
+        try {
+            return Utils.getSha1(p);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

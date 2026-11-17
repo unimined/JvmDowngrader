@@ -1,13 +1,7 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.VarInsnNode;
-import xyz.wagyourtail.jvmdg.version.Modify;
+import xyz.wagyourtail.jvmdg.version.InitPost;
+import xyz.wagyourtail.jvmdg.version.InitRewrite;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -17,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+@InitRewrite(ref = @Ref(value = "Ljava/lang/StackTraceElement;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V"), to = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V", keep = {3, 4, 5, 6})
 public class J_L_StackTraceElement {
 
     // module/classloader info carried by the 7-arg constructor has no field to
@@ -65,43 +60,8 @@ public class J_L_StackTraceElement {
      * arguments, delegates to the 4-arg constructor, then registers the extra
      * data in {@link #MODULE_INFO} for the getters below.
      */
-    @Modify(ref = @Ref(value = "Ljava/lang/StackTraceElement;", member = "<init>",
-        desc = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V"))
-    public static void init(MethodNode mnode, int i) {
-        InsnList list = new InsnList();
-        int base = mnode.maxLocals;
-        mnode.maxLocals += 7;
-
-        // stack: uninit, uninit, classLoaderName, moduleName, moduleVersion,
-        //        declaringClass, methodName, fileName, lineNumber
-        list.add(new VarInsnNode(Opcodes.ISTORE, base + 6));
-        list.add(new VarInsnNode(Opcodes.ASTORE, base + 5));
-        list.add(new VarInsnNode(Opcodes.ASTORE, base + 4));
-        list.add(new VarInsnNode(Opcodes.ASTORE, base + 3));
-        list.add(new VarInsnNode(Opcodes.ASTORE, base + 2));
-        list.add(new VarInsnNode(Opcodes.ASTORE, base + 1));
-        list.add(new VarInsnNode(Opcodes.ASTORE, base));
-        // stack: uninit, uninit
-        list.add(new VarInsnNode(Opcodes.ALOAD, base + 3));
-        list.add(new VarInsnNode(Opcodes.ALOAD, base + 4));
-        list.add(new VarInsnNode(Opcodes.ALOAD, base + 5));
-        list.add(new VarInsnNode(Opcodes.ILOAD, base + 6));
-        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/StackTraceElement", "<init>",
-            "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V", false));
-        // stack: uninit (now initialized)
-        list.add(new InsnNode(Opcodes.DUP));
-        list.add(new VarInsnNode(Opcodes.ALOAD, base));
-        list.add(new VarInsnNode(Opcodes.ALOAD, base + 1));
-        list.add(new VarInsnNode(Opcodes.ALOAD, base + 2));
-        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-            "xyz/wagyourtail/jvmdg/j9/stub/java_base/J_L_StackTraceElement", "register",
-            "(Ljava/lang/StackTraceElement;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", false));
-
-        AbstractInsnNode insn = mnode.instructions.get(i);
-        mnode.instructions.insertBefore(insn, list);
-        mnode.instructions.remove(insn);
-    }
-
+    // the dropped module/classloader metadata gets side-tabled after construction
+    @InitPost(target = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V", from = {0, 1, 2})
     public static void register(StackTraceElement element, String classLoaderName,
                                 String moduleName, String moduleVersion) {
         drain();

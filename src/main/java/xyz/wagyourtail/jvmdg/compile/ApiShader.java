@@ -2,16 +2,21 @@ package xyz.wagyourtail.jvmdg.compile;
 
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.*;
-import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.SimpleRemapper;
 import org.objectweb.asm.tree.*;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
-import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.cli.Flags;
-import xyz.wagyourtail.jvmdg.compile.shade.ReferenceGraph;
+import xyz.wagyourtail.jvmdg.compile.jar.FusedJarRun;
+import xyz.wagyourtail.jvmdg.compile.jar.JarStep;
+import xyz.wagyourtail.jvmdg.compile.jar.ManifestStep;
+import xyz.wagyourtail.jvmdg.compile.jar.PipelineJarStep;
+import xyz.wagyourtail.jvmdg.compile.jar.SignatureStripStep;
+import xyz.wagyourtail.jvmdg.compile.jar.StepContext;
+import xyz.wagyourtail.jvmdg.compile.shade.IndexScanner;
+import xyz.wagyourtail.jvmdg.compile.shade.RefExtractor;
+import xyz.wagyourtail.jvmdg.compile.shade.ReferenceIndex;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.AsyncUtils;
-import xyz.wagyourtail.jvmdg.util.IOConsumer;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
@@ -20,14 +25,12 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -51,10 +54,14 @@ public class ApiShader {
         Flags flags = new Flags();
         flags.classVersion = target;
         shadeApis(flags, prefix, input, output, Collections.singleton(downgradedApi));
-        System.out.println("Shaded in " + (System.currentTimeMillis() - start) + "ms");
+        new Logger(ApiShader.class, flags.getLogLevel(), flags.logAnsiColors, System.out)
+            .info("Shaded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     public static void shadeApis(Flags flags, String prefix, File input, File output, Set<File> apiJars) throws IOException {
+        if (output.exists() && Files.isSameFile(input.toPath(), output.toPath())) {
+            throw new IOException("input and output are the same file: " + input);
+        }
         if (output.exists()) {
             output.delete();
         }
@@ -73,7 +80,7 @@ public class ApiShader {
                     for (FileSystem fs : apiFs) {
                         apiRoots.add(fs.getPath("/"));
                     }
-                    Pair<ReferenceGraph, Set<Type>> api = scanApis(flags, apiRoots);
+                    Pair<ReferenceIndex, Set<Type>> api = scanApis(flags, apiRoots);
                     shadeApis(flags, prefix, inputFs.getPath("/"), outputFs.getPath("/"), apiRoots, api.getFirst(), api.getSecond());
                 }
             }
@@ -104,7 +111,7 @@ public class ApiShader {
             for (FileSystem fs : apiFs) {
                 apiRoots.add(fs.getPath("/"));
             }
-            Pair<ReferenceGraph, Set<Type>> api = scanApis(flags, apiRoots);
+            Pair<ReferenceIndex, Set<Type>> api = scanApis(flags, apiRoots);
             for (int i = 0; i < inputRoots.size(); i++) {
                 shadeApis(flags, prefix.get(i % prefix.size()), inputRoots.get(i), outputRoots.get(i), apiRoots, api.getFirst(), api.getSecond());
             }
@@ -182,36 +189,50 @@ public class ApiShader {
             .append(new TreeSet<>(flags.multiReleaseVersions)).append('|')
             .append(flags.downgradeFromMultiReleases).append('|')
             .append(flags.debugNoSynthetic).append('|')
+            .append(flags.noIndy).append('|')
+            .append(flags.stubPolicy).append('|')
+            .append(flags.onMissingApi).append('|')
+            .append(flags.allowPreview).append('|')
+            .append(flags.ignoreEmbeddedRules).append('|')
+            .append(flags.keepEmbeddedRules).append('|')
+            .append(flags.scopedRules).append('|')
+            .append(flags.debugNoFuse).append('|')
+            .append(flags.debugNoStubIdx).append('|')
             .append(new TreeSet<>(flags.debugSkipStubs)).append('|')
             .append(new TreeSet<>(flags.debugSkipJeps)).append('|');
+        List<String> include = new ArrayList<>();
+        for (FullyQualifiedMemberNameAndDesc m : flags.includeStub) {
+            include.add(m.toString());
+        }
+        include.sort(java.util.Comparator.naturalOrder());
+        sb.append(include).append('|');
         List<String> skip = new ArrayList<>();
         for (FullyQualifiedMemberNameAndDesc m : flags.debugSkipStub) {
             skip.add(m.toString());
         }
-        Collections.sort(skip);
+        skip.sort(java.util.Comparator.naturalOrder());
         sb.append(skip);
-        MessageDigest digest = MessageDigest.getInstance("SHA-1");
-        byte[] hashBytes = digest.digest(sb.toString().getBytes());
-        StringBuilder hash = new StringBuilder();
-        for (int i = 0; i < 7; i++) {
-            hash.append(String.format("%02x", hashBytes[i]));
+        try {
+            // first 14 hex chars (was: first 7 digest bytes)
+            return Utils.getSha1(sb.toString().getBytes()).substring(0, 14);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
-        return hash.toString();
     }
 
-    public static Pair<ReferenceGraph, Set<Type>> scanApis(Flags flags, List<Path> apiRoots) throws IOException {
+    public static Pair<ReferenceIndex, Set<Type>> scanApis(Flags flags, List<Path> apiRoots) throws IOException {
         // step 2: collect classes in the api and their references
         try {
-            ReferenceGraph apiRefs = new ReferenceGraph(new Logger(ApiShader.class, flags.getLogLevel(), flags.logAnsiColors, System.out), true);
-            List<Pair<Path, Map<Path, Type>>> preScans = new ArrayList<>();
-            final Set<Type> apiClasses = new HashSet<>();
+            ReferenceIndex apiRefs = new ReferenceIndex(new Logger(ApiShader.class, flags.getLogLevel(), flags.logAnsiColors, System.out), true);
+            // collectClassTypes runs inside visitPathsAsync — concurrent add site
+            final Set<Type> apiClasses = Collections.newSetFromMap(new ConcurrentHashMap<Type, Boolean>());
+            // pass 1: collect every api class name across the roots —
+            // the filter needs the complete set before refs resolve
             for (Path apiRoot : apiRoots) {
-                Map<Path, Type> preScan = apiRefs.preScan(apiRoot);
-                preScans.add(new Pair<>(apiRoot, preScan));
-                apiClasses.addAll(preScan.values());
+                collectClassTypes(apiRoot, apiClasses);
             }
-            for (Pair<Path, Map<Path, Type>> preScan : preScans) {
-                apiRefs.scan(preScan.getFirst(), preScan.getSecond(), new ReferenceGraph.Filter() {
+            for (Path apiRoot : apiRoots) {
+                IndexScanner.scanRoot(apiRefs, apiRoot, new RefExtractor.Filter() {
                     @Override
                     public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
                         return apiClasses.contains(member.getOwner());
@@ -222,6 +243,22 @@ public class ApiShader {
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void collectClassTypes(final Path root, final Set<Type> out) throws IOException, ExecutionException, InterruptedException {
+        AsyncUtils.visitPathsAsync(root, null, path -> {
+            if (path.getFileName().toString().equals("module-info.class")) {
+                return;
+            }
+            Path rel = root.relativize(path);
+            if (IndexScanner.isMultiRelease(rel)) {
+                rel = rel.subpath(3, rel.getNameCount());
+            }
+            String pathStr = IndexScanner.internalPath(rel);
+            if (pathStr.endsWith(".class")) {
+                out.add(Type.getObjectType(pathStr.substring(0, pathStr.length() - 6)));
+            }
+        }).get();
     }
 
     public static Map<FullyQualifiedMemberNameAndDesc, Type> inlineCandidates(Logger logger, Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>> refs, Set<Type> keys) {
@@ -265,7 +302,10 @@ public class ApiShader {
         return candidates;
     }
 
-    private static void inlineRef(FullyQualifiedMemberNameAndDesc ref, AbstractInsnNode insn, Type target, boolean isInterface) {
+    /** Rewrites {@code insn} (and nested bsm args/consts) referencing {@code ref} to call the copy
+     *  appended to {@code target} as {@code jvmdg$inlined$<name>} — used by the in-pipeline
+     *  inline transform as well as the jar-level flow. */
+    public static void inlineRef(FullyQualifiedMemberNameAndDesc ref, AbstractInsnNode insn, Type target, boolean isInterface) {
         if (insn instanceof MethodInsnNode) {
             MethodInsnNode min = (MethodInsnNode) insn;
             min.owner = target.getInternalName();
@@ -332,227 +372,24 @@ public class ApiShader {
         }
     }
 
-    public static void shadeApis(final Flags flags, final String prefix, final Path inputRoot, final Path outputRoot, final List<Path> apiRoots, final ReferenceGraph apiRefs, final Set<Type> apiClasses) throws IOException {
+    public static void shadeApis(final Flags flags, final String prefix, final Path inputRoot, final Path outputRoot, final List<Path> apiRoots, final ReferenceIndex apiRefs, final Set<Type> apiClasses) throws IOException {
         if (!prefix.endsWith("/")) throw new IllegalArgumentException("prefix must end with /");
         Logger logger = new Logger(ApiShader.class, flags.getLogLevel(), flags.logAnsiColors, System.out);
-        try {
-            // step 3: traverse the input classes for references to the api
-            final ReferenceGraph inputRefs = new ReferenceGraph(logger, true, flags.shadeInlining);
-            inputRefs.scan(inputRoot, new ReferenceGraph.Filter() {
-                @Override
-                public boolean shouldInclude(FullyQualifiedMemberNameAndDesc member) {
-                    return apiClasses.contains(member.getOwner());
-                }
-            });
-
-            Set<Integer> inputVersions = inputRefs.getVersions();
-            Map<Type, Set<Integer>> inputKeys = inputRefs.getKeys();
-
-            // deterministic output: async consumers defer into these maps,
-            // then a single sorted write pass produces reproducible order.
-            // shared across the version loop: first writer wins, matching the
-            // previous Files.exists(outPath) defer-to-lower-version check
-            final ConcurrentMap<String, byte[]> writes = new ConcurrentHashMap<>();
-            final ConcurrentMap<String, Path> copies = new ConcurrentHashMap<>();
-
-            for (final int version : inputVersions) {
-                // dedup of identical class bytes is per-version: sharing this
-                // map across versions would skip writing a versioned entry
-                // whenever its bytes happen to equal another version's
-                final Map<Type, byte[]> currentOutputData = new ConcurrentHashMap<>();
-                // step 4: inline candidates
-                Pair<Map<FullyQualifiedMemberNameAndDesc, Set<FullyQualifiedMemberNameAndDesc>>, Set<String>> required = apiRefs.recursivelyResolveUsagesFrom(inputRefs.getAllUsagesForRefs(version), version);
-
-                Set<Type> keys = new HashSet<>();
-                for (Type key : inputKeys.keySet()) {
-                    if (inputKeys.get(key).contains(version)) {
-                        keys.add(key);
-                    }
-                }
-
-                if (flags.shadeInlining) {
-                    Map<FullyQualifiedMemberNameAndDesc, Type> inlineCandidates = inlineCandidates(logger, required.getFirst(), keys);
-                    for (Map.Entry<FullyQualifiedMemberNameAndDesc, Type> entry : inlineCandidates.entrySet()) {
-                        ClassNode node = inputRefs.getClassFor(entry.getValue(), version);
-                        required.getFirst().remove(entry.getKey());
-                        required.getFirst().remove(new FullyQualifiedMemberNameAndDesc(entry.getKey().getOwner(), null, null));
-
-                        // change insn's owner to the inlined class
-                        for (AbstractInsnNode insn : inputRefs.getAllInsnsFor(entry.getKey(), version)) {
-                            inlineRef(entry.getKey(), insn, entry.getValue(), (node.access & Opcodes.ACC_INTERFACE) != 0);
-                        }
-
-                        // actually inline it
-                        ClassNode apiNode = apiRefs.getClassFor(entry.getKey().getOwner(), version);
-                        // find api method
-                        MethodNode method = null;
-                        for (MethodNode m : apiNode.methods) {
-                            if (m.name.equals(entry.getKey().getName()) && m.desc.equals(entry.getKey().getDesc().getDescriptor())) {
-                                method = m;
-                                break;
-                            }
-                        }
-                        if (method == null) {
-                            throw new IllegalStateException("Method not found in class: " + entry.getKey());
-                        }
-                        MethodNode copy = new MethodNode((method.access & ~Opcodes.ACC_PUBLIC) | Opcodes.ACC_PRIVATE | (flags.debugNoSynthetic ? 0 : Opcodes.ACC_SYNTHETIC), "jvmdg$inlined$" + method.name, method.desc, method.signature, method.exceptions.toArray(new String[0]));
-                        method.accept(copy);
-                        node.methods.add(copy);
-                    }
-                }
-
-                // step 4.5: create remapper for api classes to prefixed api classes
-                final Map<Type, Set<MemberNameAndDesc>> byType = byType(required.getFirst().keySet());
-                final Map<String, String> remap = new HashMap<>();
-                for (Type type : byType.keySet()) {
-                    remap.put(type.getInternalName(), prefix + type.getInternalName());
-                }
-                final SimpleRemapper remapper = new SimpleRemapper(remap);
-
-                // step 5: actually write the referenced api classes to the output, removing unused parts from them.
-                Future<Void> apiWrite = AsyncUtils.forEachAsync(byType.entrySet(), new IOConsumer<Map.Entry<Type, Set<MemberNameAndDesc>>>() {
-                    @Override
-                    public void accept(Map.Entry<Type, Set<MemberNameAndDesc>> type) throws IOException {
-                        // load api class as a ClassNode
-                        ClassNode node = apiRefs.getClassFor(type.getKey(), version);
-                        // get actual version of node
-                        Path outPath;
-                        if (node.version > flags.classVersion) {
-                            outPath = outputRoot.resolve("META-INF/versions/" + Utils.classVersionToMajorVersion(node.version) + "/");
-                        } else {
-                            outPath = outputRoot;
-                        }
-                        outPath = outPath.resolve(prefix + type.getKey().getInternalName() + ".class");
-                        String rel = outputRoot.relativize(outPath).toString();
-                        if (writes.containsKey(rel)) {
-                            // Already written by lower version, defer to lower version
-                            return;
-                        }
-                        if ((node.access & Opcodes.ACC_ENUM) == 0) {
-                            // remove unused members
-                            Set<MemberNameAndDesc> members = type.getValue();
-                            Iterator<MethodNode> iter = node.methods.iterator();
-                            while (iter.hasNext()) {
-                                MethodNode method = iter.next();
-                                if (!members.contains(new MemberNameAndDesc(method.name, Type.getMethodType(method.desc)))) {
-                                    iter.remove();
-                                }
-                            }
-                            Iterator<FieldNode> fiter = node.fields.iterator();
-                            while (fiter.hasNext()) {
-                                FieldNode field = fiter.next();
-                                if (!members.contains(new MemberNameAndDesc(field.name, Type.getType(field.desc)))) {
-                                    fiter.remove();
-                                }
-                            }
-                        }
-                        // write the class to the output
-                        ClassWriter writer = new ClassWriter(0);
-                        node.accept(new ClassRemapper(writer, remapper));
-                        byte[] data = writer.toByteArray();
-                        byte[] prevData = currentOutputData.get(type.getKey());
-                        if (prevData == null || !Utils.equals(prevData, 8, prevData.length, data, 8, data.length)) {
-                            currentOutputData.put(type.getKey(), data);
-                            writes.putIfAbsent(rel, data);
-                        }
-                    }
-
-                });
-
-                Future<Void> resourceWrite = AsyncUtils.forEachAsync(required.getSecond(), new IOConsumer<String>() {
-                    @Override
-                    public void accept(String resource) throws IOException {
-                        // never carry signature files from the api jar — they no
-                        // longer match the shaded output
-                        if (ManifestUtils.isSignatureFile(resource)) {
-                            return;
-                        }
-                        for (Path apiRoot : apiRoots) {
-                            Path inPath = apiRoot.resolve(resource);
-                            if (Files.exists(inPath)) {
-                                copies.put(resource, inPath);
-                                return;
-                            }
-                        }
-                    }
-                });
-
-                // step 6: remap references to the api to start with prefix
-                Set<Type> inputsOnVersion = new HashSet<Type>();
-                for (Type key : inputKeys.keySet()) {
-                    if (inputKeys.get(key).contains(version)) {
-                        inputsOnVersion.add(key);
-                    }
-                }
-                Future<Void> shadeWrite = AsyncUtils.forEachAsync(inputsOnVersion, new IOConsumer<Type>() {
-                    @Override
-                    public void accept(Type type) throws IOException {
-                        ClassNode node = inputRefs.getClassFor(type, version);
-                        Path outPath;
-                        if (version != 0) {
-                            outPath = outputRoot.resolve("META-INF/versions/" + version + "/");
-                        } else {
-                            outPath = outputRoot;
-                        }
-                        outPath = outPath.resolve(type.getInternalName() + ".class");
-                        ClassWriter writer = new ClassWriter(0);
-                        node.accept(new ClassRemapper(writer, remapper));
-                        writes.put(outputRoot.relativize(outPath).toString(), writer.toByteArray());
-                    }
-                });
-
-                AsyncUtils.waitForFutures(apiWrite, resourceWrite, shadeWrite).get();
-            }
-
-            // step 7: write the resources in the class file
-            AsyncUtils.visitPathsAsync(inputRoot, null, new IOConsumer<Path>() {
-                @Override
-                public void accept(Path path) throws IOException {
-                    if (path.toString().endsWith(".class")) return;
-                    copies.put(inputRoot.relativize(path).toString(), path);
-                }
-            }).get();
-
-            // step 8: write module-info if present
-            Path modInfoInPath = inputRoot.resolve("module-info.class");
-            if (Files.exists(modInfoInPath)) {
-                ClassNode modInfo = ASMUtils.bytesToClassNode(Files.readAllBytes(modInfoInPath));
-                if (modInfo.module.requires != null) {
-                    for (ModuleRequireNode require : new ArrayList<>(modInfo.module.requires)) {
-                        if (require.module.equals("xyz.wagyourtail.jvmdg.java_api")) {
-                            modInfo.module.requires.remove(require);
-                        }
-                    }
-                }
-                writes.put("module-info.class", ASMUtils.classNodeToBytes(modInfo));
-            }
-
-            // single sorted write pass: deterministic entry order
-            List<String> order = new ArrayList<>(writes.size() + copies.size());
-            order.addAll(writes.keySet());
-            order.addAll(copies.keySet());
-            Collections.sort(order);
-            for (String rel : order) {
-                Path p = outputRoot.resolve(rel);
-                Path parent = p.getParent();
-                if (parent != null) {
-                    Files.createDirectories(parent);
-                }
-                byte[] data = writes.get(rel);
-                if (data != null) {
-                    Files.write(p, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-                } else {
-                    Files.copy(copies.get(rel), p, StandardCopyOption.REPLACE_EXISTING);
-                }
-            }
-            OutputUtils.pinTimestamps(outputRoot);
-
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        // one fused pass: classes collect during traversal, then a single
+        // pipeline (scan → closure → inline/prefix → emit) runs at endFused
+        List<JarStep> steps = new ArrayList<>();
+        // shaded class bytes invalidate jar signatures — strip them (and the
+        // manifest's Sealed attrs) the same way the downgrade chain does
+        steps.add(new SignatureStripStep());
+        steps.add(new ManifestStep());
+        steps.add(new PipelineJarStep(prefix, apiRefs, apiClasses, apiRoots));
+        StepContext ctx = new StepContext(flags, logger, null,
+            Collections.singletonList(inputRoot), null);
+        FusedJarRun.run(inputRoot, steps, ctx, outputRoot);
     }
 
-    private static Map<Type, Set<MemberNameAndDesc>> byType(Set<FullyQualifiedMemberNameAndDesc> fqns) {
+    /** Groups required members by owner type — null-member (class-level) refs contribute just the type. */
+    public static Map<Type, Set<MemberNameAndDesc>> byType(Set<FullyQualifiedMemberNameAndDesc> fqns) {
         Map<Type, Set<MemberNameAndDesc>> byType = new HashMap<>();
         for (FullyQualifiedMemberNameAndDesc fqn : fqns) {
             Set<MemberNameAndDesc> list = byType.get(fqn.getOwner());
@@ -566,6 +403,89 @@ public class ApiShader {
             }
         }
         return byType;
+    }
+
+    /**
+     * One shaded output entry for a {@code META-INF/services/<iface>} provider
+     * file, or null when the file can't survive the shade: the service
+     * interface is an api class the closure pruned (nobody can load it), or
+     * no provider line remains. Provider lines naming an emitted api class
+     * carry the prefix; lines naming a pruned api class are dropped (the
+     * class is absent — keeping the line would crash {@code ServiceLoader});
+     * {@code #} comments, blanks and names outside the api set pass through.
+     * The file is renamed when the interface itself is an emitted api class
+     * so {@code ServiceLoader.load(prefixedInterface)} still resolves it.
+     */
+    public static Map.Entry<String, byte[]> mapServiceEntry(String name, byte[] bytes,
+            @Nullable SimpleRemapper remapper, Set<Type> apiClasses) {
+        String ifaceInternal = name.substring("META-INF/services/".length()).replace('.', '/');
+        String outName = name;
+        if (apiClasses.contains(Type.getObjectType(ifaceInternal))) {
+            String mapped = remapper == null ? null : remapper.map(ifaceInternal);
+            if (mapped == null) {
+                return null;
+            }
+            outName = "META-INF/services/" + mapped.replace('/', '.');
+        }
+        String content = new String(bytes, StandardCharsets.UTF_8);
+        StringBuilder out = new StringBuilder(content.length());
+        Set<String> seen = new HashSet<>();
+        for (String line : content.split("\n", -1)) {
+            int hash = line.indexOf('#');
+            String provider = (hash < 0 ? line : line.substring(0, hash)).trim();
+            if (provider.isEmpty()) {
+                out.append(line).append('\n');
+                continue;
+            }
+            String internal = provider.replace('.', '/');
+            String mapped = remapper == null ? null : remapper.map(internal);
+            if (mapped != null) {
+                provider = mapped.replace('/', '.');
+            } else if (apiClasses.contains(Type.getObjectType(internal))) {
+                continue;
+            }
+            if (!seen.add(provider)) {
+                continue;
+            }
+            out.append(provider);
+            if (hash >= 0) {
+                out.append(' ').append(line.substring(hash));
+            }
+            out.append('\n');
+        }
+        if (seen.isEmpty()) {
+            return null;
+        }
+        out.setLength(out.length() - 1);
+        return new AbstractMap.SimpleImmutableEntry<>(
+            outName, out.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Union of two provider files for the same service — the input jar and an
+     * api jar can both carry {@code META-INF/services/<iface>} as separate
+     * classpath resources, but a merged output jar holds exactly one file, so
+     * the provider sets merge: {@code first}'s providers lead (input precedes
+     * the api jars on a classpath, preserving {@code ServiceLoader} order),
+     * deduped by provider name. Comment lines are dropped — they carry no
+     * semantics.
+     */
+    public static byte[] mergeServices(byte[] first, byte[] second) {
+        StringBuilder out = new StringBuilder(first.length + second.length);
+        Set<String> seen = new LinkedHashSet<>();
+        for (byte[] bytes : new byte[][]{first, second}) {
+            for (String line : new String(bytes, StandardCharsets.UTF_8).split("\n", -1)) {
+                int hash = line.indexOf('#');
+                String provider = (hash < 0 ? line : line.substring(0, hash)).trim();
+                if (!provider.isEmpty() && seen.add(provider)) {
+                    out.append(provider).append('\n');
+                }
+            }
+        }
+        if (out.length() > 0) {
+            out.setLength(out.length() - 1);
+        }
+        return out.toString().getBytes(StandardCharsets.UTF_8);
     }
 
 }

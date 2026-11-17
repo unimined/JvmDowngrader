@@ -1,14 +1,18 @@
 package xyz.wagyourtail.jvmdg.cli;
 
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader;
 import xyz.wagyourtail.jvmdg.compile.ZipDowngrader;
-import xyz.wagyourtail.jvmdg.logging.Logger;
+import xyz.wagyourtail.jvmdg.compile.shade.ReferenceIndex;
+import xyz.wagyourtail.jvmdg.config.BoundFlag;
+import xyz.wagyourtail.jvmdg.config.FlagBindings;
+import xyz.wagyourtail.jvmdg.config.JvmdgConfig;
+import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
-import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -25,6 +29,7 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,34 +47,38 @@ public class Main {
         Arguments parser = new Arguments("JvmDowngrader", null, null, null);
         Arguments input = new Arguments("--target", "input to output\n  (required)\n  you can use - for a temp-file if you want to chain operations", new String[]{"-t"}, new String[]{"input jar|path", "output jar|path"});
         Arguments classpath = new Arguments("--classpath", "Classpath to use\n  (highly recommended)", new String[]{"-cp"}, new String[]{"classpath"});
-        parser.addChildren(
+        Arguments debugCmd = new Arguments("debug", "Set debug flags/call debug actions", null, null)
+            .addChildren(new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"}));
+        List<Arguments> top = new ArrayList<>(Arrays.asList(
             new Arguments("--help", "Prints this help", new String[]{"-h"}, null),
             new Arguments("--version", "Prints the version", new String[]{"-v"}, null),
-            new Arguments("--logLevel", "Set the log level", new String[]{"-l"}, new String[]{"level"}),
-            new Arguments("--quiet", "[Deprecated] Suppress all warnings", new String[]{"-q"}, null),
-            new Arguments("--ignoreWarningsIn", "Ignore warnings of missing class/member stubs in package/class matching", new String[]{"-i"}, new String[]{"package or class identifier"}),
-            new Arguments("--api", "Provide a java-api jar or jars", new String[]{"-a"}, new String[]{"jar"}),
-            new Arguments("--classVersion", "Target class version (ex. \"52\" for java 8)", new String[]{"-c"}, new String[]{"version"}),
-            new Arguments("--multiReleaseOriginal", "Use the original class file for a Multi-Release jar", new String[]{"-mro"}, null),
-            new Arguments("--multiRelease", "Use semi-downgraded files for a Multi-Release jar, versions as class version (ex. \"55\" for java 11)", new String[]{"-mr"}, new String[]{"version"}),
-            new Arguments("--noColor", "Disables ansi colors", new String[]{"-nc"}, null),
-            new Arguments("--multiReleaseInputs", "Use the Multi-Release files as inputs for downgrading when available, instead of the normal ones", new String[]{"-mri"}, null),
-            new Arguments("debug", "Set debug flags/call debug actions", null, null).addChildren(
-                new Arguments("--print", "[Deprecated] Enable printing debug info", new String[]{"-p"}, null),
-                new Arguments("--skipStub", "Skip a specific class/method, of form \"Lcom/example/ClassName;\" or \"Lcom/example/ClassName;methodName;()V\"", new String[] {"-ss"}, new String[] {"stub"}),
-                new Arguments("--skipStubs", "Skip method/class stubs for these class versions", new String[]{"-s"}, new String[]{"versions"}),
-                new Arguments("--skipJEP", "Skip JEP", new String[]{"-sj"}, new String[]{"jep"}),
-                new Arguments("--dumpClasses", "Dump classes to the debug folder", new String[]{"-d"}, null),
-                new Arguments("--noSynthetic", "Do not add `synthetic` modifier to methods", new String[]{"-ns"}, null),
-                new Arguments("downgradeApi", "Retrieves and downgrades the java api jar", null, new String[]{"outputPath"})
+            new Arguments("--config", "Apply a jvmdg.mf config file\n  (repeatable, applied in order, below CLI flags)", new String[]{"-cfg"}, new String[]{"file"})
+        ));
+        // flag surface is generated from @BoundFlag on Flags — see FlagBindings
+        for (FlagBindings.Binding b : FlagBindings.ALL) {
+            for (BoundFlag m : b.metas) {
+                if (m.cli().isEmpty()) continue;
+                Arguments arg = new Arguments(m.cli(), m.doc(), m.aliases(),
+                    m.cliConst().isEmpty() ? m.argNames() : null);
+                if (m.command().isEmpty()) {
+                    top.add(arg);
+                } else if ("debug".equals(m.command())) {
+                    debugCmd.addChildren(arg);
+                }
+            }
+        }
+        parser.addChildren(top.toArray(new Arguments[0]));
+        parser.addChildren(
+            debugCmd,
+            new Arguments("config", "Inspect the effective configuration", null, null).addChildren(
+                new Arguments("--print", "Print the merged effective config and the source of each value", null, null)
             ),
-            new Arguments("--disable-inlining", "Disables shade inlining api's that are only used in one class into that class", null, null),
             new Arguments("downgrade", "Downgrades a jar or folder", null, null).addChildren(
                 input,
                 classpath
             ),
             new Arguments("shade", "Shades necessary api's into targets", null, null).addChildren(
-                new Arguments("--prefix", "Prefix to use for shaded classes\n  (required)", new String[]{"-p"}, new String[]{"prefix"}),
+                new Arguments("--prefix", "Prefix to use for shaded classes\n  (required unless Shade-Prefix is configured)", new String[]{"-p"}, new String[]{"prefix"}),
                 new Arguments("--downgradedApi", "Pre-downgraded api jar", new String[]{"-d"}, new String[]{"jar"}),
                 input
             ),
@@ -109,8 +118,19 @@ public class Main {
             System.out.println("Shade jvmdg api into a downgraded jar");
             System.out.println(">  jvmdg shade --prefix uniqueName --target input.jar output.jar");
             System.out.println();
+            System.out.println("Emit multi-release output (primary downgraded + per-version variants):");
+            System.out.println(">  jvmdg downgrade --target input.jar output.jar --multiRelease 8,11,17");
+            System.out.println("   add --multiReleaseInputs to also treat META-INF/versions/ entries as inputs (highest per name wins)");
+            System.out.println();
             System.out.println("Bootstrap run a jar");
             System.out.println(">  jvmdg bootstrap -cp input.jar --main com.example.Main");
+            System.out.println();
+            System.out.println("Or attach the agent to run a too-new jar on an old JVM:");
+            System.out.println(">  java -javaagent:JvmDowngrader-all.jar -jar myapp.jar");
+            System.out.println();
+            System.out.println("Smallest shaded output (language desugars only, no stub impls, no reflection table):");
+            System.out.println(">  jvmdg shade --prefix uniqueName --target input.jar output.jar --stubPolicy mechanical --onMissingApi warn --shadeReflection none");
+            System.out.println("   add -c 49 for Java 5 target — drops all stack maps, but lowers every lambda to an inner class and every indy to field+method");
             System.out.println();
             System.out.println();
             System.out.println("For more information see the help below, or the documentation at https://github.com/unimined/JvmDowngrader");
@@ -130,78 +150,61 @@ public class Main {
             return;
         }
 
+        Map<String, FlagBindings.Source> sources = new LinkedHashMap<>();
+
+        // config files apply below explicit CLI flags — read them first, then
+        // the generic flag pass overwrites whatever they set
+        if (parsed.containsKey("--config")) {
+            List<Path> files = new ArrayList<>();
+            for (String[] s : parsed.get("--config")) {
+                files.add(new File(s[0]).toPath());
+            }
+            JvmdgConfig.applyFiles(files, flags, sources);
+        }
+
         for (Map.Entry<String, List<String[]>> entry : parsed.entrySet()) {
+            if (!entry.getKey().startsWith("--")) continue;
             switch (entry.getKey()) {
-                case "--quiet":
-                    flags.quiet = true;
+                case "--help":
+                case "--version":
+                case "--config":
                     break;
-                case "--logLevel":
-                    if (entry.getValue().size() > 1) {
-                        throw new IllegalArgumentException("Multiple log levels specified");
+                default: {
+                    FlagBindings.Binding b = FlagBindings.byCliFlag(entry.getKey());
+                    if (b == null) {
+                        throw new IllegalArgumentException("Unknown argument: " + entry.getKey());
                     }
-                    flags.logLevel = Logger.Level.valueOf(entry.getValue().get(0)[0].toUpperCase());
-                    break;
-                case "--classVersion":
-                    if (entry.getValue().size() > 1) {
-                        throw new IllegalArgumentException("Multiple class versions specified");
-                    }
-                    flags.classVersion = Integer.parseInt(entry.getValue().get(0)[0]);
-                    break;
-                case "--ignoreWarningsIn":
-                    for (String[] s : entry.getValue()) {
-                        for (String string : s) {
-                            flags.addIgnore(string);
-                        }
-                    }
-                    break;
-                case "--api":
-                    List<File> api = new ArrayList<>();
-                    for (String[] s : entry.getValue()) {
-                        for (String string : s) {
-                            String[] split = string.split(File.pathSeparator);
-                            for (String s1 : split) {
-                                api.add(new File(s1));
-                            }
-                        }
-                    }
-                    flags.api = api;
-                    break;
-                case "--multiReleaseOriginal":
-                    flags.multiReleaseOriginal = true;
-                    break;
-                case "--multiRelease":
-                    Set<Integer> versions = new HashSet<>();
-                    for (String[] s : entry.getValue()) {
-                        for (String string : s) {
-                            versions.add(Integer.parseInt(string));
-                        }
-                    }
-                    flags.multiReleaseVersions = versions;
-                    break;
-                case "--disable-inlining":
-                    flags.shadeInlining = false;
-                    break;
-                case "--noColor":
-                    flags.logAnsiColors = false;
-                    break;
-                case "--multiReleaseInputs":
-                    flags.downgradeFromMultiReleases = true;
-                    break;
-                default:
+                    FlagBindings.applyCli(b, b.metaForCli(entry.getKey()), flags, entry.getValue(), sources);
+                }
             }
         }
 
 
-        for (Map.Entry<String, List<String[]>> entry : parsed.entrySet()) {
+        List<Map.Entry<String, List<String[]>>> ops = new ArrayList<>(parsed.entrySet());
+        for (int i = 0; i < ops.size(); i++) {
+            Map.Entry<String, List<String[]>> entry = ops.get(i);
             if (!entry.getKey().startsWith("--")) {
                 Map<String, List<String[]>> subArgs = Arguments.subCommandArgs(entry.getKey(), parsed);
                 switch (entry.getKey()) {
                     case "debug":
                         debug(subArgs);
                         break;
-                    case "downgrade":
+                    case "config":
+                        config(subArgs, sources);
+                        break;
+                    case "downgrade": {
+                        // fuse `downgrade - shade` when they're chained through
+                        // a temp file — one jar pass instead of two
+                        Map<String, List<String[]>> nextArgs = null;
+                        if (i + 1 < ops.size() && "shade".equals(ops.get(i + 1).getKey()) &&
+                            fuses(subArgs, nextArgs = Arguments.subCommandArgs(ops.get(i + 1).getKey(), parsed))) {
+                            downgradeShade(subArgs, nextArgs);
+                            i++;
+                            break;
+                        }
                         downgrade(subArgs);
                         break;
+                    }
                     case "shade":
                         shade(subArgs);
                         break;
@@ -215,40 +218,29 @@ public class Main {
 
     }
 
+    /** The `downgrade - shade` chain is fusable only through the temp-file hop: downgrade writes `-`, shade reads `-`. */
+    private static boolean fuses(Map<String, List<String[]>> downgradeArgs, Map<String, List<String[]>> shadeArgs) {
+        List<String[]> dt = downgradeArgs.get("--target");
+        List<String[]> st = shadeArgs.get("--target");
+        return dt != null && st != null && dt.size() == 1 && st.size() == 1 &&
+            "-".equals(dt.get(0)[1]) && "-".equals(st.get(0)[0]);
+    }
+
+    /** The {@code config} command — currently just {@code --print}. */
+    public void config(Map<String, List<String[]>> args, Map<String, FlagBindings.Source> sources) {
+        if (args.containsKey("--print")) {
+            System.out.println(FlagBindings.printConfig(flags, sources));
+        }
+    }
+
     public void debug(Map<String, List<String[]>> args) throws IOException {
         for (Map.Entry<String, List<String[]>> entry : args.entrySet()) {
-            switch (entry.getKey()) {
-                case "--print":
-                    flags.printDebug = true;
-                    break;
-                case "--dumpClasses":
-                    flags.debugDumpClasses = true;
-                    break;
-                case "--skipStub":
-                    for (String[] s : entry.getValue()) {
-                        for (String string : s) {
-                            flags.debugSkipStub.add(FullyQualifiedMemberNameAndDesc.of(string));
-                        }
-                    }
-                    break;
-                case "--skipStubs":
-                    for (String[] s : entry.getValue()) {
-                        for (String string : s) {
-                            flags.debugSkipStubs.add(Integer.parseInt(string));
-                        }
-                    }
-                    break;
-                case "--skipJEP":
-                    for (String[] s : entry.getValue()) {
-                        for (String string : s) {
-                            flags.debugSkipJeps.add(Integer.parseInt(string));
-                        }
-                    }
-                    break;
-                case "--noSynthetic":
-                    flags.debugNoSynthetic = true;
-                    break;
+            if (!entry.getKey().startsWith("--")) continue;
+            FlagBindings.Binding b = FlagBindings.byCliFlag(entry.getKey());
+            if (b == null) {
+                throw new IllegalArgumentException("Unknown argument: " + entry.getKey());
             }
+            FlagBindings.applyCli(b, b.metaForCli(entry.getKey()), flags, entry.getValue(), null);
         }
 
         if (args.containsKey("downgradeApi")) {
@@ -315,6 +307,9 @@ public class Main {
                             throw new IOException("Failed to create directory: " + parent);
                         }
                     }
+                    if (output.exists() && Files.isSameFile(input.toPath(), output.toPath())) {
+                        throw new IOException("input and output are the same file: " + input);
+                    }
                     if (output.exists()) {
                         if (!output.delete()) {
                             throw new IOException("Failed to delete output file: " + output);
@@ -371,10 +366,10 @@ public class Main {
     }
 
     public void shade(Map<String, List<String[]>> args) throws IOException {
-        if (!args.containsKey("--prefix")) {
-            throw new IllegalArgumentException("No prefix specified");
+        if (!args.containsKey("--prefix") && flags.shadePrefix == null) {
+            throw new IllegalArgumentException("No prefix specified (use --prefix or Shade-Prefix in a config file)");
         }
-        if (args.get("--prefix").size() > 1) {
+        if (args.get("--prefix") != null && args.get("--prefix").size() > 1) {
             throw new IllegalArgumentException("Multiple prefixes specified");
         }
         Set<File> downgradedApi = new HashSet<>();
@@ -404,6 +399,9 @@ public class Main {
 
             List<String> prefixes = new ArrayList<>();
             List<String[]> prefix = args.get("--prefix");
+            if (prefix == null && flags.shadePrefix != null) {
+                prefix = Collections.singletonList(new String[]{flags.shadePrefix});
+            }
             for (String[] strings : prefix) {
                 if (!strings[0].endsWith("/")) {
                     strings[0] += "/";
@@ -414,6 +412,95 @@ public class Main {
             ApiShader.shadeApis(flags, prefixes, inputs, outputs, downgradedApi);
         } finally {
             for (FileSystem fileSystem : fileSystems) {
+                fileSystem.close();
+            }
+        }
+    }
+
+    /**
+     * Fused {@code downgrade - shade}: one {@link PathDowngrader} pass where
+     * the class step runs the downgrade union chain then the shade stage list
+     * — the temp jar the chain would hop through is never written. Input
+     * comes from the downgrade op's {@code --target}, output from the shade
+     * op's; {@code --prefix}/{@code --downgradedApi} are the shade op's.
+     */
+    public void downgradeShade(Map<String, List<String[]>> dArgs, Map<String, List<String[]>> sArgs) throws IOException {
+        if (!sArgs.containsKey("--prefix") && flags.shadePrefix == null) {
+            throw new IllegalArgumentException("No prefix specified (use --prefix or Shade-Prefix in a config file)");
+        }
+        String prefix = sArgs.containsKey("--prefix") ? sArgs.get("--prefix").get(0)[0] : flags.shadePrefix;
+        if (!prefix.endsWith("/")) {
+            prefix += "/";
+        }
+        Set<File> apiJars = new HashSet<>();
+        if (sArgs.containsKey("--downgradedApi")) {
+            for (String[] s : sArgs.get("--downgradedApi")) {
+                for (String s1 : s[0].split(File.pathSeparator)) {
+                    apiJars.add(new File(s1));
+                }
+            }
+        }
+        if (apiJars.isEmpty()) {
+            apiJars = null;
+        }
+
+        String[] dTarget = dArgs.get("--target").get(0);
+        String[] sTarget = sArgs.get("--target").get(0);
+        List<FileSystem> fileSystems = new ArrayList<>();
+        List<FileSystem> apiFs = new ArrayList<>();
+        try {
+            File input = new File(dTarget[0]);
+            if (!input.exists()) {
+                throw new IllegalArgumentException("input \"" + input + "\" does not exist");
+            }
+            Path inputPath;
+            if (input.isDirectory() || input.toString().endsWith(".class")) {
+                inputPath = input.toPath();
+            } else {
+                FileSystem fs = Utils.openZipFileSystem(input.toPath(), false);
+                fileSystems.add(fs);
+                inputPath = fs.getPath("/");
+            }
+
+            File output = new File(sTarget[1]);
+            File parent = output.getParentFile();
+            if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                throw new IOException("Failed to create directory: " + parent);
+            }
+            if (output.exists() && !output.delete()) {
+                throw new IOException("Failed to delete output file: " + output);
+            }
+            Path outputPath;
+            if (output.toString().endsWith(".jar") || output.toString().endsWith(".zip")) {
+                FileSystem fs = Utils.openZipFileSystem(output.toPath(), true);
+                fileSystems.add(fs);
+                outputPath = fs.getPath("/");
+            } else {
+                outputPath = output.toPath();
+            }
+
+            Set<Path> downgradedApiPath = ApiShader.resolveDowngradedApi(flags, apiJars);
+            List<Path> apiRoots = new ArrayList<>();
+            for (Path file : downgradedApiPath) {
+                FileSystem fs = Utils.openZipFileSystem(file, false);
+                apiFs.add(fs);
+                apiRoots.add(fs.getPath("/"));
+            }
+            Pair<ReferenceIndex, Set<Type>> api = ApiShader.scanApis(flags, apiRoots);
+
+            Set<URL> classpath = new HashSet<>();
+            classpath.addAll(getClasspath(dArgs));
+            classpath.addAll(getClasspath(sArgs));
+            try (ClassDowngrader downgrader = ClassDowngrader.downgradeTo(flags)) {
+                PathDowngrader.downgradePaths(downgrader,
+                    Collections.singletonList(inputPath), Collections.singletonList(outputPath), classpath,
+                    prefix, api.getFirst(), api.getSecond(), apiRoots);
+            }
+        } finally {
+            for (FileSystem fileSystem : fileSystems) {
+                fileSystem.close();
+            }
+            for (FileSystem fileSystem : apiFs) {
                 fileSystem.close();
             }
         }
@@ -494,28 +581,25 @@ public class Main {
                 final ThreadGroup group = new ThreadGroup("jvmdg:" + m[0]);
                 final ByteArrayOutputStream buf = router.register(group);
                 final ClassDowngrader downgrader = currentVersionDowngrader;
-                Thread worker = new Thread(group, new Runnable() {
-                    @Override
-                    public void run() {
-                        int exit = 0;
-                        String main = m[0];
+                Thread worker = new Thread(group, () -> {
+                    int exit = 0;
+                    String main = m[0];
+                    try {
+                        invokeMain(Class.forName(main, false, downgrader.getClassLoader()), bootstrapArgs);
+                    } catch (InvocationTargetException e) {
+                        e.getCause().printStackTrace();
+                        exit = 1;
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                        exit = 1;
+                    } finally {
                         try {
-                            invokeMain(Class.forName(main, false, downgrader.getClassLoader()), bootstrapArgs);
-                        } catch (InvocationTargetException e) {
-                            e.getCause().printStackTrace();
-                            exit = 1;
-                        } catch (Throwable t) {
-                            t.printStackTrace();
-                            exit = 1;
-                        } finally {
-                            try {
-                                emit(realOut, main, buf, exit);
-                            } catch (IOException e) {
-                                realOut.println("===JVMDG-BEGIN " + main);
-                                realOut.println("===JVMDG-EXIT 1");
-                            }
-                            permits.release();
+                            emit(realOut, main, buf, exit);
+                        } catch (IOException e) {
+                            realOut.println("===JVMDG-BEGIN " + main);
+                            realOut.println("===JVMDG-EXIT 1");
                         }
+                        permits.release();
                     }
                 });
                 workers.add(worker);

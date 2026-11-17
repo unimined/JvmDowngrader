@@ -6,9 +6,12 @@ import org.objectweb.asm.tree.ClassNode;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.Constants;
 import xyz.wagyourtail.jvmdg.compile.ApiShader;
+import xyz.wagyourtail.jvmdg.config.BoundFlag;
+import xyz.wagyourtail.jvmdg.config.FlagBindings;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Consumer;
 import xyz.wagyourtail.jvmdg.util.Function;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
 import org.w3c.dom.Document;
@@ -25,7 +28,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
 import java.util.*;
 
 public class Flags {
@@ -37,10 +39,18 @@ public class Flags {
     /**
      * sets the target class version, default is {@link Opcodes#V1_8}
      */
-    public int classVersion = Integer.parseInt(System.getProperty(Constants.CLASS_VERSION, "52"));
+    @BoundFlag(key = "Target", cli = "--classVersion", aliases = "-c", argNames = {"version"},
+        sysprop = Constants.CLASS_VERSION, gradle = "downgradeTo", gradleType = "JavaVersion",
+        form = BoundFlag.Parser.JAVA_VERSION, legacyForm = BoundFlag.Parser.INT,
+        doc = "Target version — java major in config, class version on CLI")
+    public int classVersion = Opcodes.V1_8;
     /**
      * sets the api jar to use, if null will attempt to automatically find it
      */
+    @BoundFlag(key = "Api", cli = "--api", aliases = "-a", argNames = {"jar"},
+        sysprop = Constants.JAVA_API, gradle = "apiJar",
+        form = BoundFlag.Parser.FILE_LIST,
+        doc = "Provide a java-api jar or jars")
     public List<File> api = null;
     /**
      * sets the log level to {@link Logger.Level#FATAL}
@@ -48,18 +58,30 @@ public class Flags {
      * @deprecated use logLevel, if this is true, it will override {@link #logLevel} to {@link Logger.Level#FATAL}
      */
     @Deprecated
-    public boolean quiet = Boolean.getBoolean(Constants.QUIET);
+    @BoundFlag(key = "Quiet", cli = "--quiet", aliases = "-q", cliConst = "true",
+        sysprop = Constants.QUIET, deprecated = true,
+        doc = "[Deprecated] Suppress all warnings — use Log-Level: FATAL")
+    public boolean quiet = false;
     /**
      * sets if the logger should use ansi colors for the console to look pretty
      */
-    public boolean logAnsiColors = Boolean.parseBoolean(System.getProperty(Constants.LOG_ANSI_COLORS, "true"));
+    @BoundFlag.List({
+        @BoundFlag(key = "Log-Ansi-Colors", sysprop = Constants.LOG_ANSI_COLORS,
+            gradle = "logAnsiColors", doc = "ANSI colors in console output"),
+        @BoundFlag(key = "", cli = "--noColor", aliases = "-nc", cliConst = "false",
+            doc = "Disables ansi colors")
+    })
+    public boolean logAnsiColors = true;
     /**
      * sets the log level
      *
      * @see Logger.Level
      * @since 0.9.0
      */
-    public Logger.Level logLevel = Logger.Level.valueOf(System.getProperty(Constants.LOG_LEVEL, "INFO").toUpperCase());
+    @BoundFlag(key = "Log-Level", cli = "--logLevel", aliases = "-l", argNames = {"level"},
+        sysprop = Constants.LOG_LEVEL, gradle = "logLevel",
+        form = BoundFlag.Parser.LOG_LEVEL, doc = "Set the log level")
+    public Logger.Level logLevel = Logger.Level.INFO;
     /**
      * sets if any classes should be set to ignore missing class/member warnings
      * this will prevent {@link xyz.wagyourtail.jvmdg.version.VersionProvider#printWarnings(Set, String)} for
@@ -69,30 +91,78 @@ public class Flags {
      *
      * @since 0.9.0
      */
+    @BoundFlag(key = "Ignore-Warnings-In", cli = "--ignoreWarningsIn", aliases = "-i",
+        argNames = {"package or class identifier"}, sysprop = Constants.IGNORE_WARNINGS,
+        gradle = "ignoreWarningsIn", form = BoundFlag.Parser.WILDCARD_MAP,
+        doc = "Ignore missing class/member warnings in matching packages")
     public TreeMap<String, WildcardType> ignoreWarningsIn = new TreeMap<>();
     /**
      * sets if maven lookup is allowed for auto resolving {@link #api}
      */
-    public boolean allowMaven = Boolean.getBoolean(Constants.ALLOW_MAVEN_LOOKUP);
+    @BoundFlag(key = "Allow-Maven", sysprop = Constants.ALLOW_MAVEN_LOOKUP, gradle = "allowMaven",
+        doc = "Allow maven lookup for auto-resolving the api jar")
+    public boolean allowMaven = false;
     /**
      * sets the log level to {@link Logger.Level#DEBUG}
      *
      * @deprecated use logLevel, if this is true, it will override {@link #logLevel} to {@link Logger.Level#DEBUG}
      */
     @Deprecated
-    public boolean printDebug = Boolean.getBoolean(Constants.DEBUG);
+    @BoundFlag(key = "Print-Debug", cli = "--print", aliases = "-p", cliConst = "true",
+        command = "debug", sysprop = Constants.DEBUG, deprecated = true,
+        doc = "[Deprecated] Enable printing debug info — use Log-Level: DEBUG")
+    public boolean printDebug = false;
     /**
      * sets whether to enable "inlining" of methods during {@link ApiShader} tasks.
      *
      * @since 1.2.0
      */
-    public boolean shadeInlining = Boolean.parseBoolean(System.getProperty(Constants.SHADE_INLINING, "true"));
+    @BoundFlag.List({
+        @BoundFlag(key = "Shade-Inlining", sysprop = Constants.SHADE_INLINING,
+            gradle = "shadeInlining",
+            doc = "Inline api members used by exactly one class during shade"),
+        @BoundFlag(key = "", cli = "--disable-inlining", cliConst = "false",
+            doc = "Disables shade inlining")
+    })
+    public boolean shadeInlining = true;
+
+    /**
+     * which {@code reflection.idx} entries a shaded output ships for dynamic
+     * reflection sites — {@code none|usedOwners|all}. {@code usedOwners}
+     * (default) roots the impl classes of stub members on every JDK owner the
+     * input references, so reflective calls can reach them without shipping
+     * the whole table.
+     */
+    @BoundFlag(key = "Shade-Reflection", cli = "--shadeReflection",
+        argNames = {"none|usedOwners|all"}, sysprop = Constants.SHADE_REFLECTION,
+        gradle = "shadeReflection", form = BoundFlag.Parser.SHADE_REFLECTION,
+        doc = "Reflection-table retention under shade")
+    public xyz.wagyourtail.jvmdg.config.ShadeReflection shadeReflection = xyz.wagyourtail.jvmdg.config.ShadeReflection.USED_OWNERS;
+
+    /**
+     * extra {@code reflection.idx} entries to keep under
+     * {@code Shade-Reflection: usedOwners} — ProGuard-style
+     * {@code owner.member} patterns ({@code java/util/List.*}), merged across
+     * {@code Name:} scopes. Matched against the stubbed JDK owner + member
+     * name, same wildcard machinery as {@code Ignore-Warnings-In}.
+     */
+    @BoundFlag(key = "Shade-Keep-Reflection", cli = "--shadeKeepReflection",
+        argNames = {"owner.member glob"}, sysprop = Constants.SHADE_KEEP_REFLECTION,
+        gradle = "shadeKeepReflection",
+        form = BoundFlag.Parser.WILDCARD_MAP,
+        doc = "Reflection entries kept under shade beyond referenced owners")
+    public TreeMap<String, WildcardType> shadeKeepReflection = new TreeMap<>();
     /**
      * this skips applying stubs for the specified input class version, this will still apply the
      * {@link xyz.wagyourtail.jvmdg.version.VersionProvider#otherTransforms(ClassNode, Set, Function, Set)}
      * such as {@code INVOKE_INTERFACE} -> {@code INVOKE_SPECIAL} for private interface methods in java 9 -> 8
      */
-    public Set<Integer> debugSkipStubs = new HashSet<>(getDebugSkipStubs());
+    @BoundFlag(key = "Exclude-Stub-Versions", cli = "--skipStubs", aliases = "-s",
+        argNames = {"versions"}, command = "debug", sysprop = Constants.DEBUG_SKIP_STUBS,
+        gradle = "debugSkipStubs", form = BoundFlag.Parser.JAVA_VERSION_SET,
+        legacyForm = BoundFlag.Parser.CLASS_VERSION_SET,
+        doc = "Skip stubs for the specified input versions")
+    public Set<Integer> debugSkipStubs = new HashSet<>();
 
     /**
      * skip the specified JEPs stubs. this is only guarenteed to be present for methods that exist in both the source and target class versions,
@@ -100,14 +170,21 @@ public class Flags {
      *
      * @since 1.4.0
      */
-    public Set<Integer> debugSkipJeps = new HashSet<>(getDebugSkipJeps());
+    @BoundFlag(key = "Exclude-Jeps", cli = "--skipJEP", aliases = "-sj",
+        argNames = {"jep"}, command = "debug", sysprop = Constants.DEBUG_SKIP_JEPS, scoped = true,
+        gradle = "debugSkipJeps", form = BoundFlag.Parser.JEP_SET,
+        doc = "Skip stubs for the specified JEPs")
+    public Set<Integer> debugSkipJeps = new HashSet<>();
 
     /**
      * sets if classes should be dumped to the {@link Constants#DEBUG_DIR} directory
      *
      * @since 0.9.0
      */
-    public boolean debugDumpClasses = Boolean.getBoolean(Constants.DEBUG_DUMP_CLASSES);
+    @BoundFlag(key = "Debug-Dump-Classes", cli = "--dumpClasses", aliases = "-d",
+        cliConst = "true", command = "debug", sysprop = Constants.DEBUG_DUMP_CLASSES,
+        gradle = "debugDumpClasses", doc = "Dump classes to the debug folder")
+    public boolean debugDumpClasses = false;
 
     /**
      * this skips applying specific stub classes/methods, for example to disable the JEP 400, you would put
@@ -115,57 +192,190 @@ public class Flags {
      *
      * @since 1.3.0
      */
-    public Set<FullyQualifiedMemberNameAndDesc> debugSkipStub = new HashSet<>(getDebugSkipStub());
+    @BoundFlag(key = "Exclude-Stubs", cli = "--skipStub", aliases = "-ss",
+        argNames = {"stub"}, command = "debug", sysprop = Constants.DEBUG_SKIP_STUB, scoped = true,
+        gradle = "debugSkipStub", form = BoundFlag.Parser.FQMND_SET,
+        doc = "Skip specific stub classes/methods")
+    public Set<FullyQualifiedMemberNameAndDesc> debugSkipStub = new HashSet<>();
+
+    /**
+     * which stub kinds callsites may use — {@code full} applies all stubs,
+     * {@code noBehavior} skips {@code BEHAVIOR} stubs (never wrap an API the
+     * target already has), {@code mechanical} keeps {@code LANGUAGE} desugars
+     * only and reports {@code MISSING_API} hits per {@link #onMissingApi}.
+     * Scoped in {@code Name:} sections — resolved per transformed class.
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "Stub-Policy", cli = "--stubPolicy", argNames = {"policy"},
+        sysprop = Constants.STUB_POLICY, gradle = "stubPolicy", scoped = true,
+        form = BoundFlag.Parser.STUB_POLICY,
+        doc = "Stub application policy: full|noBehavior|mechanical")
+    public xyz.wagyourtail.jvmdg.config.StubPolicy stubPolicy = xyz.wagyourtail.jvmdg.config.StubPolicy.FULL;
+
+    /**
+     * what {@code mechanical} does with a {@code MISSING_API} callsite —
+     * {@code error} aborts the transform naming the site + required Java
+     * version; {@code warn} reports it and keeps building.
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "On-Missing-Api", cli = "--onMissingApi", argNames = {"mode"},
+        sysprop = Constants.ON_MISSING_API, gradle = "onMissingApi", scoped = true,
+        form = BoundFlag.Parser.ON_MISSING_API,
+        doc = "Mechanical-mode missing-API reporting: error|warn")
+    public xyz.wagyourtail.jvmdg.config.OnMissingApi onMissingApi = xyz.wagyourtail.jvmdg.config.OnMissingApi.ERROR;
+
+    /**
+     * members named here are always emitted — an explicit member-level
+     * statement that beats {@code Exclude-Stubs}/{@code Exclude-Jeps} and
+     * {@code Stub-Policy} drops in scope (the {@code mechanical} escape
+     * hatch: keep a deliberate polyfill while everything else missing
+     * errors out). Cannot resurrect members dropped at registration time
+     * by global {@code Exclude-Stubs}/{@code Exclude-Jeps}/{@code Exclude-Stub-Versions}.
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "Include-Stubs", cli = "--includeStub", aliases = "-is",
+        argNames = {"stub"}, sysprop = Constants.INCLUDE_STUB, scoped = true,
+        gradle = "includeStub", form = BoundFlag.Parser.FQMND_SET,
+        doc = "Always emit the listed stub members, overriding excludes and policy")
+    public Set<FullyQualifiedMemberNameAndDesc> includeStub = new HashSet<>();
 
     /**
      * set generated methods to not be synthetic
      *
      * @since 1.2.3
      */
-    public boolean debugNoSynthetic = Boolean.getBoolean(Constants.DEBUG_NO_SYNTHETIC);
+    @BoundFlag(key = "Debug-No-Synthetic", cli = "--noSynthetic", aliases = "-ns",
+        cliConst = "true", command = "debug", sysprop = Constants.DEBUG_NO_SYNTHETIC,
+        gradle = "debugNoSynthetic", doc = "Generated methods are not marked synthetic")
+    public boolean debugNoSynthetic = false;
+
+    /**
+     * disables {@link xyz.wagyourtail.jvmdg.pipeline.FusibleTransform} fusion —
+     * adjacent fusible transforms run sequentially. The sequential path is
+     * the correctness oracle; set this to bisect a fused-output difference.
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "Debug-No-Fuse", sysprop = Constants.DEBUG_NO_FUSE, gradle = "debugNoFuse",
+        doc = "Disable fused transforms (sequential oracle path)")
+    public boolean debugNoFuse = false;
+
+    /**
+     * internal debugging flag, disable loading the {@code META-INF/jvmdg/stubs.idx}
+     * index — forces the reflective stub scan even when the api jar ships an index
+     */
+    @BoundFlag(key = "Debug-No-Stub-Idx", sysprop = Constants.DEBUG_NO_STUB_IDX, gradle = "debugNoStubIdx",
+        doc = "Force reflective stub scan even when the api jar ships an index")
+    public boolean debugNoStubIdx = false;
     /**
      * if should move the original class file to the multi-release directory
      *
      * @since 1.0.0
      */
-    public boolean multiReleaseOriginal = Boolean.getBoolean(Constants.MULTI_RELEASE_ORIGINAL);
+    @BoundFlag(key = "Multi-Release-Original", cli = "--multiReleaseOriginal",
+        aliases = "-mro", cliConst = "true", sysprop = Constants.MULTI_RELEASE_ORIGINAL,
+        gradle = "multiReleaseOriginal",
+        doc = "Move the original class file to the multi-release directory")
+    public boolean multiReleaseOriginal = false;
     /**
      * if should provide extra multi-release versions. As class versions, not java versions.
      *
      * @since 1.0.0
      */
-    public Set<Integer> multiReleaseVersions = new HashSet<>(getMultiReleaseVersions());
+    @BoundFlag(key = "Multi-Release-Versions", cli = "--multiRelease", aliases = "-mr",
+        argNames = {"version"}, sysprop = Constants.MULTI_RELEASE_VERSIONS,
+        gradle = "multiReleaseVersions", form = BoundFlag.Parser.JAVA_VERSION_SET,
+        legacyForm = BoundFlag.Parser.CLASS_VERSION_SET,
+        doc = "Extra multi-release versions (java major in config, class version on CLI)")
+    public Set<Integer> multiReleaseVersions = new HashSet<>();
 
     /**
      * if should downgrade classes from the multi-release folder, instead of selecting the normal one
      *
      * @since 1.2.1
      */
+    @BoundFlag(key = "Multi-Release-Inputs", cli = "--multiReleaseInputs", aliases = "-mri",
+        cliConst = "true", gradle = "downgradeFromMultiReleases",
+        doc = "Downgrade classes from the multi-release folder instead of the normal ones")
     public boolean downgradeFromMultiReleases = false;
 
+    /**
+     * emit no {@code invokedynamic} / {@code ConstantDynamic} in the output —
+     * every bootstrap site desugars to ordinary invokes/fields at transform
+     * time (string concat, lambdas, condy, records, type-switch). For
+     * runtimes/toolchains where indy linking is unsupported or undesirable.
+     *
+     * @since 3.1.0
+     */
+    @BoundFlag(key = "No-Indy", cli = "--noIndy", cliConst = "true",
+        sysprop = Constants.NO_INDY, gradle = "noIndy",
+        doc = "Emit no invokedynamic/ConstantDynamic in the output")
+    public boolean noIndy = false;
+
+    /**
+     * accept preview-compiled input class files (javac {@code --enable-preview}
+     * sets the class-file minor version to 0xFFFF) — they route through the
+     * provider chain of their major version — and activate stubs registered
+     * with {@code condition = PREVIEW}. Without this flag a preview input is a
+     * hard error naming the class.
+     *
+     * @since 3.1.0
+     */
+    @BoundFlag(key = "Allow-Preview", cli = "--allowPreview", cliConst = "true",
+        sysprop = Constants.ALLOW_PREVIEW, gradle = "allowPreview",
+        doc = "Accept preview-compiled input classes and activate PREVIEW-condition stubs")
+    public boolean allowPreview = false;
+
+
+    /**
+     * prefix used when shading api classes into the output — the {@code shade}
+     * command's {@code --prefix} argument overrides it
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "Shade-Prefix", gradle = "shadePrefix", form = BoundFlag.Parser.STRING,
+        doc = "Prefix for shaded api classes")
+    public String shadePrefix = null;
+
+    /**
+     * disables reading {@code META-INF/jvmdg/*.mf} rules embedded in input jars
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "Ignore-Embedded-Rules", cli = "--ignoreEmbeddedRules", cliConst = "true", gradle = "ignoreEmbeddedRules",
+        doc = "Do not apply META-INF/jvmdg/*.mf rules embedded in input jars")
+    public boolean ignoreEmbeddedRules = false;
+
+    /**
+     * keeps {@code META-INF/jvmdg/*.mf} rule files in the output jar instead of
+     * stripping them (lets a downgraded library re-export its rules)
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "Keep-Embedded-Rules", cli = "--keepEmbeddedRules", cliConst = "true", gradle = "keepEmbeddedRules",
+        doc = "Copy META-INF/jvmdg/*.mf rules into the output instead of stripping them")
+    public boolean keepEmbeddedRules = false;
+
+    /**
+     * {@code Name:}-scoped config sections, in file order — resolved per class
+     * (most specific matching pattern wins) at use sites. Internal state, not
+     * an option surface.
+     *
+     * @since 3.0.0
+     */
+    @BoundFlag(key = "")
+    public List<xyz.wagyourtail.jvmdg.config.ScopedRule> scopedRules = new ArrayList<>();
+
     public Flags() {
-        loadIgnoreWarnings();
+        FlagBindings.applySysprops(this);
     }
 
     public Flags copy() {
         Flags flags = new Flags();
-        flags.classVersion = classVersion;
-        flags.api = api == null ? null : new ArrayList<>(api);
-        flags.quiet = quiet;
-        flags.logAnsiColors = logAnsiColors;
-        flags.logLevel = logLevel;
-        flags.allowMaven = allowMaven;
-        flags.shadeInlining = shadeInlining;
-        flags.ignoreWarningsIn = new TreeMap<>(ignoreWarningsIn);
-        flags.printDebug = printDebug;
-        flags.debugSkipStub = new HashSet<>(debugSkipStub);
-        flags.debugSkipStubs = new HashSet<>(debugSkipStubs);
-        flags.debugSkipJeps = new HashSet<>(debugSkipJeps);
-        flags.debugNoSynthetic = debugNoSynthetic;
-        flags.debugDumpClasses = debugDumpClasses;
-        flags.multiReleaseOriginal = multiReleaseOriginal;
-        flags.multiReleaseVersions = new HashSet<>(multiReleaseVersions);
-        flags.downgradeFromMultiReleases = downgradeFromMultiReleases;
+        FlagBindings.copyInto(this, flags);
         return flags;
     }
 
@@ -177,37 +387,18 @@ public class Flags {
 
     @Override
     public String toString() {
-        return "Flags{" +
-            "classVersion=" + classVersion +
-            ", api=" + api +
-            ", quiet=" + quiet +
-            ", logAnsiColors=" + logAnsiColors +
-            ", logLevel=" + logLevel +
-            ", allowMaven=" + allowMaven +
-            ", ignoreWarningsIn=" + ignoreWarningsIn +
-            ", printDebug=" + printDebug +
-            ", debugSkipStub=" + debugSkipStub +
-            ", debugSkipStubs=" + debugSkipStubs +
-            ", debugSkipJeps=" + debugSkipJeps +
-            ", debugNoSynthetic=" + debugNoSynthetic +
-            ", debugDumpClasses=" + debugDumpClasses +
-            ", multiReleaseOriginal=" + multiReleaseOriginal +
-            ", multiReleaseVersions=" + multiReleaseVersions +
-            ", downgradeFromMultiReleases=" + downgradeFromMultiReleases +
-            ", shadeInlining=" + shadeInlining +
-            '}';
+        return FlagBindings.describe(this);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
-        Flags flags = (Flags) o;
-        return classVersion == flags.classVersion && quiet == flags.quiet && logAnsiColors == flags.logAnsiColors && allowMaven == flags.allowMaven && printDebug == flags.printDebug && shadeInlining == flags.shadeInlining && debugDumpClasses == flags.debugDumpClasses && debugNoSynthetic == flags.debugNoSynthetic && multiReleaseOriginal == flags.multiReleaseOriginal && downgradeFromMultiReleases == flags.downgradeFromMultiReleases && Objects.equals(api, flags.api) && logLevel == flags.logLevel && Objects.equals(ignoreWarningsIn, flags.ignoreWarningsIn) && Objects.equals(debugSkipStubs, flags.debugSkipStubs) && Objects.equals(debugSkipJeps, flags.debugSkipJeps) && Objects.equals(debugSkipStub, flags.debugSkipStub) && Objects.equals(multiReleaseVersions, flags.multiReleaseVersions);
+        return FlagBindings.flagsEqual(this, (Flags) o);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(classVersion, api, quiet, logAnsiColors, logLevel, ignoreWarningsIn, allowMaven, printDebug, shadeInlining, debugSkipStubs, debugSkipJeps, debugDumpClasses, debugSkipStub, debugNoSynthetic, multiReleaseOriginal, multiReleaseVersions, downgradeFromMultiReleases);
+        return FlagBindings.flagsHash(this);
     }
 
     /* getters */
@@ -259,7 +450,7 @@ public class Flags {
                         foundApi = Collections.singletonList(tmp.toFile());
                         return foundApi;
                     } else {
-                        try (InputStream in = url.openStream()) {
+                        try (InputStream in = Utils.openUncached(url)) {
                             try (InputStream in2 = Files.newInputStream(tmp)) {
                                 if (hash(in).equals(hash(in2))) {
                                     foundApi = Collections.singletonList(tmp.toFile());
@@ -274,7 +465,7 @@ public class Flags {
                     url = getJavaApiFromMaven();
                 }
                 if (url != null) {
-                    try (InputStream in = url.openStream()) {
+                    try (InputStream in = Utils.openUncached(url)) {
                         Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
                         foundApi = Collections.singletonList(tmp.toFile());
                         return foundApi;
@@ -306,10 +497,22 @@ public class Flags {
             }
             entry = ignoreWarningsIn.lowerEntry(entry.getKey());
         }
+        if (!scopedRules.isEmpty()) {
+            // a matching Name:-scoped section with Ignore-Warnings: true
+            // suppresses warnings for the class — an equal-specificity
+            // conflict surfaces here since it can't be checked eagerly
+            try {
+                xyz.wagyourtail.jvmdg.config.ScopedRule rule =
+                    xyz.wagyourtail.jvmdg.config.ScopedRule.resolve(scopedRules, className);
+                return rule != null && rule.ignoreWarnings();
+            } catch (xyz.wagyourtail.jvmdg.config.ManifestConfigReader.ConfigException e) {
+                throw new IllegalStateException(e.getMessage(), e);
+            }
+        }
         return false;
     }
 
-    private static boolean wildcardMatches(WildcardType type, String key, String className) {
+    public static boolean wildcardMatches(WildcardType type, String key, String className) {
         switch (type) {
             case NONE:
                 return className.equals(key);
@@ -325,55 +528,6 @@ public class Flags {
                 return true;
             default:
                 return false;
-        }
-    }
-
-    /* initialization methods */
-    private Set<FullyQualifiedMemberNameAndDesc> getDebugSkipStub() {
-        Set<FullyQualifiedMemberNameAndDesc> skip = new HashSet<>();
-        String skipStubs = System.getProperty(Constants.DEBUG_SKIP_STUB);
-        if (skipStubs == null) return skip;
-        for (String s : skipStubs.split("\\|")) {
-            skip.add(FullyQualifiedMemberNameAndDesc.of(s));
-        }
-        return skip;
-    }
-
-    private Set<Integer> getDebugSkipJeps() {
-        Set<Integer> skip = new HashSet<>();
-        String skipJeps = System.getProperty(Constants.DEBUG_SKIP_JEPS);
-        if (skipJeps == null) return skip;
-        for (String s : skipJeps.split(",")) {
-            skip.add(Integer.parseInt(s));
-        }
-        return skip;
-    }
-
-    private Set<Integer> getDebugSkipStubs() {
-        Set<Integer> skip = new HashSet<>();
-        String skipStubs = System.getProperty(Constants.DEBUG_SKIP_STUBS);
-        if (skipStubs == null) return skip;
-        for (String s : skipStubs.split(",")) {
-            skip.add(Integer.parseInt(s));
-        }
-        return skip;
-    }
-
-    private Set<Integer> getMultiReleaseVersions() {
-        Set<Integer> versions = new HashSet<>();
-        String multiReleaseVersions = System.getProperty(Constants.MULTI_RELEASE_VERSIONS);
-        if (multiReleaseVersions == null) return versions;
-        for (String s : multiReleaseVersions.split(",")) {
-            versions.add(Integer.parseInt(s));
-        }
-        return versions;
-    }
-
-    private void loadIgnoreWarnings() {
-        String ignoreWarnings = System.getProperty(Constants.IGNORE_WARNINGS);
-        if (ignoreWarnings == null) return;
-        for (String s : ignoreWarnings.split(",")) {
-            addIgnore(s);
         }
     }
 
@@ -396,12 +550,17 @@ public class Flags {
     private URL getJavaApiFromMaven() throws IOException {
         Package pkg = ClassDowngrader.class.getPackage();
         String version = pkg.getImplementationVersion();
+        if (version == null) {
+            // running from raw class dirs (dev/tests) — no artifact
+            // coordinates to resolve, same as any other not-found path
+            return null;
+        }
         if (version.contains("SNAPSHOT")) {
             // retrieve maven metadata
             URL url = URI.create("https://maven.wagyourtail.xyz/snapshots/xyz/wagyourtail/jvmdowngrader/jvmdowngrader-java-api/" + version + "/maven-metadata.xml").toURL();
             // get actual latest — parse as plain XML; XMLDecoder is a
             // deserialization codec and unsafe on remote input
-            try (InputStream in = url.openStream()) {
+            try (InputStream in = Utils.openUncached(url)) {
                 DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
                 dbf.setFeature("http://javax.xml.XMLConstants/feature/secure-processing", true);
                 try {
@@ -433,12 +592,12 @@ public class Flags {
             // fetch the published sha1 for integrity verification (optional —
             // older artifacts may not publish one)
             String expectedSha1 = null;
-            try (InputStream shaIn = URI.create(url.toString() + ".sha1").toURL().openStream()) {
+            try (InputStream shaIn = Utils.openUncached(URI.create(url.toString() + ".sha1").toURL())) {
                 expectedSha1 = readFirstToken(shaIn);
             } catch (IOException ignored) {
             }
             // download
-            try (InputStream in = url.openStream()) {
+            try (InputStream in = Utils.openUncached(url)) {
                 Files.copy(in, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
             if (expectedSha1 != null) {
@@ -464,20 +623,8 @@ public class Flags {
     }
 
     private String hash(InputStream is) {
-        MessageDigest digest = null;
         try {
-            digest = MessageDigest.getInstance("SHA-1");
-            byte[] buffer = new byte[8192];
-            int read = 0;
-            while ((read = is.read(buffer)) > 0) {
-                digest.update(buffer, 0, read);
-            }
-            byte[] hash = digest.digest();
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
+            return Utils.getSha1(is);
         } catch (Exception e) {
             throw new RuntimeException("Failed to hash", e);
         }

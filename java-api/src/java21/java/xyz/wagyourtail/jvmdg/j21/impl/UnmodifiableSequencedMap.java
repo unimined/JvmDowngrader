@@ -3,6 +3,8 @@ package xyz.wagyourtail.jvmdg.j21.impl;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import xyz.wagyourtail.jvmdg.j21.stub.java_base.J_U_SequencedMap;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -10,12 +12,12 @@ import java.util.Set;
 
 /**
  * Unmodifiable sequenced view of a {@link Map} for
- * {@code Collections.unmodifiableSequencedMap}. Recognized as sequenced by
- * {@code J_U_SequencedMap.jvmdg$instanceof} and throws
+ * {@code Collections.unmodifiableSequencedMap}. Recognized as sequenced
+ * via {@link J_U_SequencedMap.Marker} and throws
  * {@link UnsupportedOperationException} from all mutating operations,
  * matching the JDK's unmodifiable wrappers.
  */
-public class UnmodifiableSequencedMap<K, V, T extends Map<K, V>> implements Map<K, V> {
+public class UnmodifiableSequencedMap<K, V, T extends Map<K, V>> implements Map<K, V>, J_U_SequencedMap.Marker {
     public final T original;
 
     public UnmodifiableSequencedMap(T original) {

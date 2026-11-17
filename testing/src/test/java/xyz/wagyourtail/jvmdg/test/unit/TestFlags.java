@@ -175,6 +175,7 @@ public class TestFlags {
             {Constants.DEBUG_DUMP_CLASSES, "debugDumpClasses"},
             {Constants.DEBUG_NO_SYNTHETIC, "debugNoSynthetic"},
             {Constants.MULTI_RELEASE_ORIGINAL, "multiReleaseOriginal"},
+            {Constants.NO_INDY, "noIndy"},
         };
         for (String[] c : cases) {
             String prop = c[0];
@@ -199,6 +200,8 @@ public class TestFlags {
                 return f.debugNoSynthetic;
             case "multiReleaseOriginal":
                 return f.multiReleaseOriginal;
+            case "noIndy":
+                return f.noIndy;
             default:
                 throw new IllegalArgumentException(field);
         }
@@ -251,6 +254,8 @@ public class TestFlags {
         f.logLevel = Logger.Level.WARN;
         f.allowMaven = true;
         f.shadeInlining = false;
+        f.shadeReflection = xyz.wagyourtail.jvmdg.config.ShadeReflection.ALL;
+        f.shadeKeepReflection.put("java/util/List.", Flags.WildcardType.SINGLE);
         f.addIgnore("x/**");
         f.printDebug = true;
         f.debugSkipStub.add(FullyQualifiedMemberNameAndDesc.of("Ljava/lang/String;length;()I"));
@@ -261,6 +266,7 @@ public class TestFlags {
         f.multiReleaseOriginal = true;
         f.multiReleaseVersions.add(55);
         f.downgradeFromMultiReleases = true;
+        f.noIndy = true;
 
         Flags c = f.copy();
         assertEquals(f, c);
@@ -274,11 +280,13 @@ public class TestFlags {
         Flags c = f.copy();
         c.api.add(new File("leak.jar"));
         c.ignoreWarningsIn.put("leak/", Flags.WildcardType.DOUBLE);
+        c.shadeKeepReflection.put("leak/", Flags.WildcardType.DOUBLE);
         c.debugSkipStubs.add(99);
         c.multiReleaseVersions.add(99);
 
         assertTrue(f.api.isEmpty(), "copy().api must not alias the source list");
         assertFalse(f.ignoreWarningsIn.containsKey("leak/"));
+        assertFalse(f.shadeKeepReflection.containsKey("leak/"));
         assertFalse(f.debugSkipStubs.contains(99));
         assertFalse(f.multiReleaseVersions.contains(99));
     }

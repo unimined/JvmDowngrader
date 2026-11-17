@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.Stub;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 
 import java.util.Objects;
 
@@ -20,7 +20,7 @@ public interface J_U_F_DoublePredicate {
 
     class DoublePredicateDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static J_U_F_DoublePredicate and(final J_U_F_DoublePredicate self, final J_U_F_DoublePredicate other) {
             Objects.requireNonNull(other);
             return new J_U_F_DoublePredicate.DoublePredicateAdapter() {
@@ -31,7 +31,7 @@ public interface J_U_F_DoublePredicate {
             };
         }
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static J_U_F_DoublePredicate negate(final J_U_F_DoublePredicate self) {
             return new J_U_F_DoublePredicate.DoublePredicateAdapter() {
                 @Override
@@ -41,7 +41,7 @@ public interface J_U_F_DoublePredicate {
             };
         }
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static J_U_F_DoublePredicate or(final J_U_F_DoublePredicate self, final J_U_F_DoublePredicate other) {
             Objects.requireNonNull(other);
             return new J_U_F_DoublePredicate.DoublePredicateAdapter() {

@@ -5,6 +5,7 @@ import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_DoubleConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongConsumer;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -29,7 +30,7 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
 
         class OfIntDefaults {
 
-            @Stub(abstractDefault = true)
+            @DefaultImpl
             public static void forEachRemaining(J_U_PrimitiveIterator.OfInt it, J_U_F_Consumer<? super Integer> action) {
                 if (action instanceof J_U_F_IntConsumer) {
                     forEachRemaining(it, (J_U_F_IntConsumer) action);
@@ -40,12 +41,12 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
                 }
             }
 
-            @Stub(abstractDefault = true)
+            @DefaultImpl
             public static void forEachRemaining(J_U_PrimitiveIterator.OfInt it, J_U_F_IntConsumer action) {
                 it.forEachRemaining(action);
             }
 
-            @Stub(abstractDefault = true)
+            @DefaultImpl
             public static Integer next(J_U_PrimitiveIterator.OfInt it) {
                 return it.nextInt();
             }
@@ -67,7 +68,7 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
 
         class OfLongDefaults {
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"))
             public static void forEachRemaining(J_U_PrimitiveIterator.OfLong it, J_U_F_Consumer<? super Long> action) {
                 if (action instanceof J_U_F_LongConsumer) {
                     forEachRemaining(it, (J_U_F_LongConsumer) action);
@@ -78,12 +79,12 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
                 }
             }
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"))
             public static void forEachRemaining(J_U_PrimitiveIterator.OfLong it, J_U_F_LongConsumer action) {
                 it.forEachRemaining(action);
             }
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("Ljava/util/PrimitiveIterator$OfLong;"))
             public static Long next(J_U_PrimitiveIterator.OfLong it) {
                 return it.nextLong();
             }
@@ -105,7 +106,7 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
 
         class OfDoubleDefaults {
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"))
             public static void forEachRemaining(J_U_PrimitiveIterator.OfDouble it, J_U_F_Consumer<? super Double> action) {
                 if (action instanceof J_U_F_DoubleConsumer) {
                     forEachRemaining(it, (J_U_F_DoubleConsumer) action);
@@ -116,12 +117,12 @@ public interface J_U_PrimitiveIterator<T, T_CONS> extends Iterator<T> {
                 }
             }
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"))
             public static void forEachRemaining(J_U_PrimitiveIterator.OfDouble it, J_U_F_DoubleConsumer action) {
                 it.forEachRemaining(action);
             }
 
-            @Stub(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("Ljava/util/PrimitiveIterator$OfDouble;"))
             public static Double next(J_U_PrimitiveIterator.OfDouble it) {
                 return it.nextDouble();
             }

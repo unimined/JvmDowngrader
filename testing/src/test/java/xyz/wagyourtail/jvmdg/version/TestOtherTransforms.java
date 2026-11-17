@@ -146,6 +146,41 @@ public class TestOtherTransforms {
             && min.desc.equals("(Lt/Itf;)V")), "private/super itf call must gain self param");
     }
 
+    @Test
+    public void interfaceConstantsDontEnterMemberSynthesis() throws Exception {
+        // regression for the field-in-members crash: interface constants are
+        // static members, so they land in the StaticDefaults-bound members
+        // map alongside relocated methods — the missing-default synthesizer
+        // must only emit *method* redirects (a field desc like "I" is not
+        // parseable by Type.getReturnType/getArgumentTypes)
+        ClassNode itf = node(Opcodes.V1_8, Opcodes.ACC_INTERFACE | Opcodes.ACC_ABSTRACT | Opcodes.ACC_PUBLIC, "t/Itf");
+        itf.fields.add(new FieldNode(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+            "MAX_REACH_SQ", "I", null, 4));
+        MethodNode stat = method(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, "stat", "()V");
+        stat.instructions.add(new InsnNode(Opcodes.RETURN));
+        MethodNode dflt = method(Opcodes.ACC_PUBLIC, "dflt", "()V");
+        dflt.instructions.add(new InsnNode(Opcodes.RETURN));
+        itf.methods.add(stat);
+        itf.methods.add(dflt);
+
+        ClassNode impl = node(Opcodes.V1_8, Opcodes.ACC_PUBLIC, "t/Impl");
+        impl.interfaces = java.util.Collections.singletonList("t/Itf");
+
+        Map<String, ClassNode> out = toNodes(downgrade(Opcodes.V1_7,
+            Map.of("t/Itf", itf, "t/Impl", impl), "t/Impl"));
+
+        // reaching here means the constant never hit the method-desc APIs;
+        // the missing default must still get its redirect synthesized
+        ClassNode nImpl = out.get("t/Impl");
+        assertNotNull(nImpl);
+        MethodNode redirect = find(nImpl, "dflt");
+        assertNotNull(redirect, "missing-default redirect must be synthesized");
+        assertTrue(hasInsn(nImpl, i -> i instanceof MethodInsnNode min
+            && min.owner.equals("t/Itf$jvmdg$StaticDefaults")
+            && min.name.equals("dflt")), "redirect must call the companion impl");
+        assertNull(find(nImpl, "MAX_REACH_SQ"), "no synthetic member for the constant");
+    }
+
     // ---------- Java7Downgrader (target <= 50) ----------
 
     @Test

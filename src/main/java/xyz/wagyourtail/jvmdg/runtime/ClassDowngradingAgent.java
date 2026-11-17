@@ -1,8 +1,8 @@
 package xyz.wagyourtail.jvmdg.runtime;
 
 import org.objectweb.asm.*;
+import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.logging.Logger;
-import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.IOException;
@@ -58,16 +58,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
     }
 
     static {
-        String version = System.getProperty("java.class.version");
-        if (version != null) {
-            try {
-                currentVersion = Integer.parseInt(version.split("\\.")[0]);
-            } catch (NumberFormatException e) {
-                throw new UnsupportedOperationException("Unable to determine current class version");
-            }
-        } else {
-            throw new UnsupportedOperationException("Unable to determine current class version");
-        }
+        currentVersion = Utils.getCurrentClassVersion();
     }
 
     public byte[] retransformCodeSource(byte[] bytes) {
@@ -76,18 +67,27 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
         ClassVisitor visitor = new ClassVisitor(Opcodes.ASM9, writer) {
             @Override
             public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
+                // the aim is to null the certs/signers parameter of the
+                // CodeSource(URL, ...) ctors before the body reads it. Guarded:
+                // only when a second parameter actually exists, is a reference
+                // type, and lands on a computable local slot — an unguarded
+                // ASTORE 2 corrupts any ctor with fewer/differently-sized args
                 if (name.equals("<init>")) {
-                    return new MethodVisitor(api, super.visitMethod(access, name, descriptor, signature, exceptions)) {
-                        @Override
-                        public void visitCode() {
-                            super.visitCode();
-                            visitInsn(Opcodes.ACONST_NULL);
-                            visitVarInsn(Opcodes.ASTORE, 2);
-                        }
-                    };
-                } else {
-                    return super.visitMethod(access, name, descriptor, signature, exceptions);
+                    Type[] args = Type.getArgumentTypes(descriptor);
+                    if (args.length >= 2 &&
+                        (args[1].getSort() == Type.OBJECT || args[1].getSort() == Type.ARRAY)) {
+                        final int slot = 1 + args[0].getSize(); // local slot of the 2nd arg
+                        return new MethodVisitor(api, super.visitMethod(access, name, descriptor, signature, exceptions)) {
+                            @Override
+                            public void visitCode() {
+                                super.visitCode();
+                                visitInsn(Opcodes.ACONST_NULL);
+                                visitVarInsn(Opcodes.ASTORE, slot);
+                            }
+                        };
+                    }
                 }
+                return super.visitMethod(access, name, descriptor, signature, exceptions);
             }
         };
         reader.accept(visitor, 0);
@@ -103,7 +103,7 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
 
             if (loader != null && className != null && Bootstrap.flags.downgradeFromMultiReleases) {
                 for (Integer version : multiVersions()) {
-                    try (InputStream stream = loader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + className + ".class")) {
+                    try (InputStream stream = openResource(loader, "META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + className + ".class")) {
                         if (stream != null) {
                             bytes = Utils.readAllBytes(stream);
                             break;
@@ -128,28 +128,28 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             LOGGER.trace("Transforming " + className + " from " + version + " to " + currentVersion);
 //        if (loader instanceof DowngradingClassLoader) return bytes; // already handled
             final AtomicReference<String> resolvedName = new AtomicReference<>(className);
-            Map<String, byte[]> outputs = Bootstrap.currentVersionDowngrader.downgrade(resolvedName, bytes, true, new Function<String, byte[]>() {
-                @Override
-                public byte[] apply(String s) {
-                    try {
-                        if (Bootstrap.flags.downgradeFromMultiReleases) {
-                            for (Integer version : multiVersions()) {
-                                try (InputStream stream = loader.getResourceAsStream("META-INF/versions/" + Utils.classVersionToMajorVersion(version) + "/" + s + ".class")) {
-                                    if (stream != null) {
-                                        return Utils.readAllBytes(stream);
-                                    }
+            // bootstrap loads (loader == null) have no ClassLoader to read
+            // resources through; use the bootstrap-delegating loader instead
+            final ClassLoader resourceLoader = loader == null ? ClassDowngrader.bootstrapClassLoader : loader;
+            Map<String, byte[]> outputs = Bootstrap.currentVersionDowngrader.downgrade(resolvedName, bytes, true, s -> {
+                try {
+                    if (loader != null && Bootstrap.flags.downgradeFromMultiReleases) {
+                        for (Integer multiVersion : multiVersions()) {
+                            try (InputStream stream = openResource(resourceLoader, "META-INF/versions/" + Utils.classVersionToMajorVersion(multiVersion) + "/" + s + ".class")) {
+                                if (stream != null) {
+                                    return Utils.readAllBytes(stream);
                                 }
                             }
                         }
-                        try (InputStream stream = loader.getResourceAsStream(s + ".class")) {
-                            if (stream != null) {
-                                return Utils.readAllBytes(stream);
-                            }
-                        }
-                        return null;
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
                     }
+                    try (InputStream stream = openResource(resourceLoader, s + ".class")) {
+                        if (stream != null) {
+                            return Utils.readAllBytes(stream);
+                        }
+                    }
+                    return null;
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             });
             LOGGER.trace("transform size for " + resolvedName.get() + ": " + (outputs == null ? null : outputs.size()));
@@ -168,8 +168,14 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
                 }
                 if (entry.getKey().startsWith("META-INF/versions")) continue; // skip the versioned classes
                 if (loader == null) continue; // extras for bootstrap-loaded classes resolve via the classpath
+                String extraName = entry.getKey().replace('/', '.');
                 try {
-                    defineClass.bindTo(loader).invoke(entry.getKey().replace('/', '.'), entry.getValue(), 0, entry.getValue().length);
+                    defineClass.bindTo(loader).invoke(extraName, entry.getValue(), 0, entry.getValue().length);
+                } catch (LinkageError e) {
+                    // a raw defineClass can race a loadClass for the same name
+                    // on another thread; the racing definition is equivalent,
+                    // so keep theirs rather than kill the transform
+                    LOGGER.warn("Skipping already-defined class " + extraName + " (" + e + ")");
                 } catch (Throwable throwable) {
                     throw new RuntimeException(throwable);
                 }
@@ -185,6 +191,10 @@ public class ClassDowngradingAgent implements ClassFileTransformer {
             e.initCause(t);
             throw e;
         }
+    }
+
+    private static InputStream openResource(ClassLoader loader, String path) throws IOException {
+        return Utils.openResource(loader, path);
     }
 
 }

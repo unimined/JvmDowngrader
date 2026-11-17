@@ -1,0 +1,23 @@
+# known-missing allowlist — honestly-declared coverage gaps.
+# One `Lowner;name;desc` (FQMND) or `Lowner;` (whole class) per line.
+# Rows matching a missing member are classified `knownMissing` in
+# coverage-matrix.csv and listed in <version>/knownMissing.txt instead of
+# appearing as undeclared misses. Keep entries grouped with a comment
+# explaining why the gap is honest (platform limit, deferred work, etc.).
+
+# Virtual-thread emulation limits (P6-9 docs) — virtual threads cannot be
+# faithfully emulated below 21; the stubs that exist are honest shims.
+
+# dropLookupMode — needs privileged Lookup mode access a stand-in can't
+# grant safely; triaged honest-missing (audit M-4C).
+Ljava/lang/invoke/MethodHandles$Lookup;dropLookupMode;(I)Ljava/lang/invoke/MethodHandles$Lookup;
+
+# MethodHandles loop combinators — real clause-execution machinery; a
+# wrong emulation is worse than an honest miss (audit fix-list 6).
+Ljava/lang/invoke/MethodHandles;loop;([[Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;
+Ljava/lang/invoke/MethodHandles;whileLoop;(Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;
+Ljava/lang/invoke/MethodHandles;doWhileLoop;(Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;
+Ljava/lang/invoke/MethodHandles;countedLoop;(Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;
+Ljava/lang/invoke/MethodHandles;countedLoop;(Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;
+Ljava/lang/invoke/MethodHandles;iteratedLoop;(Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;
+Ljava/lang/invoke/MethodHandles;tryFinally;(Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle;

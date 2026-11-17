@@ -198,11 +198,17 @@ public class JavaRunner {
         InputStream inputStream = process.getInputStream();
         InputStream errorStream = process.getErrorStream();
 
+        // both streams are drained on separate threads; callers often feed
+        // them into the same unsynchronized sink (e.g. one StringBuilder), so
+        // consumer invocations are serialized on a per-run lock
+        Object consumerLock = new Object();
         Thread outputThread = new Thread(() -> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    output.accept(line);
+                    synchronized (consumerLock) {
+                        output.accept(line);
+                    }
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -213,7 +219,9 @@ public class JavaRunner {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    error.accept(line);
+                    synchronized (consumerLock) {
+                        error.accept(line);
+                    }
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);

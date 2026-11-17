@@ -27,6 +27,8 @@ public class TestManifestUtils {
         assertTrue(ManifestUtils.isSignatureFile("META-INF/TEST.DSA"));
         assertTrue(ManifestUtils.isSignatureFile("META-INF/TEST.EC"), ".EC signature blocks must strip too");
         assertTrue(ManifestUtils.isSignatureFile("META-INF/sub/TEST.SF"));
+        assertTrue(ManifestUtils.isSignatureFile("META-INF/test.sf"), "signature suffixes are case-insensitive");
+        assertTrue(ManifestUtils.isSignatureFile("META-INF/Test.Rsa"));
     }
 
     @Test
@@ -73,6 +75,22 @@ public class TestManifestUtils {
         assertNull(attr.getValue(ManifestUtils.DOWNGRADE_TARGET));
         assertNull(attr.getValue(ManifestUtils.MULTI_RELEASE));
         assertEquals("1.0", attr.getValue(Attributes.Name.MANIFEST_VERSION));
+    }
+
+    @Test
+    public void sealedAttributesStripped() {
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes().put(Attributes.Name.SEALED, "true");
+        Attributes entry = new Attributes();
+        entry.put(Attributes.Name.SEALED, "true");
+        entry.putValue("SHA-256-Digest", "abc=");
+        manifest.getEntries().put("com/foo/", entry);
+        ManifestUtils.stripSealedAttributes(manifest);
+        assertNull(manifest.getMainAttributes().getValue(Attributes.Name.SEALED));
+        assertNull(entry.getValue(Attributes.Name.SEALED), "per-entry Sealed must strip too");
+        assertEquals("abc=", entry.getValue("SHA-256-Digest"),
+            "per-entry digests are inert without .SF files — left alone");
     }
 
     @Test

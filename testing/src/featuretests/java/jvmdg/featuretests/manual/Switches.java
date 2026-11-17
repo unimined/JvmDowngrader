@@ -3,6 +3,9 @@ package jvmdg.featuretests.manual;
 import jvmdg.featuretests.FeatureTest;
 import jvmdg.featuretests.Support;
 
+import java.util.List;
+import java.util.SequencedCollection;
+
 /**
  * Switch forms: enum (synthetic switch-map class), string (hashCode
  * lookupswitch incl. collision buckets), boxed ints/shorts/bytes/chars,
@@ -258,6 +261,29 @@ public class Switches {
         switch (arr) {
             case String[] a -> System.out.println("strArray");
             case Object _ -> System.out.println("objAnyArray");
+        }
+
+        // retro-supertype labels: stubbed types keep their source name in
+        // the emitted switch and route through the membership table
+        Object seq = rt((Object) List.of("a"));
+        switch (seq) {
+            case SequencedCollection<?> sc -> System.out.println("seq:" + sc.size());
+            default -> System.out.println("notSeq");
+        }
+        Object notSeq = rt((Object) new java.util.HashSet<>());
+        switch (notSeq) {
+            case SequencedCollection<?> sc -> System.out.println("seq:" + sc.size());
+            default -> System.out.println("notSeq2");
+        }
+        Object rng = rt((Object) new java.util.Random(0));
+        switch (rng) {
+            case java.util.random.RandomGenerator g -> System.out.println("rng");
+            default -> System.out.println("notRng");
+        }
+        Object seqArr = rt((Object) new List[0]);
+        switch (seqArr) {
+            case SequencedCollection<?>[] sa -> System.out.println("seqArr:" + sa.length);
+            default -> System.out.println("notSeqArr");
         }
     }
 

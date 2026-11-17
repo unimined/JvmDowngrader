@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public class J_L_CharSequence {
 
-    @Stub(excludeChild = "java/lang/String")
+    @Stub
     public static void getChars(CharSequence self, int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         if (self instanceof String str) {
             str.getChars(srcBegin, srcEnd, dst, dstBegin);

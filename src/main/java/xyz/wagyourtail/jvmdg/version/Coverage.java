@@ -47,7 +47,7 @@ public class Coverage {
             if (classes != null) return;
             Map<Type, String> classes = new LinkedHashMap<>();
             Map<FullyQualifiedMemberNameAndDesc, String> members = new LinkedHashMap<>();
-            try (InputStream is = versionProvider.getClass().getResourceAsStream(path)) {
+            try (InputStream is = Utils.openResource(versionProvider.getClass(), path)) {
                 if (is != null) {
                     try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
                         String line;

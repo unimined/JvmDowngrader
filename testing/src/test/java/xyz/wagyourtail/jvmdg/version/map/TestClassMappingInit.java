@@ -44,7 +44,7 @@ public class TestClassMappingInit implements Opcodes {
             new InsnNode(RETURN)
         ));
         assertEquals(indexOf(m.instructions, n),
-            ClassMapping.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"));
+            MemberStubTransform.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"));
     }
 
     @Test
@@ -66,9 +66,9 @@ public class TestClassMappingInit implements Opcodes {
             new InsnNode(RETURN)
         ));
         assertEquals(indexOf(m.instructions, innerNew),
-            ClassMapping.findPairedNew(m, indexOf(m.instructions, innerInit), "foo/Bar"));
+            MemberStubTransform.findPairedNew(m, indexOf(m.instructions, innerInit), "foo/Bar"));
         assertEquals(indexOf(m.instructions, outerNew),
-            ClassMapping.findPairedNew(m, indexOf(m.instructions, outerInit), "foo/Bar"));
+            MemberStubTransform.findPairedNew(m, indexOf(m.instructions, outerInit), "foo/Bar"));
     }
 
     @Test
@@ -81,7 +81,7 @@ public class TestClassMappingInit implements Opcodes {
             init,
             new InsnNode(RETURN)
         ));
-        assertEquals(-1, ClassMapping.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"),
+        assertEquals(-1, MemberStubTransform.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"),
             "constructor delegation must not pair — previously threw IllegalStateException");
     }
 
@@ -94,7 +94,7 @@ public class TestClassMappingInit implements Opcodes {
             init, // no DUP — the rewrite contract (remove NEW+DUP) can't be honored
             new InsnNode(RETURN)
         ));
-        assertEquals(-1, ClassMapping.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"),
+        assertEquals(-1, MemberStubTransform.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"),
             "NEW not followed by DUP must not be removed — previously threw 'expected DUP'");
     }
 
@@ -117,9 +117,9 @@ public class TestClassMappingInit implements Opcodes {
             new InsnNode(RETURN)
         ));
         assertEquals(indexOf(m.instructions, firstNew),
-            ClassMapping.findPairedNew(m, indexOf(m.instructions, firstInit), "foo/Bar"));
+            MemberStubTransform.findPairedNew(m, indexOf(m.instructions, firstInit), "foo/Bar"));
         assertEquals(indexOf(m.instructions, secondNew),
-            ClassMapping.findPairedNew(m, indexOf(m.instructions, secondInit), "foo/Bar"));
+            MemberStubTransform.findPairedNew(m, indexOf(m.instructions, secondInit), "foo/Bar"));
     }
 
     @Test
@@ -133,7 +133,7 @@ public class TestClassMappingInit implements Opcodes {
             init,
             new InsnNode(RETURN)
         ));
-        assertEquals(-1, ClassMapping.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"));
+        assertEquals(-1, MemberStubTransform.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"));
     }
 
     @Test
@@ -147,7 +147,7 @@ public class TestClassMappingInit implements Opcodes {
             init,
             new InsnNode(RETURN)
         ));
-        assertEquals(-1, ClassMapping.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"));
+        assertEquals(-1, MemberStubTransform.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"));
     }
 
     @Test
@@ -173,7 +173,7 @@ public class TestClassMappingInit implements Opcodes {
             new InsnNode(RETURN)
         ));
         assertEquals(indexOf(m.instructions, n),
-            ClassMapping.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"));
+            MemberStubTransform.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"));
     }
 
     @Test
@@ -192,6 +192,6 @@ public class TestClassMappingInit implements Opcodes {
             new InsnNode(RETURN)
         ));
         assertEquals(indexOf(m.instructions, barNew),
-            ClassMapping.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"));
+            MemberStubTransform.findPairedNew(m, indexOf(m.instructions, init), "foo/Bar"));
     }
 }

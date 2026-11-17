@@ -1,19 +1,17 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.util.Utils;
-import xyz.wagyourtail.jvmdg.version.Modify;
+import xyz.wagyourtail.jvmdg.version.InitPost;
+import xyz.wagyourtail.jvmdg.version.InitPre;
+import xyz.wagyourtail.jvmdg.version.InitRewrite;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
+@InitRewrite(ref = @Ref(value = "Ljava/lang/Thread;", member = "<init>", desc = "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;JZ)V"), to = "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;J)V", keep = {0, 1, 2, 3})
 public class J_L_Thread {
 
     private static final ThreadLocal<Object> old = new ThreadLocal<>();
@@ -24,24 +22,8 @@ public class J_L_Thread {
         Thread.yield();
     }
 
-    @Modify(ref = @Ref(value = "java/lang/Thread", member = "<init>", desc = "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;JZ)V"))
-    public static void init(MethodNode mnode, int i) {
-        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
-        InsnList list = new InsnList();
-
-        // stack: Thread, ThreadGroup, Runnable, String, long, boolean
-        // call preInit
-        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, Type.getType(J_L_Thread.class).getInternalName(), "preInit", "(Z)V", false));
-        // stack: Thread, ThreadGroup, Runnable, String, long
-        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/Thread", "<init>", "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;J)V", false));
-        // stack: Thread
-        // call postInit
-        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, Type.getType(J_L_Thread.class).getInternalName(), "postInit", "()V", false));
-
-        mnode.instructions.insert(node, list);
-        mnode.instructions.remove(node);
-    }
-
+    // runs before the retargeted <init> with the dropped inheritThreadLocals arg
+    @InitPre(target = "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;JZ)V", from = {4})
     public static void preInit(boolean inheritThreadLocals) {
         if (!inheritThreadLocals) {
             Thread current = Thread.currentThread();
@@ -57,6 +39,12 @@ public class J_L_Thread {
         } else {
             old.remove();
         }
+    }
+
+    // postInit restores state on the *current* thread — the Self param is unused
+    @InitPost(target = "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;Ljava/lang/String;JZ)V")
+    public static void post(Thread self) {
+        postInit();
     }
 
     public static void postInit() {

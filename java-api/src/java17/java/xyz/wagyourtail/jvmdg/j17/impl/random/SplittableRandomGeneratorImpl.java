@@ -60,7 +60,7 @@ public class SplittableRandomGeneratorImpl implements J_U_R_RandomGenerator.Spli
         // interface, so source may be a raw SplittableRandom that does not
         // implement this fake interface — coerce first or the nextLong()
         // invokeinterface below throws IncompatibleClassChangeError
-        SplittableGenerator src = SplittableGenerator.jvmdg$checkcast(source);
+        SplittableGenerator src = SplittableGenerator.jvmdg$wrap(source);
         if (CTOR != null) {
             try {
                 return (SplittableRandom) CTOR.invoke(src.nextLong(), mixGamma(src.nextLong()));

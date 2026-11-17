@@ -1,77 +1,35 @@
 package xyz.wagyourtail.jvmdg.j8.stub;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-import xyz.wagyourtail.jvmdg.version.Modify;
+
+import xyz.wagyourtail.jvmdg.j8.intl.ExceptionHelper;
+import xyz.wagyourtail.jvmdg.version.InitArg;
+import xyz.wagyourtail.jvmdg.version.InitPost;
+import xyz.wagyourtail.jvmdg.version.InitPosts;
+import xyz.wagyourtail.jvmdg.version.InitRewrite;
+import xyz.wagyourtail.jvmdg.version.InitRewrites;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
+import java.lang.InternalError;
+
+// explicit containers — this source set compiles below Java 8
+@InitRewrites({
+    @InitRewrite(ref = @Ref(value = "Ljava/lang/InternalError;", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V"), to = "(Ljava/lang/String;)V", keep = {0}),
+    @InitRewrite(ref = @Ref(value = "Ljava/lang/InternalError;", member = "<init>", desc = "(Ljava/lang/Throwable;)V"), to = "(Ljava/lang/String;)V", keep = {-1})
+})
 public class J_L_InternalError {
 
-//    @Stub(ref = @Ref(value = "java/lang/InternalError", member = "<init>"))
-//    public static InternalError init(String message, Throwable cause) {
-//        InternalError ie = new InternalError(message);
-//        ie.initCause(cause);
-//        return ie;
-//    }
-
-    @Modify(ref = @Ref(value = "java/lang/InternalError", member = "<init>", desc = "(Ljava/lang/String;Ljava/lang/Throwable;)V"))
-    public static void init(MethodNode mnode, int i) {
-        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
-        InsnList list = new InsnList();
-        // stack: InternalError, String, Throwable
-        list.add(new InsnNode(Opcodes.DUP_X2));
-        // stack: Throwable, InternalError, String, Throwable
-        list.add(new InsnNode(Opcodes.POP));
-        // stack: Throwable, InternalError, String
-        list.add(new InsnNode(Opcodes.DUP2));
-        // stack: Throwable, InternalError, String, InternalError, String
-        // call init
-        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/InternalError", "<init>", "(Ljava/lang/String;)V", false));
-        // stack: Throwable, InternalError, String
-        list.add(new InsnNode(Opcodes.POP));
-        // stack: Throwable, InternalError
-        list.add(new InsnNode(Opcodes.SWAP));
-        // stack: InternalError, Throwable
-        // call initCause
-        list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/InternalError", "initCause", "(Ljava/lang/Throwable;)Ljava/lang/Throwable;", false));
-        // stack: InternalError
-        list.add(new InsnNode(Opcodes.POP));
-
-        mnode.instructions.insert(node, list);
-        mnode.instructions.remove(node);
+    // InternalError(String,Throwable) / (Throwable) -> InternalError(String) then initCause
+    @InitPosts({
+        @InitPost(target = "(Ljava/lang/String;Ljava/lang/Throwable;)V"),
+        @InitPost(target = "(Ljava/lang/Throwable;)V")
+    })
+    public static void setCause(InternalError e, Throwable t) {
+        e.initCause(t);
     }
 
-//    @Stub(ref = @Ref(value = "java/lang/InternalError", member = "<init>"))
-//    public static InternalError init(Throwable cause) {
-//        InternalError ie = new InternalError();
-//        ie.initCause(cause);
-//        return ie;
-//    }
-
-    @Modify(ref = @Ref(value = "java/lang/InternalError", member = "<init>", desc = "(Ljava/lang/Throwable;)V"))
-    public static void init2(MethodNode mnode, int i) {
-        MethodInsnNode node = (MethodInsnNode) mnode.instructions.get(i);
-        InsnList list = new InsnList();
-        // stack: InternalError, Throwable
-        // Throwable(Throwable) sets detailMessage = cause == null ? null : cause.toString()
-        list.add(new InsnNode(Opcodes.DUP2));
-        // stack: InternalError, Throwable, InternalError, Throwable
-        list.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "xyz/wagyourtail/jvmdg/j8/intl/ExceptionHelper", "causeMessage", "(Ljava/lang/Throwable;)Ljava/lang/String;", false));
-        // stack: InternalError, Throwable, InternalError, String
-        // call init(String)
-        list.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/InternalError", "<init>", "(Ljava/lang/String;)V", false));
-        // stack: InternalError, Throwable
-        // call initCause
-        list.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/InternalError", "initCause", "(Ljava/lang/Throwable;)Ljava/lang/Throwable;", false));
-        // stack: InternalError, InternalError (initCause returns this)
-        list.add(new InsnNode(Opcodes.POP));
-        // stack: InternalError
-
-        mnode.instructions.insert(node, list);
-        mnode.instructions.remove(node);
+    @InitArg(target = "(Ljava/lang/Throwable;)V", slot = 0)
+    public static String msg(Throwable t) {
+        return ExceptionHelper.causeMessage(t);
     }
 
 }

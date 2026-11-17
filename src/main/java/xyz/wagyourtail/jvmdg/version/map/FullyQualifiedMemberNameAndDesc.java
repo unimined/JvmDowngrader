@@ -6,18 +6,29 @@ import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import xyz.wagyourtail.jvmdg.version.Ref;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Objects;
 
 public class FullyQualifiedMemberNameAndDesc {
     private final Type owner;
     private final String name;
     private final Type desc;
+    private final boolean ignoreReturnValue;
+    private int hash;
 
     public FullyQualifiedMemberNameAndDesc(Type owner, String name, Type desc) {
+        this(owner, name, desc, false);
+    }
+
+    public FullyQualifiedMemberNameAndDesc(Type owner, String name, Type desc, boolean ignoreReturnValue) {
         this.owner = owner;
         this.name = name;
         this.desc = desc;
+        this.ignoreReturnValue = ignoreReturnValue;
     }
 
     public static FullyQualifiedMemberNameAndDesc of(String value) {
@@ -39,6 +50,19 @@ public class FullyQualifiedMemberNameAndDesc {
         return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
     }
 
+    public static FullyQualifiedMemberNameAndDesc of(Member member) {
+        Type owner = Type.getType(member.getDeclaringClass());
+        if (member instanceof Method) {
+            return new FullyQualifiedMemberNameAndDesc(owner, member.getName(), Type.getType((Method) member));
+        } else if (member instanceof Field) {
+            return new FullyQualifiedMemberNameAndDesc(owner, member.getName(), Type.getType(((Field) member).getType()));
+        } else if (member instanceof Constructor) {
+            return new FullyQualifiedMemberNameAndDesc(owner, "<init>", Type.getType((Constructor<?>) member));
+        } else {
+            throw new IllegalArgumentException("Unknown member type: " + member.getClass());
+        }
+    }
+
     public static FullyQualifiedMemberNameAndDesc of(Class<?> clazz) {
         return new FullyQualifiedMemberNameAndDesc(Type.getType(clazz), null, null);
     }
@@ -54,10 +78,6 @@ public class FullyQualifiedMemberNameAndDesc {
             return new FullyQualifiedMemberNameAndDesc(Type.getObjectType(owner), null, null);
         }
         return new FullyQualifiedMemberNameAndDesc(Type.getObjectType(owner), ref.member(), Type.getType(ref.desc()));
-    }
-
-    public static FullyQualifiedMemberNameAndDesc of(Method method) {
-        return new FullyQualifiedMemberNameAndDesc(Type.getType(method.getDeclaringClass()), method.getName(), Type.getType(method));
     }
 
     public static FullyQualifiedMemberNameAndDesc of(Type type) {
@@ -88,12 +108,33 @@ public class FullyQualifiedMemberNameAndDesc {
         return desc;
     }
 
+    public boolean isIgnoreReturnValue() {
+        return ignoreReturnValue;
+    }
+
+    /**
+     * a copy that compares equal to another ignoring-return-value instance
+     * when owner, name and argument types match, regardless of return type.
+     */
+    public FullyQualifiedMemberNameAndDesc ignoreReturnValue() {
+        if (desc != null && !ignoreReturnValue && desc.getSort() == Type.METHOD) {
+            return new FullyQualifiedMemberNameAndDesc(owner, name, desc, true);
+        }
+        return this;
+    }
+
     public boolean isClassRef() {
         return name == null;
     }
 
+    public boolean isMethodRef() {
+        return desc != null && desc.getSort() == Type.METHOD;
+    }
+
     public MemberNameAndDesc toMemberNameAndDesc() {
         if (name == null) return null;
+        // MNAD defaults to return-insensitive method equality (its
+        // historical semantics); the FQ flag does not propagate
         return new MemberNameAndDesc(name, desc);
     }
 
@@ -102,7 +143,10 @@ public class FullyQualifiedMemberNameAndDesc {
         StringBuilder sb = new StringBuilder();
         sb.append(owner.getDescriptor());
         if (name != null) {
-            sb.append(name).append(";").append(desc.getDescriptor());
+            sb.append(name);
+            if (desc != null) {
+                sb.append(";").append(desc.getDescriptor());
+            }
         }
         return sb.toString();
     }
@@ -112,12 +156,30 @@ public class FullyQualifiedMemberNameAndDesc {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FullyQualifiedMemberNameAndDesc that = (FullyQualifiedMemberNameAndDesc) o;
-        return Objects.equals(owner, that.owner) && Objects.equals(name, that.name) && Objects.equals(desc, that.desc);
+        if (desc != null && that.desc != null && desc.getSort() != that.desc.getSort()) return false;
+        if (!Objects.equals(owner, that.owner) || !Objects.equals(name, that.name)) return false;
+        if (ignoreReturnValue && that.ignoreReturnValue && desc != null && desc.getSort() == Type.METHOD) {
+            return Arrays.equals(desc.getArgumentTypes(), that.desc.getArgumentTypes());
+        }
+        return Objects.equals(desc, that.desc);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(owner, name, desc);
+        // methods always hash owner + name + arg types — equal keys must
+        // hash alike even when only one side ignores the return type.
+        // Immutable, so the descriptor re-parse and rehash are cached;
+        // a racy recompute produces the same value.
+        int h = hash;
+        if (h == 0) {
+            if (desc != null && desc.getSort() == Type.METHOD) {
+                h = Objects.hash(owner, name, Arrays.hashCode(desc.getArgumentTypes()));
+            } else {
+                h = Objects.hash(owner, name, desc);
+            }
+            hash = h;
+        }
+        return h;
     }
 
 }

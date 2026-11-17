@@ -18,13 +18,24 @@ public class Constants {
     public static final String DEBUG_SKIP_STUB = "jvmdg.debug.skipStub";
     public static final String DEBUG_SKIP_STUBS = "jvmdg.debug.skipStubs";
     public static final String DEBUG_SKIP_JEPS = "jvmdg.debug.skipJeps";
+    public static final String STUB_POLICY = "jvmdg.stubPolicy";
+    public static final String ON_MISSING_API = "jvmdg.onMissingApi";
+    public static final String INCLUDE_STUB = "jvmdg.includeStub";
     public static final String DEBUG_DUMP_CLASSES = "jvmdg.debug.dumpClasses";
     public static final String DEBUG_NO_SYNTHETIC = "jvmdg.debug.noSynthetic";
+    public static final String DEBUG_NO_FUSE = "jvmdg.debug.noFuse";
+    public static final String DEBUG_NO_STUB_IDX = "jvmdg.debug.noStubIdx";
 
     public static final String MULTI_RELEASE_ORIGINAL = "jvmdg.multiReleaseOriginal";
     public static final String MULTI_RELEASE_VERSIONS = "jvmdg.multiReleaseVersions";
 
+    public static final String NO_INDY = "jvmdg.noIndy";
+    public static final String ALLOW_PREVIEW = "jvmdg.allowPreview";
+
+
     public static final String SHADE_INLINING = "jvmdg.shadeInlining";
+    public static final String SHADE_REFLECTION = "jvmdg.shadeReflection";
+    public static final String SHADE_KEEP_REFLECTION = "jvmdg.shadeKeepReflection";
 
 
     public static final File DIR = new File(".jvmdg");

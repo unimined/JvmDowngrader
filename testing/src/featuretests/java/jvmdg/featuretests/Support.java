@@ -66,6 +66,9 @@ public final class Support {
 
     public static void exc(String id, Throwable t) {
         System.out.println(id + " EXC:" + t.getClass().getName());
+        if (System.getProperty("jvmdg.corpus.debugExc") != null) {
+            t.printStackTrace(System.err);
+        }
     }
 
     /**

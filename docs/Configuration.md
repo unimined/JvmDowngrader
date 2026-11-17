@@ -1,0 +1,231 @@
+# Configuration
+
+JvmDowngrader's flags are a single option surface — every option is declared
+once on a `Flags` field via `@BoundFlag`, and that one declaration drives the
+CLI flag, the system property, the `jvmdg.mf` config key, the Gradle DSL
+property, `Flags.copy()`/`equals`/`toString`, and the `--print` dump. There is
+nothing to keep in sync by hand; a field without `@BoundFlag` fails a static
+completeness check at class-init.
+
+## Value sources and precedence
+
+Low → high; a higher source always wins:
+
+1. **Built-in defaults** — the `Flags` field initializers.
+2. **Embedded rules** — `META-INF/jvmdg/*.mf` inside input jars, sandboxed to
+   the jar's own packages (see below).
+3. **Config files** — `--config <file>` (repeatable, applied in order; later
+   files win per key) or `jvmdg { config.from(file("jvmdg.mf")) }`.
+4. **System properties** — a set `jvmdg.*` property mechanically skips config
+   application for its flag.
+5. **Explicit CLI flags / Gradle DSL values.**
+
+## jvmdg.mf syntax
+
+JAR-manifest syntax — the same shape `java.util.jar.Manifest` reads, parsed by
+`ManifestConfigReader` (which additionally preserves section order, rejects
+duplicates, accepts a missing final newline, imposes no line-length limit, and
+reports `file:line` in errors):
+
+```text
+Jvmdg-Config-Version: 1
+Target: 11
+Log-Level: warn
+Ignore-Warnings-In: com/example/generated/**
+
+Name: com/example/legacy/**
+Ignore-Warnings: true
+```
+
+- `Key: value` lines; keys are case-insensitive, `[A-Za-z0-9][A-Za-z0-9_-]*`.
+- A blank line ends a section. `Name: <pattern>` opens a scoped section.
+- A line starting with one space continues the previous value (manifest
+  continuation — the leading space is stripped; a second space carries a
+  separator into the value).
+- `Jvmdg-Config-Version: 1` is required as the first key of the main section.
+- Duplicate keys and duplicate `Name:` sections are errors.
+
+## Keys
+
+Every bound config key with its CLI flag, system property, and Gradle DSL
+property. Value forms: `bool`, `int`, `enum` (`Log-Level`: `trace` `debug`
+`info` `warn` `error` `fatal`), `java-version` (a Java major — `Target: 11`
+→ class version 55; the matching CLI/sysprop takes the legacy class-version
+opcode), `set` (comma/space/pipe-separated), `path-list` (platform path
+separator), `wildcard-map` (comma-separated patterns).
+
+<!-- flag-table:begin -->
+| Key | CLI flag | System property | Gradle DSL | Form |
+|---|---|---|---|---|
+| `Allow-Maven` | — | `jvmdg.maven` | `allowMaven` | bool |
+| `Allow-Preview` | `--allowPreview` (const-true) | `jvmdg.allowPreview` | `allowPreview` | bool |
+| `Api` | `--api` / `-a` | `jvmdg.javaApi` | `apiJar` | path-list |
+| `Debug-Dump-Classes` | `debug --dumpClasses` / `-d` (const-true) | `jvmdg.debug.dumpClasses` | `debugDumpClasses` | bool |
+| `Debug-No-Fuse` | — | `jvmdg.debug.noFuse` | `debugNoFuse` | bool |
+| `Debug-No-Stub-Idx` | — | `jvmdg.debug.noStubIdx` | `debugNoStubIdx` | bool |
+| `Debug-No-Synthetic` | `debug --noSynthetic` / `-ns` (const-true) | `jvmdg.debug.noSynthetic` | `debugNoSynthetic` | bool |
+| `Exclude-Jeps` | `debug --skipJEP` / `-sj` | `jvmdg.debug.skipJeps` | `debugSkipJeps` | int-set |
+| `Exclude-Stub-Versions` | `debug --skipStubs` / `-s` | `jvmdg.debug.skipStubs` | `debugSkipStubs` | version-set |
+| `Exclude-Stubs` | `debug --skipStub` / `-ss` | `jvmdg.debug.skipStub` | `debugSkipStub` | member-set |
+| `Ignore-Embedded-Rules` | `--ignoreEmbeddedRules` (const-true) | — | `ignoreEmbeddedRules` | bool |
+| `Ignore-Warnings-In` | `--ignoreWarningsIn` / `-i` | `jvmdg.ignoreWarnings` | `ignoreWarningsIn` | wildcard-map |
+| `Include-Stubs` | `--includeStub` / `-is` | `jvmdg.includeStub` | `includeStub` | member-set |
+| `Keep-Embedded-Rules` | `--keepEmbeddedRules` (const-true) | — | `keepEmbeddedRules` | bool |
+| `Log-Ansi-Colors` | `--noColor` / `-nc` (const-false) | `jvmdg.logAnsiColors` | `logAnsiColors` | bool |
+| `Log-Level` | `--logLevel` / `-l` | `jvmdg.logLevel` | `logLevel` | enum |
+| `Multi-Release-Inputs` | `--multiReleaseInputs` / `-mri` (const-true) | — | `downgradeFromMultiReleases` | bool |
+| `Multi-Release-Original` | `--multiReleaseOriginal` / `-mro` (const-true) | `jvmdg.multiReleaseOriginal` | `multiReleaseOriginal` | bool |
+| `Multi-Release-Versions` | `--multiRelease` / `-mr` | `jvmdg.multiReleaseVersions` | `multiReleaseVersions` | version-set |
+| `No-Indy` | `--noIndy` (const-true) | `jvmdg.noIndy` | `noIndy` | bool |
+| `On-Missing-Api` | `--onMissingApi` | `jvmdg.onMissingApi` | `onMissingApi` | `error`/`warn` |
+| `Print-Debug` *(deprecated)* | `debug --print` / `-p` (const-true) | `jvmdg.debug` | — | bool |
+| `Quiet` *(deprecated)* | `--quiet` / `-q` (const-true) | `jvmdg.quiet` | — | bool |
+| `Shade-Inlining` | `--disable-inlining` (const-false) | `jvmdg.shadeInlining` | `shadeInlining` | bool |
+| `Shade-Keep-Reflection` | `--shadeKeepReflection` | `jvmdg.shadeKeepReflection` | `shadeKeepReflection` | wildcard-map |
+| `Shade-Prefix` | — | — | `shadePrefix` | string |
+| `Shade-Reflection` | `--shadeReflection` | `jvmdg.shadeReflection` | `shadeReflection` | `none`/`usedOwners`/`all` |
+| `Stub-Policy` | `--stubPolicy` | `jvmdg.stubPolicy` | `stubPolicy` | `full`/`noBehavior`/`mechanical` |
+| `Target` | `--classVersion` / `-c` | `jvmdg.classVersion` | `downgradeTo: JavaVersion` | java-version / int |
+
+<!-- flag-table:end -->
+
+CLI-only (not config keys): `--config`, `--target`, `--classpath`, `--prefix`,
+`--downgradedApi`, `bootstrap` args.
+
+`--api`'s config/sysprop form uses the platform path separator; the Gradle
+`apiJar` is a `ListProperty<File>`.
+
+`Shade-Reflection` selects which `reflection.idx` entries a shaded output
+ships for reflection sites that can't be folded at transform time:
+
+- `none` — no entries; dynamic lookups degrade to the native JVM behavior
+  (`ClassNotFoundException`/`NoSuchMethodException` exactly as the old
+  runtime gives).
+- `usedOwners` *(default)* — entries whose stubbed JDK owner the input
+  references anywhere; those entries' impl classes become shade-closure
+  roots so the reflective call can actually reach them.
+- `all` — every entry; largest output, least pruning.
+
+`Shade-Keep-Reflection` unions extra `owner.member` wildcard patterns into
+the `usedOwners` root set (same `*`/`**` semantics as `Ignore-Warnings-In`,
+e.g. `java/util/List.*`). Under `none`/`usedOwners`, input members calling
+dynamic entry points (`Class.forName`, `Lookup.find*`, reflective
+`invoke`/`newInstance`) report a shade warning naming each site.
+
+`No-Indy` makes the output free of `invokedynamic` and `ldc <condy>`:
+bootstrap sites (string concat, lambdas/methodrefs, records, pattern
+switches, `ConstantDynamic`) are desugared to ordinary method calls,
+generated helper classes, or constant-folding fields at transform time.
+Observable behavior is unchanged; only the linkage mechanism differs.
+
+Calls on *gained* interfaces (interfaces a JDK class acquired after the
+target version — e.g. `StringBuffer`→`Comparable` on Java 8, `System.Logger`
+on Java 8) always route through an `invokedynamic` bootstrap
+(`GainedRuntime.bootstrap`): the member resolves once per receiver class
+into a polymorphic inline cache, and receivers that natively implement the
+interface keep a guarded near-native fast path. `instanceof`/`checkcast`
+still go through the generated `gen/gained/<I>` structural methods +
+`$Wrap` delegator, and `--noIndy` lowers gained sites to the
+`RetroTypes.gainedCall` reflective tail. Observable behavior is unchanged.
+
+`Allow-Preview` accepts input classes compiled `javac --enable-preview`
+(minor version `0xFFFF`): they route to the provider for their major
+version and `condition = PREVIEW` stubs activate for them. Without the
+flag a preview class is rejected — its minor version doesn't match any
+provider's input window.
+
+## Scoped sections
+
+`Name: <pattern>` sections hold rules that apply to classes matching the
+pattern, using the same wildcard semantics as `Ignore-Warnings-In`:
+
+- `com/example/Thing` — exactly that class.
+- `com/example/*` — direct members of the package (`com/example/Thing`,
+  not `com/example/sub/Thing`).
+- `com/example/**` — the package and everything under it.
+
+Resolution is **order-independent: the most specific matching section wins**
+(longer literal prefix, then narrower wildcard). Two different sections
+matching the same class at equal specificity is a config error — file order
+never decides semantics.
+
+Scoped keys honored today:
+
+- `Ignore-Warnings: true|false` — suppress/enable missing-member warnings
+  for matching classes.
+- `Exclude-Stubs: <member-ref>…` — stub/modify/ctor emission for the listed
+  callsite members is vetoed in matching classes: the callsite keeps its
+  native reference (and the normal missing-member warning still reports it).
+  Exclusions name the JDK callsite (`Ljava/lang/String;strip;()Ljava/lang/String;`),
+  same form as global `Exclude-Stubs`.
+- `Exclude-Jeps: <n>…` — veto stub entries whose `@JEP` set intersects the
+  listed ids in matching classes.
+- `Stub-Policy: full|noBehavior|mechanical` — override the global
+  `Stub-Policy` for matching classes.
+- `On-Missing-Api: error|warn` — override the global `On-Missing-Api` for
+  matching classes.
+- `Include-Stubs: <member-ref>…` — re-include the listed callsite members in
+  matching classes even when `Exclude-Stubs`/`Exclude-Jeps` or `Stub-Policy`
+  would drop them.
+
+Scoped exclusion is emission-time, not registration: a globally excluded
+member is never registered, while a scoped exclusion only suppresses
+emission for classes inside the pattern — classes outside still get the
+stub. `Include-Stubs` (global flag ∪ the matching rule's set) is the
+exception that proves the rule: an explicitly listed member is the most
+specific statement possible, so it is **always emitted** — it beats scoped
+`Exclude-Stubs`/`Exclude-Jeps` and every `Stub-Policy` drop, which makes it
+the `mechanical` escape hatch (`mechanical` + a handful of `Include-Stubs`
+= "error on everything missing except these deliberate polyfills"). It
+cannot resurrect members dropped at registration time by the global
+`Exclude-*` flags. Unknown keys and global keys in a `Name:` section are hard errors.
+
+## Embedded rules
+
+A jar may ship `META-INF/jvmdg/*.mf` files. During downgrade/shade,
+`EmbeddedRulesStep` reads them (sorted order) **before any class is
+transformed** and applies them *sandboxed*: every rule — including the file's
+main section — is implicitly constrained to the set of package directories
+the jar actually contains. A library's rules steer its own code and nothing
+else. Named sections are intersected with the same package set. Global-only
+and unknown keys are dropped with a warning (a newer jvmdg's key in a
+dependency must not brick your build).
+
+- Rules are **stripped from the output jar** by default.
+- `Keep-Embedded-Rules: true` preserves them (re-export: the downgraded jar
+  keeps steering its own consumers).
+- `Ignore-Embedded-Rules: true` skips reading them *and* passes the files
+  through untouched.
+
+## Inspecting the result
+
+- CLI: `jvmdg config --print` — every bound value plus its source
+  (`default`/`config`/`sysprop`/`cli`), followed by the scoped rules.
+- Gradle: `./gradlew jvmdgPrintConfig` — same dump for the merged DSL +
+  config-file state.
+
+## Adding a flag
+
+Annotate the `Flags` field:
+
+```java
+@BoundFlag(key = "My-Key", cli = "--myFlag", sysprop = Constants.MY_PROP,
+    gradle = "myProp", form = BoundFlag.Parser.BOOLEAN,
+    doc = "What it does")
+public boolean myFlag = false;
+```
+
+That is the whole change for CLI/sysprop/config/copy/equals/toString/`--print`.
+Gradle needs only the typed `Property` declaration on `DowngradeFlags` (the DSL
+is a public API surface) plus the `gradle` name on the annotation — `toFlags()`
+resolves each bound `gradle` name to the like-named property, and each value
+converts through the flag's own `form` parser (`JavaVersion` properties map to
+class-version opcodes). Drift fails fast in both directions: a `gradle` name
+with no declared property throws at bind time
+(`TestToFlags.everyBoundGradleNameHasAPropertyOnSomeInterface`), and a
+declared property with no `gradle` binding throws for the same reason — an
+unbound DSL property would be silently ignored.
+
+The keys table above is generated from this metadata — after adding or
+renaming a flag, run `./gradlew :testing:genConfigDocs` to rewrite the marked
+section; `TestFlagBindings.configDocTableIsCurrent` fails while it's stale.

@@ -80,7 +80,7 @@ public class Java8Downgrader extends AllVersionDowngrader {
         // AnnotatedType
         // AnnotatedTypeVariable
         // AnnotatedWildcardType
-        stub(J_L_R_Constructor.class);
+        // Constructor — view stubs live in stub/all (interpose at every target)
         // Executable
         stub(J_L_R_Field.class);
         stub(J_L_R_MalformedParametersException.class);
@@ -399,15 +399,8 @@ public class Java8Downgrader extends AllVersionDowngrader {
             );
             interfaceStaticDefaults.visitOuterClass(clazz.name, null, null);
             extra.add(interfaceStaticDefaults);
-            downgradeInterfaceAccesses(interfaceStaticDefaults, extra, new Function<String, ClassNode>() {
-                @Override
-                public ClassNode apply(String s) {
-                    if (s.equals(clazz.name)) {
-                        return clazz;
-                    }
-                    return getReadOnly.apply(s);
-                }
-            }, warnings);
+            downgradeInterfaceAccesses(interfaceStaticDefaults, extra, s ->
+                s.equals(clazz.name) ? clazz : getReadOnly.apply(s), warnings);
         }
     }
 

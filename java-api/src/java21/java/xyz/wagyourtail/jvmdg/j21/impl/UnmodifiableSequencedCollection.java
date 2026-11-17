@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j21.impl;
 
 import org.jetbrains.annotations.NotNull;
+import xyz.wagyourtail.jvmdg.j21.stub.java_base.J_U_SequencedCollection;
 
 import java.util.AbstractCollection;
 import java.util.Collection;
@@ -9,10 +10,10 @@ import java.util.Iterator;
 /**
  * Unmodifiable sequenced view of a {@link Collection} for
  * {@code Collections.unmodifiableSequencedCollection}. Recognized as sequenced
- * by {@code J_U_SequencedCollection.jvmdg$instanceof} and throws
+ * via {@link J_U_SequencedCollection.Marker} and throws
  * {@link UnsupportedOperationException} from all mutating operations.
  */
-public class UnmodifiableSequencedCollection<E, T extends Collection<E>> extends AbstractCollection<E> {
+public class UnmodifiableSequencedCollection<E, T extends Collection<E>> extends AbstractCollection<E> implements J_U_SequencedCollection.Marker {
     public final T original;
 
     public UnmodifiableSequencedCollection(T original) {

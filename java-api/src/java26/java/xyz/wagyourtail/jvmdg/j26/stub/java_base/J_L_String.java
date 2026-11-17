@@ -1,5 +1,6 @@
 package xyz.wagyourtail.jvmdg.j26.stub.java_base;
 
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.RequiresResource;
 import xyz.wagyourtail.jvmdg.version.Stub;
@@ -16,7 +17,7 @@ public class J_L_String {
 
     @RequiresResource("unicode/CaseFolding.txt")
     private static void readData() {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(J_L_String.class.getResourceAsStream("/unicode/CaseFolding.txt"))))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(Utils.openResource(J_L_String.class, "/unicode/CaseFolding.txt"))))) {
             Map<Integer, int[]> caseFolding = new HashMap<>();
             reader.lines().forEach(e -> {
                 if (e.startsWith("#")) return;

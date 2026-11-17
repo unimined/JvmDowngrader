@@ -7,6 +7,10 @@ import org.objectweb.asm.tree.*;
 public class ASMUtils {
 
     public static Handle boxType(Type type) {
+        if (type.getSort() == Type.VOID) {
+            // Void exists (for void.class) but Void.valueOf() does not
+            return null;
+        }
         Type box = getBoxFor(type);
         if (box != null) {
             return new Handle(
@@ -237,6 +241,72 @@ public class ASMUtils {
         ClassWriter cw = new ClassWriter(flags);
         node.accept(cw);
         return cw.toByteArray();
+    }
+
+    /**
+     * helper function to get enum value
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <T extends Enum<T>> T enumValueOf(Type type, String value) throws ClassNotFoundException {
+        return enumValueOf(type, value, ASMUtils.class.getClassLoader());
+    }
+
+    /**
+     * helper function to get enum value
+     */
+    public static <T extends Enum<T>> T enumValueOf(String desc, String value) throws ClassNotFoundException {
+        return enumValueOf(Type.getType(desc), value);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <T extends Enum<T>> T enumValueOf(Type desc, String value, ClassLoader loader) throws ClassNotFoundException {
+        return (T) Enum.valueOf((Class<Enum>) Class.forName(desc.getClassName(), true, loader), value);
+    }
+
+    /**
+     * helper function to get enum value
+     */
+    public static <T extends Enum<T>> T enumValueOf(String desc, String value, ClassLoader loader) throws ClassNotFoundException {
+        return enumValueOf(Type.getType(desc), value, loader);
+    }
+
+    /**
+     * helper function to get class from type
+     */
+    public static Class<?> getClass(Type type) throws ClassNotFoundException {
+        return getClass(type, ASMUtils.class.getClassLoader());
+    }
+
+    /**
+     * helper function to get class from type
+     */
+    public static Class<?> getClass(Type type, ClassLoader loader) throws ClassNotFoundException {
+        switch (type.getSort()) {
+            case Type.VOID:
+                return void.class;
+            case Type.BOOLEAN:
+                return boolean.class;
+            case Type.CHAR:
+                return char.class;
+            case Type.BYTE:
+                return byte.class;
+            case Type.SHORT:
+                return short.class;
+            case Type.INT:
+                return int.class;
+            case Type.FLOAT:
+                return float.class;
+            case Type.LONG:
+                return long.class;
+            case Type.DOUBLE:
+                return double.class;
+            default:
+                return Class.forName(type.getClassName(), true, loader);
+        }
+    }
+
+    public static boolean equals(Type type, Class<?> clazz) {
+        return type.getClassName().equals(clazz.getName());
     }
 
 }

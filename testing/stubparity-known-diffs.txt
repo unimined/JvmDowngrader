@@ -58,16 +58,6 @@
 65-downgrade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@trivial ==> RESULT:[class java.lang.String, class IMPL, class IMPL] ==> RESULT:[class java.lang.String, class IMPL]
 65-shade Ljava/lang/Class;getNestMembers;()[Ljava/lang/Class;@trivial ==> RESULT:[class java.lang.String, class IMPL, class IMPL] ==> RESULT:[class java.lang.String, class IMPL]
 
-# ClassLoader.getName/getUnnamedModule on the bootstrap loader: the receiver
-# alias synthesizes String.class.getClassLoader() which is null — native
-# invokevirtual NPEs on the null receiver while the rewritten static stub
-# call reaches the impl, which deliberately answers for the bootstrap
-# loader — semantic difference by design.
-52-downgrade Ljava/lang/ClassLoader;getName;()Ljava/lang/String;@meaningful ==> EXC:java.lang.NullPointerException ==> RESULT:bootstrap
-52-shade Ljava/lang/ClassLoader;getName;()Ljava/lang/String;@meaningful ==> EXC:java.lang.NullPointerException ==> RESULT:bootstrap
-52-downgrade Ljava/lang/ClassLoader;getUnnamedModule;()Ljava/lang/Module;@meaningful ==> EXC:java.lang.NullPointerException ==> RESULT:unnamed module @#
-52-shade Ljava/lang/ClassLoader;getUnnamedModule;()Ljava/lang/Module;@meaningful ==> EXC:java.lang.NullPointerException ==> RESULT:unnamed module @#
-
 # Math/StrictMath.atanh boundary probe: one-ulp difference between
 # StrictMath's fdlibm port on different JDKs — irreducible floating-point
 # last-bit difference.
@@ -169,3 +159,94 @@ all Ljava/time/format/DateTimeFormatter;localizedBy;(Ljava/util/Locale;)Ljava/ti
 55-downgrade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@meaningful ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
 55-shade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@trivial ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
 55-shade Lxyz/wagyourtail/jvmdg/j17/stub/java_base/J_U_R_RandomGenerator$SplittableGenerator;split;(Ljava/util/random/RandomGenerator$SplittableGenerator;)Ljava/util/random/RandomGenerator$SplittableGenerator;@meaningful ==> RESULT:java.util.SplittableRandom@# ==> RESULT:IMPL@#
+
+# Class.getDeclaredMethods prints the JDK's own declared-member surface —
+# the member list grows across releases (native carries newer impls like
+# String.decodeUTF8_UTF16 and Integer.describeConstable; the targets'
+# lists are subsets plus older impl details like Integer.getChars).
+# Irreducible version difference, same class as getNestMembers — the stub
+# is a real-only passthrough so both sides answer their own JDK's list.
+52-downgrade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@trivial ==> *decodeUTF8_UTF16* ==> *String.equals*
+52-shade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@trivial ==> *decodeUTF8_UTF16* ==> *String.equals*
+55-downgrade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@trivial ==> *decodeUTF8_UTF16* ==> *String.equals*
+55-shade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@trivial ==> *decodeUTF8_UTF16* ==> *String.equals*
+61-downgrade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@trivial ==> *decodeUTF8_UTF16* ==> *String.equals*
+61-shade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@trivial ==> *decodeUTF8_UTF16* ==> *String.equals*
+65-downgrade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@trivial ==> *decodeUTF8_UTF16* ==> *String.equals*
+65-shade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@trivial ==> *decodeUTF8_UTF16* ==> *String.equals*
+52-downgrade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@meaningful ==> *describeConstable* ==> *getChars*
+52-shade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@meaningful ==> *describeConstable* ==> *getChars*
+55-downgrade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@meaningful ==> *describeConstable* ==> *getChars*
+55-shade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@meaningful ==> *describeConstable* ==> *getChars*
+61-downgrade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@meaningful ==> *describeConstable* ==> *getChars*
+61-shade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@meaningful ==> *describeConstable* ==> *getChars*
+65-downgrade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@meaningful ==> *describeConstable* ==> *getChars*
+65-shade Ljava/lang/Class;getDeclaredMethods;()[Ljava/lang/reflect/Method;@meaningful ==> *describeConstable* ==> *getChars*
+
+# Class.getInterfaces/getGenericInterfaces adjust the runtime list to the
+# authored view: String/Integer gained Constable/ConstantDesc at 56, so
+# targets below that report the corpus's stand-ins (printed as IMPL by the
+# corpus's stand-in redaction) while the native baseline carries the real
+# interfaces — same class of member-set version difference as
+# getDeclaredMethods, modulo the stand-in substitution.
+52-downgrade Ljava/lang/Class;getInterfaces;()[Ljava/lang/Class;@trivial ==> *java.lang.constant.Constable* ==> *CharSequence, interface IMPL, interface IMPL]
+52-shade Ljava/lang/Class;getInterfaces;()[Ljava/lang/Class;@trivial ==> *java.lang.constant.Constable* ==> *CharSequence, interface IMPL, interface IMPL]
+55-downgrade Ljava/lang/Class;getInterfaces;()[Ljava/lang/Class;@trivial ==> *java.lang.constant.Constable* ==> *CharSequence, interface IMPL, interface IMPL]
+55-shade Ljava/lang/Class;getInterfaces;()[Ljava/lang/Class;@trivial ==> *java.lang.constant.Constable* ==> *CharSequence, interface IMPL, interface IMPL]
+52-downgrade Ljava/lang/Class;getInterfaces;()[Ljava/lang/Class;@meaningful ==> *java.lang.constant.Constable* ==> *Comparable, interface IMPL, interface IMPL]
+52-shade Ljava/lang/Class;getInterfaces;()[Ljava/lang/Class;@meaningful ==> *java.lang.constant.Constable* ==> *Comparable, interface IMPL, interface IMPL]
+55-downgrade Ljava/lang/Class;getInterfaces;()[Ljava/lang/Class;@meaningful ==> *java.lang.constant.Constable* ==> *Comparable, interface IMPL, interface IMPL]
+55-shade Ljava/lang/Class;getInterfaces;()[Ljava/lang/Class;@meaningful ==> *java.lang.constant.Constable* ==> *Comparable, interface IMPL, interface IMPL]
+52-downgrade Ljava/lang/Class;getGenericInterfaces;()[Ljava/lang/reflect/Type;@trivial ==> *java.lang.constant.Constable* ==> *CharSequence, interface IMPL, interface IMPL]
+52-shade Ljava/lang/Class;getGenericInterfaces;()[Ljava/lang/reflect/Type;@trivial ==> *java.lang.constant.Constable* ==> *CharSequence, interface IMPL, interface IMPL]
+55-downgrade Ljava/lang/Class;getGenericInterfaces;()[Ljava/lang/reflect/Type;@trivial ==> *java.lang.constant.Constable* ==> *CharSequence, interface IMPL, interface IMPL]
+55-shade Ljava/lang/Class;getGenericInterfaces;()[Ljava/lang/reflect/Type;@trivial ==> *java.lang.constant.Constable* ==> *CharSequence, interface IMPL, interface IMPL]
+52-downgrade Ljava/lang/Class;getGenericInterfaces;()[Ljava/lang/reflect/Type;@meaningful ==> *java.lang.constant.Constable* ==> *Comparable<java.lang.Integer>, interface IMPL, interface IMPL]
+52-shade Ljava/lang/Class;getGenericInterfaces;()[Ljava/lang/reflect/Type;@meaningful ==> *java.lang.constant.Constable* ==> *Comparable<java.lang.Integer>, interface IMPL, interface IMPL]
+55-downgrade Ljava/lang/Class;getGenericInterfaces;()[Ljava/lang/reflect/Type;@meaningful ==> *java.lang.constant.Constable* ==> *Comparable<java.lang.Integer>, interface IMPL, interface IMPL]
+55-shade Ljava/lang/Class;getGenericInterfaces;()[Ljava/lang/reflect/Type;@meaningful ==> *java.lang.constant.Constable* ==> *Comparable<java.lang.Integer>, interface IMPL, interface IMPL]
+
+# Lookup.defineClass (j9 API) and Lookup.defineHiddenClass (j15 API) are the
+# only requiresRuntime stubs (CG-3f): jar-mode (enableRuntime=false) leaves
+# the callsite unrewritten, so the old JVM reports NoSuchMethodError where
+# the native baseline reports the probe's garbage bytes as ClassFormatError.
+# Under the runtime/agent path the rewrite applies and OptionalDependency's
+# ServiceLoader backend performs the real byte downgrade; with no core jar
+# the stub falls back to defining the raw bytes.
+52-downgrade Ljava/lang/invoke/MethodHandles$Lookup;defineClass;([B)Ljava/lang/Class;@trivial ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-shade Ljava/lang/invoke/MethodHandles$Lookup;defineClass;([B)Ljava/lang/Class;@trivial ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-downgrade Ljava/lang/invoke/MethodHandles$Lookup;defineClass;([B)Ljava/lang/Class;@meaningful ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-shade Ljava/lang/invoke/MethodHandles$Lookup;defineClass;([B)Ljava/lang/Class;@meaningful ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-downgrade Ljava/lang/invoke/MethodHandles$Lookup;defineClass;([B)Ljava/lang/Class;@boundary ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-shade Ljava/lang/invoke/MethodHandles$Lookup;defineClass;([B)Ljava/lang/Class;@boundary ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-downgrade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@trivial ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-shade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@trivial ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-downgrade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@meaningful ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-shade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@meaningful ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-downgrade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@boundary ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+52-shade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@boundary ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+55-downgrade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@trivial ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+55-shade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@trivial ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+55-downgrade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@meaningful ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+55-shade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@meaningful ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+55-downgrade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@boundary ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+55-shade Ljava/lang/invoke/MethodHandles$Lookup;defineHiddenClass;([BZ[Ljava/lang/invoke/MethodHandles$Lookup$ClassOption;)Ljava/lang/Class;@boundary ==> EXC:java.lang.ClassFormatError* ==> EXC:java.lang.NoSuchMethodError*
+
+# Executors.newVirtualThreadPerTaskExecutor/newThreadPerTaskExecutor: the
+# trivial probe prints the executor's Object.toString — the impl class name
+# differs by construction (JDK-internal ThreadPerTaskExecutor vs jvmdg's
+# j21.impl counterpart, which norm maps to IMPL). The behavioral contract —
+# per-task threads, virtual-thread factory — is covered by the manual
+# ExecutorTests probes instead.
+52-downgrade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+52-shade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+52-downgrade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+52-shade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+55-downgrade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+55-shade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+55-downgrade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+55-shade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+61-downgrade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+61-shade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+61-downgrade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+61-shade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#

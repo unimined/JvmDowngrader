@@ -4,7 +4,15 @@ import jvmdg.featuretests.FeatureTest;
 import jvmdg.featuretests.Support;
 
 import java.io.IOException;
+import java.util.AbstractCollection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+import java.util.SequencedCollection;
 import java.util.function.Function;
+import java.util.random.RandomGenerator;
 
 /**
  * Core language constructs that compile to distinctive bytecode shapes:
@@ -80,6 +88,69 @@ public class LangCore {
         }
         Object arr = new String[1];
         System.out.println(arr instanceof String[] sa && sa.length == 1);
+    }
+
+    /**
+     * A user type whose only membership path is the injected marker:
+     * {@code AbstractCollection} is not a {@code SequencedCollection} impl,
+     * so downgraded {@code instanceof} is only true if the marker the
+     * transform adds to {@link UserRetro} is honored.
+     */
+    interface UserRetro extends SequencedCollection<String> {
+    }
+
+    static class OnlyRetro extends AbstractCollection<String> implements UserRetro {
+        @Override
+        public Iterator<String> iterator() {
+            return Collections.emptyIterator();
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public SequencedCollection<String> reversed() {
+            return this;
+        }
+    }
+
+    @FeatureTest
+    static void retroSupertypes() {
+        // retro interface instanceof/cast on JDK impls + a marker-carrier,
+        // Class.isInstance/cast/isAssignableFrom routing, array forms
+        Object list = List.of("a");
+        Object set = new HashSet<>();
+        Object rng = new Random(0);
+        Object own = new OnlyRetro();
+
+        System.out.println(list instanceof SequencedCollection);
+        System.out.println(set instanceof SequencedCollection);
+        System.out.println(rng instanceof RandomGenerator);
+        System.out.println(own instanceof SequencedCollection);
+
+        System.out.println(SequencedCollection.class.isInstance(list));
+        System.out.println(SequencedCollection.class.isInstance(set));
+        System.out.println(SequencedCollection.class.isInstance(own));
+        System.out.println(SequencedCollection.class.cast(list) == list);
+        System.out.println(RandomGenerator.class.isInstance(rng));
+
+        System.out.println(SequencedCollection.class.isAssignableFrom(OnlyRetro.class));
+        System.out.println(SequencedCollection.class.isAssignableFrom(HashSet.class));
+
+        System.out.println(new List[0] instanceof SequencedCollection[]);
+        System.out.println(SequencedCollection[].class.isInstance(new List[0]));
+        System.out.println(SequencedCollection[].class.isInstance(new HashSet[0]));
+        System.out.println(SequencedCollection[].class.isAssignableFrom(List[].class));
+        System.out.println(SequencedCollection[].class.isAssignableFrom(HashSet[].class));
+
+        try {
+            SequencedCollection.class.cast(set);
+            System.out.println("castNoThrow");
+        } catch (ClassCastException e) {
+            System.out.println("castThrew");
+        }
     }
 
     @FeatureTest

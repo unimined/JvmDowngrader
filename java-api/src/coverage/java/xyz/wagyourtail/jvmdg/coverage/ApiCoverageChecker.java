@@ -8,16 +8,24 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
+import xyz.wagyourtail.jvmdg.version.Internal;
 import xyz.wagyourtail.jvmdg.version.Modify;
 import xyz.wagyourtail.jvmdg.version.Stub;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
+import xyz.wagyourtail.jvmdg.version.map.FieldStubEntry;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
+import xyz.wagyourtail.jvmdg.version.map.MethodRef;
+import xyz.wagyourtail.jvmdg.version.idx.StubIndexWriter;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -39,14 +47,6 @@ public class ApiCoverageChecker {
     );
 
     public static void main(String[] args) throws IOException, URISyntaxException {
-//        var home = Path.of(System.getProperty("java.home")).resolve("lib/ct.sym");
-//        if (!Files.exists(home)) {
-//            System.err.println("Failed to find \"" + home + "\" for coverage. Please ensure you are using a JDK and not a JRE.");
-//            System.exit(1);
-//        }
-//
-//        System.out.println("Found \"" + home + "\" for coverage.");
-
         File ctSym = new File(args[0]);
         if (!ctSym.exists()) {
             System.err.println("Failed to find \"" + ctSym + "\" for coverage. Please provide as first arg.");
@@ -69,25 +69,47 @@ public class ApiCoverageChecker {
                 }
             }
 
-//            var current = Runtime.version().feature();
-//            var currentModules = Path.of(URI.create("jrt:/"));
-//            versions.computeIfAbsent(current, k -> new ArrayList<>()).add(currentModules);
-
             var classes = new HashMap<String, Pair<String, ClassNode>>();
 
             var max = versions.keySet().stream().max(Integer::compareTo).orElseThrow();
             // load initial classes
             compare(versions.get(max), classes, new ArrayList<>());
 
+            // known-missing allowlist — honestly-declared coverage gaps; rows
+            // are `Lowner;name;desc` FQMNDs (+ `Lowner;` for whole classes).
+            // Missing members outside it are the report's signal.
+            Set<String> knownMissing = new HashSet<>();
+            try (var km = ApiCoverageChecker.class.getResourceAsStream("/known-missing.txt")) {
+                if (km != null) {
+                    new java.io.BufferedReader(new java.io.InputStreamReader(km, StandardCharsets.UTF_8))
+                        .lines().map(String::trim)
+                        .filter(l -> !l.isEmpty() && !l.startsWith("#"))
+                        .forEach(knownMissing::add);
+                }
+            }
+
             versions.keySet().stream().sorted((a, b) -> -a.compareTo(b)).skip(1).forEach(v -> {
                 var missingStubs = new ArrayList<MemberInfo>();
                 var parentOnlyStubs = new ArrayList<MemberInfo>();
+                var availableStubs = new ArrayList<MemberInfo>();
+                var gainedStubs = new ArrayList<MemberInfo>();
+                var superNames = new HashMap<Type, Set<String>>();
+                var matrix = new ArrayList<String>();
 
                 var stubVersion = v + 1;
                 var availableStubCount = 0;
                 var onlyOnParentStubCount = 0;
                 var missingStubCount = 0;
                 var versionProvider = ClassDowngrader.getCurrentVersionDowngrader().getVersionProviderFor(stubVersion);
+                if (versionProvider != null && versionProvider.stubRegistry.memberSince.isEmpty()) {
+                    // the coverage classpath carries no stubs.idx — derive memberSince
+                    // from the same ct.sym the writer uses, independently
+                    try {
+                        StubIndexWriter.populateMemberSince(ctSym.toPath(), List.of(versionProvider));
+                    } catch (IOException e) {
+                        throw new UncheckedIOException("Failed to populate memberSince for " + stubVersion, e);
+                    }
+                }
 
                 if (versionProvider == null) {
                     System.out.println("No version provider for " + stubVersion);
@@ -101,27 +123,78 @@ public class ApiCoverageChecker {
                 System.out.println("Checking version " + stubVersion);
 
                 Map<Type, Type> stubClassTypes = versionProvider.classStubs.entrySet().stream()
-                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getFirst()));
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().target));
+                // stubClassTypes is JDK-source → adapter; unmatched members need the inverse
+                Map<Type, Type> adapterToJdk = versionProvider.classStubs.entrySet().stream()
+                    .collect(Collectors.toMap(e -> e.getValue().target, Map.Entry::getKey));
                 Set<FullyQualifiedMemberNameAndDesc> stubClassMethods = versionProvider.classStubs.entrySet().stream()
                     .flatMap(e -> Stream.concat(
-                                Arrays.stream(e.getValue().getSecond().getFirst().getDeclaredMethods()),
-                                Arrays.stream(e.getValue().getSecond().getFirst().getConstructors())
+                                Arrays.stream(e.getValue().clazz().getDeclaredMethods()),
+                                Arrays.stream(e.getValue().clazz().getConstructors())
                             ).filter(m ->
                                 (m.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) != 0 &&
                                     (m.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0 &&
+                                    !m.isAnnotationPresent(Internal.class) &&
                                     !m.isAnnotationPresent(CoverageIgnore.class) &&
                                     !m.isAnnotationPresent(Stub.class) &&
                                     !m.isAnnotationPresent(Modify.class) &&
                                     !m.getName().startsWith("jvmdg$")
                             ).map(MemberNameAndDesc::fromMember)
-                            .map(m -> m.toFullyQualified(e.getValue().getFirst()))
+                            .map(m -> m.toFullyQualified(e.getValue().target))
                     ).collect(Collectors.toSet());
                 var unmatchedStubs = versionProvider.stubMappings.values().stream().flatMap(val ->
-                    Stream.of(val.getMethodStubMap().values().stream(), val.getFieldStubMap().values().stream().map(Pair::getFirst), val.getMethodModifyMap().values().stream())
-                        .flatMap(e -> e)).map(Pair::getFirst).collect(Collectors.toList());
+                    Stream.of(
+                            val.getMethodStubMap().values().stream().map(e -> e.handler.method()),
+                            val.getFieldStubMap().values().stream().flatMap(f -> f.getter == null ? Stream.<Method>empty() : Stream.of(f.getter.handler.method())),
+                            val.getCtorMap().values().stream().flatMap(e -> Stream.of(e.methods()).map(MethodRef::method)),
+                            val.getMethodModifyMap().values().stream().map(MethodRef::method))
+                        .flatMap(e -> e)).collect(Collectors.toList());
+
+                // impl method → the JDK member it is registered against; used to auto-exclude
+                // registered entries whose member exists on the target surface (BEHAVIOR kind) or
+                // resolves through supertypes with a covariant return — neither is "unmatched".
+                var implSite = new IdentityHashMap<Method, FullyQualifiedMemberNameAndDesc>();
+                var kindCounts = new EnumMap<xyz.wagyourtail.jvmdg.version.StubKind, Integer>(
+                    xyz.wagyourtail.jvmdg.version.StubKind.class);
+                versionProvider.stubMappings.forEach((owner, val) -> {
+                    java.util.function.Function<MemberNameAndDesc, FullyQualifiedMemberNameAndDesc> site =
+                        m -> new FullyQualifiedMemberNameAndDesc(owner, m.getName(),
+                            remapDesc(m.getDesc(), adapterToJdk));
+                    val.getMethodStubMap().forEach((m, e) -> {
+                        var s = site.apply(m);
+                        implSite.put(e.handler.method(), s);
+                        kindCounts.merge(versionProvider.stubRegistry.kindOf(s, false, v + 44), 1, Integer::sum);
+                    });
+                    val.getFieldStubMap().forEach((m, f) -> {
+                        var s = site.apply(m);
+                        if (f.getter != null) implSite.put(f.getter.handler.method(), s);
+                        if (f.setter != null) implSite.put(f.setter.handler.method(), s);
+                        kindCounts.merge(versionProvider.stubRegistry.kindOf(s, false, v + 44), 1, Integer::sum);
+                    });
+                    val.getCtorMap().forEach((m, e) -> {
+                        var s = site.apply(m);
+                        for (MethodRef r : e.methods()) {
+                            implSite.put(r.method(), s);
+                        }
+                        kindCounts.merge(versionProvider.stubRegistry.kindOf(s, false, v + 44), 1, Integer::sum);
+                    });
+                    val.getMethodModifyMap().forEach((m, e) -> {
+                        if (m == null) {
+                            kindCounts.merge(xyz.wagyourtail.jvmdg.version.StubKind.LANGUAGE, 1, Integer::sum);
+                        } else {
+                            var s = site.apply(m);
+                            implSite.put(e.method(), s);
+                            kindCounts.merge(versionProvider.stubRegistry.kindOf(s, true, v + 44), 1, Integer::sum);
+                        }
+                    });
+                });
 
                 try {
                     var requiredStubs = new ArrayList<MemberInfo>();
+                    // classes currently holds stubVersion's own surface (compare replaces it with
+                    // the target-v surface) — adapter members are existence-checked against the
+                    // API they mirror, registered sites against the target they downgrade to
+                    var stubVersionSurface = new HashMap<>(classes);
                     compare(versions.get(v), classes, requiredStubs);
 
                     outer:
@@ -140,83 +213,45 @@ public class ApiCoverageChecker {
                                 }
                             }
                             // map classes in desc
-                            var desc = stub.getDesc();
-                            if (desc.getSort() == Type.METHOD) {
-                                var descArgs = desc.getArgumentTypes();
-                                for (int i = 0; i < descArgs.length; i++) {
-                                    var arg = descArgs[i];
-                                    if (arg.getSort() == Type.OBJECT) {
-                                        var stubCls = stubClassTypes.get(arg);
-                                        if (stubCls != null) {
-                                            descArgs[i] = stubCls;
-                                        }
-                                    } else if (arg.getSort() == Type.ARRAY) {
-                                        var dims = arg.getDimensions();
-                                        var elem = arg.getElementType();
-                                        if (elem.getSort() == Type.OBJECT) {
-                                            var stubCls = stubClassTypes.get(elem);
-                                            if (stubCls != null) {
-                                                descArgs[i] = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
-                                            }
-                                        }
-                                    }
-                                }
-                                var ret = desc.getReturnType();
-                                if (ret.getSort() == Type.OBJECT) {
-                                    var stubCls = stubClassTypes.get(ret);
-                                    if (stubCls != null) {
-                                        ret = stubCls;
-                                    }
-                                } else if (ret.getSort() == Type.ARRAY) {
-                                    var dims = ret.getDimensions();
-                                    var elem = ret.getElementType();
-                                    if (elem.getSort() == Type.OBJECT) {
-                                        var stubCls = stubClassTypes.get(elem);
-                                        if (stubCls != null) {
-                                            ret = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
-                                        }
-                                    }
-                                }
-                                desc = Type.getMethodType(ret, descArgs);
-                            } else if (desc.getSort() == Type.OBJECT) {
-                                var stubCls = stubClassTypes.get(desc);
-                                if (stubCls != null) {
-                                    desc = stubCls;
-                                }
-                            } else if (desc.getSort() == Type.ARRAY) {
-                                var dims = desc.getDimensions();
-                                var elem = desc.getElementType();
-                                if (elem.getSort() == Type.OBJECT) {
-                                    var stubCls = stubClassTypes.get(elem);
-                                    if (stubCls != null) {
-                                        desc = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
-                                    }
-                                }
-                            }
+                            var desc = remapDesc(stub.getDesc(), stubClassTypes);
 
                             var member = new MemberNameAndDesc(stub.getName(), desc);
                             if (stubClassTypes.containsKey(stub.getOwner())) {
                                 if (stubClassMethods.remove(member.toFullyQualified(stubClassTypes.get(stub.getOwner())))) {
                                     availableStubCount++;
+                                    availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                     continue;
                                 }
                             }
 
                             if (stubProvider.getMethodStubMap().containsKey(member)) {
                                 availableStubCount++;
-                                unmatchedStubs.remove(stubProvider.getMethodStubMap().get(member).getFirst());
+                                availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                                unmatchedStubs.remove(stubProvider.getMethodStubMap().get(member).handler.method());
                                 continue;
                             }
 
                             if (stubProvider.getFieldStubMap().containsKey(member)) {
                                 availableStubCount++;
-                                unmatchedStubs.remove(stubProvider.getFieldStubMap().get(member).getFirst().getFirst());
+                                availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                                FieldStubEntry fe = stubProvider.getFieldStubMap().get(member);
+                                unmatchedStubs.remove(fe.getter == null ? null : fe.getter.handler.method());
                                 continue;
                             }
 
                             if (stubProvider.getMethodModifyMap().containsKey(member)) {
                                 availableStubCount++;
-                                unmatchedStubs.remove(stubProvider.getMethodModifyMap().get(member).getFirst());
+                                availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                                unmatchedStubs.remove(stubProvider.getMethodModifyMap().get(member).method());
+                                continue;
+                            }
+
+                            if (stubProvider.getCtorMap().containsKey(member)) {
+                                availableStubCount++;
+                                availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                                for (MethodRef hm : stubProvider.getCtorMap().get(member).methods()) {
+                                    unmatchedStubs.remove(hm.method());
+                                }
                                 continue;
                             }
 
@@ -225,17 +260,18 @@ public class ApiCoverageChecker {
                                 ClassMapping parent = parents.pollFirst();
                                 if (parent.getMethodStubMap().containsKey(member)) {
                                     onlyOnParentStubCount++;
-                                    unmatchedStubs.remove(parent.getMethodStubMap().get(member).getFirst());
+                                    unmatchedStubs.remove(parent.getMethodStubMap().get(member).handler.method());
                                     parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                     continue outer;
                                 } else if (parent.getFieldStubMap().containsKey(member)) {
                                     onlyOnParentStubCount++;
-                                    unmatchedStubs.remove(parent.getFieldStubMap().get(member).getFirst().getFirst());
+                                    FieldStubEntry fe = parent.getFieldStubMap().get(member);
+                                    unmatchedStubs.remove(fe.getter == null ? null : fe.getter.handler.method());
                                     parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                     continue outer;
                                 } else if (parent.getMethodModifyMap().containsKey(member)) {
                                     onlyOnParentStubCount++;
-                                    unmatchedStubs.remove(parent.getMethodModifyMap().get(member).getFirst());
+                                    unmatchedStubs.remove(parent.getMethodModifyMap().get(member).method());
                                     parentOnlyStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                     continue outer;
                                 }
@@ -246,18 +282,27 @@ public class ApiCoverageChecker {
                         } else {
                             if (versionProvider.classStubs.containsKey(stub.getOwner())) {
                                 availableStubCount++;
+                                availableStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
                                 continue;
                             }
                         }
 
-                        missingStubCount++;
-                        missingStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                        if (stub.getName() != null && gainedCovered(versionProvider, stub, superNames)) {
+                            gainedStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                        } else {
+                            missingStubCount++;
+                            missingStubs.add(new MemberInfo(modName, stub, isAbstract, isStatic));
+                        }
 
                     }
 
                     var total = availableStubCount + onlyOnParentStubCount + missingStubCount;
                     System.out.println("Version " + stubVersion + " has " + availableStubCount + " available stubs, " +
-                        onlyOnParentStubCount + " only on parent stubs, and " + missingStubCount + " missing stubs. Total: " + total);
+                            gainedStubs.size() + " gained-covered stubs, " +
+                        onlyOnParentStubCount + " only on parent stubs, and " + missingStubCount + " missing stubs. Total: " + total +
+                        " (kinds: missingApi=" + kindCounts.getOrDefault(xyz.wagyourtail.jvmdg.version.StubKind.MISSING_API, 0) +
+                        ", behavior=" + kindCounts.getOrDefault(xyz.wagyourtail.jvmdg.version.StubKind.BEHAVIOR, 0) +
+                        ", language=" + kindCounts.getOrDefault(xyz.wagyourtail.jvmdg.version.StubKind.LANGUAGE, 0) + ")");
 
                     var missing = Path.of("./coverage/" + stubVersion + "/missing.txt");
                     writeList(missingStubs, missing);
@@ -265,13 +310,52 @@ public class ApiCoverageChecker {
                     var parentOnly = Path.of("./coverage/" + stubVersion + "/parentOnly.txt");
                     writeList(parentOnlyStubs, parentOnly);
 
+                    var available = Path.of("./coverage/" + stubVersion + "/available.txt");
+                    writeList(availableStubs, available);
+
+                    var gained = Path.of("./coverage/" + stubVersion + "/gained.txt");
+                    writeList(gainedStubs, gained);
+
+                    var known = Path.of("./coverage/" + stubVersion + "/knownMissing.txt");
+                    writeList(missingStubs.stream()
+                        .filter(m -> knownMissing.contains(m.fqm().toString()))
+                        .collect(Collectors.toList()), known);
+
+                    for (MemberInfo m : availableStubs) {
+                        matrix.add(matrixRow(m, "stub"));
+                    }
+                    for (MemberInfo m : parentOnlyStubs) {
+                        matrix.add(matrixRow(m, "parent"));
+                    }
+                    for (MemberInfo m : gainedStubs) {
+                        matrix.add(matrixRow(m, "gained"));
+                    }
+                    for (MemberInfo m : missingStubs) {
+                        matrix.add(matrixRow(m,
+                            knownMissing.contains(m.fqm().toString()) ? "knownMissing" : "missing"));
+                    }
+                    Collections.sort(matrix);
+                    var matrixFile = Path.of("./coverage/" + stubVersion + "/coverage-matrix.txt");
+                    try (var w = Files.newBufferedWriter(matrixFile, StandardCharsets.UTF_8)) {
+                        for (String row : matrix) {
+                            w.write(row);
+                            w.write('\n');
+                        }
+                    }
+
                     var unmatched = Path.of("./coverage/" + stubVersion + "/unmatched.txt");
                     writeList(
                         Stream.concat(
                                 unmatchedStubs.stream()
-                                    .filter(e -> !e.isAnnotationPresent(CoverageIgnore.class))
+                                    .filter(e -> !e.isAnnotationPresent(Internal.class) &&
+                                        !e.isAnnotationPresent(CoverageIgnore.class) &&
+                                        !existsInSurface(classes, implSite.get(e)))
                                     .map(FullyQualifiedMemberNameAndDesc::of),
                                 stubClassMethods.stream()
+                                    .filter(e -> !existsInSurface(stubVersionSurface,
+                                        new FullyQualifiedMemberNameAndDesc(
+                                            adapterToJdk.getOrDefault(e.getOwner(), e.getOwner()), e.getName(),
+                                            remapDesc(e.getDesc(), adapterToJdk))))
                             ).map(e -> new MemberInfo("unknown", e, false, false))
                             .collect(Collectors.toList()),
                         unmatched
@@ -282,6 +366,63 @@ public class ApiCoverageChecker {
             });
 
         }
+    }
+
+    /**
+     * {@code module;owner;name;desc;kind=status} — see audit M-4B. Owner is
+     * the internal name (no {@code L…;}) so naive {@code ;}-splitting works;
+     * {@code name} is empty for class-level rows.
+     */
+    private static String matrixRow(MemberInfo m, String kind) {
+        FullyQualifiedMemberNameAndDesc fqm = m.fqm();
+        return m.module() + ";" + fqm.getOwner().getInternalName() + ";" +
+            (fqm.getName() == null ? "" : fqm.getName() + ";" + fqm.getDesc().getDescriptor()) +
+            ";kind=" + kind;
+    }
+
+    /**
+     * Is {@code stub} callable at runtime through the gained-interface
+     * machinery despite having no registered stub? True when a gained
+     * interface dispatches the member signature ({@code gainedMembers}) and
+     * the owner's source-version supertype closure contains a class that
+     * acquired that interface ({@code gained}) — calls then route to the
+     * {@code gen/gained/<I>} dispatcher or a stub impl instead of NSME-ing.
+     */
+    private static boolean gainedCovered(xyz.wagyourtail.jvmdg.version.VersionProvider vp,
+                                         FullyQualifiedMemberNameAndDesc stub,
+                                         Map<Type, Set<String>> superNames) {
+        if (vp.gained.isEmpty()) {
+            return false;
+        }
+        Type owner = stub.getOwner();
+        Set<String> names = superNames.computeIfAbsent(owner, o -> {
+            Set<String> ns = new HashSet<>();
+            ns.add(o.getInternalName());
+            try {
+                List<Pair<Type, Boolean>> supers = vp.downgrader.getSupertypes(
+                        vp.inputVersion, o, new HashSet<>());
+                if (supers != null) {
+                    for (Pair<Type, Boolean> p : supers) {
+                        ns.add(p.getFirst().getInternalName());
+                    }
+                }
+            } catch (IOException ignored) {
+            }
+            return ns;
+        });
+        String nameDesc = stub.getName() + " " + stub.getDesc().getDescriptor();
+        for (Map.Entry<String, Set<String>> g : vp.gained.entrySet()) {
+            Set<String> members = vp.gainedMembers.get(g.getKey());
+            if (members == null || !members.contains(nameDesc)) {
+                continue;
+            }
+            for (String t : g.getValue()) {
+                if (names.contains(t)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private static void writeList(List<MemberInfo> missing, Path outputFile) throws IOException {
@@ -315,6 +456,137 @@ public class ApiCoverageChecker {
             }
         }
         return null;
+    }
+
+    /** remap jvmdg adapter types in a desc to their JDK targets via {@code stubClassTypes}. */
+    private static Type remapDesc(Type desc, Map<Type, Type> stubClassTypes) {
+        if (desc.getSort() == Type.METHOD) {
+            var descArgs = desc.getArgumentTypes();
+            for (int i = 0; i < descArgs.length; i++) {
+                var arg = descArgs[i];
+                if (arg.getSort() == Type.OBJECT) {
+                    var stubCls = stubClassTypes.get(arg);
+                    if (stubCls != null) {
+                        descArgs[i] = stubCls;
+                    }
+                } else if (arg.getSort() == Type.ARRAY) {
+                    var dims = arg.getDimensions();
+                    var elem = arg.getElementType();
+                    if (elem.getSort() == Type.OBJECT) {
+                        var stubCls = stubClassTypes.get(elem);
+                        if (stubCls != null) {
+                            descArgs[i] = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
+                        }
+                    }
+                }
+            }
+            var ret = desc.getReturnType();
+            if (ret.getSort() == Type.OBJECT) {
+                var stubCls = stubClassTypes.get(ret);
+                if (stubCls != null) {
+                    ret = stubCls;
+                }
+            } else if (ret.getSort() == Type.ARRAY) {
+                var dims = ret.getDimensions();
+                var elem = ret.getElementType();
+                if (elem.getSort() == Type.OBJECT) {
+                    var stubCls = stubClassTypes.get(elem);
+                    if (stubCls != null) {
+                        ret = Type.getType("[".repeat(dims) + stubCls.getDescriptor());
+                    }
+                }
+            }
+            return Type.getMethodType(ret, descArgs);
+        } else if (desc.getSort() == Type.OBJECT) {
+            var stubCls = stubClassTypes.get(desc);
+            if (stubCls != null) {
+                return stubCls;
+            }
+        } else if (desc.getSort() == Type.ARRAY) {
+            var dims = desc.getDimensions();
+            var elem = desc.getElementType();
+            if (elem.getSort() == Type.OBJECT) {
+                var stubCls = stubClassTypes.get(elem);
+                if (stubCls != null) {
+                    return Type.getType("[".repeat(dims) + stubCls.getDescriptor());
+                }
+            }
+        }
+        return desc;
+    }
+
+    /**
+     * Does {@code fqn} exist in {@code surface}? Exact member match on the owning class or an
+     * inherited declaration — for methods, a supertype declaration with the same name+args and a
+     * return the site return is assignable to counts (covariant redeclarations).
+     */
+    private static boolean existsInSurface(Map<String, Pair<String, ClassNode>> surface,
+                                           FullyQualifiedMemberNameAndDesc fqn) {
+        if (fqn == null) return false;
+        return memberInHierarchy(surface, fqn, new HashSet<>());
+    }
+
+    private static boolean memberInHierarchy(Map<String, Pair<String, ClassNode>> surface,
+                                             FullyQualifiedMemberNameAndDesc fqn, Set<String> seen) {
+        if (!seen.add(fqn.getOwner().getInternalName())) return false;
+        var p = surface.get(fqn.getOwner().getInternalName());
+        if (p == null) return false;
+        var cn = p.getSecond();
+        if (fqn.getDesc().getSort() == Type.METHOD) {
+            for (MethodNode m : cn.methods) {
+                if ((m.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) continue;
+                if (!m.name.equals(fqn.getName())) continue;
+                if (m.desc.equals(fqn.getDesc().getDescriptor())) return true;
+                var md = Type.getMethodType(m.desc);
+                if (Arrays.equals(md.getArgumentTypes(), fqn.getDesc().getArgumentTypes()) &&
+                    isSubtype(surface, fqn.getDesc().getReturnType(), md.getReturnType())) {
+                    return true;
+                }
+            }
+        } else {
+            for (FieldNode f : cn.fields) {
+                if ((f.access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) continue;
+                if (f.name.equals(fqn.getName()) && f.desc.equals(fqn.getDesc().getDescriptor())) {
+                    return true;
+                }
+            }
+        }
+        if (cn.superName != null && memberInHierarchy(surface, new FullyQualifiedMemberNameAndDesc(
+            Type.getObjectType(cn.superName), fqn.getName(), fqn.getDesc()), seen)) {
+            return true;
+        }
+        if (cn.interfaces != null) {
+            for (var itf : cn.interfaces) {
+                if (memberInHierarchy(surface, new FullyQualifiedMemberNameAndDesc(
+                    Type.getObjectType(itf), fqn.getName(), fqn.getDesc()), seen)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /** is {@code sub} assignable to {@code sup} within the type graph reachable via {@code surface}? */
+    private static boolean isSubtype(Map<String, Pair<String, ClassNode>> surface, Type sub, Type sup) {
+        if (sub.equals(sup)) return true;
+        if (sub.getSort() != Type.OBJECT || sup.getSort() != Type.OBJECT) return false;
+        var seen = new HashSet<String>();
+        var stack = new ArrayDeque<String>();
+        stack.push(sub.getInternalName());
+        while (!stack.isEmpty()) {
+            var n = stack.pop();
+            if (!seen.add(n)) continue;
+            if (n.equals(sup.getInternalName())) return true;
+            var p = surface.get(n);
+            if (p == null) {
+                // type outside the measured surface — only java/lang/Object is a safe conclusion
+                if (sup.getInternalName().equals("java/lang/Object")) return true;
+                continue;
+            }
+            if (p.getSecond().superName != null) stack.push(p.getSecond().superName);
+            if (p.getSecond().interfaces != null) stack.addAll(p.getSecond().interfaces);
+        }
+        return false;
     }
 
     public static void compare(List<Path> moduleHolders, Map<String, Pair<String, ClassNode>> currentVersion, List<MemberInfo> removed) throws IOException {

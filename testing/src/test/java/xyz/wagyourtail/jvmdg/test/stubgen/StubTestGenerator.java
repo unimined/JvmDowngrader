@@ -8,6 +8,7 @@ import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
+import xyz.wagyourtail.jvmdg.version.map.ClassStubEntry;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
@@ -1026,10 +1027,10 @@ public class StubTestGenerator {
         try (ClassDowngrader d = ClassDowngrader.downgradeTo(Opcodes.V1_8)) {
             for (VersionProvider provider : ServiceLoader.load(VersionProvider.class)) {
                 provider.ensureInit(d);
-                for (Map.Entry<Type, Pair<Type, Pair<Class<?>, Adapter>>> e :
+                for (Map.Entry<Type, ClassStubEntry> e :
                         provider.classStubs.entrySet()) {
-                    // key is the real JDK type; first is the fake stand-in class
-                    fakeToReal.put(e.getValue().getFirst().getInternalName(), e.getKey().getInternalName());
+                    // key is the real JDK type; target is the fake stand-in class
+                    fakeToReal.put(e.getValue().target.getInternalName(), e.getKey().getInternalName());
                 }
                 for (Map.Entry<Type, ClassMapping> e :
                         new ArrayList<>(provider.stubMappings.entrySet())) {
@@ -1037,6 +1038,9 @@ public class StubTestGenerator {
                     if (mapping == null) continue;
                     String owner = e.getKey().getInternalName();
                     for (MemberNameAndDesc m : mapping.getMethodStubMap().keySet()) {
+                        add(members, owner, m, "method");
+                    }
+                    for (MemberNameAndDesc m : mapping.getCtorMap().keySet()) {
                         add(members, owner, m, "method");
                     }
                     for (MemberNameAndDesc m : mapping.getFieldStubMap().keySet()) {
@@ -1285,6 +1289,39 @@ public class StubTestGenerator {
                 && method.getDeclaringClass() != clazz) {
                 setReason(reason, "declared-on-non-public");
                 return null;
+            }
+            // a member surfaced under a child-interface owner resolves via
+            // getMethod to the parent's inherited declaration; its erased
+            // generic signature (e.g. OfPrimitive.forEachRemaining(Object))
+            // isn't source-expressible on the child, so cast the receiver to
+            // the declaring interface — the same receiver type the
+            // receiverInArg0 path produced for receiver-in-desc registrations.
+            // Class owners keep their own type: inherited methods are
+            // source-callable there and the callsite owner must stay the
+            // registered one.
+            if (clazz.isInterface() && method.getDeclaringClass().isInterface()
+                && method.getDeclaringClass() != clazz) {
+                clazz = method.getDeclaringClass();
+                cName = clazz.getCanonicalName();
+            }
+            // javac's specialized override emits a synthetic bridge carrying
+            // the erased generic signature on the child itself — getMethod
+            // resolves to that bridge, but it isn't source-callable. The real
+            // erased declaration lives on the generic supertype, so re-resolve
+            // through the interface hierarchy.
+            if (method.isBridge()) {
+                for (Class<?> iface : clazz.getInterfaces()) {
+                    try {
+                        Method decl = iface.getMethod(e.name, params);
+                        if (!decl.isBridge() && decl.getDeclaringClass().isInterface()) {
+                            clazz = decl.getDeclaringClass();
+                            cName = clazz.getCanonicalName();
+                            method = decl;
+                            break;
+                        }
+                    } catch (NoSuchMethodException ignored) {
+                    }
+                }
             }
         }
         if (receiverInArg0) {

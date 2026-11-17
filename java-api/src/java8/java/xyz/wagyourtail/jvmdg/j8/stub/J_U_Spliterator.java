@@ -5,6 +5,7 @@ import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_DoubleConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_IntConsumer;
 import xyz.wagyourtail.jvmdg.j8.stub.function.J_U_F_LongConsumer;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -50,7 +51,7 @@ public interface J_U_Spliterator<T> {
 
         class OfPrimitiveDefaults {
 
-            @Stub(ref = @Ref("java/util/Spliterator$OfPrimitive"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("java/util/Spliterator$OfPrimitive"))
             public static <T, T_CONS> void forEachRemaining(J_U_Spliterator.OfPrimitive<T, T_CONS, ?> spliterator, T_CONS action) {
                 do {
                 } while (spliterator.tryAdvance(action));
@@ -81,13 +82,13 @@ public interface J_U_Spliterator<T> {
 
         class OfIntDefaults {
 
-            @Stub(ref = @Ref("java/util/Spliterator$OfInt"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("java/util/Spliterator$OfInt"))
             public static void forEachRemaining(J_U_Spliterator.OfInt spliterator, J_U_F_IntConsumer action) {
                 do {
                 } while (spliterator.tryAdvance(action));
             }
 
-            @Stub(ref = @Ref("java/util/Spliterator$OfInt"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("java/util/Spliterator$OfInt"))
             public static boolean tryAdvance(J_U_Spliterator.OfInt spliterator, final J_U_F_Consumer<? super Integer> action) {
                 if (action instanceof J_U_F_IntConsumer) {
                     return spliterator.tryAdvance((J_U_F_IntConsumer) action);
@@ -102,7 +103,7 @@ public interface J_U_Spliterator<T> {
                 }
             }
 
-            @Stub(ref = @Ref("java/util/Spliterator$OfInt"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("java/util/Spliterator$OfInt"))
             public static void forEachRemaining(J_U_Spliterator.OfInt spliterator, final J_U_F_Consumer<? super Integer> action) {
                 if (action instanceof J_U_F_IntConsumer) {
                     forEachRemaining(spliterator, (J_U_F_IntConsumer) action);
@@ -141,13 +142,13 @@ public interface J_U_Spliterator<T> {
 
         class OfLongDefaults {
 
-            @Stub(ref = @Ref("java/util/Spliterator$OfLong"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("java/util/Spliterator$OfLong"))
             public static void forEachRemaining(J_U_Spliterator.OfLong spliterator, J_U_F_LongConsumer action) {
                 do {
                 } while (spliterator.tryAdvance(action));
             }
 
-            @Stub(ref = @Ref("java/util/Spliterator$OfLong"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("java/util/Spliterator$OfLong"))
             public static boolean tryAdvance(J_U_Spliterator.OfLong spliterator, final J_U_F_Consumer<? super Long> action) {
                 if (action instanceof J_U_F_LongConsumer) {
                     return spliterator.tryAdvance((J_U_F_LongConsumer) action);
@@ -162,7 +163,7 @@ public interface J_U_Spliterator<T> {
                 }
             }
 
-            @Stub(ref = @Ref("java/util/Spliterator$OfLong"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("java/util/Spliterator$OfLong"))
             public static void forEachRemaining(J_U_Spliterator.OfLong spliterator, final J_U_F_Consumer<? super Long> action) {
                 if (action instanceof J_U_F_LongConsumer) {
                     forEachRemaining(spliterator, (J_U_F_LongConsumer) action);
@@ -200,13 +201,13 @@ public interface J_U_Spliterator<T> {
 
         class OfDoubleDefaults {
 
-            @Stub(ref = @Ref("java/util/Spliterator$OfDouble"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("java/util/Spliterator$OfDouble"))
             public static void forEachRemaining(J_U_Spliterator.OfDouble spliterator, J_U_F_DoubleConsumer action) {
                 do {
                 } while (spliterator.tryAdvance(action));
             }
 
-            @Stub(ref = @Ref("java/util/Spliterator$OfDouble"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("java/util/Spliterator$OfDouble"))
             public static boolean tryAdvance(J_U_Spliterator.OfDouble spliterator, final J_U_F_Consumer<? super Double> action) {
                 if (action instanceof J_U_F_DoubleConsumer) {
                     return spliterator.tryAdvance((J_U_F_DoubleConsumer) action);
@@ -221,7 +222,7 @@ public interface J_U_Spliterator<T> {
                 }
             }
 
-            @Stub(ref = @Ref("java/util/Spliterator$OfDouble"), abstractDefault = true)
+            @DefaultImpl(ref = @Ref("java/util/Spliterator$OfDouble"))
             public static void forEachRemaining(J_U_Spliterator.OfDouble spliterator, final J_U_F_Consumer<? super Double> action) {
                 if (action instanceof J_U_F_DoubleConsumer) {
                     forEachRemaining(spliterator, (J_U_F_DoubleConsumer) action);
@@ -241,23 +242,23 @@ public interface J_U_Spliterator<T> {
 
     class SpliteratorDefaults {
 
-        @Stub(ref = @Ref("java/util/Spliterator"), abstractDefault = true)
+        @DefaultImpl(ref = @Ref("java/util/Spliterator"))
         public static <T> void forEachRemaining(J_U_Spliterator<T> spliterator, J_U_F_Consumer<? super T> action) {
             do {
             } while (spliterator.tryAdvance(action));
         }
 
-        @Stub(ref = @Ref("java/util/Spliterator"), abstractDefault = true)
+        @DefaultImpl(ref = @Ref("java/util/Spliterator"))
         public static long getExactSizeIfKnown(J_U_Spliterator<?> spliterator) {
             return (spliterator.characteristics() & J_U_Spliterator.SIZED) == 0 ? -1 : spliterator.estimateSize();
         }
 
-        @Stub(ref = @Ref("java/util/Spliterator"), abstractDefault = true)
+        @DefaultImpl(ref = @Ref("java/util/Spliterator"))
         public static boolean hasCharacteristics(J_U_Spliterator<?> spliterator, int characteristics) {
             return (spliterator.characteristics() & characteristics) == characteristics;
         }
 
-        @Stub(ref = @Ref("java/util/Spliterator"), abstractDefault = true)
+        @DefaultImpl(ref = @Ref("java/util/Spliterator"))
         public static Comparator<?> getComparator(J_U_Spliterator<?> spliterator) {
             if (!hasCharacteristics(spliterator, J_U_Spliterator.SORTED)) {
                 throw new IllegalStateException();

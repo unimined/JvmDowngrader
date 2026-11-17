@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
+import xyz.wagyourtail.jvmdg.version.Internal;
 import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.lang.ref.WeakReference;
@@ -18,7 +18,7 @@ public class J_L_Module {
     private final J_L_M_ModuleDescriptor descriptor;
     private final String name;
 
-    @CoverageIgnore
+    @Internal
     public J_L_Module() {
         J_L_StackWalker walker = J_L_StackWalker.getInstance(J_L_StackWalker.Option.RETAIN_CLASS_REFERENCE);
         J_L_StackWalker.StackFrame sf = walker.walk(stream -> stream.skip(2).findFirst().get());
@@ -32,7 +32,7 @@ public class J_L_Module {
         this.name = null;
     }
 
-    @CoverageIgnore
+    @Internal
     public J_L_Module(ClassLoader classLoader) {
         this.classLoader = new WeakReference<>(classLoader);
         this.layer = null;
@@ -40,7 +40,7 @@ public class J_L_Module {
         this.name = null;
     }
 
-    @CoverageIgnore
+    @Internal
     public J_L_Module(ClassLoader classLoader, J_L_ModuleLayer layer, J_L_M_ModuleDescriptor descriptor) {
         this.classLoader = classLoader == null ? null : new WeakReference<>(classLoader);
         this.layer = layer;

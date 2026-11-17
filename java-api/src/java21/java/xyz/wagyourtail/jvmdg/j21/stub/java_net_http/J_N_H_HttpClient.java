@@ -3,6 +3,7 @@ package xyz.wagyourtail.jvmdg.j21.stub.java_net_http;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.net.http.HttpClient;
+import java.time.Duration;
 
 public class J_N_H_HttpClient {
 
@@ -25,6 +26,11 @@ public class J_N_H_HttpClient {
     @Stub
     public static void shutdownNow(HttpClient client) {
         // no-op
+    }
+
+    @Stub
+    public static boolean awaitTermination(HttpClient client, Duration duration) {
+        return isTerminated(client);
     }
 
 

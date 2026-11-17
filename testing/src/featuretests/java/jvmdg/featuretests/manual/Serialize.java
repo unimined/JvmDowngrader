@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.function.IntFunction;
 
 /**
  * Java serialization round-trips: a POJO with serialVersionUID, a transient
@@ -73,5 +74,17 @@ public class Serialize {
         // the transformed record's ctor signature
         Rec r = roundTrip(new Rec("abc", 7));
         System.out.println(r);
+    }
+
+    @FeatureTest
+    static void lambdaRoundTrip() throws IOException, ClassNotFoundException {
+        // altMetafactory FLAG_SERIALIZABLE: the impl's writeReplace emits a
+        // SerializedLambda carrying source-vocabulary identity fields;
+        // readResolve reflects into the capturing class's $deserializeLambda$
+        // which re-materializes through the desugared factory
+        IntFunction<String> f = (IntFunction<String> & Serializable) (int x) -> "v" + x;
+        @SuppressWarnings("unchecked")
+        IntFunction<String> back = (IntFunction<String>) roundTrip((Serializable) f);
+        System.out.println(back.apply(7));
     }
 }

@@ -8,12 +8,17 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.asm.ASMUtils;
+import xyz.wagyourtail.jvmdg.asm.index.ClasspathIndex;
+import xyz.wagyourtail.jvmdg.asm.index.NamespaceView;
 import xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.logging.Logger;
+import xyz.wagyourtail.jvmdg.pipeline.TransformContext;
+import xyz.wagyourtail.jvmdg.pipeline.TransformPipeline;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Pair;
 import xyz.wagyourtail.jvmdg.util.Utils;
+import xyz.wagyourtail.jvmdg.version.DowngradeRegistrar;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 
@@ -37,6 +42,7 @@ public class ClassDowngrader implements Closeable {
     public final Logger logger;
     private final Map<Integer, VersionProvider> downgraders;
     private final DowngradingClassLoader classLoader;
+    public final ClasspathIndex classpathIndex;
     protected volatile int maxVersion = -1;
 
     protected ClassDowngrader(@NotNull Flags flags) {
@@ -48,6 +54,7 @@ public class ClassDowngrader implements Closeable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        classpathIndex = new ClasspathIndex(classLoader);
         downgraders = collectProviders();
     }
 
@@ -109,6 +116,18 @@ public class ClassDowngrader implements Closeable {
         return classLoader;
     }
 
+    /**
+     * Every {@link VersionProvider} discovered at construction, keyed by
+     * {@code inputVersion} — includes providers below {@link #target} that
+     * no run's version chain will ever initialize (needed when a transform
+     * wants provider data outside the chain, e.g. the noIndy desugar
+     * union). Read-only view; these are the same instances the chain
+     * initializes.
+     */
+    public Map<Integer, VersionProvider> providers() {
+        return java.util.Collections.unmodifiableMap(downgraders);
+    }
+
     public synchronized Map<Integer, VersionProvider> collectProviders() {
         Map<Integer, VersionProvider> downgraders = new HashMap<>();
         try {
@@ -139,112 +158,25 @@ public class ClassDowngrader implements Closeable {
         return downgraders;
     }
 
+    /**
+     * Query surface over the classpath as seen from {@code version} — every
+     * query remaps the queried type through the provider chain (first-hit
+     * wins) before resolving against the index.
+     */
+    public NamespaceView namespace(int version, Set<String> warnings) {
+        return new NamespaceView(this, version, warnings);
+    }
+
     public Set<MemberNameAndDesc> getMembers(int version, Type type, Set<String> warnings) throws IOException {
-        for (int vers = version; vers > target; ) {
-            VersionProvider downgrader = downgraders.get(vers);
-            if (downgrader == null) {
-                throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
-            }
-            vers = downgrader.outputVersion;
-            downgrader.ensureInit(this);
-            Type stubbed = downgrader.stubClass(type, warnings);
-            if (!stubbed.equals(type)) {
-                try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
-                    if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
-                    ClassReader reader = new ClassReader(stream);
-                    ClassNode node = new ClassNode();
-                    reader.accept(node, ClassReader.SKIP_CODE);
-                    Set<MemberNameAndDesc> members = new HashSet<>();
-                    for (MethodNode o : node.methods) {
-                        if ((o.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
-                        members.add(new MemberNameAndDesc(o.name, stubClass(node.version, Type.getMethodType(o.desc), warnings)));
-                    }
-                    return members;
-                }
-            }
-        }
-        try (InputStream stream = classLoader.getResourceAsStream(type.getInternalName() + ".class")) {
-            if (bootstrapClassLoader.getResource(type.getInternalName() + ".class") != null) {
-                // assume all java api classes are... "empty". this makes parentOnly stubs work properly.
-                return new HashSet<>();
-            }
-            if (type.getInternalName().startsWith("xyz/wagyourtail/jvmdg")) {
-                // also all jvmdg classes are "empty"
-                return new HashSet<>();
-            }
-            if (stream == null) return null;
-            ClassReader reader = new ClassReader(stream);
-            ClassNode node = new ClassNode();
-            reader.accept(node, ClassReader.SKIP_CODE);
-            Set<MemberNameAndDesc> members = new HashSet<>();
-            for (MethodNode o : node.methods) {
-                if ((o.access & (Opcodes.ACC_ABSTRACT | Opcodes.ACC_PRIVATE)) != 0) continue;
-                members.add(new MemberNameAndDesc(o.name, stubClass(node.version, Type.getMethodType(o.desc), warnings)));
-            }
-            return members;
-        }
+        return namespace(version, warnings).membersAt(type);
     }
 
     public List<Pair<Type, Boolean>> getSupertypes(int version, Type type, Set<String> warnings) throws IOException {
-        for (int vers = version; vers > target; ) {
-            VersionProvider downgrader = downgraders.get(vers);
-            if (downgrader == null) {
-                throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
-            }
-            vers = downgrader.outputVersion;
-            downgrader.ensureInit(this);
-            Type stubbed = downgrader.stubClass(type, warnings);
-            if (!stubbed.equals(type)) {
-                try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
-                    if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
-                    ClassReader reader = new ClassReader(stream);
-                    List<Pair<Type, Boolean>> types = new ArrayList<>();
-                    types.add(new Pair<>(Type.getObjectType(reader.getSuperName()), Boolean.FALSE));
-                    for (String anInterface : reader.getInterfaces()) {
-                        types.add(new Pair<>(Type.getObjectType(anInterface), Boolean.TRUE));
-                    }
-                    return types;
-                }
-            }
-        }
-        try (InputStream stream = classLoader.getResourceAsStream(type.getInternalName() + ".class")) {
-            if (stream == null) return null;
-            ClassReader reader = new ClassReader(stream);
-            List<Pair<Type, Boolean>> types = new ArrayList<>();
-            int vers = reader.readShort(6);
-            types.add(new Pair<>(stubClass(vers, Type.getObjectType(reader.getSuperName()), warnings), Boolean.FALSE));
-            for (String anInterface : reader.getInterfaces()) {
-                types.add(new Pair<>(stubClass(vers, Type.getObjectType(anInterface), warnings), Boolean.TRUE));
-            }
-            return types;
-        }
+        return namespace(version, warnings).supertypesAt(type);
     }
 
     public Boolean isInterface(int version, Type type, Set<String> warnings) throws IOException {
-        for (int vers = version; vers > target; ) {
-            VersionProvider downgrader = downgraders.get(vers);
-            if (downgrader == null) {
-                throw new RuntimeException("Unsupported class version: " + vers + " supported: " + downgraders.keySet());
-            }
-            vers = downgrader.outputVersion;
-            downgrader.ensureInit(this);
-            Type stubbed = downgrader.stubClass(type, warnings);
-            if (!stubbed.equals(type)) {
-                try (InputStream stream = classLoader.getResourceAsStream(stubbed.getInternalName() + ".class")) {
-                    if (stream == null) throw new IOException("Failed to find stubbed class: " + stubbed);
-                    ClassReader reader = new ClassReader(stream);
-                    return (reader.getAccess() & Opcodes.ACC_INTERFACE) != 0;
-                }
-            }
-        }
-        try (InputStream stream = classLoader.getResourceAsStream(type.getInternalName() + ".class")) {
-            if (stream == null) {
-//                warnings.add("Failed to find class: " + type);
-                return null;
-            }
-            ClassReader reader = new ClassReader(stream);
-            return (reader.getAccess() & Opcodes.ACC_INTERFACE) != 0;
-        }
+        return namespace(version, warnings).isInterfaceAt(type);
     }
 
     public Type stubClass(int version, Type type, Set<String> warnings) {
@@ -263,49 +195,33 @@ public class ClassDowngrader implements Closeable {
         return type;
     }
 
+    private static final Comparator<ClassNode> CLASS_NODE_NAME_ORDER =
+        Comparator.comparing(c -> c.name);
+
+    /**
+     * multi-release captures share the class name but differ in {@code version}
+     * — name alone would dedup them away (dropping the final output when a
+     * capture lands first).
+     */
+    private static final Comparator<ClassNode> CLASS_NODE_NAME_VERSION_ORDER =
+        Comparator.comparing((ClassNode c) -> c.name).thenComparingInt(c -> c.version);
+
     protected Set<ClassNode> downgrade(ClassNode clazz, boolean enableRuntime, Function<String, ClassNode> getReadOnly) throws IOException {
-        Set<ClassNode> classes = new HashSet<>();
-        Set<ClassNode> multiReleaseHolder = new HashSet<>();
-        classes.add(clazz);
-        int version = clazz.version;
-        int originalVersion = clazz.version;
-        while (version > target) {
-            if (flags.multiReleaseVersions.contains(version) || (version == originalVersion && flags.multiReleaseOriginal)) {
-                // copy to new class node
-                for (ClassNode c : classes) {
-                    ClassNode copy = new ClassNode();
-                    c.accept(new ClassVisitor(Opcodes.ASM9, copy) {
-                        @Override
-                        public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
-                            return new MethodVisitor(api, super.visitMethod(access, name, descriptor, signature, exceptions)) {
-
-                                @Override
-                                public void visitInvokeDynamicInsn(String name, String descriptor, Handle bootstrapMethodHandle, Object... bootstrapMethodArguments) {
-                                    super.visitInvokeDynamicInsn(name, descriptor, bootstrapMethodHandle, bootstrapMethodArguments.clone());
-                                }
-
-                            };
-                        }
-                    });
-                    multiReleaseHolder.add(copy);
-                }
-            }
-            VersionProvider downgrader = downgraders.get(version);
-            if (downgrader == null) {
-                throw new RuntimeException("Unsupported class version: " + version + " supported: " + downgraders.keySet());
-            }
-            Set<ClassNode> newClasses = new HashSet<>();
-            for (ClassNode c : classes) {
-                ClassNode downgraded = downgrader.downgrade(this, c, newClasses, enableRuntime, getReadOnly);
-                if (downgraded != null) {
-                    newClasses.add(downgraded);
-                }
-            }
-            classes = newClasses;
-            version = downgrader.outputVersion;
+        // the registrar emits one stage per provider boundary; sequential
+        // pipeline execution reproduces the legacy per-provider chain —
+        // sorted result so output order (and therefore define order in
+        // loaders and jar entry order) is deterministic
+        DowngradeRegistrar registrar = new DowngradeRegistrar(this, enableRuntime, getReadOnly);
+        TransformPipeline pipeline = new TransformPipeline().addStages(registrar.stages(clazz.version));
+        TransformContext ctx = new TransformContext(classpathIndex, flags, logger);
+        registrar.install(ctx);
+        List<ClassNode> out = pipeline.run(Collections.singletonList(clazz), ctx);
+        Set<ClassNode> result = new TreeSet<>(CLASS_NODE_NAME_VERSION_ORDER);
+        for (Map.Entry<Object, List<ClassNode>> e : pipeline.variants().entrySet()) {
+            result.addAll(e.getValue());
         }
-        multiReleaseHolder.addAll(classes);
-        return multiReleaseHolder;
+        result.addAll(out);
+        return result;
     }
 
     public List<VersionProvider> versionProviders(int inputVersion) {
@@ -331,6 +247,12 @@ public class ClassDowngrader implements Closeable {
         // ignore minor version
         // get major version
         int version = ((bytes[6] & 0xFF) << 8) | (bytes[7] & 0xFF);
+        if (!flags.allowPreview && (((bytes[4] & 0xFF) << 8) | (bytes[5] & 0xFF)) == 0xFFFF) {
+            // javac --enable-preview sets minor_version = 0xFFFF — refuse
+            // silently processing such inputs unless the run opted in
+            throw new IllegalClassFormatException(name.get() +
+                " (preview-compiled, rerun with --allowPreview)");
+        }
         if (version <= target) {
             // already at or below the target version
             return null;
@@ -342,23 +264,27 @@ public class ClassDowngrader implements Closeable {
         } else if (!name.get().equals(node.name)) {
             throw new RuntimeException("Class name mismatch: " + name.get() + " != " + node.name);
         }
-        Map<String, byte[]> outputs = new HashMap<>();
+        Map<String, byte[]> outputs = new TreeMap<>();
         try {
             logger.trace("Transforming " + name.get());
-            Set<ClassNode> extra = downgrade(node, enableRuntime, new Function<String, ClassNode>() {
-
-                @Override
-                public ClassNode apply(String s) {
+            // per-call memoization: within one downgrade the resolvers query
+            // the same input-jar/loader classes repeatedly (hierarchy walks).
+            // scoped to this call — the underlying source may return different
+            // bytes for the same name in later calls (e.g. a different loader).
+            final Map<String, Object> originalCache = new HashMap<>();
+            final Object miss = new Object();
+            Set<ClassNode> extra = downgrade(node, enableRuntime, s -> {
+                Object cached = originalCache.get(s);
+                if (cached == null) {
                     try {
                         byte[] out = getExtraRead.apply(s);
-                        if (out == null) {
-                            return null;
-                        }
-                        return ASMUtils.bytesToClassNode(out);
+                        cached = out == null ? miss : ASMUtils.bytesToClassNode(out);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
+                    originalCache.put(s, cached);
                 }
+                return cached == miss ? null : (ClassNode) cached;
             });
             boolean hasVersions = false;
             for (ClassNode c : extra) {
@@ -373,7 +299,7 @@ public class ClassDowngrader implements Closeable {
             }
             if (hasVersions) {
                 // filter outputs that are effectively the same
-                Map<String, Map<Integer, byte[]>> byVersion = new HashMap<>();
+                Map<String, Map<Integer, byte[]>> byVersion = new TreeMap<>();
                 for (Map.Entry<String, byte[]> entry : outputs.entrySet()) {
                     String key = entry.getKey();
                     if (key.startsWith("META-INF/versions/")) {
@@ -391,7 +317,7 @@ public class ClassDowngrader implements Closeable {
                     }
                 }
                 outputs.clear();
-                Map<String, byte[]> current = new HashMap<>();
+                Map<String, byte[]> current = new TreeMap<>();
                 for (Map.Entry<String, Map<Integer, byte[]>> entry : byVersion.entrySet()) {
                     String key = entry.getKey();
                     Map<Integer, byte[]> versions = entry.getValue();
@@ -453,7 +379,7 @@ public class ClassDowngrader implements Closeable {
     @VisibleForTesting
     public VersionProvider getVersionProviderFor(int version) {
         // This is not true for java 1
-        VersionProvider vp = downgraders.get(version + 44);
+        VersionProvider vp = downgraders.get(Utils.majorVersionToClassVersion(version));
         if (vp == null) return null;
         vp.ensureInit(this);
         return vp;

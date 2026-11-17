@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.io.Closeable;
@@ -36,7 +37,7 @@ public interface J_L_M_ModuleReader extends Closeable {
         if (!optionalURI.isPresent()) {
             return Optional.empty();
         }
-        return Optional.of(optionalURI.get().toURL().openStream());
+        return Optional.of(Utils.openUncached(optionalURI.get().toURL()));
     }
 
     default Optional<ByteBuffer> read(String name) throws IOException {

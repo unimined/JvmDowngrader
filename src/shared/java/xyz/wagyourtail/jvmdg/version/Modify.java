@@ -19,9 +19,22 @@ public @interface Modify {
      * ClassNode - current class
      * Set&lt;ClassNode&gt; - extra classes
      * boolean - if synthetic should be set on any generated methods
+     * <p>
+     * Handlers may additionally declare a trailing
+     * {@code xyz.wagyourtail.jvmdg.version.ModifyContext} parameter (core
+     * classpath type — carries the run's {@code Flags}, e.g. {@code noIndy});
+     * see {@code ModifyUtils.MODIFY_SIG} for the full invocable signature.
      */
     Class<?>[] MODIFY_SIG = new Class<?>[]{MethodNode.class, int.class, ClassNode.class, Set.class, boolean.class};
 
     Ref ref() default @Ref();
+
+    /**
+     * Force the {@link StubKind} classification — the default
+     * {@link StubKind#AUTO} classifies {@code @Modify} entries
+     * {@link StubKind#LANGUAGE} (insn-level desugars aren't API mirrors).
+     * Override for a {@code @Modify} that emulates API semantics.
+     */
+    StubKind kind() default StubKind.AUTO;
 
 }

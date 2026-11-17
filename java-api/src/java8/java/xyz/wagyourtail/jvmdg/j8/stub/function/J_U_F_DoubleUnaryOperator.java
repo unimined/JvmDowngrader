@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -19,7 +20,7 @@ public interface J_U_F_DoubleUnaryOperator {
 
     class DoubleUnaryOperatorDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static J_U_F_DoubleUnaryOperator compose(final J_U_F_DoubleUnaryOperator f1, final J_U_F_DoubleUnaryOperator f2) {
             Objects.requireNonNull(f2);
             return new J_U_F_DoubleUnaryOperator.DoubleUnaryOperatorAdapter() {
@@ -30,7 +31,7 @@ public interface J_U_F_DoubleUnaryOperator {
             };
         }
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static J_U_F_DoubleUnaryOperator andThen(final J_U_F_DoubleUnaryOperator f1, final J_U_F_DoubleUnaryOperator f2) {
             Objects.requireNonNull(f2);
             return compose(f2, f1);

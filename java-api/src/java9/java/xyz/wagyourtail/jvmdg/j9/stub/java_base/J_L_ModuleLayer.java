@@ -2,7 +2,7 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import xyz.wagyourtail.jvmdg.j9.intl.module.ModuleConstantHelper;
 import xyz.wagyourtail.jvmdg.version.Adapter;
-import xyz.wagyourtail.jvmdg.version.CoverageIgnore;
+import xyz.wagyourtail.jvmdg.version.Internal;
 import xyz.wagyourtail.jvmdg.version.JEP;
 
 import java.util.*;
@@ -18,7 +18,7 @@ public class J_L_ModuleLayer {
     private volatile Set<J_L_Module> moduleSet;
     private volatile String strValue;
 
-    @CoverageIgnore
+    @Internal
     public J_L_ModuleLayer(List<J_L_ModuleLayer> parents, Map<String, J_L_Module> modules) {
         this.parents = parents;
         this.modules = modules;

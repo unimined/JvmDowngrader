@@ -1,8 +1,9 @@
 package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import org.objectweb.asm.Opcodes;
-import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
+import xyz.wagyourtail.jvmdg.stub.OptionalDependency;
+import xyz.wagyourtail.jvmdg.stub.RuntimeDowngrader;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Ref;
@@ -17,6 +18,7 @@ import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class J_L_I_MethodHandles {
@@ -156,26 +158,24 @@ public class J_L_I_MethodHandles {
             Objects.requireNonNull(field);
             return J_L_I_VarHandle.of(field);
         }
-        @Stub
+        @Stub(requiresRuntime = true)
         public static Class<?> defineClass(MethodHandles.Lookup lookup, byte[] bytes) throws Throwable {
             Objects.requireNonNull(bytes);
             DefiningLoader loader = new DefiningLoader(lookup.lookupClass().getClassLoader());
-            // check if classdowngrader is available
-            try {
-                Class.forName("xyz.wagyourtail.jvmdg.ClassDowngrader");
-            } catch (ClassNotFoundException e) {
-                return loader.defineClass0(bytes, 0, bytes.length);
-            }
             AtomicReference<String> name = new AtomicReference<>(null);
-            Map<String, byte[]> classBytes = ClassDowngrader.getCurrentVersionDowngrader().downgrade(name, bytes, true, (s) -> {
+            Optional<RuntimeDowngrader> backend = OptionalDependency.downgrader();
+            Map<String, byte[]> classBytes = backend.isPresent() ? backend.get().downgrade(name, bytes, true, (s) -> {
                 URL url = loader.getResource(s + ".class");
                 if (url == null) return null;
                 try {
-                    return Utils.readAllBytes(url.openStream());
+                    return Utils.readAllBytes(Utils.openUncached(url));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
-            });
+            }) : null;
+            if (classBytes == null) {
+                return loader.defineClass0(bytes, 0, bytes.length);
+            }
             Class<?> c = null;
             for (Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
                 if (entry.getKey().startsWith("META-INF/versions")) continue;

@@ -14,10 +14,25 @@ import java.util.Objects;
 public class MemberNameAndDesc {
     private final String name;
     private final Type desc;
+    /**
+     * commons-asm carries this flag too, but there it defaults to exact
+     * matching. jvmdg historically compared methods on name + argument
+     * types only (covariant-return stub matching, ctor stubs whose impl
+     * returns the instance type), so the two-arg constructor keeps that
+     * as the default; pass {@code false} explicitly for exact desc
+     * equality.
+     */
+    private final boolean ignoreReturnValue;
+    private int hash;
 
     public MemberNameAndDesc(String name, Type desc) {
+        this(name, desc, true);
+    }
+
+    public MemberNameAndDesc(String name, Type desc, boolean ignoreReturnValue) {
         this.name = name;
         this.desc = desc;
+        this.ignoreReturnValue = ignoreReturnValue;
     }
 
     public static MemberNameAndDesc fromMember(Member member) {
@@ -48,6 +63,21 @@ public class MemberNameAndDesc {
         return desc;
     }
 
+    public boolean isIgnoreReturnValue() {
+        return ignoreReturnValue;
+    }
+
+    /**
+     * a copy that compares equal to another ignoring-return-value instance
+     * when name and argument types match, regardless of return type.
+     */
+    public MemberNameAndDesc ignoreReturnValue() {
+        if (ignoreReturnValue || desc.getSort() != Type.METHOD) {
+            return this;
+        }
+        return new MemberNameAndDesc(name, desc, true);
+    }
+
     public FullyQualifiedMemberNameAndDesc toFullyQualified(Type owner) {
         return new FullyQualifiedMemberNameAndDesc(owner, name, desc);
     }
@@ -56,7 +86,11 @@ public class MemberNameAndDesc {
         return desc.getSort() == Type.METHOD;
     }
 
-    public  boolean isField() {
+    public boolean isMethodRef() {
+        return isMethod();
+    }
+
+    public boolean isField() {
         return desc.getSort() != Type.METHOD;
     }
 
@@ -65,11 +99,12 @@ public class MemberNameAndDesc {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         MemberNameAndDesc that = (MemberNameAndDesc) o;
-        if (desc.getSort() == Type.METHOD) {
-            return Objects.equals(name, that.name) && Arrays.equals(desc.getArgumentTypes(), that.desc.getArgumentTypes());
-        } else {
-            return Objects.equals(name, that.name) && desc.equals(that.desc);
+        if (desc.getSort() != that.desc.getSort()) return false;
+        if (!name.equals(that.name)) return false;
+        if (ignoreReturnValue && that.ignoreReturnValue && desc.getSort() == Type.METHOD) {
+            return Arrays.equals(desc.getArgumentTypes(), that.desc.getArgumentTypes());
         }
+        return Objects.equals(desc, that.desc);
     }
 
     @Override
@@ -79,11 +114,21 @@ public class MemberNameAndDesc {
 
     @Override
     public int hashCode() {
-        if (desc.getSort() == Type.METHOD) {
-            return Objects.hash(name, Arrays.hashCode(desc.getArgumentTypes()));
-        } else {
-            return Objects.hash(name, desc);
+        // methods always hash name + arg types, not full desc — equal keys
+        // must hash alike even when only one side ignores the return type
+        // (flagged-vs-exact equality falls back to desc equality, which
+        // implies equal args). Immutable, so the descriptor re-parse and
+        // rehash are cached; a racy recompute produces the same value.
+        int h = hash;
+        if (h == 0) {
+            if (desc.getSort() == Type.METHOD) {
+                h = Objects.hash(name, Arrays.hashCode(desc.getArgumentTypes()));
+            } else {
+                h = Objects.hash(name, desc);
+            }
+            hash = h;
         }
+        return h;
     }
 
 }

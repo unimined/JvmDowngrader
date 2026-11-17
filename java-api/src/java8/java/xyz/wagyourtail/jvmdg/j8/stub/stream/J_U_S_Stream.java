@@ -4,6 +4,7 @@ import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j8.stub.J_U_Optional;
 import xyz.wagyourtail.jvmdg.j8.stub.function.*;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -88,7 +89,7 @@ public interface J_U_S_Stream<T> extends J_U_S_BaseStream<T, J_U_S_Stream<T>> {
 
         class BuilderDefaults {
 
-            @Stub(abstractDefault = true)
+            @DefaultImpl
             public static <T> Builder<T> add(Builder<T> builder, T t) {
                 builder.accept(t);
                 return builder;

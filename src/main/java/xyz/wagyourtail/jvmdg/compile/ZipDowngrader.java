@@ -1,6 +1,7 @@
 package xyz.wagyourtail.jvmdg.compile;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
+import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 import java.io.File;
@@ -26,7 +27,8 @@ public class ZipDowngrader {
             }
         }
         downgradeZip(target, input, classpath, output);
-        System.out.println("Downgraded in " + (System.currentTimeMillis() - start) + "ms");
+        new Logger(ZipDowngrader.class, Logger.Level.INFO, true, System.out)
+            .info("Downgraded in " + (System.currentTimeMillis() - start) + "ms");
     }
 
     public static void downgradeZip(int opcVersion, File input, Set<File> classpath, File output) throws IOException {
@@ -52,11 +54,15 @@ public class ZipDowngrader {
                 Files.createDirectories(parent);
             }
             Path tmp = parent != null ? Files.createTempFile(parent, output.getFileName().toString(), ".zip") : Files.createTempFile(output.getFileName().toString(), ".zip");
-            new ZipOutputStream(Files.newOutputStream(tmp, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)).close();
-            try (final FileSystem outputZipFs = Utils.openZipFileSystem(tmp, true)) {
-                PathDowngrader.downgradePaths(downgrader, Collections.singletonList(zipfs.getPath("/")), Collections.singletonList(outputZipFs.getPath("/")), classpath);
+            try {
+                new ZipOutputStream(Files.newOutputStream(tmp, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)).close();
+                try (final FileSystem outputZipFs = Utils.openZipFileSystem(tmp, true)) {
+                    PathDowngrader.downgradePaths(downgrader, Collections.singletonList(zipfs.getPath("/")), Collections.singletonList(outputZipFs.getPath("/")), classpath);
+                }
+                Files.move(tmp, output, StandardCopyOption.REPLACE_EXISTING);
+            } finally {
+                Files.deleteIfExists(tmp);
             }
-            Files.move(tmp, output, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

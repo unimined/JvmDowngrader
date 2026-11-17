@@ -184,6 +184,21 @@ tasks.named<JavaCompile>("compileStubtestsJava") {
     options.compilerArgs.add("-nowarn")
 }
 
+// regenerates the flag-keys table in docs/Configuration.md from FlagBindings —
+// TestFlagBindings asserts the checked-in table matches this output
+tasks.register<JavaExec>("genConfigDocs") {
+    group = "verification"
+    description = "Regenerates the flag table section of docs/Configuration.md from @BoundFlag metadata"
+    dependsOn(tasks.testClasses)
+    classpath = sourceSets["test"].runtimeClasspath
+    mainClass.set("xyz.wagyourtail.jvmdg.test.docgen.ConfigDocTable")
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(stubToVersion.majorVersion.toInt()))
+        vendor.set(JvmVendorSpec.AZUL)
+    })
+    args(rootProject.layout.projectDirectory.dir("docs").file("Configuration.md").asFile.absolutePath)
+}
+
 val generateStubTests = tasks.register<JavaExec>("generateStubTests") {
     group = "verification"
     description = "Enumerates registered stub members and emits per-owner call sites + Index"
@@ -248,6 +263,10 @@ jmh {
 //    javaLauncher = javaToolchains.launcherFor {
 //        languageVersion.set(JavaLanguageVersion.of(8))
 //    }
+}
+
+tasks.named("jmh") {
+    dependsOn(featureJar)
 }
 
 tasks.test {

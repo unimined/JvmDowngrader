@@ -55,6 +55,44 @@ public interface Interfaces {
     }
 
     @FeatureTest
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static void gainedInterfaceCall() {
+        // invokeinterface on Comparable where the receiver's class only
+        // gained the implements edge in j11 — the site can't verify below
+        // j11, so it routes through the gained indy (GainedRuntime PIC);
+        // under --noIndy the desugar drops to RetroTypes.gainedCall.
+        // Natively this is a plain call.
+        java.lang.StringBuffer a = new java.lang.StringBuffer("a");
+        java.lang.StringBuffer b = new java.lang.StringBuffer("b");
+        Comparable cmp = a;
+        System.out.println(cmp.compareTo(b));
+        System.out.println(cmp.compareTo(a));
+    }
+
+    @FeatureTest
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static void gainedInterfaceArrayStore() {
+        // aastore into Comparable[] — the member's class gained Comparable
+        // in j11, so the runtime element check ArrayStoreExceptions on a
+        // raw member; the transform rewrites the store through
+        // jvmdg$aastore which wraps the member (real ASE preserved for
+        // genuine mismatches)
+        StringBuffer sb = new StringBuffer("x");
+        Comparable[] arr = new Comparable[2];
+        arr[0] = sb;
+        arr[1] = "y";
+        System.out.println(arr[0] instanceof Comparable);
+        System.out.println(arr[0].compareTo(sb));
+        System.out.println(arr[1]);
+        try {
+            ((Object[]) arr)[0] = new Object();
+            System.out.println("no-exc");
+        } catch (ArrayStoreException e) {
+            System.out.println("ase");
+        }
+    }
+
+    @FeatureTest
     static void conflict() {
         // two interfaces with same default -> impl must override
         new ABImpl().who();

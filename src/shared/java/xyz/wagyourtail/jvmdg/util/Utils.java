@@ -14,25 +14,32 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.zip.ZipOutputStream;
 
 public class Utils {
-    private static Unsafe cachedUnsafe;
-    private static MethodHandles.Lookup cachedImplLookup;
+    private static volatile Unsafe cachedUnsafe;
+    private static volatile MethodHandles.Lookup cachedImplLookup;
 
     public static Unsafe getUnsafe() {
         if (cachedUnsafe != null) {
             return cachedUnsafe;
         }
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            return cachedUnsafe = (Unsafe) f.get(null);
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            throw new UnsupportedOperationException("Unable to get Unsafe instance", e);
+        synchronized (Utils.class) {
+            if (cachedUnsafe != null) {
+                return cachedUnsafe;
+            }
+            try {
+                Field f = Unsafe.class.getDeclaredField("theUnsafe");
+                f.setAccessible(true);
+                return cachedUnsafe = (Unsafe) f.get(null);
+            } catch (IllegalAccessException | NoSuchFieldException e) {
+                throw new UnsupportedOperationException("Unable to get Unsafe instance", e);
+            }
         }
     }
 
@@ -40,6 +47,15 @@ public class Utils {
         if (cachedImplLookup != null) {
             return cachedImplLookup;
         }
+        synchronized (Utils.class) {
+            if (cachedImplLookup != null) {
+                return cachedImplLookup;
+            }
+            return cachedImplLookup = getImplLookup0();
+        }
+    }
+
+    private static MethodHandles.Lookup getImplLookup0() {
 
         // ensure lookup is initialized
         MethodHandles.lookup();
@@ -58,7 +74,7 @@ public class Utils {
         if (lookup == null) {
             throw new UnsupportedOperationException("Unable to get or construct IMPL_LOOKUP");
         }
-        return cachedImplLookup = lookup;
+        return lookup;
     }
 
     private static MethodHandles.Lookup getImplLookupWithUnsafe() {
@@ -110,11 +126,77 @@ public class Utils {
         return null;
     }
 
+    private static volatile MethodHandle hasStaticInitializerHandle;
+
+    /**
+     * whether the class has a static initializer ({@code <clinit>}), via
+     * {@link java.io.ObjectStreamClass}'s internal check since reflection
+     * cannot see it. Returns false when unavailable.
+     */
+    public static boolean hasStaticInitializer(Class<?> clazz) {
+        MethodHandle handle = hasStaticInitializerHandle;
+        if (handle == null) {
+            synchronized (Utils.class) {
+                handle = hasStaticInitializerHandle;
+                if (handle == null) {
+                    try {
+                        handle = getImplLookup().findStatic(
+                            java.io.ObjectStreamClass.class, "hasStaticInitializer",
+                            java.lang.invoke.MethodType.methodType(boolean.class, Class.class));
+                    } catch (Throwable ignored) {
+                    }
+                    hasStaticInitializerHandle = handle;
+                }
+            }
+        }
+        if (handle == null) {
+            return false;
+        }
+        try {
+            return (boolean) handle.invokeExact(clazz);
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
     public static FileSystem openZipFileSystem(Path path, boolean create) throws IOException {
         if (create && !Files.exists(path)) {
             new ZipOutputStream(Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)).close();
         }
-        return FileSystems.newFileSystem(path, null);
+        return FileSystems.newFileSystem(path, (ClassLoader) null);
+    }
+
+    /**
+     * Open {@code url} bypassing the JVM-wide {@link URLConnection} cache —
+     * the JDK caches {@code JarFile} handles by URL, so a jar rewritten
+     * in-place (Gradle daemon/worker reuse across rebuilds) would otherwise
+     * be read through stale offsets ("invalid LOC header").
+     */
+    public static InputStream openUncached(URL url) throws IOException {
+        URLConnection conn = url.openConnection();
+        conn.setUseCaches(false);
+        return conn.getInputStream();
+    }
+
+    /**
+     * {@link #openUncached(URL)} on the resource URL, falling back to
+     * {@code getResourceAsStream} when the loader answers streams but not
+     * URLs (custom loaders may override only the stream method).
+     */
+    public static InputStream openResource(ClassLoader loader, String name) throws IOException {
+        URL url = loader == null ? ClassLoader.getSystemResource(name) : loader.getResource(name);
+        if (url != null) return openUncached(url);
+        return loader == null ? ClassLoader.getSystemResourceAsStream(name) : loader.getResourceAsStream(name);
+    }
+
+    /**
+     * {@link #openResource(ClassLoader, String)} resolved relative to
+     * {@code base}'s package, same stream-only fallback.
+     */
+    public static InputStream openResource(Class<?> base, String name) throws IOException {
+        URL url = base.getResource(name);
+        if (url != null) return openUncached(url);
+        return base.getResourceAsStream(name);
     }
 
     public static byte[] readAllBytes(InputStream in) throws IOException {
@@ -142,6 +224,22 @@ public class Utils {
     public static int classVersionToMajorVersion(int version) {
         if (version == Opcodes.V1_1) return 1;
         else return (version & 0xFFFF) - Opcodes.V1_2 + 2;
+    }
+
+    /**
+     * The class-file version masked to its major — {@code ClassNode.version}
+     * carries {@code minor << 16 | major} as read by ASM, and
+     * {@code javac --enable-preview} sets the minor to {@code 0xFFFF}, so
+     * raw {@code ==} comparisons against provider versions only work after
+     * masking.
+     */
+    public static int majorClassVersion(int version) {
+        return version & 0xFFFF;
+    }
+
+    /** a preview-compiled class file — its minor version is {@code 0xFFFF} (the only nonzero minor the JVMS allows) */
+    public static boolean isPreviewVersion(int version) {
+        return (version >>> 16) == 0xFFFF;
     }
 
     public static int majorVersionToClassVersion(int version) {
@@ -246,12 +344,39 @@ public class Utils {
             className.startsWith("java.lang.invoke.LambdaForm");
     }
 
+    /**
+     * the class of the frame that invoked the caller of this method, skipping
+     * reflection dispatch frames. Stack layout is
+     * {@code [getStackTrace, getCaller, <invoker>, ...]} — starting the scan at
+     * the invoker's frame would return the invoker's own class (e.g. the stub
+     * method) rather than its caller.
+     */
     public static Class<?> getCaller(MethodHandles.Lookup lookup) throws ClassNotFoundException {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-        for (int i = 2; i < stack.length; i++) {
+        // locate this method's frame instead of assuming a fixed index: some
+        // VMs omit the getStackTrace frame itself. The frame after getCaller
+        // is its invoker, and we want the caller of *that*.
+        int start = 3;
+        for (int j = 0; j < stack.length; j++) {
+            if (stack[j].getClassName().equals(Utils.class.getName())) {
+                start = j + 2;
+                break;
+            }
+        }
+        for (int i = start; i < stack.length; i++) {
             String className = stack[i].getClassName();
             if (!isReflectionFrame(className)) {
-                return Class.forName(className, false, lookup.lookupClass().getClassLoader());
+                try {
+                    return Class.forName(className, false, lookup.lookupClass().getClassLoader());
+                } catch (ClassNotFoundException e) {
+                    // the caller may not be visible to the lookup's loader;
+                    // retry against the context loader before giving up
+                    ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+                    if (tccl != null && tccl != lookup.lookupClass().getClassLoader()) {
+                        return Class.forName(className, false, tccl);
+                    }
+                    throw e;
+                }
             }
         }
         throw new ClassNotFoundException("Could not find caller class???");
@@ -277,21 +402,32 @@ public class Utils {
         return true;
     }
 
-    public static String getSha1(Path path) throws IOException, NoSuchAlgorithmException {
+    public static String toHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
+    public static String getSha1(byte[] bytes) throws NoSuchAlgorithmException {
+        return toHex(MessageDigest.getInstance("SHA-1").digest(bytes));
+    }
+
+    public static String getSha1(InputStream is) throws IOException, NoSuchAlgorithmException {
         MessageDigest digestSha1 = MessageDigest.getInstance("SHA-1");
+        byte[] buffer = new byte[8192];
+        int read;
+        while ((read = is.read(buffer)) != -1) {
+            digestSha1.update(buffer, 0, read);
+        }
+        return toHex(digestSha1.digest());
+    }
+
+    public static String getSha1(Path path) throws IOException, NoSuchAlgorithmException {
         try (InputStream is = Files.newInputStream(path)) {
-            byte[] buffer = new byte[8192];
-            int read;
-            while ((read = is.read(buffer)) != -1) {
-                digestSha1.update(buffer, 0, read);
-            }
+            return getSha1(is);
         }
-        byte[] hashBytes = digestSha1.digest();
-        StringBuilder hash = new StringBuilder();
-        for (byte b : hashBytes) {
-            hash.append(String.format("%02x", b));
-        }
-        return hash.toString();
     }
 
     public static String getSha1(File file) throws IOException, NoSuchAlgorithmException {

@@ -2,6 +2,7 @@ package xyz.wagyourtail.jvmdg.j8.stub.function;
 
 import xyz.wagyourtail.jvmdg.j8.stub.J_L_FunctionalInterface;
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.DefaultImpl;
 import xyz.wagyourtail.jvmdg.version.Ref;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
@@ -19,7 +20,7 @@ public interface J_U_F_Predicate<T> {
 
     class PredicateDefaults {
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T> J_U_F_Predicate<T> and(final J_U_F_Predicate<T> self, final J_U_F_Predicate<? super T> other) {
             return new J_U_F_Predicate.PredicateAdapter<T>() {
                 @Override
@@ -29,7 +30,7 @@ public interface J_U_F_Predicate<T> {
             };
         }
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T> J_U_F_Predicate<T> negate(final J_U_F_Predicate<T> self) {
             return new J_U_F_Predicate.PredicateAdapter<T>() {
                 @Override
@@ -39,7 +40,7 @@ public interface J_U_F_Predicate<T> {
             };
         }
 
-        @Stub(abstractDefault = true)
+        @DefaultImpl
         public static <T> J_U_F_Predicate<T> or(final J_U_F_Predicate<T> self, final J_U_F_Predicate<? super T> other) {
             return new J_U_F_Predicate.PredicateAdapter<T>() {
                 @Override
