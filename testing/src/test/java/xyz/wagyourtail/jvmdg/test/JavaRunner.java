@@ -159,6 +159,11 @@ public class JavaRunner {
 
         List<String> command = new ArrayList<>();
         command.add(javaBin.toString());
+        // old JVMs can misdetect newer x86 features and emit corrupt JIT code
+        // (same mitigation as compile workers); the flag doesn't exist on aarch64
+        if (System.getProperty("os.arch").matches("x86_64|amd64|x86")) {
+            command.add("-XX:UseAVX=0");
+        }
         command.addAll(jvmArgs);
         command.addAll(Arrays.asList(processArgs));
         command.addAll(Arrays.asList(args));

@@ -312,6 +312,17 @@ fun JavaCompile.configCompile(version: JavaVersion) {
 
     options.encoding = "UTF-8"
 
+    // EOL toolchain JVMs (zulu 9/10/... predate current CPU-detection fixes)
+    // can silently corrupt string/array copies on newer runner CPUs via
+    // misdetected AVX intrinsics — observed in CI as Gradle worker daemons
+    // dying at slf4j init with NUL-mangled class names. Disabling AVX use
+    // removes the corrupting intrinsics. Gradle hands jvmArgs to whatever
+    // JVM/argv runs the compile: toolchain <= 7 execs `javac` (needs the
+    // -J prefix), >= 8 spawns a worker daemon on the toolchain JVM (plain).
+    options.isFork = true
+    options.forkOptions.jvmArgs =
+        listOf(if (version >= JavaVersion.VERSION_1_8) "-XX:UseAVX=0" else "-J-XX:UseAVX=0")
+
     javaCompiler = javaToolchains.compilerFor {
         languageVersion = JavaLanguageVersion.of(version.majorVersion)
         vendor.set(JvmVendorSpec.AZUL)

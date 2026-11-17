@@ -87,10 +87,10 @@ jvmdg.multiReleaseVersions = [].toSet()
 You can see more of what these values mean
 by [checking the docs on the flags classes](gradle-plugin/src/main/kotlin/xyz/wagyourtail/jvmdg/gradle/flags)
 
-This will create a default downgrade task for `jar` (or `shadowJar` if present) called `downgradeJar` that will
-downgrade the output to java 8 by default.
+Once the `java` plugin is applied, this will register a default downgrade task for `jar` (or `shadowJar` if present)
+called `downgradeJar` that will downgrade the output to java 8 by default.
 as well as a `shadeDowngradedApi` to then insert the required classes for not having a runtime dependency on the api
-jar.
+jar. (Without `java`, no tasks are registered — the flags/spec/`dg` surfaces still work.)
 
 you can change the downgrade version by doing:
 
@@ -166,7 +166,14 @@ task customShadeDowngradedApi(type: xyz.wagyourtail.jvmdg.gradle.task.ShadeJar) 
 task downgradeFileCollection(type: xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles) {
     inputCollection = files("file1.jar", "file2.jar")
     downgradeTo = JavaVersion.VERSION_1_8 // default
-    classpath = sourceSets.main.runtimeClasspath // default
+    classpath = sourceSets.main.runtimeClasspath // default when java plugin is present, else empty
+}
+
+// or bind a source set directly — its output classes dirs become the
+// inputs and its runtimeClasspath the member-resolution classpath:
+task downgradeTestClasses(type: xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles) {
+    sourceSet "test"
+    downgradeTo = JavaVersion.VERSION_1_8
 }
 
 // get the output with
@@ -210,10 +217,76 @@ This is the expected usage of these functions.
 
 `jvmdg.dg` has optional parameter, `shade: Boolean`, turn this to false if you plan on shadow'ing this configuration and
 running `shadeDowngradedApi`, as otherwise there may be duplicate jvmdg-api classes.
+
+### Scoped flag specs
+
+For multi-target builds (or plugins building on jvmdg) the extension carries named
+`FlagsSpec`s — standalone bundles of all the same flags, conventioned to the global
+`jvmdg` values so explicit sets win:
+
+```gradle
+jvmdg.spec("test") {
+    downgradeTo = JavaVersion.VERSION_11
+    enabled = false // declared but inert — check this before using the spec
+}
+
+// bind a task to a spec's flags
+task downgradeTest(type: xyz.wagyourtail.jvmdg.gradle.task.files.DowngradeFiles) {
+    inputCollection = sourceSets.test.runtimeClasspath
+    convention(jvmdg.specs["test"])
+    onlyIf { jvmdg.specs["test"].enabled.get() }
+}
+```
+
+Specs can also chain each other — `spec("b") { convention(spec("a")) }` —
+and plugin authors can create their own standalone specs with
+`objects.newInstance(FlagsSpec::class.java, "name")`.
+
+Dependency transforms bind to a spec with the `dg(dep, spec)` overload — the
+spec's flags replace the extension's for that configuration's downgrades:
+
+```gradle
+jvmdg.dg(configurations.downgrade, jvmdg.spec("java11") {
+    downgradeTo = JavaVersion.VERSION_11
+})
+```
 ie. `jvmdg.dg(configurations.downgrade, false)`
 
 you may have to include whatever configuration you're downgrading in ShadowJar yourself.
 I do not automatically make the configuration shadowed into your output.
+
+### Embedding jvmdg in your own plugin
+
+The plugin is deliberately consumable without its task surface: `apply` only
+registers the shared flag defaults and the `jvmdg` extension, and the default
+tasks only appear once `java` is applied. The pieces meant for embedders:
+
+- **`jvmdg.specs` / `jvmdg.spec("name")`** — per-scope `FlagsSpec`s that
+  convention the global extension; your own scopes (source sets, environments,
+  variants) get `own set > spec > global > built-in` precedence for free.
+- **`spec.enabled`** — specs can be declared but inert; gate bound tasks with
+  `onlyIf { spec.enabled.get() }` (Gradle task types can't carry an `enabled`
+  *property* — the name is already a plain boolean on `Task`).
+- **`convention(spec)`** — binds any `DowngradeFlags` carrier (a task, a
+  transform's params, another spec) to a spec: set values win, unset values
+  keep their existing conventions. `enabled` flows when both ends are
+  `EnabledFlag`s.
+- **`toFlags()`** — converts any flags carrier to the engine's `cli.Flags`;
+  engine entry points are `ClassDowngrader`, `PathDowngrader` (dirs),
+  `ZipDowngrader` (jars) and `ApiShader` (stub shading).
+- **`jvmdg.javaApi`** — a resolvable `jvmdgApi` configuration carrying the
+  `jvmdowngrader-java-api` artifact at this plugin's version, for consumers
+  that prefer lazy maven resolution over the bundled api jar extraction:
+  `spec.apiJar.addAll(jvmdg.javaApi.map { it.files })`.
+- **Compile-vs-emit is yours** — jvmdg only knows the *emit* level
+  (`downgradeTo`); what java level you compile at, and how a user asks for a
+  higher compile level, is the consuming plugin's schema (e.g. unimined's
+  `source`/`target` pair).
+- **Supported input majors are a release property** — downgrading is a pure
+  bytecode transform (inputs are never `defineClass`'d; api stubs load
+  through a downgrading classloader), so there is no "build JVM ≥ source"
+  requirement. The ceiling is the `VersionProvider` coverage and bundled ASM
+  in the jvmdg release itself — document yours accordingly.
 
 #### Including newer dependencies on lower java version building
 
@@ -221,10 +294,21 @@ It is **strongly** not recommended due to the following but is still possible.
 instead, you *should* just shade dependencies into your project and downgrade the combined output.
 The dependencies may not be correctly represented in the pom with this method.
 
-There may be issues with metadata breaking because of how early gradle checks the java version,
-you can disable this by setting `artifact` in the `metadataSources` function on repositories
-to explicitly disable metadata, if you are lucky, you may be able to include `mavenPom` as well, so trasitive dependencies can resolve, otherwise
-**transitive dependencies will not be included**, and must be included manually.
+Since 2.1.0, `dg()` on an external module dependency registers a
+component metadata rule that rewrites the module's
+`org.gradle.jvm.version` to the downgrade target, so a consumer
+resolving at that level passes variant compatibility against
+Gradle Module Metadata that only publishes higher-jvm variants —
+metadata sources and transitive resolution work as-is. File
+dependencies carry no metadata and are unaffected.
+
+On older versions, there may be issues with metadata breaking because
+of how early gradle checks the java version. You can disable this by
+setting `artifact` in the `metadataSources` function on repositories
+to explicitly disable metadata, if you are lucky, you may be able to
+include `mavenPom` as well, so trasitive dependencies can resolve,
+otherwise **transitive dependencies will not be included**, and must
+be included manually.
 
 for example:
 
@@ -340,6 +424,7 @@ one side, port the fix to the counterpart:
 | `jvmdg.collection.{Map,FlatMap}Enumeration` | `commons.enumerations.{Map,FlatMap}Enumeration` |
 
 See `AGENTS.md` for the full mapping and verification commands.
+
 ## License
 
 JvmDowngrader is licensed under the [GNU Lesser General Public License v2.1](LICENSE.md) or
@@ -357,6 +442,7 @@ And this does, usually, mean that you shouldn't need to use the *exact* same lic
 Running this tool, should be a thing the end-user is capable of doing, thus section 6.a should be satisfied as long as
 your project provides the unshaded/undowngraded jar as well, or alternatively provides source code to build said jar,
 or the post-shaded jar.
+
 
 ### inspired by
 
