@@ -63,6 +63,20 @@ public class StubScanner {
             new IndyDesugarHandler()
         ));
 
+
+    /**
+     * The throwable with its cause chain flattened into one line — scan
+     * failures deliberately degrade per-member (a bad member must not abort
+     * the rest of the class), so the log is the only place the cause survives.
+     */
+    private static String describe(Throwable e) {
+        StringBuilder sb = new StringBuilder(e.toString());
+        for (Throwable c = e.getCause(); c != null && c != e; c = c.getCause()) {
+            sb.append(" <- ").append(c);
+        }
+        return sb.toString();
+    }
+
     private final VersionProvider vp;
 
     public StubScanner(VersionProvider vp) {
@@ -87,7 +101,7 @@ public class StubScanner {
                     try {
                         handler.onClass(clazz, a, ctx);
                     } catch (Throwable e) {
-                        failures.add("class-level " + a.annotationType().getSimpleName() + ": " + e);
+                        failures.add("class-level " + a.annotationType().getSimpleName() + ": " + describe(e));
                     }
                 }
             }
@@ -127,17 +141,17 @@ public class StubScanner {
                             }
                         }
                     } catch (Throwable e) {
-                        failures.add(method.getName() + ": " + e);
+                        failures.add(method.getName() + ": " + describe(e));
                     }
                 }
             } catch (Throwable e) {
-                failures.add("resolving methods: " + e);
+                failures.add("resolving methods: " + describe(e));
             }
             for (AnnotationHandler handler : HANDLERS) {
                 try {
                     handler.finishClass(ctx);
                 } catch (Throwable e) {
-                    failures.add(handler.annotation().getSimpleName() + " finishClass: " + e);
+                    failures.add(handler.annotation().getSimpleName() + " finishClass: " + describe(e));
                 }
             }
             try {
@@ -146,17 +160,17 @@ public class StubScanner {
                     scan(inner);
                 }
             } catch (Throwable e) {
-                failures.add("resolving inner classes: " + e);
+                failures.add("resolving inner classes: " + describe(e));
             }
         } catch (Throwable e) {
-            failures.add("creating stub: " + e);
+            failures.add("creating stub: " + describe(e));
         }
         if (!failures.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (String failure : failures) {
                 sb.append("\n    ").append(failure);
             }
-            throw new IllegalStateException(failures.size() + " stub registration failure(s) in " + clazz.getName() + sb);
+            vp.logger.error(failures.size() + " stub registration failure(s) in " + clazz.getName() + sb);
         }
         if (!warnings.isEmpty() && vp.logger.is(Logger.Level.WARN)) {
             if (vp.downgrader.flags.checkInIgnoreWarnings(clazz.getName())) return;

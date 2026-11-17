@@ -203,7 +203,8 @@ val genStubIndex = tasks.register<JavaExec>("genStubIndex") {
         layout.buildDirectory.dir("generated/gen-src").get().asFile.absolutePath,
         stubIndexDir.get().file("META-INF/jvmdg/gained").asFile.absolutePath,
         stubIndexDir.get().file("META-INF/jvmdg/gained-calls").asFile.absolutePath,
-        stubIndexDir.get().file("xyz/wagyourtail/jvmdg/stub/reflection.idx").asFile.absolutePath
+        stubIndexDir.get().file("xyz/wagyourtail/jvmdg/stub/reflection.idx").asFile.absolutePath,
+        stubIndexDir.get().file("META-INF/jvmdg/member-since").asFile.absolutePath
     )
     inputs.file(genCtSym.flatMap { it.ctSym })
     dependsOn(genCtSym)

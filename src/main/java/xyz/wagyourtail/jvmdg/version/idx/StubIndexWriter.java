@@ -80,8 +80,8 @@ import xyz.wagyourtail.jvmdg.version.map.StubRegistry;
 public class StubIndexWriter {
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 3 || args.length > 11) {
-            throw new IllegalArgumentException("usage: StubIndexWriter <output-file> <jvmdg-version> <ct.sym> [<retrotypes-file> [<gen-classes-dir> [<excludes-file> [<wraps-file> [<gen-src-dir> [<gained-file> [<gained-calls-file> [<reflection-file>]]]]]]]]");
+        if (args.length < 3 || args.length > 12) {
+            throw new IllegalArgumentException("usage: StubIndexWriter <output-file> <jvmdg-version> <ct.sym> [<retrotypes-file> [<gen-classes-dir> [<excludes-file> [<wraps-file> [<gen-src-dir> [<gained-file> [<gained-calls-file> [<reflection-file> [<member-since-file>]]]]]]]]]");
         }
         Path out = Paths.get(args[0]);
         Path ctSym = Paths.get(args[2]);
@@ -134,6 +134,28 @@ public class StubIndexWriter {
         if (args.length > 10) {
             writeReflection(Paths.get(args[10]), providers, graph);
         }
+        if (args.length > 11) {
+            writeMemberSince(Paths.get(args[11]), providers);
+        }
+    }
+
+    /**
+     * {@code META-INF/jvmdg/member-since} — {@code provider-class<TAB>siteFQM<TAB>classVersion}
+     * rows feeding the scan path's {@link StubRegistry#memberSince} (the idx
+     * carries it inline; scan-built registries load it here so both paths
+     * classify members identically).
+     */
+    private static void writeMemberSince(Path out, List<VersionProvider> providers) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        for (VersionProvider vp : providers) {
+            for (Map.Entry<FullyQualifiedMemberNameAndDesc, Integer> e : vp.stubRegistry.memberSince.entrySet()) {
+                sb.append(vp.getClass().getName()).append('\t')
+                    .append(e.getKey().toString()).append('\t')
+                    .append(e.getValue()).append('\n');
+            }
+        }
+        Files.createDirectories(out.getParent());
+        Files.write(out, sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     /**

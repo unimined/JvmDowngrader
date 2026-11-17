@@ -29,6 +29,7 @@ import xyz.wagyourtail.jvmdg.version.map.StubRegistry;
 import xyz.wagyourtail.jvmdg.version.map.TypeRemap;
 import xyz.wagyourtail.jvmdg.version.idx.DerivedExclusions;
 import xyz.wagyourtail.jvmdg.version.idx.DerivedGained;
+import xyz.wagyourtail.jvmdg.version.idx.DerivedMemberSince;
 import xyz.wagyourtail.jvmdg.version.idx.StubIndex;
 
 import java.io.BufferedInputStream;
@@ -941,6 +942,10 @@ public abstract class VersionProvider implements TypeRemap {
                             // path already has baked in (no resource = older
                             // api jar = nothing derived)
                             DerivedExclusions.apply(this);
+                            // memberSince feeds kind classification (BEHAVIOR
+                            // vs MISSING_API) — the idx carries it inline, the
+                            // scan path loads the flattened resource
+                            DerivedMemberSince.apply(this);
                         }
                         // gained-supertypes rows are provider-level resource
                         // data — the same resource feeds both load paths
