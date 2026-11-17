@@ -194,7 +194,9 @@ public class PipelineJarStep extends JarStep {
         if (ctx.downgrader != null && flags.multiReleaseOriginal) {
             for (ClassNode node : finals) {
                 ClassNode copy = TransformPipeline.copy(node);
-                putVariant(pipeline, copy.version, copy);
+                // mask minor bits: preview minors (0xFFFF) would otherwise pin
+                // a garbage slot and mis-route the original
+                putVariant(pipeline, Utils.classVersionToMajorVersion(copy.version), copy);
             }
         }
 

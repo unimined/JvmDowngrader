@@ -8,7 +8,9 @@ import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.compile.jar.FusedJarRun;
 import xyz.wagyourtail.jvmdg.compile.jar.JarStep;
+import xyz.wagyourtail.jvmdg.compile.jar.ManifestStep;
 import xyz.wagyourtail.jvmdg.compile.jar.PipelineJarStep;
+import xyz.wagyourtail.jvmdg.compile.jar.SignatureStripStep;
 import xyz.wagyourtail.jvmdg.compile.jar.StepContext;
 import xyz.wagyourtail.jvmdg.compile.shade.IndexScanner;
 import xyz.wagyourtail.jvmdg.compile.shade.RefExtractor;
@@ -187,8 +189,23 @@ public class ApiShader {
             .append(new TreeSet<>(flags.multiReleaseVersions)).append('|')
             .append(flags.downgradeFromMultiReleases).append('|')
             .append(flags.debugNoSynthetic).append('|')
+            .append(flags.noIndy).append('|')
+            .append(flags.stubPolicy).append('|')
+            .append(flags.onMissingApi).append('|')
+            .append(flags.allowPreview).append('|')
+            .append(flags.ignoreEmbeddedRules).append('|')
+            .append(flags.keepEmbeddedRules).append('|')
+            .append(flags.scopedRules).append('|')
+            .append(flags.debugNoFuse).append('|')
+            .append(flags.debugNoStubIdx).append('|')
             .append(new TreeSet<>(flags.debugSkipStubs)).append('|')
             .append(new TreeSet<>(flags.debugSkipJeps)).append('|');
+        List<String> include = new ArrayList<>();
+        for (FullyQualifiedMemberNameAndDesc m : flags.includeStub) {
+            include.add(m.toString());
+        }
+        include.sort(java.util.Comparator.naturalOrder());
+        sb.append(include).append('|');
         List<String> skip = new ArrayList<>();
         for (FullyQualifiedMemberNameAndDesc m : flags.debugSkipStub) {
             skip.add(m.toString());
@@ -361,6 +378,10 @@ public class ApiShader {
         // one fused pass: classes collect during traversal, then a single
         // pipeline (scan → closure → inline/prefix → emit) runs at endFused
         List<JarStep> steps = new ArrayList<>();
+        // shaded class bytes invalidate jar signatures — strip them (and the
+        // manifest's Sealed attrs) the same way the downgrade chain does
+        steps.add(new SignatureStripStep());
+        steps.add(new ManifestStep());
         steps.add(new PipelineJarStep(prefix, apiRefs, apiClasses, apiRoots));
         StepContext ctx = new StepContext(flags, logger, null,
             Collections.singletonList(inputRoot), null);

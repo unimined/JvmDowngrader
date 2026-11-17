@@ -79,10 +79,15 @@ public class StructuralRemapTransform {
             fin.owner = remap.remap(Type.getObjectType(fin.owner), warnings).getInternalName();
             fin.desc = remap.remap(Type.getType(fin.desc), warnings).getDescriptor();
         } else if (insn instanceof TypeInsnNode) {
+            TypeInsnNode tin = (TypeInsnNode) insn;
             if (isGeneratedDispatch(ownerName)) {
+                // mechanical remap still applies — only the retro/gained
+                // dispatcher rewrites below are suppressed for generated
+                // dispatch machinery
+                tin.desc = remap.remap(Type.getObjectType(tin.desc), warnings).getInternalName();
                 return null;
             }
-            return remapTypeInsn((TypeInsnNode) insn, warnings, ceiling);
+            return remapTypeInsn(tin, warnings, ceiling);
         } else if (insn instanceof InvokeDynamicInsnNode) {
             InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode) insn;
             indy.desc = remap.remap(Type.getMethodType(indy.desc), warnings).getDescriptor();

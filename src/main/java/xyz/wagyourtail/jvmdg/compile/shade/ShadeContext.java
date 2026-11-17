@@ -149,14 +149,14 @@ public class ShadeContext {
         if (pinned != null) {
             return pinned;
         }
-        return node.version > flags.classVersion
+        return Utils.majorClassVersion(node.version) > flags.classVersion
             ? Utils.classVersionToMajorVersion(node.version) : 0;
     }
 
     /** The jar-relative output path for an emitted (already prefixed) api class. */
     public String relPath(ClassNode node, Flags flags) {
         String base = node.name + ".class";
-        return node.version > flags.classVersion
+        return Utils.majorClassVersion(node.version) > flags.classVersion
             ? "META-INF/versions/" + Utils.classVersionToMajorVersion(node.version) + "/" + base
             : base;
     }

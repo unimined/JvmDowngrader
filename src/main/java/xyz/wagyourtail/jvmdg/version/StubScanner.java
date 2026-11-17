@@ -156,7 +156,7 @@ public class StubScanner {
             for (String failure : failures) {
                 sb.append("\n    ").append(failure);
             }
-            vp.logger.error(failures.size() + " stub registration failure(s) in " + clazz.getName() + sb);
+            throw new IllegalStateException(failures.size() + " stub registration failure(s) in " + clazz.getName() + sb);
         }
         if (!warnings.isEmpty() && vp.logger.is(Logger.Level.WARN)) {
             if (vp.downgrader.flags.checkInIgnoreWarnings(clazz.getName())) return;
