@@ -27,10 +27,59 @@ import java.util.TreeMap;
 public final class TransformWorklist {
 
     private final Map<String, ClassNode> nodes = new TreeMap<String, ClassNode>();
+    /** Append-only enqueue log — lets extras passes drain only what was
+     * enqueued *during* their window instead of re-walking the whole
+     * accumulated set. Entries carry whether they were transform-emitted
+     * extras or pipeline outputs so drains can skip outputs. */
+    private final List<ClassNode> journal = new ArrayList<ClassNode>();
+    private final List<Boolean> journalIsOutput = new ArrayList<Boolean>();
+    /** Journal position the next extras drain resumes from — entries
+     * enqueued during a drain land past it and defer to the next pass. */
+    private int extrasCursor;
 
-    /** Adds {@code node} to the set, replacing any same-named entry. */
+    /** Adds {@code node} to the set as a transform-emitted extra, replacing any same-named entry. */
     public void enqueue(ClassNode node) {
         nodes.put(node.name, node);
+        journal.add(node);
+        journalIsOutput.add(false);
+    }
+
+    /** Adds {@code node} to the set as a pipeline output — extras drains skip it. */
+    public void enqueueOutput(ClassNode node) {
+        nodes.put(node.name, node);
+        journal.add(node);
+        journalIsOutput.add(true);
+    }
+
+    /**
+     * Monotonic enqueue count — pair with {@link #entryAt} to iterate what
+     * was enqueued after a point. Includes entries later replaced or
+     * re-enqueued; callers re-check {@link #get(String)} for the live form.
+     */
+    public int mark() {
+        return journal.size();
+    }
+
+    /** The {@code i}'th enqueued node — possibly stale if it was since
+     * replaced or re-enqueued; compare against {@link #get(String)}. */
+    public ClassNode entryAt(int i) {
+        return journal.get(i);
+    }
+
+    /** Whether the {@code i}'th journal entry was a pipeline output. */
+    public boolean isOutputAt(int i) {
+        return journalIsOutput.get(i);
+    }
+
+    /** Journal position the next extras drain starts from. */
+    public int extrasCursor() {
+        return extrasCursor;
+    }
+
+    /** Advances the extras drain cursor — call before draining so entries
+     * enqueued by the drain defer to the next pass. */
+    public void extrasCursor(int mark) {
+        this.extrasCursor = mark;
     }
 
     /** The class currently in the set under {@code name}, or null. */

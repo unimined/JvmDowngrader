@@ -181,6 +181,59 @@ public class TestTransformPipeline {
     }
 
     @Test
+    public void extrasPassDoesNotRetransformPriorOutputs() throws IOException {
+        // each primary emits one extra; the drain must cover each entry
+        // once — re-visiting already-processed outputs is O(primaries x
+        // extras) and unsound (transforms carry no idempotence contract)
+        final List<String> log = new ArrayList<String>();
+        ClassTransform emitAndCount = new ClassTransform() {
+            @Override
+            public ClassNode apply(ClassNode node, TransformContext ctx) {
+                log.add("t:" + node.name);
+                if (node.name.startsWith("a/")) {
+                    ctx.extras.enqueue(node("x/" + node.name.substring(2)));
+                }
+                return node;
+            }
+        };
+        Stage s = new Stage("s").transform(new ExtrasApplyTransform(emitAndCount));
+        TransformPipeline p = new TransformPipeline().addStage(s);
+        List<ClassNode> out = p.run(Arrays.asList(node("a/A"), node("a/B"), node("a/C")), ctx());
+        assertEquals(Arrays.asList(
+            "t:a/A", "t:x/A",
+            "t:a/B", "t:x/B",
+            "t:a/C", "t:x/C"), log);
+        assertEquals(Arrays.asList("a/A", "a/B", "a/C", "x/A", "x/B", "x/C"), names(out));
+    }
+
+    @Test
+    public void deferredExtrasDrainAtNextPrimary() throws IOException {
+        // an extra emitted *during* a drain is invisible to that pass but
+        // must not be stranded — the next primary's extras pass drains it
+        final List<String> log = new ArrayList<String>();
+        ClassTransform emitChain = new ClassTransform() {
+            @Override
+            public ClassNode apply(ClassNode node, TransformContext ctx) {
+                log.add("t:" + node.name);
+                if (node.name.equals("a/A")) {
+                    ctx.extras.enqueue(node("b/Helper"));
+                } else if (node.name.equals("b/Helper")) {
+                    ctx.extras.enqueue(node("c/Late"));
+                }
+                return node;
+            }
+        };
+        Stage s = new Stage("s").transform(new ExtrasApplyTransform(emitChain));
+        TransformPipeline p = new TransformPipeline().addStage(s);
+        List<ClassNode> out = p.run(Arrays.asList(node("a/A"), node("a/B")), ctx());
+        // a/A's pass: a/A + its extra b/Helper (c/Late deferred past the bound).
+        // a/B's pass: a/B + the deferred c/Late — and neither a/A nor
+        // b/Helper is re-transformed
+        assertEquals(Arrays.asList("t:a/A", "t:b/Helper", "t:a/B", "t:c/Late"), log);
+        assertEquals(Arrays.asList("a/A", "a/B", "b/Helper", "c/Late"), names(out));
+    }
+
+    @Test
     public void captureSnapshotAtStageEntry() throws IOException {
         Stage s1 = new Stage("s1").transform(new ClassTransform() {
             @Override

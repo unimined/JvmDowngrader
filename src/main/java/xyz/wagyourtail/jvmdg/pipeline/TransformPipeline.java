@@ -95,7 +95,7 @@ public final class TransformPipeline {
             List<ClassTransform> transforms = flagsNoFuse(ctx) ? stage.transforms : fuse(stage.transforms);
             for (ClassNode clazz : current) {
                 if (stage.filter != null && !stage.filter.apply(clazz)) {
-                    next.enqueue(clazz);
+                    next.enqueueOutput(clazz);
                     continue;
                 }
                 if (stage.precondition != null) {
@@ -115,7 +115,7 @@ public final class TransformPipeline {
                     }
                 }
                 if (node != null) {
-                    next.enqueue(node);
+                    next.enqueueOutput(node);
                 }
             }
             current = next.drain();

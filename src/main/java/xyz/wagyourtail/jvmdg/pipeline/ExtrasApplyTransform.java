@@ -45,8 +45,23 @@ public final class ExtrasApplyTransform extends FusibleTransform {
             // stubWithExtras semantics: a dropped primary skips the extras pass
             return null;
         }
-        List<ClassNode> extras = ctx.extras.snapshot();
-        for (ClassNode extra : extras) {
+        // drain only entries enqueued since the last drain up to the bound
+        // fixed now — prior outputs are skipped by their journal tag, and
+        // entries enqueued by this drain land past the cursor so they defer
+        // to the next pass ("invisible to this pass" semantics). Re-running
+        // the delegate over already-processed outputs would be quadratic
+        // over the jar and unsound (no idempotence contract).
+        int from = ctx.extras.extrasCursor();
+        int to = ctx.extras.mark();
+        ctx.extras.extrasCursor(to);
+        for (int i = from; i < to; i++) {
+            if (ctx.extras.isOutputAt(i)) {
+                continue;
+            }
+            ClassNode extra = ctx.extras.entryAt(i);
+            if (ctx.extras.get(extra.name) != extra) {
+                continue;
+            }
             ClassNode transformed = delegate.apply(extra, ctx);
             ctx.extras.replace(extra, transformed);
         }
