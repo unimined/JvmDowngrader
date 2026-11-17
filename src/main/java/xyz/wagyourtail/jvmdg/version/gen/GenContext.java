@@ -225,4 +225,23 @@ public final class GenContext {
         return -1;
     }
 
+
+    static String dotted(String internal) {
+        return internal.replace('/', '.').replace('$', '.');
+    }
+
+    static String dotted(Type type) {
+        if (type.getSort() == Type.ARRAY) {
+            StringBuilder sb = new StringBuilder(dotted(type.getElementType()));
+            for (int i = 0; i < type.getDimensions(); i++) {
+                sb.append("[]");
+            }
+            return sb.toString();
+        }
+        if (type.getSort() == Type.OBJECT) {
+            return dotted(type.getInternalName());
+        }
+        return type.getClassName();
+    }
+
 }

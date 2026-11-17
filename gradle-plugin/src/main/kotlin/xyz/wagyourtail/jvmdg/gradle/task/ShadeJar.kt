@@ -21,6 +21,7 @@ import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.deleteIfExists
 import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
+import xyz.wagyourtail.jvmdg.util.defaultShadePrefix
 import java.io.File
 import java.nio.file.StandardOpenOption
 import javax.inject.Inject
@@ -67,7 +68,7 @@ abstract class ShadeJar: Jar(), ShadeFlags, FlagsConvention {
         val fl = this.toFlags()
         ApiShader.shadeApis(
             fl,
-            shadePath.getOrElse(fl.shadePrefix ?: archiveBaseName.get().replace(Regex("[.;\\[/]"), "-") + "/"),
+            shadePath.getOrElse(fl.shadePrefix ?: defaultShadePrefix(archiveBaseName.get())),
             inputFile.asFile.get(),
             tempOutput,
             apiJar.get().toSet()

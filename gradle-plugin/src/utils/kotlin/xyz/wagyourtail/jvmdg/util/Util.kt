@@ -78,3 +78,6 @@ operator fun JavaVersion.plus(int: Int): JavaVersion {
 val CONSTANT_TIME_FOR_ZIP_ENTRIES = GregorianCalendar(1980, Calendar.FEBRUARY, 1, 0, 0, 0).timeInMillis
 
 fun safeName(name: String): String = name.replace(Regex("[.;\\[/]"), "-")
+
+fun defaultShadePrefix(name: String): String =
+    name.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/"

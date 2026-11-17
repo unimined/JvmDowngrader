@@ -168,11 +168,11 @@ public final class MemberForwarderGenerator implements ApiGenerator {
 
     private static void dumpFwd(StringBuilder sb, String adapter, Method m, Set<String> standIns) {
         String simple = simple(adapter);
-        sb.append("    public static ").append(dotted(Type.getReturnType(m)))
+        sb.append("    public static ").append(GenContext.dotted(Type.getReturnType(m)))
             .append(' ').append(m.getName()).append("(Object self");
         Type[] args = Type.getArgumentTypes(m);
         for (int i = 0; i < args.length; i++) {
-            sb.append(", ").append(dotted(args[i])).append(" a").append(i);
+            sb.append(", ").append(GenContext.dotted(args[i])).append(" a").append(i);
         }
         sb.append(") {\n        ");
         if (m.getReturnType() != void.class) {
@@ -185,31 +185,13 @@ public final class MemberForwarderGenerator implements ApiGenerator {
                 sb.append(", ");
             }
             if (args[i].getSort() == Type.OBJECT && standIns.contains(args[i].getInternalName())) {
-                sb.append('(').append(dotted(args[i])).append(") ")
-                    .append(dotted(args[i].getInternalName())).append("$jvmdg$retro.wrap(a").append(i).append(')');
+                sb.append('(').append(GenContext.dotted(args[i])).append(") ")
+                    .append(GenContext.dotted(args[i].getInternalName())).append("$jvmdg$retro.wrap(a").append(i).append(')');
             } else {
                 sb.append('a').append(i);
             }
         }
         sb.append(");\n    }\n\n");
-    }
-
-    private static String dotted(String internalName) {
-        return internalName.replace('/', '.').replace('$', '.');
-    }
-
-    private static String dotted(Type type) {
-        if (type.getSort() == Type.ARRAY) {
-            StringBuilder sb = new StringBuilder(dotted(type.getElementType()));
-            for (int i = 0; i < type.getDimensions(); i++) {
-                sb.append("[]");
-            }
-            return sb.toString();
-        }
-        if (type.getSort() == Type.OBJECT) {
-            return dotted(type.getInternalName());
-        }
-        return type.getClassName();
     }
 
 }

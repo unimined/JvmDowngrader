@@ -46,7 +46,10 @@ public final class FusedJarRun {
                 ctx.sink.mkdir(dir.name);
                 return true;
             }, path -> {
-                JarEntry cur = new JarEntry(IndexScanner.internalPath(inputRoot.relativize(path)), path);
+                Path rel = inputRoot.relativize(path);
+                // a single-file root relativizes to "" — use its file name so
+                // entry-name filters (e.g. *.class) still see it
+                JarEntry cur = new JarEntry(IndexScanner.internalPath(rel.toString().isEmpty() ? path.getFileName() : rel), path);
                 for (JarStep step : steps) {
                     if (cur == null) {
                         break;

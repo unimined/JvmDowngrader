@@ -1,8 +1,5 @@
 package xyz.wagyourtail.jvmdg.gradle.task.files
 
-import groovy.lang.Closure
-import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
 import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionTask
 import org.gradle.api.tasks.InputFiles
@@ -20,6 +17,7 @@ import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.Utils
+import xyz.wagyourtail.jvmdg.util.defaultShadePrefix
 import java.io.File
 import java.nio.file.FileSystem
 import kotlin.io.path.exists
@@ -122,7 +120,7 @@ abstract class ShadeFiles: ConventionTask(), ShadeFlags, FlagsConvention {
                 val downgradedFile = downgraded[i]
                 ApiShader.shadeApis(
                     fl,
-                    fl.shadePrefix ?: toDowngrade[i].name.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/",
+                    fl.shadePrefix ?: defaultShadePrefix(toDowngrade[i].name),
                     toDowngradeFile,
                     downgradedFile,
                     apiJar.get().toSet()

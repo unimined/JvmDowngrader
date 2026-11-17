@@ -204,15 +204,6 @@ public abstract class VersionProvider implements TypeRemap {
         }, warnings);
     }
 
-    public synchronized ClassMapping getStubMapper(Type type, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final Set<String> warnings) throws IOException {
-        return getStubMapper(type, new IOSupplier<Boolean>() {
-            @Override
-            public Boolean get() {
-                return isInterface;
-            }
-        }, memberResolver, warnings);
-    }
-
     public synchronized ClassMapping getStubMapper(Type type, final IOSupplier<Boolean> isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final Set<String> warnings) throws IOException {
         return getStubMapper(type, isInterface, memberResolver, new IOFunction<Type, List<Pair<Type, Boolean>>>() {
 

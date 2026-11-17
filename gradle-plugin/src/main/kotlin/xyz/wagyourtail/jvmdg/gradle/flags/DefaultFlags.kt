@@ -1,8 +1,5 @@
 package xyz.wagyourtail.jvmdg.gradle.flags
 
-import groovy.lang.Closure
-import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 

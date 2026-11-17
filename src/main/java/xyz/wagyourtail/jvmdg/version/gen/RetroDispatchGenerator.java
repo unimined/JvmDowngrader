@@ -363,9 +363,9 @@ public final class RetroDispatchGenerator implements ApiGenerator {
             if (!pairs.isEmpty()) {
                 sb.append("        try {\n");
                 for (String[] pair : pairs) {
-                    sb.append("            if (o instanceof ").append(dotted(pair[0]))
-                        .append(") return new ").append(dotted(pair[1]))
-                        .append("((").append(dotted(pair[0])).append(") o);\n");
+                    sb.append("            if (o instanceof ").append(GenContext.dotted(pair[0]))
+                        .append(") return new ").append(GenContext.dotted(pair[1]))
+                        .append("((").append(GenContext.dotted(pair[0])).append(") o);\n");
                 }
                 sb.append("        } catch (LinkageError e) { /* absent member -> table answers identically */ }\n");
             }
@@ -396,7 +396,7 @@ public final class RetroDispatchGenerator implements ApiGenerator {
         if (!pairs.isEmpty()) {
             sb.append("        try {\n");
             for (String[] pair : pairs) {
-                sb.append("            if (o instanceof ").append(dotted(pair[0])).append(") return true;\n");
+                sb.append("            if (o instanceof ").append(GenContext.dotted(pair[0])).append(") return true;\n");
             }
             sb.append("        } catch (LinkageError e) { }\n");
         }
@@ -431,10 +431,6 @@ public final class RetroDispatchGenerator implements ApiGenerator {
             sb.append("        if (o instanceof ").append(marker).append("[]) return o;\n");
         }
         sb.append("        return RetroTypes.castArray(o, \"").append(src).append("\");\n    }\n\n");
-    }
-
-    private static String dotted(String internal) {
-        return internal.replace('/', '.').replace('$', '.');
     }
 
 }

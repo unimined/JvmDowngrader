@@ -1,8 +1,5 @@
 package xyz.wagyourtail.jvmdg.gradle.transform
 
-import groovy.lang.Closure
-import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -15,6 +12,7 @@ import org.gradle.api.tasks.PathSensitivity
 import xyz.wagyourtail.jvmdg.compile.ApiShader
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
+import xyz.wagyourtail.jvmdg.util.defaultShadePrefix
 
 @CacheableTransform
 abstract class ShadeTransform: TransformAction<ShadeTransform.ShadeTransformFlags> {
@@ -31,7 +29,7 @@ abstract class ShadeTransform: TransformAction<ShadeTransform.ShadeTransformFlag
 
         ApiShader.shadeApis(
             fl,
-            fl.shadePrefix ?: input.name.substringBefore(".").substringBeforeLast("-").replace(Regex("[.;\\[/]"), "-") + "/",
+            fl.shadePrefix ?: defaultShadePrefix(input.name),
             input,
             output,
             flags.apiJar.get().toSet()

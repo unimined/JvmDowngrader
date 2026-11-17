@@ -1565,7 +1565,7 @@ public final class ReflectionTable {
                     if (line.isEmpty() || line.startsWith("#")) {
                         continue;
                     }
-                    applyRow(line.split("\t"));
+                    applyRow(line.split("\t", -1));
                 }
                 r.close();
             } finally {
