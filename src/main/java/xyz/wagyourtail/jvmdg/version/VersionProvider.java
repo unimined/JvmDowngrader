@@ -10,6 +10,7 @@ import xyz.wagyourtail.jvmdg.asm.index.WorkingClasses;
 import xyz.wagyourtail.jvmdg.cli.Flags;
 import xyz.wagyourtail.jvmdg.logging.Logger;
 import xyz.wagyourtail.jvmdg.stub.all.GainedInterfaces;
+import xyz.wagyourtail.jvmdg.stub.all.JvmDowngraded;
 import xyz.wagyourtail.jvmdg.stub.all.RemovedInterfaces;
 import xyz.wagyourtail.jvmdg.util.*;
 import xyz.wagyourtail.jvmdg.version.map.ClassMapping;
@@ -1043,19 +1044,31 @@ public abstract class VersionProvider implements TypeRemap {
         Utils.<RuntimeException>sneakyThrow(initFailure);
     }
 
-    public ClassNode downgrade(final ClassDowngrader downgrader, ClassNode clazz, final Set<ClassNode> extra, final boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws IOException {
-        String className = clazz.name;
-
-        // major-compare: a preview class carries minor 0xFFFF and belongs to
-        // its major's boundary (reaching here means allowPreview let it in)
-        if (Utils.majorClassVersion(clazz.version) != inputVersion)
-            throw new IllegalArgumentException("Class " + className + " is not version " + inputVersion);
-
-        ensureInit(downgrader);
-        final Set<String> warnings = new LinkedHashSet<>();
-
+    /**
+     * Per-class boundary prologue shared by {@link #downgrade} and the
+     * steps path ({@code ProviderInitTransform}): stamps the
+     * {@link JvmDowngraded} provenance annotation on first pass, rewrites
+     * the class version to this boundary's output, and injects the
+     * java-api module requirement into {@code module-info}. Runs after
+     * {@link #ensureInit} — reads {@link #downgrader}'s flags.
+     */
+    public ClassNode initClass(ClassNode clazz) {
+        if (!hasProvenance(clazz)) {
+            // first boundary — clazz.version is still the authored major
+            // (masked: a preview class carries minor 0xFFFF, and `from` is
+            // compared against plain majors by the reflection runtime);
+            // record it before the rewrite below so reflection stubs can
+            // answer in the callsite's emitted vocabulary at runtime
+            if (clazz.visibleAnnotations == null) {
+                clazz.visibleAnnotations = new ArrayList<>();
+            }
+            AnnotationNode provenance = new AnnotationNode(Type.getDescriptor(JvmDowngraded.class));
+            provenance.values = Arrays.asList(
+                "from", Utils.majorClassVersion(clazz.version),
+                "to", downgrader.flags.classVersion);
+            clazz.visibleAnnotations.add(provenance);
+        }
         clazz.version = outputVersion;
-
         if (clazz.name.equals("module-info")) {
             if (clazz.module.requires == null) {
                 clazz.module.requires = new ArrayList<>();
@@ -1073,6 +1086,35 @@ public abstract class VersionProvider implements TypeRemap {
                 }
             }
         }
+        return clazz;
+    }
+
+    /** already stamped (a later boundary, or an upstream transformer) — keep the first-seen {@code from} */
+    private static boolean hasProvenance(ClassNode node) {
+        if (node.visibleAnnotations == null) {
+            return false;
+        }
+        String desc = Type.getDescriptor(JvmDowngraded.class);
+        for (AnnotationNode an : node.visibleAnnotations) {
+            if (desc.equals(an.desc)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public ClassNode downgrade(final ClassDowngrader downgrader, ClassNode clazz, final Set<ClassNode> extra, final boolean enableRuntime, final Function<String, ClassNode> getReadOnly) throws IOException {
+        String className = clazz.name;
+
+        // major-compare: a preview class carries minor 0xFFFF and belongs to
+        // its major's boundary (reaching here means allowPreview let it in)
+        if (Utils.majorClassVersion(clazz.version) != inputVersion)
+            throw new IllegalArgumentException("Class " + className + " is not version " + inputVersion);
+
+        ensureInit(downgrader);
+        final Set<String> warnings = new LinkedHashSet<>();
+
+        clazz = initClass(clazz);
 
         final IOFunction<Type, Set<MemberNameAndDesc>> getMembers = memberResolver(extra, getReadOnly, warnings);
         final IOFunction<Type, List<Pair<Type, Boolean>>> getSuperTypes = superTypeResolver(extra, getReadOnly, warnings);
