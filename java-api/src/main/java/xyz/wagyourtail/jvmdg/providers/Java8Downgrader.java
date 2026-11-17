@@ -416,7 +416,7 @@ public class Java8Downgrader extends AllVersionDowngrader {
         if (!clazz.name.endsWith("$jvmdg$StaticDefaults")) {
             ClassMapping stubMapper = getStubMapper(Type.getObjectType(clazz.name), (clazz.access & Opcodes.ACC_INTERFACE) != 0, warnings);
             for (Map.Entry<MemberNameAndDesc, Pair<Boolean, Type>> member : stubMapper.getMembers().entrySet()) {
-                if (member.getValue().getFirst()) {
+                if (member.getValue().getFirst() && member.getKey().isMethod()) {
                     members.put(member.getKey(), member.getValue().getSecond());
                 }
             }
