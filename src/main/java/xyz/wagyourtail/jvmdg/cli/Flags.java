@@ -59,7 +59,7 @@ public class Flags {
      */
     @Deprecated
     @BoundFlag(key = "Quiet", cli = "--quiet", aliases = "-q", cliConst = "true",
-        sysprop = Constants.QUIET, gradle = "quiet", deprecated = true,
+        sysprop = Constants.QUIET, deprecated = true,
         doc = "[Deprecated] Suppress all warnings — use Log-Level: FATAL")
     public boolean quiet = false;
     /**
@@ -109,7 +109,7 @@ public class Flags {
      */
     @Deprecated
     @BoundFlag(key = "Print-Debug", cli = "--print", aliases = "-p", cliConst = "true",
-        command = "debug", sysprop = Constants.DEBUG, gradle = "debug", deprecated = true,
+        command = "debug", sysprop = Constants.DEBUG, deprecated = true,
         doc = "[Deprecated] Enable printing debug info — use Log-Level: DEBUG")
     public boolean printDebug = false;
     /**

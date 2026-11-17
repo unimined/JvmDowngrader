@@ -54,7 +54,6 @@ class TestToFlags {
         df.downgradeTo.set(JavaVersion.VERSION_11)
         df.logLevel.set("warn")
         df.shadePrefix.set("com/example/jvmdg")
-        df.quiet.set(true)
         df.apiJar.set(listOf(File("api.jar"), File("api2.jar")))
         val f = df.toFlags()
         assertEquals(StubPolicy.MECHANICAL, f.stubPolicy)
@@ -69,7 +68,6 @@ class TestToFlags {
         assertEquals(JavaVersion.VERSION_11.toOpcode(), f.classVersion)
         assertEquals(xyz.wagyourtail.jvmdg.logging.Logger.Level.WARN, f.logLevel)
         assertEquals("com/example/jvmdg", f.shadePrefix)
-        assertEquals(true, f.quiet)
         assertEquals(listOf(File("api.jar"), File("api2.jar")), f.api)
     }
 

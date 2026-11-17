@@ -15,8 +15,6 @@ import org.gradle.api.attributes.Attribute
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.jvm.tasks.Jar
-import xyz.wagyourtail.jvmdg.ClassDowngrader
-import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsSpec
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
@@ -28,7 +26,6 @@ import xyz.wagyourtail.jvmdg.gradle.task.ShadeJar
 import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeTransform
 import xyz.wagyourtail.jvmdg.gradle.transform.ShadeTransform
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
-import xyz.wagyourtail.jvmdg.util.defaultedMapOf
 import java.io.File
 import javax.inject.Inject
 
@@ -142,11 +139,9 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
             }
             setOf(apiJar)
         }).finalizeValueOnRead()
-        quiet.convention(false).finalizeValueOnRead()
         logAnsiColors.convention(true).finalizeValueOnRead()
         logLevel.convention("INFO").finalizeValueOnRead()
         ignoreWarningsIn.convention(emptySet()).finalizeValueOnRead()
-        debug.convention(false).finalizeValueOnRead()
         debugSkipStub.convention(emptySet()).finalizeValueOnRead()
         debugSkipStubs.convention(emptySet()).finalizeValueOnRead()
         debugDumpClasses.convention(false).finalizeValueOnRead()
@@ -182,25 +177,6 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
             }
         }
     }
-
-    @get:Internal
-    @get:Deprecated("not compatibile with configuration cache for use in tasks")
-    internal val downgradedApis = defaultedMapOf<JavaVersion, Set<File>> { version ->
-        val jars = mutableSetOf<File>()
-        for (path in apiJar.get()) {
-            val downgraded = path.resolveSibling(path.nameWithoutExtension + "-downgraded-${version}.jar")
-            if (!downgraded.exists() || project.gradle.startParameter.isRefreshDependencies) {
-                ClassDowngrader.downgradeTo(this.toFlags()).use {
-                    ZipDowngrader.downgradeZip(it, path.toPath(), emptySet(), downgraded.toPath())
-                }
-            }
-            jars.add(downgraded)
-        }
-        jars
-    }
-
-    @Deprecated("not compatibile with configuration cache for use in tasks")
-    fun getDowngradedApi(version: JavaVersion): Set<File> = downgradedApis[version]
 
     /**
      * A resolvable configuration carrying the `jvmdowngrader-java-api`

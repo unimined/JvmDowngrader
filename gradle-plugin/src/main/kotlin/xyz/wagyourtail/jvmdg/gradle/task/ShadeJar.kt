@@ -2,9 +2,6 @@
 
 package xyz.wagyourtail.jvmdg.gradle.task
 
-import groovy.lang.Closure
-import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
 import org.gradle.api.file.ArchiveOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -17,9 +14,7 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.work.DisableCachingByDefault
-import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.ApiShader
-import xyz.wagyourtail.jvmdg.compile.ZipDowngrader
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
@@ -62,24 +57,6 @@ abstract class ShadeJar: Jar(), ShadeFlags, FlagsConvention {
 
     fun shadePath(path: String) {
         this.shadePath.set(path)
-    }
-
-    @Deprecated("use a static string")
-    fun shadePath(action: (String) -> String) {
-        shadePath.set(project.provider { action(archiveFileName.get()) })
-    }
-
-    @Deprecated("use a static string")
-    fun shadePath(
-        @ClosureParams(
-            value = SimpleType::class,
-            options = [
-                "java.lang.String"
-            ]
-        )
-        action: Closure<String>
-    ) {
-        shadePath.set(project.provider { action.call(archiveFileName.get()) })
     }
 
     @TaskAction

@@ -42,11 +42,6 @@ interface DowngradeFlags {
      * sets the log level to [Logger.Level.FATAL]
      * @deprecated use [logLevel], if this is true, it will override [logLevel] to [Logger.Level.FATAL]
      */
-    @get:Input
-    @get:Optional
-    @get:Deprecated(message = "use logLevel", replaceWith = ReplaceWith("logLevel = LogLevel.FATAL"))
-    val quiet: Property<Boolean>
-
     /**
      * sets if the logger should use ansi colors for the console to look pretty
      */
@@ -78,11 +73,6 @@ interface DowngradeFlags {
      * sets if the logger should print debug messages
      * @deprecated use [logLevel], if this is true, it will override [logLevel] to [Logger.Level.DEBUG]
      */
-    @get:Input
-    @get:Optional
-    @get:Deprecated(message = "use logLevel", replaceWith = ReplaceWith("logLevel = LogLevel.DEBUG"))
-    val debug: Property<Boolean>
-
     /**
      * this skips applying stubs for the specified input class version, this will still apply the
      * [xyz.wagyourtail.jvmdg.version.VersionProvider.otherTransforms]

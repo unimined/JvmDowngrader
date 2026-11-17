@@ -78,8 +78,8 @@ separator), `wildcard-map` (comma-separated patterns).
 | `Multi-Release-Versions` | `--multiRelease` / `-mr` | `jvmdg.multiReleaseVersions` | `multiReleaseVersions` | version-set |
 | `No-Indy` | `--noIndy` (const-true) | `jvmdg.noIndy` | `noIndy` | bool |
 | `On-Missing-Api` | `--onMissingApi` | `jvmdg.onMissingApi` | `onMissingApi` | `error`/`warn` |
-| `Print-Debug` *(deprecated)* | `debug --print` / `-p` (const-true) | `jvmdg.debug` | `debug` | bool |
-| `Quiet` *(deprecated)* | `--quiet` / `-q` (const-true) | `jvmdg.quiet` | `quiet` | bool |
+| `Print-Debug` *(deprecated)* | `debug --print` / `-p` (const-true) | `jvmdg.debug` | — | bool |
+| `Quiet` *(deprecated)* | `--quiet` / `-q` (const-true) | `jvmdg.quiet` | — | bool |
 | `Shade-Inlining` | `--disable-inlining` (const-false) | `jvmdg.shadeInlining` | `shadeInlining` | bool |
 | `Shade-Keep-Reflection` | `--shadeKeepReflection` | `jvmdg.shadeKeepReflection` | `shadeKeepReflection` | wildcard-map |
 | `Shade-Prefix` | — | — | `shadePrefix` | string |
