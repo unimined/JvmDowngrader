@@ -86,7 +86,35 @@ Stray `gradlew-lf` add+remove pair sits in main history (`8b7da737` +
   META-INF/jvmdg/{providers,stubs/j<N>}; ensureInit replays stubs/j<N>
   instead of init() when the resource exists (init() fallback retained;
   j9's init() had a latent duplicate registration, dedup'd in emission)
-- [ ] E4 gen-time classpath enumeration of j<N> annotation classes +
-  parity assertion vs recorded registrations (then transforms/j<N>
-  generation replaces the handwritten files)
+- [x] E4 gen-time classpath enumeration + parity gate —
+  `version/idx/StubClassEnumerator` ASM-scans the gen classpath for
+  `jvmdg/j<N>/` classes carrying StubScanner marker annotations (or
+  `BoundaryTransform`), recording InnerClasses outer-chains; parity model
+  in `StubIndexWriter`: every marker class must be covered by a
+  registered anchor (itself or an enclosing registered class — matches
+  `scan()`'s `getDeclaredClasses()` recursion) and every anchor must
+  cover ≥1 marker (else dead registration → build error). Uncovered
+  markers are latent missing registrations — emitted to
+  `META-INF/jvmdg/dormant-stubs` + build-log warning, not fatal
+  (activation is a behavior change needing stub-test coverage).
+  Fixes the gate surfaced: deleted 5 dead `stub()` calls registering
+  zero-annotation classes (j20 `J_L_R_Field`; j8 `J_L_ThreadLocal` +
+  `J_U_S_{Double,Int,Long}Stream` vocabulary interfaces — classes kept
+  as signature types), annotated `J_L_ThreadLocal.withInitial` (real
+  impl whose @Stub was never written — now dormant-tracked).
+  12 dormant classes tracked: j8 `J_U_Comparator`,
+  `J_U_PrimitiveIterator` family ×7, `J_L_ThreadLocal`; j9 `J_L_Long`;
+  j15 `J_N_C_S_SelectorProvider`; j16 `J_U_L_LogRecord`.
+  Transform parity added: resource-loaded `boundaryTransforms` must
+  equal classpath-discovered impls (all 8 transforms/j<N> files pass).
+  **E3 regression found by bisect**: `TestCtorRewrite`'s
+  `TestProvider(V11→V1_8)` now replays `stubs/j11` (real `FileReader`
+  ctor entries collided with fixture assertions) — fixed by
+  `debugSkipStubs.add(V11)` in its `provider()` helper; other
+  TestProvider files tolerate the registry or intentionally load it.
+  Full `:testing:test` matrix green (3m12s, 1420 tests).
+  **Follow-up**: dormant-stub activation triage (each needs coverage
+  before registering; E5 datagen must decide anchors-only vs
+  anchors+dormant replay); transforms/j<N> generation replacing the
+  handwritten files still open.
 - [ ] E5 delete init() bodies; optional generated provider classes

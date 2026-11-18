@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -63,6 +64,21 @@ public class StubScanner {
             new IndyDesugarHandler()
         ));
 
+
+    /**
+     * Descriptors ({@code Lowner/Name;}) of every annotation {@link #scan}
+     * treats as a registration marker — the gen-time classpath enumerator
+     * filters on exactly this set so scanned and reflective registration
+     * agree by construction. All handler annotations are RUNTIME-retained,
+     * matching {@code ClassNode.visibleAnnotations}.
+     */
+    public static Set<String> markerAnnotationDescriptors() {
+        Set<String> out = new HashSet<>(HANDLERS.size() * 2);
+        for (AnnotationHandler handler : HANDLERS) {
+            out.add(org.objectweb.asm.Type.getDescriptor(handler.annotation()));
+        }
+        return out;
+    }
 
     /**
      * The throwable with its cause chain flattened into one line — scan

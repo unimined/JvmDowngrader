@@ -18,7 +18,6 @@ public class Java20Downgrader extends AllVersionDowngrader {
         stub(J_L_R_AccessFlag.class);
         stub(J_L_R_ClassFileFormatVersion.class);
         stub(J_L_R_Executable.class);
-        stub(J_L_R_Field.class);
         stub(J_L_R_Member.class);
         stub(J_L_R_Parameter.class);
         stub(J_N_F_S_FileSystemProvider.class);

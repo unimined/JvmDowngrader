@@ -384,6 +384,9 @@ public class TestCtorRewrite implements Opcodes {
 
     private static TestProvider provider(ClassDowngrader downgrader) {
         TestProvider provider = new TestProvider();
+        // isolated fixture registry — V11 would otherwise replay the
+        // bundled stubs/j11 resource into this test provider
+        downgrader.flags.debugSkipStubs.add(Opcodes.V11);
         provider.ensureInit(downgrader);
         return provider;
     }

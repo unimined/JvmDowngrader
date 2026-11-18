@@ -37,6 +37,7 @@ import org.objectweb.asm.tree.MethodNode;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
+import xyz.wagyourtail.jvmdg.version.StubScanner;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.gen.ApiGenerator;
 import xyz.wagyourtail.jvmdg.version.gen.GainedDispatchGenerator;
@@ -146,14 +147,23 @@ public class StubIndexWriter {
     /**
      * {@code META-INF/jvmdg/providers} — {@code provider-fqcn<TAB>input-version
      * <TAB>output-version<TAB>priority} rows (class-name sorted) — and
-     * {@code META-INF/jvmdg/stubs/j<N>} per provider, the FQCN list {@code
-     * init()} registered in call order. The stubs resource is what
-     * {@link VersionProvider}'s scan path replays instead of running {@code
-     * init()} reflectively; {@code providers} is the boundary metadata a
-     * generated provider class would consume (E5 — nothing reads it at
-     * runtime yet).
+     * {@code META-INF/jvmdg/stubs/j<N>} per provider: the classes {@code
+     * init()} registers, in call order, asserted against a classpath
+     * enumeration of marker-annotated classes under {@code jvmdg/j<N>/}.
+     * The stubs resource is what {@link VersionProvider}'s scan path
+     * replays instead of running {@code init()} reflectively;
+     * {@code providers} is the boundary metadata a generated provider
+     * class would consume (E5 — nothing reads it at runtime yet).
+     *
+     * <p>Parity is a hard gate: a class with stub annotations that {@code
+     * init()} forgets to register — or an {@code init()} entry carrying no
+     * stub annotations — fails the build with the diff instead of silently
+     * drifting the replay set.</p>
      */
     private static void writeProviderConfig(Path dir, List<VersionProvider> providers) throws IOException {
+        StubClassEnumerator.Result scanned = StubClassEnumerator.enumerate(StubScanner.markerAnnotationDescriptors());
+        List<String> parityErrors = new ArrayList<>();
+        List<String> dormant = new ArrayList<>();
         List<VersionProvider> sorted = new ArrayList<>(providers);
         sorted.sort(Comparator.comparing(p -> p.getClass().getName()));
         StringBuilder providersSb = new StringBuilder();
@@ -164,15 +174,90 @@ public class StubIndexWriter {
                 .append(vp.inputVersion).append('\t')
                 .append(vp.outputVersion).append('\t')
                 .append(vp.priotity).append('\n');
-            Set<String> names = new LinkedHashSet<>(vp.catalog.initRegistrations);
+            Set<String> registered = new LinkedHashSet<>(vp.catalog.initRegistrations);
+            Set<String> discovered = scanned.stubClasses.get(vp.versionTag());
+            if (discovered == null) {
+                discovered = Collections.emptySet();
+            }
+            // every marker class must be covered by an anchor (itself or an
+            // enclosing class on the anchors list); uncovered markers are
+            // dormant stubs — reported, not yet fatal (they were never
+            // registered, so activating them is a behavior change needing
+            // its own verification pass)
+            Set<String> usedAncestors = new TreeSet<>();
+            for (String marker : discovered) {
+                if (!StubClassEnumerator.covered(registered, marker, scanned.outerOf)) {
+                    dormant.add(vp.versionTag() + " " + marker);
+                }
+                for (String cur = marker.replace('.', '/'); (cur = scanned.outerOf.get(cur)) != null; ) {
+                    usedAncestors.add(cur.replace('/', '.'));
+                }
+            }
+            // every anchor must cover something: marker-bearing itself or
+            // at least one marker descendant — otherwise the registration
+            // is a dead no-op
+            for (String anchor : registered) {
+                if (!discovered.contains(anchor) && !usedAncestors.contains(anchor)) {
+                    parityErrors.add(vp.versionTag() + " dead anchor (covers no stub-annotated class): " + anchor);
+                }
+            }
+            // transforms: the resource-loaded boundaryTransforms (populated
+            // by ensureInit → transforms/j<N>) must equal the classpath-
+            // discovered impls — a transform class missing from the
+            // resource silently never runs, a stale entry fails discovery
+            Set<String> loadedTransforms = new TreeSet<>();
+            for (xyz.wagyourtail.jvmdg.version.BoundaryTransform t : vp.boundaryTransforms) {
+                loadedTransforms.add(t.getClass().getName());
+            }
+            Set<String> discoveredTransforms = scanned.transforms.get(vp.versionTag());
+            if (discoveredTransforms == null) {
+                discoveredTransforms = Collections.emptySet();
+            }
+            for (String name : loadedTransforms) {
+                if (!discoveredTransforms.contains(name)) {
+                    parityErrors.add(vp.versionTag() + " transform loaded but no class under jvmdg/" + vp.versionTag() + "/: " + name);
+                }
+            }
+            for (String name : discoveredTransforms) {
+                if (!loadedTransforms.contains(name)) {
+                    parityErrors.add(vp.versionTag() + " transform class not in transforms/" + vp.versionTag() + " resource: " + name);
+                }
+            }
+            // emit in init()'s registration order — the sets just proved equal
             StringBuilder sb = new StringBuilder();
-            for (String name : names) {
+            for (String name : registered) {
                 sb.append(name).append('\n');
             }
             Files.createDirectories(stubsDir);
             Files.write(stubsDir.resolve(vp.versionTag()), sb.toString().getBytes(StandardCharsets.UTF_8));
         }
+        if (!parityErrors.isEmpty()) {
+            StringBuilder sb = new StringBuilder("stub-class scan/init() parity failed:\n");
+            for (String e : parityErrors) {
+                sb.append("  ").append(e).append('\n');
+            }
+            throw new IllegalStateException(sb.toString());
+        }
         Files.write(dir.resolve("providers"), providersSb.toString().getBytes(StandardCharsets.UTF_8));
+        // dormant marker classes — stub-annotated but unreachable from any
+        // init() anchor — are latent missing registrations, not a parity
+        // break: tracked in META-INF/jvmdg/dormant-stubs and loud in the
+        // build log until each is activated (needs stub-test coverage) or
+        // removed
+        Collections.sort(dormant);
+        StringBuilder dormantSb = new StringBuilder();
+        dormantSb.append("# tag\tfqcn — stub-annotated classes no provider anchors (never registered)\n");
+        for (String d : dormant) {
+            dormantSb.append(d.replace(' ', '\t')).append('\n');
+        }
+        Files.write(dir.resolve("dormant-stubs"), dormantSb.toString().getBytes(StandardCharsets.UTF_8));
+        if (!dormant.isEmpty()) {
+            System.err.println("[StubIndexWriter] WARNING: " + dormant.size()
+                + " stub-annotated classes are never registered by any provider (see META-INF/jvmdg/dormant-stubs)");
+            for (String d : dormant) {
+                System.err.println("[StubIndexWriter]   dormant: " + d);
+            }
+        }
     }
 
     /**

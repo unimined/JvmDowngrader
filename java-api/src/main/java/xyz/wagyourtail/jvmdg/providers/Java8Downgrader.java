@@ -63,7 +63,6 @@ public class Java8Downgrader extends AllVersionDowngrader {
         stub(J_L_StrictMath.class);
         stub(J_L_String.class);
         // StringBuffer
-        stub(J_L_ThreadLocal.class);
         stub(J_L_VirtualMachineError.class);
         // ElementType
         // Native
@@ -319,9 +318,6 @@ public class Java8Downgrader extends AllVersionDowngrader {
         stub(J_U_S_BaseStream.class);
         stub(J_U_S_Collector.class);
         stub(J_U_S_Collectors.class);
-        stub(J_U_S_DoubleStream.class);
-        stub(J_U_S_IntStream.class);
-        stub(J_U_S_LongStream.class);
         stub(J_U_S_Stream.class);
     }
 
