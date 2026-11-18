@@ -11,6 +11,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -137,6 +138,41 @@ public class StubIndexWriter {
         if (args.length > 11) {
             writeMemberSince(Paths.get(args[11]), providers);
         }
+        if (args.length > 4) {
+            writeProviderConfig(Paths.get(args[4]).resolve("META-INF/jvmdg"), providers);
+        }
+    }
+
+    /**
+     * {@code META-INF/jvmdg/providers} — {@code provider-fqcn<TAB>input-version
+     * <TAB>output-version<TAB>priority} rows (class-name sorted) — and
+     * {@code META-INF/jvmdg/stubs/j<N>} per provider, the FQCN list {@code
+     * init()} registered in call order. The stubs resource is what
+     * {@link VersionProvider}'s scan path replays instead of running {@code
+     * init()} reflectively; {@code providers} is the boundary metadata a
+     * generated provider class would consume (E5 — nothing reads it at
+     * runtime yet).
+     */
+    private static void writeProviderConfig(Path dir, List<VersionProvider> providers) throws IOException {
+        List<VersionProvider> sorted = new ArrayList<>(providers);
+        sorted.sort(Comparator.comparing(p -> p.getClass().getName()));
+        StringBuilder providersSb = new StringBuilder();
+        providersSb.append("# provider-fqcn\tinput-version\toutput-version\tpriority\n");
+        Path stubsDir = dir.resolve("stubs");
+        for (VersionProvider vp : sorted) {
+            providersSb.append(vp.getClass().getName()).append('\t')
+                .append(vp.inputVersion).append('\t')
+                .append(vp.outputVersion).append('\t')
+                .append(vp.priotity).append('\n');
+            Set<String> names = new LinkedHashSet<>(vp.catalog.initRegistrations);
+            StringBuilder sb = new StringBuilder();
+            for (String name : names) {
+                sb.append(name).append('\n');
+            }
+            Files.createDirectories(stubsDir);
+            Files.write(stubsDir.resolve(vp.versionTag()), sb.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        Files.write(dir.resolve("providers"), providersSb.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     /**

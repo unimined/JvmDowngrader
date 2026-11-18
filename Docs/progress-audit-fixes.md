@@ -75,6 +75,18 @@ Stray `gradlew-lf` add+remove pair sits in main history (`8b7da737` +
 - [x] F20 ShadeClosureBarrier row-parser coverage (`TestShadeClosureBarrier`)
 - [x] Full :testing:test matrix after all phases — BUILD SUCCESSFUL;
   CI remains the remaining green signal
-- [ ] F13 tail (optional): registry-vs-engine split of VersionProvider is
-  the deeper StubCatalog boundary — deferred to a dedicated architecture
-  pass
+- [x] E1 StubCatalog extraction (`f489faf2`) — registry data + resolver
+  family into version.StubCatalog; public field aliases kept
+- [x] E2 BoundaryTransform migration (`09ceafa8`) — all provider
+  otherTransforms bodies -> named j<N>.transform classes, discovered via
+  META-INF/jvmdg/transforms/j<N> resources; shared indy shapes in
+  version.indy.IndyShapes; Java9 identity override deleted
+- [x] E3 provider-config emission — init() registrations journaled to
+  catalog.initRegistrations; StubIndexWriter emits
+  META-INF/jvmdg/{providers,stubs/j<N>}; ensureInit replays stubs/j<N>
+  instead of init() when the resource exists (init() fallback retained;
+  j9's init() had a latent duplicate registration, dedup'd in emission)
+- [ ] E4 gen-time classpath enumeration of j<N> annotation classes +
+  parity assertion vs recorded registrations (then transforms/j<N>
+  generation replaces the handwritten files)
+- [ ] E5 delete init() bodies; optional generated provider classes

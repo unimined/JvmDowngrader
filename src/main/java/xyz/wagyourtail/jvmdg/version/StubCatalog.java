@@ -83,6 +83,15 @@ public class StubCatalog {
     /** registered @Stub/@Modify entries for this provider's input version, keyed by stubbed owner */
     public final StubRegistry stubRegistry = new StubRegistry();
 
+    /**
+     * Class names {@code init()} registered, in call order — recorded only
+     * while {@link VersionProvider} runs the reflective scan ({@code
+     * recordingInit}); the generated {@code META-INF/jvmdg/stubs/j<N>}
+     * resource is emitted from this list so replay registers the identical
+     * set in the identical order. Gen-time data — empty on the replay path.
+     */
+    public final List<String> initRegistrations = new ArrayList<>();
+
     public StubCatalog(VersionProvider provider) {
         this.provider = provider;
     }

@@ -210,7 +210,21 @@ public abstract class VersionProvider implements TypeRemap {
         return catalog.getStubMapper(type, isInterface, memberResolver, superTypeResolver);
     }
 
+    /**
+     * True while the reflective {@code init()} body is running — {@link
+     * #stub(Class)} calls made inside it are journaled to {@link
+     * StubCatalog#initRegistrations} so the build can emit the exact class
+     * list {@code META-INF/jvmdg/stubs/j<N>} replays later. Calls outside
+     * {@code init()} ({@code preInit} contributors, adapters, SPI users) are
+     * intentionally not recorded — the generated list replaces {@code
+     * init()}, not the contributor layer.
+     */
+    boolean recordingInit;
+
     public void stub(Class<?> clazz) {
+        if (recordingInit) {
+            catalog.initRegistrations.add(clazz.getName());
+        }
         new StubScanner(this).scan(clazz);
     }
 
@@ -588,7 +602,17 @@ public abstract class VersionProvider implements TypeRemap {
                             stubIndexLoaded = true;
                         } else {
                             preInit();
-                            init();
+                            // the generated stub list replaces init() when
+                            // it exists; the recorded-registration journal
+                            // only runs on the fallback reflective path
+                            if (!replayRegisteredStubs()) {
+                                recordingInit = true;
+                                try {
+                                    init();
+                                } finally {
+                                    recordingInit = false;
+                                }
+                            }
                             // OWN_INTERFACE forwarder registrations need the
                             // complete adapterImpls picture — a descendant
                             // adapter's impls pull up to ancestors, so
@@ -972,7 +996,7 @@ public abstract class VersionProvider implements TypeRemap {
      * {@code otherTransforms}.
      */
     protected void loadBoundaryTransforms() {
-        String resource = "META-INF/jvmdg/transforms/j" + (Utils.majorClassVersion(inputVersion) - 44);
+        String resource = "META-INF/jvmdg/transforms/" + versionTag();
         try {
             ClassLoader cl = getClass().getClassLoader();
             Enumeration<URL> resources = cl == null
@@ -1004,6 +1028,53 @@ public abstract class VersionProvider implements TypeRemap {
             throw new IllegalStateException("failed to load boundary transforms from " + resource, e);
         }
         boundaryTransforms.sort(Comparator.comparingInt(BoundaryTransform::order).thenComparing(t -> t.getClass().getName()));
+    }
+
+    /**
+     * The {@code j<N>} tag naming this provider's version-scope — {@code j}
+     * + {@code major(inputVersion) - 44} ({@code V1_7} → {@code j7}, {@code
+     * V25} → {@code j25}). Names the per-version generated resources
+     * ({@code META-INF/jvmdg/transforms/}, {@code META-INF/jvmdg/stubs/})
+     * and the {@code jvmdg.j<N>} source-set packages they mirror.
+     */
+    public String versionTag() {
+        return "j" + (Utils.majorClassVersion(inputVersion) - 44);
+    }
+
+    /**
+     * Replays the generated {@code META-INF/jvmdg/stubs/j<N>} resource —
+     * one stub-class FQCN per line, emitted by {@code StubIndexWriter} from
+     * the recorded {@code init()} registration order. Returns {@code true}
+     * when at least one resource exists on this classloader (the generated
+     * file then replaces {@code init()} entirely); {@code false} when none
+     * does (dev classpath without the generated api resources) so the
+     * caller falls back to the reflective {@link #init()}.
+     */
+    private boolean replayRegisteredStubs() throws IOException {
+        String resource = "META-INF/jvmdg/stubs/" + versionTag();
+        ClassLoader cl = getClass().getClassLoader();
+        Enumeration<URL> resources = cl == null
+            ? ClassLoader.getSystemResources(resource)
+            : cl.getResources(resource);
+        boolean found = false;
+        while (resources.hasMoreElements()) {
+            found = true;
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(Utils.openUncached(resources.nextElement()), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (line.isEmpty() || line.startsWith("#")) {
+                        continue;
+                    }
+                    try {
+                        stub(Class.forName(line, false, cl));
+                    } catch (ClassNotFoundException e) {
+                        throw new IOException("generated stub list " + resource + " references missing class " + line, e);
+                    }
+                }
+            }
+        }
+        return found;
     }
 
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
