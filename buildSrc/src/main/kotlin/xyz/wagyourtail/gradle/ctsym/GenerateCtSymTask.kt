@@ -3,8 +3,8 @@ package xyz.wagyourtail.gradle.ctsym
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
 import org.gradle.api.JavaVersion
+import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.internal.ConventionTask
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
@@ -22,8 +22,10 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import java.util.zip.ZipFile
 import kotlin.io.path.*
+import org.gradle.work.DisableCachingByDefault
 
-abstract class GenerateCtSymTask: ConventionTask() {
+@DisableCachingByDefault
+abstract class GenerateCtSymTask: DefaultTask() {
 
     @get:Optional
     @get:OutputFile

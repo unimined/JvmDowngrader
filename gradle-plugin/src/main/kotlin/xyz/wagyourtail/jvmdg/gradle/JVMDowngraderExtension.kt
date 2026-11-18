@@ -2,8 +2,6 @@ package xyz.wagyourtail.jvmdg.gradle
 
 import groovy.lang.Closure
 import groovy.lang.DelegatesTo
-import groovy.transform.stc.ClosureParams
-import groovy.transform.stc.SimpleType
 import org.gradle.api.Action
 import org.gradle.api.JavaVersion
 import org.gradle.api.NamedDomainObjectContainer
@@ -19,22 +17,25 @@ import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsSpec
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.convention
-import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
 import xyz.wagyourtail.jvmdg.gradle.task.DowngradeJar
+import xyz.wagyourtail.jvmdg.gradle.task.ExtractApiJar
 import xyz.wagyourtail.jvmdg.gradle.task.PrintConfig
 import xyz.wagyourtail.jvmdg.gradle.task.ShadeJar
 import xyz.wagyourtail.jvmdg.gradle.transform.DowngradeTransform
 import xyz.wagyourtail.jvmdg.gradle.transform.ShadeTransform
 import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
-import java.io.File
 import javax.inject.Inject
 
 val Project.jvmdg
     get() = project.extensions.getByType(JVMDowngraderExtension::class.java)
 
-private val API_EXTRACTION_LOCK = Any()
-
-abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val project: Project): ShadeFlags by project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as ShadeFlags {
+/**
+ * Global jvmdg defaults — implements [ShadeFlags] directly so the flag
+ * properties are generated members of the extension itself. Tasks and
+ * transform parameters `convention(this)`, so `jvmdg { ... }` writes
+ * land on the same provider chain every consumer reads.
+ */
+abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val project: Project): ShadeFlags {
     @get:Internal
     val version by FinalizeOnRead(JVMDowngraderPlugin::class.java.`package`.implementationVersion ?: "0.7.0")
 
@@ -44,7 +45,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
      * that never apply `java` get no task noise from this plugin.
      */
     @get:Internal
-    lateinit var defaultTask: TaskProvider<DowngradeJar>
+    var defaultTask: TaskProvider<DowngradeJar>? = null
         private set
 
     /**
@@ -52,8 +53,21 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
      * `java` plugin is present.
      */
     @get:Internal
-    lateinit var defaultShadeTask: TaskProvider<ShadeJar>
+    var defaultShadeTask: TaskProvider<ShadeJar>? = null
         private set
+
+    /**
+     * Materializes the bundled `java-api.jar` resource into
+     * `build/jvmdg-api/` — the [apiJar] convention reads this task's
+     * output, so the extraction is a tracked task rather than a
+     * side-effecting provider (which used to self-invalidate the
+     * configuration-cache entry on the store that created the file).
+     */
+    @get:Internal
+    val extractApiTask = project.tasks.register("jvmdgExtractApi", ExtractApiJar::class.java) { task ->
+        task.apiVersion.set(version)
+        task.refreshDependencies.set(project.gradle.startParameter.isRefreshDependencies)
+    }
 
     /**
      * Named [FlagsSpec]s for multi-target/multi-scope builds —
@@ -79,6 +93,17 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
      *  `withModule` across `dg()` calls sharing a dep. */
     @get:Internal
     private val jvmRuleModules = mutableSetOf<String>()
+
+    /** Modules whose [DowngradeTargetJvmRule] registration waits on
+     *  the DSL settling — rule params are eager values, so the target
+     *  must be read after `jvmdg { downgradeTo.set(...) }` has run. */
+    @get:Internal
+    private val pendingModuleRules = linkedMapOf<String, DowngradeFlags>()
+
+    /** Post-DSL flag — a `dg()` call from a later `afterEvaluate`
+     *  registers its rules immediately instead of queueing. */
+    @get:Internal
+    private var dslEvaluated = false
 
     /**
      * Get or create a named [FlagsSpec] in [specs].
@@ -114,31 +139,9 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
 
     init {
         downgradeTo.convention(JavaVersion.VERSION_1_8).finalizeValueOnRead()
-        // the provider captures only serializable values (project dir,
-        // version string, refresh flag) — capturing `project` here
-        // poisons configuration-cache serialization when a task input
-        // chains this convention
-        val apiJarDir = project.layout.projectDirectory.asFile
-        val implVersion = version
-        val refreshDependencies = project.gradle.startParameter.isRefreshDependencies
-        apiJar.convention(project.provider {
-            val apiJar = apiJarDir.resolve(".gradle/jvmdg/java-api-${implVersion}.jar")
-            if (!apiJar.exists() || refreshDependencies) {
-                synchronized(API_EXTRACTION_LOCK) {
-                    if (!apiJar.exists() || refreshDependencies) {
-                        apiJar.parentFile.mkdirs()
-                        JVMDowngraderExtension::class.java.getResourceAsStream("/META-INF/lib/java-api.jar")
-                            .use { stream ->
-                                if (stream == null) throw IllegalStateException("java-api.jar not found in resources")
-                                apiJar.outputStream().use { os ->
-                                    stream.copyTo(os)
-                                }
-                            }
-                    }
-                }
-            }
-            setOf(apiJar)
-        }).finalizeValueOnRead()
+        apiJar.convention(
+            extractApiTask.flatMap { it.outputJar }.map { setOf(it.asFile) }
+        ).finalizeValueOnRead()
         logAnsiColors.convention(true).finalizeValueOnRead()
         logLevel.convention("INFO").finalizeValueOnRead()
         ignoreWarningsIn.convention(emptySet()).finalizeValueOnRead()
@@ -159,22 +162,49 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         ignoreEmbeddedRules.convention(false).finalizeValueOnRead()
         keepEmbeddedRules.convention(false).finalizeValueOnRead()
 
+        // component-rule params are eager values captured at
+        // registration — defer the actual withModule calls until the
+        // DSL has settled so a `jvmdg {}` block appearing after `dg()`
+        // still supplies the effective target
+        project.afterEvaluate {
+            dslEvaluated = true
+            pendingModuleRules.forEach(::registerJvmRule)
+            pendingModuleRules.clear()
+        }
+
         // only register the default tasks where they can work — they wrap
         // `jar`/`shadowJar` outputs, so without the java plugin there is
         // nothing to bind; deferring registration also keeps the task list
         // clean for embedders that only want the flags/dg surfaces
         project.pluginManager.withPlugin("java") {
+            val jarTask = project.tasks.named("jar", Jar::class.java)
             defaultTask = project.tasks.register("downgradeJar", DowngradeJar::class.java)
-            defaultTask.configure { task ->
-                val jar = (project.tasks.findByName("shadowJar") ?: project.tasks.getByName("jar")) as Jar
-                task.inputFile.set(jar.archiveFile)
+            defaultTask?.configure { task ->
+                task.inputFile.convention(jarTask.flatMap { it.archiveFile })
                 task.archiveClassifier.set("downgraded")
             }
+            // shadow-family plugins replace `jar`'s packaging — prefer a
+            // `shadowJar` task's output whenever one appears; the explicit
+            // set beats the jar convention above
+            project.tasks.matching { it is Jar && it.name == "shadowJar" }.configureEach { shadow ->
+                defaultTask?.configure { task ->
+                    task.inputFile.set((shadow as Jar).archiveFile)
+                }
+            }
             defaultShadeTask = project.tasks.register("shadeDowngradedApi", ShadeJar::class.java)
-            defaultShadeTask.configure { task ->
-                task.inputFile.set(defaultTask.flatMap { it.archiveFile })
+            defaultShadeTask?.configure { task ->
+                task.inputFile.set(defaultTask!!.flatMap { it.archiveFile })
                 task.archiveClassifier.set("downgraded-shaded")
             }
+        }
+    }
+
+    private fun registerJvmRule(module: String, flags: DowngradeFlags) {
+        project.dependencies.components.withModule(
+            module,
+            DowngradeTargetJvmRule::class.java
+        ) { r ->
+            r.params(flags.downgradeTo.get().majorVersion.toInt())
         }
     }
 
@@ -254,7 +284,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         val artifactType = Attribute.of("artifactType", String::class.java)
         val downgradeAttr = Attribute.of("jvmdg.dg.${dep.name}", Boolean::class.javaObjectType)
         val shadeAttr = Attribute.of("jvmdg.shade.${dep.name}", Boolean::class.javaObjectType)
-        lateinit var downgradeTarget: JavaVersion
+        var ruleFlags: DowngradeFlags? = null
         // first registration wins for a module — dg() with a differing
         // target on the same dep keeps the earlier rewrite
 
@@ -272,7 +302,7 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
                 spec.parameters {
                     it.convention(this@JVMDowngraderExtension)
                     config(it)
-                    downgradeTarget = it.downgradeTo.get()
+                    ruleFlags = it
                 }
             }
         }
@@ -284,15 +314,16 @@ abstract class JVMDowngraderExtension @Inject constructor(@get:Internal val proj
         // before the transform can apply. `allDependencies.all` fires
         // for declared deps now and ones added later; file deps carry
         // no metadata and project deps produce their own
+        val flags = ruleFlags!!
         dep.allDependencies.all {
             val g = (it as? ExternalModuleDependency)?.group
                 ?: return@all
-            if (jvmRuleModules.add("$g:${it.name}")) {
-                project.dependencies.components.withModule(
-                    "$g:${it.name}",
-                    DowngradeTargetJvmRule::class.java
-                ) { r ->
-                    r.params(downgradeTarget.majorVersion.toInt())
+            val module = "$g:${it.name}"
+            if (jvmRuleModules.add(module)) {
+                if (dslEvaluated) {
+                    registerJvmRule(module, flags)
+                } else {
+                    pendingModuleRules[module] = flags
                 }
             }
         }

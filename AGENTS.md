@@ -207,20 +207,31 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
                   idx never carries);
                   providers idx-load at ensureInit, falling back to the
                   scan (jvmdg.debug.noStubIdx forces it); on the scan path
-                  the generated META-INF/jvmdg/stubs/j<N> class list
-                  replaces init() (replayed via Class.forName — every
-                  marker-bearing class under jvmdg/j<N>/ minus the authored
-                  META-INF/jvmdg/dormant-stubs exclusions; init() is a
-                  no-op SPI fallback for external providers, and a bundled
-                  provider missing its resource on a generated classpath
-                  warns). genStubIndex also emits META-INF/jvmdg/providers
-                  (provider FQCN + input/output versions + priority rows);
-                  StubClassEnumerator ASM-scans the gen classpath for
-                  jvmdg/j<N>/ marker classes and BoundaryTransform impls —
-                  the gate fails the build on stale dormant rows or
-                  transforms/j<N> resource drift, and gen registers every
-                  emitted class directly so the serialized idx is built
-                  from the enumeration regardless of replay state;
+                  init() runs — for bundled providers a generated body
+                  (ProviderGenerator emits each Java<N>Downgrader.class
+                  into the api jar: ctor passes the version triple,
+                  registerBoundaryTransforms() news up the enumerated
+                  jvmdg/j<N>/transform/ impls — deferred to the end of the
+                  init window because provider <init> runs inside
+                  collectProviders' ServiceLoader pass where loading a
+                  transform class re-enters the half-built downgrader,
+                  init() stub()-calls every marker class under
+                  jvmdg/j<N>/ — the emitted list IS the enumeration, so
+                  authoring a marker IS opting in; keep a class dormant
+                  by not annotating it; j6/7/8 keep their ensureInit
+                  "VERY incomplete" warn); external providers' init() is
+                  the same SPI point. genStubIndex also emits the
+                  META-INF/services VersionProvider list; the writer
+                  stands in generic providers (constructed from the
+                  build's version table, providerKey() reporting the
+                  generated name) since the real classes can't exist on
+                  its own classpath — StubClassEnumerator ASM-scans the
+                  gen classpath for jvmdg/j<N>/ marker classes and
+                  BoundaryTransform impls, fails the build when a j<N>
+                  scope has content but no provider boundary, and gen
+                  registers every emitted class directly so the
+                  serialized idx is built from the enumeration
+                  regardless of init() contents;
                   DerivedExclusions unions the excludes resource into
                   scan-built entries so both load paths resolve identically;
                   DerivedGained load-filters the gained rows per provider
@@ -553,12 +564,12 @@ Invariants:
 
 | To add a… | Do this |
 |---|---|
-| Stub member | `public static` method + `@Stub` on any class in the right `java-api/src/java<N>` source set — `genStubIndex`'s classpath enumeration registers every marker-annotated class under `jvmdg/j<N>/` automatically (no `init()` list to update; `META-INF/jvmdg/dormant-stubs` holds deliberate exclusions); `StubScanner` registers it at provider `ensureInit`. Instance stubs take the receiver as first param and let `ref.value()` stay empty (owner derives from it); **static member stubs must set `ref = @Ref("owner")`** or the first param is consumed as `this` and the member registers on the wrong owner. `member` claims use the *registered* desc (adapter return types remap to real JDK types). |
+| Stub member | `public static` method + `@Stub` on any class in the right `java-api/src/java<N>` source set — `genStubIndex`'s classpath enumeration bakes a `stub(TheClass.class)` call into the generated `Java<N>Downgrader.init()` automatically (no registration list anywhere; leave a class unregistered by not annotating it); `StubScanner` registers it at provider `ensureInit`. The class must be `public` — the emitted `init()` ldc's it. Instance stubs take the receiver as first param and let `ref.value()` stay empty (owner derives from it); **static member stubs must set `ref = @Ref("owner")`** or the first param is consumed as `this` and the member registers on the wrong owner. `member` claims use the *registered* desc (adapter return types remap to real JDK types). |
 | Insn-level rewrite | `@Modify(ref = @Ref("Lowner;name;desc"))` on a `public static` method taking `(MethodNode, int, ClassNode, Set<ClassNode>, Object…)` — emits replacement insns, may enqueue extras. |
 | Indy desugar | `@IndyDesugar(ref = @Ref("Lbsm;member;desc"))` on a `public static void` method taking `(ModifyContext)` — fires at indy sites where the member is the bootstrap (boundary + `noIndy` sweep); never intercepts direct invokes of the bsm member — those resolve `@Stub` impls instead (concat/`ObjectMethods`/`SwitchBootstraps` build real `ConstantCallSite`s over bound static helpers; `metafactory` proxies via `MethodHandleProxies`; `altMetafactory` stays `MissingStubError`). Registry lives in `StubRegistry.Owner.indyDesugars`, serialized in `stubs.idx` format ≥5. |
 | Class-type redirect | `@Adapter` — feeds `TypeRemap`/`StructuralRemapTransform`; `keepInterface` drops the type from `implements`. Retro `instanceof`/`checkcast` is automatic (mode derives from `target`): every site emits a single `invokestatic` to the stub's generated `<stubType>$jvmdg$retro` dispatcher — `wrap` for `OWN_INTERFACE` casts over `@Adapter(impls=…)` — impls need exactly one single-arg ctor (the member type), and declarations pull upward to ancestor adapters; the dispatcher's impl references resolve in the caller's loader so downgrading loaders transform impls like any other api ref, and `wrapImpl`'s row selection keys the `wraps` row to the context's name so prefixed jars stay in-namespace. `X.class.cast` on an ldc'd retro receiver mirrors the same hook → `wrap=` → generated-wrap dispatch. A `jvmdg$instanceof`/`jvmdg$checkcast` static or `wrap=` factory is an explicit override for adaptation the table can't express; a `jvmdg$wrap` helper on an adapter delegates to `RetroTypes.wrap` for hand-written impl code that must coerce a member object (generated `$jvmdg$retro` classes don't exist when java-api compiles — most adapters no longer need the helper; keep it only where impl code calls it). `invokespecial` (`X.super.m`) on an OWN_INTERFACE member is never redirected — suppression derives from the owner's adapter mode in `ClassMapping.getStubFor`; `Stub.noSpecial` remains the explicit escape hatch elsewhere. Non-stub impls opt into membership via the adapter's `$Marker` interface. |
-| New java version | New `Java<N>Downgrader` under `providers/` + `java-api/src/java<N>` source set + `META-INF/services` registration + `META-INF/jvmdg/transforms/j<N>` resource listing its `BoundaryTransform` impls; `downgradeTo` chains it automatically and `stubs/j<N>` registration is fully enumerated — marker-annotated classes under `jvmdg/j<N>/` register automatically (use `META-INF/jvmdg/dormant-stubs` for deliberate exclusions). |
-| Wider per-class pass | A `BoundaryTransform` impl in `java-api/src/java<N>/.../j<N>/transform/` + its FQCN listed in that source set's `META-INF/jvmdg/transforms/j<N>` resource — discovered at `ensureInit` (providers can't construct them: main compiles against hollow v52 shells of the java<N> outputs), ordered by `order()` then class name, runs after the legacy `otherTransforms` arity chain → `OtherTransformsTransform` in the stage; emits `jvmdg$indy$/handle$/methodtype$/lookup/nest$/instanceMain` helpers via `ctx.extras`. |
+| New java version | Extend the `providers-csv` arg range in `java-api/build.gradle.kts`'s `genStubIndex` task + a `java-api/src/java<N>` source set — `StubIndexWriter` emits the `Java<N>Downgrader` class, its `META-INF/services` entry, and the `init()` registration for every marker class under `jvmdg/j<N>/` automatically; `downgradeTo` chains it via ServiceLoader. |
+| Wider per-class pass | A `public` `BoundaryTransform` impl with a public no-arg ctor in `java-api/src/java<N>/.../j<N>/transform/` — the classpath enumeration bakes a `boundaryTransforms.add(new Impl())` into the generated provider's `registerBoundaryTransforms()` (instantiated at the end of the `ensureInit` window — never in `<init>`, where ServiceLoader provider construction would re-enter the half-built downgrader), sorted by `order()` then class name, runs after the legacy `otherTransforms` arity chain → `OtherTransformsTransform` in the stage; emits `jvmdg$indy$/handle$/methodtype$/lookup/nest$/instanceMain` helpers via `ctx.extras`. |
 | Whole-set/ordering-sensitive pass | A `StageHook` (`onEnter`/`onExit`) — sees the full `TransformContext`; the shade closure barrier is the model. |
 | Ref kind for the index | A `RefExtractor`/`MemberScanner` SPI impl — plug into `ReferenceIndex` construction; `RequiresResourceScanner` is the model. |
 | Flag / config option | `@BoundFlag` on the `Flags` field — CLI/sysprop/config/`copy()`/`--print`/Gradle application come free; Gradle needs only the typed `Property` on `DowngradeFlags` (`toFlags` resolves bound `gradle` names reflectively, values convert via the flag's `form` parser). Docs table is drift-tested (`everyBoundKeyAndCliFlagIsDocumented`), the property surface by `TestToFlags`. See `docs/Configuration.md`. |
@@ -575,6 +586,39 @@ Invariants:
   callbacks must be concurrent (`ConcurrentHashMap`-backed) — a plain
   `HashSet`/`HashMap` silently loses entries.
 - Public API additions get unit tests under `testing/src/test`.
+
+## Gradle plugin conventions
+
+`gradle-plugin` (`xyz.wagyourtail.jvmdowngrader`). The flags model:
+
+- `JVMDowngraderExtension : ShadeFlags` IS the global flag carrier —
+  managed properties generated on the extension like on task types;
+  every task/spec/transform-params object `convention(extension)` —
+  there is **no BuildService layer** (a service used only for its
+  parameters is just a state bag; deleted in 3.0).
+- `apiJar` conventions `jvmdgExtractApi`'s `outputJar` — a real task
+  writing `build/jvmdg-api/java-api.jar`, never a side-effecting
+  provider (the old provider wrote `.gradle/jvmdg/` during fingerprint
+  reads and self-invalidated the config-cache entry once per store).
+- `dg(conf)` registers the transforms immediately but queues
+  `DowngradeTargetJvmRule` into `pendingModuleRules` until
+  `afterEvaluate` — component-rule params are eager values, so the
+  target must be read after the DSL settles (or `jvmdg {}` blocks
+  written after `dg()` lose silently). Post-eval `dg()` calls register
+  immediately via the `dslEvaluated` flag.
+- Tasks: `DefaultTask`/`Jar` only — `ConventionTask` (internal API) is
+  banned. `DowngradeFiles`/`ShadeFiles` declare `@OutputDirectory
+  outputDir` (`build/jvmdg/files/<task>`); `outputCollection` maps to
+  the per-input children through `outputMap` (dir inputs → dir outputs,
+  jar inputs → jar outputs, `-1/-2` name disambiguation) and carries
+  the producer dep. Task `classpath` is `@Classpath`-normalized, not
+  `@PathSensitive(NONE)`.
+- Wire lazily: `tasks.named<Jar>("jar").flatMap { archiveFile }`,
+  `tasks.matching { it.name == "shadowJar" }.configureEach` for the
+  shadow swap-in — never `getByName`/`findByName` at registration.
+- `TestDowngrade` asserts config-cache reuse on the **second** run;
+  `test-downgrade/gradle.properties` gives the TestKit daemon `-Xmx4G`
+  (the shade closure over the api jar exceeds the 512m default).
 
 ## commons-asm / commons-core mirrors
 

@@ -52,9 +52,9 @@ dependencies {
 tasks.jar {
     from(projectDir.parentFile.resolve("LICENSE.md"))
 
-    // so we don't have to retrieve it.
-    dependsOn(project.project(":java-api").tasks.jar.get())
-    from(project.project(":java-api").tasks.jar.get().outputs.files) {
+    // so we don't have to retrieve it — the archiveFile provider
+    // carries the :java-api:jar task dependency
+    from(project(":java-api").tasks.named<Jar>("jar").flatMap { it.archiveFile }) {
         into("META-INF/lib")
         rename {
             "java-api.jar"

@@ -9,7 +9,6 @@ import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderPlugin
 import xyz.wagyourtail.jvmdg.gradle.flags.convention
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -106,9 +105,8 @@ class SpecWiringTest {
         val withoutJava = project(java = false)
         assertNull(withoutJava.tasks.findByName("downgradeJar"))
         assertNull(withoutJava.tasks.findByName("shadeDowngradedApi"))
-        assertFailsWith<UninitializedPropertyAccessException> {
-            jvmdg(withoutJava).defaultTask
-        }
+        assertNull(jvmdg(withoutJava).defaultTask)
+        assertNull(jvmdg(withoutJava).defaultShadeTask)
     }
 
     @Test

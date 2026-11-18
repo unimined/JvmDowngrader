@@ -3,14 +3,9 @@ package xyz.wagyourtail.jvmdg.test
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.Test
 import java.io.File
-import kotlin.test.BeforeTest
+import kotlin.test.assertTrue
 
 class TestDowngrade {
-
-    @BeforeTest
-    fun clean() {
-        File("test-downgrade/.gradle/jvmdg").deleteRecursively()
-    }
 
     @Test
     fun testDowngrade() {
@@ -21,15 +16,14 @@ class TestDowngrade {
             .build()
 
         val first = runner("clean", "build")
-        assert(first.output.contains("BUILD SUCCESSFUL"))
+        assertTrue(first.output.contains("BUILD SUCCESSFUL"))
 
-        // the api-jar extraction provider records "file absent" on the
-        // first store then creates the file — that self-invalidates the
-        // entry once; the next run re-stores, and the one after must reuse
-        runner("clean", "build")
-        val third = runner("clean", "build")
-        assert(third.output.contains("BUILD SUCCESSFUL"))
-        assert(third.output.contains("Configuration cache entry reused"))
+        // the api-jar extraction is a tracked task output now, so the
+        // configuration-cache fingerprint is stable across the store —
+        // the second run must reuse the entry
+        val second = runner("clean", "build")
+        assertTrue(second.output.contains("BUILD SUCCESSFUL"))
+        assertTrue(second.output.contains("Configuration cache entry reused"))
     }
 
 }

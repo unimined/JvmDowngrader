@@ -1,9 +1,12 @@
 package xyz.wagyourtail.jvmdg.gradle.task.files
 
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
-import org.gradle.api.internal.ConventionTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.SourceSetContainer
@@ -11,6 +14,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 import xyz.wagyourtail.jvmdg.ClassDowngrader
 import xyz.wagyourtail.jvmdg.compile.PathDowngrader
+import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
@@ -24,7 +28,7 @@ import kotlin.io.path.isDirectory
 import kotlin.io.path.name
 
 @DisableCachingByDefault
-abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention {
+abstract class DowngradeFiles: DefaultTask(), DowngradeFlags, FlagsConvention {
 
     private var _inputCollection: FileCollection by FinalizeOnRead(MustSet())
 
@@ -34,50 +38,50 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention
         get() = _inputCollection
         set(value) {
             _inputCollection = value
-
-            // use _inputCollection to finalize it immediately
-            val fd = _inputCollection.mappedOutputs()
-            outputs.dirs(*fd.filter { it.key.isDirectory }.values.toTypedArray())
-            outputs.files(*fd.filter { it.key.isFile }.values.toTypedArray())
-
         }
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
+    @get:Classpath
     abstract var classpath: FileCollection
+
+    /**
+     * Output root — each input maps to a child named after the input;
+     * inputs sharing a file name get `-1`, `-2`, … suffixes (see
+     * [outputMap]). A single declared root keeps the task's outputs a
+     * normal `@OutputDirectory` instead of per-input declarations.
+     */
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
 
     @get:Internal
     val outputMap: Map<File, File>
         get() = inputCollection.mappedOutputs()
 
-    /**
-     * Disambiguated output paths — inputs sharing a file name (e.g.
-     * two `main` dirs from different source sets) get `-1`, `-2`, …
-     * suffixes so their outputs cannot overwrite each other.
-     */
     private fun FileCollection.mappedOutputs(): Map<File, File> {
+        val root = outputDir.get().asFile
         val seen = mutableMapOf<String, Int>()
         return associateWith { f ->
             val idx = seen.getOrDefault(f.name, 0)
             seen[f.name] = idx + 1
-            temporaryDir.resolve(if (idx == 0) f.name else "${f.name}-$idx")
+            root.resolve(if (idx == 0) f.name else "${f.name}-$idx")
         }
     }
 
     /**
-     * this is the true output, gradle just doesn't have a
-     * \@OutputDirectoriesAndFiles
+     * The mapped output paths (dirs stay dirs, jar inputs stay jars) —
+     * rooted on [outputDir] so the collection carries this task as
+     * producer and downstream `inputCollection = task.outputCollection`
+     * wiring picks up the dependency.
      */
     @get:Internal
-    val outputCollection: FileCollection by lazy {
-        outputs.files
-    }
+    val outputCollection: FileCollection
+        get() = project.files(outputDir.map { outputMap.values })
 
     init {
         group = "JVMDowngrader"
-        convention(project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as DowngradeFlags)
+        convention(project.extensions.getByType(JVMDowngraderExtension::class.java))
         classpath = project.extensions.findByType(SourceSetContainer::class.java)
             ?.findByName("main")?.runtimeClasspath ?: project.files()
+        outputDir.convention(project.layout.buildDirectory.dir("jvmdg/files/$name"))
     }
 
     /**
@@ -102,9 +106,9 @@ abstract class DowngradeFiles: ConventionTask(), DowngradeFlags, FlagsConvention
 
         try {
 
-            outputs.files.forEach { it.deleteRecursively() }
+            outputDir.get().asFile.deleteRecursively()
 
-            val downgraded = toDowngrade.map { outputMap[it.toFile()] ?: temporaryDir.resolve(it.name) }.map {
+            val downgraded = toDowngrade.map { outputMap[it.toFile()] ?: outputDir.get().asFile.resolve(it.name) }.map {
                 if (it.extension == "jar" || it.extension == "zip") {
                     val fs = Utils.openZipFileSystem(it.toPath(), true)
                     fileSystems.add(fs)

@@ -2,17 +2,59 @@
 
 ## RESUME
 
-**E-series complete** (E1–E5 landed on `feature/core-overhaul`, full
-matrix green): `VersionProvider` is decomposed — `StubCatalog` owns
-registry data, `BoundaryTransform`s own boundary transforms,
-registration is fully enumeration-driven. Providers are ctor-only
-classes; `init()` is an empty SPI fallback. Dormant-stub activation
-done too — `dormant-stubs` is header-only; all 12 classes register
-via enumeration with synthesized probe coverage (a bare-`@Stub`
-misregistration on `J_L_ThreadLocal.withInitial` was fixed in the
-process). **Next**: optional tails = generate `transforms/j<N>`
-+ provider classes entirely, deeper catalog/engine boundary shims.
-Unpushed commits: f489faf2, 09ceafa8, 03fefa71, b511f6d2, fb1236c2.
+**Gradle-plugin overhaul landed** (uncommitted atop E6's diff on
+`feature/core-overhaul`, `:gradle-plugin:test` 16/16 green incl.
+two-run config-cache reuse): `DefaultFlags` BuildService **deleted** —
+the extension now implements `ShadeFlags` directly (managed props
+generated like on tasks) and every task/spec/transform-param
+`convention(extension)` — same provider chain, minus a service that
+was only ever a state bag. `apiJar` is a real `ExtractApiJar` task
+(`build/jvmdg-api/`) — the old side-effecting provider wrote into
+`.gradle/` and self-invalidated the CC entry once per store.
+`dg()`'s `downgradeTo.get()` eager read is gone: component-rule
+registrations queue into `pendingModuleRules` and land in
+`afterEvaluate` (or immediately if `dg()` runs post-eval), so
+`jvmdg {}` blocks after `dg()` still win. `ConventionTask` →
+`DefaultTask` (incl. buildSrc's `GenerateCtSymTask`), `DowngradeFiles`/
+`ShadeFiles` declare a real `@OutputDirectory outputDir` (mapped
+`-1/-2` disambiguation kept) instead of setter-side `outputs.dirs`,
+task classpaths use `@Classpath`, `defaultTask`/`defaultShadeTask`
+are nullable providers wired lazily (`named<Jar>` +
+`matching{name=="shadowJar"}.configureEach`), dead
+`version`/`isRefreshDependencies` vals + `ServiceReference` import
+swept, `gradle-plugin:jar`'s `:java-api:jar` wireup uses
+`flatMap { archiveFile }` (no eager `.get()`).
+**Env note**: m2shared is ntfs3 with post-dirty-shutdown index
+damage — `fileHashes.bin` inodes returned EINVAL until caches were
+unlinked; `ntfsfix` ran already (mount works); real fix = Windows
+`chkdsk` when convenient.
+**Next**: P1 indy-dispatch benchmarks (megaplan), or deeper
+catalog/engine boundary shims. All pushed through `03ccccf2`; E6 +
+gradle-plugin overhaul uncommitted pending user word.
+
+**E6 landed** (on `feature/core-overhaul` atop pushed `03ccccf2`, full
+matrix green — 6m15s `:testing:test`): the 22 `Java<N>Downgrader`
+classes are now **emitted by `ProviderGenerator`** into the api jar —
+ctor carries the version triple, `registerBoundaryTransforms()` news up
+each enumerated `jvmdg/j<N>/transform/` impl at the END of the init
+window (ctor-time instantiation killed every runtime launch —
+ServiceLoader provider construction re-enters the half-built
+downgrader), generated `init()` carries one `stub(Marker.class)` per
+marker class, j6/7/8 keep their ensureInit "VERY incomplete" warns
+(F_SAME frame needed — V1_8 verifier).
+The entire resource layer is deleted: `META-INF/jvmdg/providers`,
+`stubs/j<N>`, `transforms/j<N>`, `dormant-stubs` all gone (annotation
+presence IS the registration; dormant = don't annotate). `genStubIndex`
+constructs generic stand-in providers from its `providers-csv` arg
+(real classes can't exist on its own classpath — chicken/egg);
+`VersionProvider.providerKey()` decouples serialized keys
+(stubs.idx/excludes/member-since rows) from the gen-time impl class.
+`AllVersionDowngrader.preInit` contributor loading moved to
+`VersionProvider.preInit` (generated classes don't override it).
+`init()` is the empty SPI fallback for external providers again.
+**Next**: P1 indy-dispatch benchmarks (megaplan), or deeper
+catalog/engine boundary shims. All pushed through `03ccccf2`; E6
+uncommitted pending user word.
 
 **Done + pushed**: all megaplan phases landed (A–D), backports pushed to
 `main`. All findings were re-verified against code before fixing; F6 was
@@ -173,3 +215,44 @@ Stray `gradlew-lf` add+remove pair sits in main history (`8b7da737` +
   J_L_C_ConstantDesc extends J_L_C_Constable models a hierarchy the
   JDK never had — downgraded `instanceof Constable` on ConstantDesc
   impls answers true where native says false; flagged, not fixed.
+- [x] E6 generated provider classes — `version/gen/ProviderGenerator`
+  emits `Java<N>Downgrader.class` (V1_8, +.java dump) per version-table
+  row: `super(in,out,pri)` ctor + `registerBoundaryTransforms()`
+  override carrying `boundaryTransforms.add(new Impl())` per enumerated
+  `j<N>/transform/` impl (name-sorted, public-no-arg-ctor contract) +
+  `init()` = `stub(Marker.class)` per enumerated marker (name-sorted;
+  nested names `$`-joined). Transform instantiation lives in the new
+  `VersionProvider.registerBoundaryTransforms()` hook at the END of the
+  init window (pre-sort) — NOT `<init>`: the first cut put the adds in
+  the ctor and every runtime launch died `ServiceConfigurationError` —
+  provider construction inside `collectProviders`' ServiceLoader pass
+  loaded `j<N>/transform/*` through the DowngradingClassLoader, whose
+  transform needs `versionProviders` (still null → NPE). Deferral
+  preserves the old `loadBoundaryTransforms` timing: classes transform
+  against the complete registry. j6/7/8 get the ensureInit
+  incomplete-stubs warn override (required `visitFrame(F_SAME)` at the
+  branch target — V1_8 strict verifier, caught by selfDowngrade).
+  `StubIndexWriter` now constructs `GenProvider` stand-ins from the
+  `providers-csv` arg instead of ServiceLoader (the emitted classes
+  can't be on its own classpath), injects them into the
+  cross-boundary `ClassDowngrader` via new `addProvider`, and writes
+  the `META-INF/services/...VersionProvider` file itself.
+  `VersionProvider.providerKey()` (default `getClass().getName()`,
+  GenProvider overrides to the emitted FQCN) keys stubs.idx, excludes,
+  member-since, reflection.idx rows + `loadStubIndex` lookup —
+  caught by `TestStubIndex` when three writer sites still used
+  `getClass().getName()` (excludeChild [] vs expected). Deleted:
+  all 22 authored providers, `providers`/`stubs/j<N>`/`transforms/j<N>`/
+  `dormant-stubs` resources, `replayRegisteredStubs`/
+  `loadBoundaryTransforms`/`warnMissingGeneratedList`, the
+  `TestCtorRewrite` `debugSkipStubs` workaround (TestProviders no
+  longer inherit the bundled registry — isolation restored).
+  `genStubClasses` stays as the writer-side seam: GenProvider has no
+  compiled init() to run, so the writer sets the enumerated list and
+  ensureInit registers it inside the init window (E5's
+  AdapterForwarders/derived-loaders ordering constraint unchanged);
+  at runtime the generated init() replays the same list.
+  `AllVersionDowngrader.preInit`'s ReflectionContributor ServiceLoader
+  moved to `VersionProvider.preInit` since generated providers don't
+  override it. `META-INF/jvmdg/` now holds exactly 7 runtime tables +
+  stubs.idx + member-since. Full matrix green.

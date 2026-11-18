@@ -7,7 +7,6 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -15,14 +14,13 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.work.DisableCachingByDefault
 import xyz.wagyourtail.jvmdg.compile.ApiShader
+import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.ShadeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
-import xyz.wagyourtail.jvmdg.util.FinalizeOnRead
 import xyz.wagyourtail.jvmdg.util.deleteIfExists
 import xyz.wagyourtail.jvmdg.util.readZipInputStreamFor
 import xyz.wagyourtail.jvmdg.util.defaultShadePrefix
-import java.io.File
 import java.nio.file.StandardOpenOption
 import javax.inject.Inject
 import kotlin.io.path.outputStream
@@ -32,12 +30,6 @@ abstract class ShadeJar: Jar(), ShadeFlags, FlagsConvention {
 
     @get:Inject
     abstract val archive: ArchiveOperations
-
-    @get:Internal
-    val version by FinalizeOnRead(ShadeJar::class.java.`package`.implementationVersion ?: "0.7.0")
-
-    @get:Internal
-    val isRefreshDependencies = project.gradle.startParameter.isRefreshDependencies
 
     @get:Optional
     @get:Input
@@ -52,8 +44,8 @@ abstract class ShadeJar: Jar(), ShadeFlags, FlagsConvention {
 
     init {
         group = "JVMDowngrader"
-        description = "Downgrades the jar to the specified version"
-        convention(project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as ShadeFlags)
+        description = "Shades the api stubs into the jar"
+        convention(project.extensions.getByType(JVMDowngraderExtension::class.java))
     }
 
     fun shadePath(path: String) {

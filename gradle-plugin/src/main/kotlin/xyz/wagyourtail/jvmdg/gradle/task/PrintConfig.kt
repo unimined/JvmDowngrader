@@ -4,6 +4,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 import xyz.wagyourtail.jvmdg.config.FlagBindings
+import xyz.wagyourtail.jvmdg.gradle.JVMDowngraderExtension
 import xyz.wagyourtail.jvmdg.gradle.flags.DowngradeFlags
 import xyz.wagyourtail.jvmdg.gradle.flags.FlagsConvention
 import xyz.wagyourtail.jvmdg.gradle.flags.toFlags
@@ -18,7 +19,7 @@ abstract class PrintConfig : DefaultTask(), DowngradeFlags, FlagsConvention {
     init {
         group = "JVMDowngrader"
         description = "Prints the effective merged jvmdg configuration and where each value came from"
-        convention(project.gradle.sharedServices.registrations.getByName("${project.path}:jvmdgDefaultFlags").parameters as DowngradeFlags)
+        convention(project.extensions.getByType(JVMDowngraderExtension::class.java))
     }
 
     @TaskAction
