@@ -1,7 +1,7 @@
 package xyz.wagyourtail.jvmdg.version.idx;
 
 import xyz.wagyourtail.jvmdg.util.Utils;
-import xyz.wagyourtail.jvmdg.version.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.StubCatalog;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 
 import java.io.BufferedReader;
@@ -40,9 +40,9 @@ public final class DerivedMemberSince {
      * for the same member wins on the lower window, matching
      * {@link StubIndexWriter#populateMemberSince}).
      */
-    public static void apply(VersionProvider vp) throws IOException {
-        String provider = vp.getClass().getName();
-        ClassLoader cl = vp.getClass().getClassLoader();
+    public static void apply(StubCatalog catalog) throws IOException {
+        String provider = catalog.provider.getClass().getName();
+        ClassLoader cl = catalog.provider.getClass().getClassLoader();
         Enumeration<URL> resources = cl == null
             ? ClassLoader.getSystemResources(RESOURCE)
             : cl.getResources(RESOURCE);
@@ -65,9 +65,9 @@ public final class DerivedMemberSince {
                     } catch (NumberFormatException nfe) {
                         continue;
                     }
-                    Integer cur = vp.stubRegistry.memberSince.get(member);
+                    Integer cur = catalog.stubRegistry.memberSince.get(member);
                     if (cur == null || since < cur) {
-                        vp.stubRegistry.memberSince.put(member, since);
+                        catalog.stubRegistry.memberSince.put(member, since);
                     }
                 }
             }

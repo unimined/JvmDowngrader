@@ -1,7 +1,7 @@
 package xyz.wagyourtail.jvmdg.version.idx;
 
 import org.objectweb.asm.Type;
-import xyz.wagyourtail.jvmdg.version.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.StubCatalog;
 import xyz.wagyourtail.jvmdg.version.map.FieldStubEntry;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
 import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
@@ -44,12 +44,12 @@ public final class DerivedExclusions {
      * {@link StubEntry}. Site keys are the canonical
      * {@link FullyQualifiedMemberNameAndDesc} form the writer emits.
      */
-    public static void apply(VersionProvider vp) throws IOException {
-        Map<String, List<String>> rows = read(vp);
+    public static void apply(StubCatalog catalog) throws IOException {
+        Map<String, List<String>> rows = read(catalog);
         if (rows.isEmpty()) {
             return;
         }
-        for (Map.Entry<String, xyz.wagyourtail.jvmdg.version.map.StubRegistry.Owner> o : vp.stubRegistry.owners().entrySet()) {
+        for (Map.Entry<String, xyz.wagyourtail.jvmdg.version.map.StubRegistry.Owner> o : catalog.stubRegistry.owners().entrySet()) {
             apply(o.getValue().methodStub, rows, Type.getObjectType(o.getKey()));
             for (Map.Entry<MemberNameAndDesc, FieldStubEntry> m : o.getValue().fieldStub.entrySet()) {
                 List<String> children = match(rows, m.getKey(), Type.getObjectType(o.getKey()));
@@ -92,10 +92,10 @@ public final class DerivedExclusions {
      * classloader, merged — multi-api-jar classpaths each contribute their
      * own section.
      */
-    private static Map<String, List<String>> read(VersionProvider vp) throws IOException {
+    private static Map<String, List<String>> read(StubCatalog catalog) throws IOException {
         Map<String, List<String>> rows = new HashMap<>();
-        String provider = vp.getClass().getName();
-        ClassLoader cl = vp.getClass().getClassLoader();
+        String provider = catalog.provider.getClass().getName();
+        ClassLoader cl = catalog.provider.getClass().getClassLoader();
         Enumeration<URL> resources = cl == null
             ? ClassLoader.getSystemResources(RESOURCE)
             : cl.getResources(RESOURCE);

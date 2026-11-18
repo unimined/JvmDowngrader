@@ -22,6 +22,7 @@ import java.util.function.Function;
 import org.objectweb.asm.Type;
 
 import xyz.wagyourtail.jvmdg.version.Adapter;
+import xyz.wagyourtail.jvmdg.version.StubCatalog;
 import xyz.wagyourtail.jvmdg.version.StubCondition;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.ClassStubEntry;
@@ -500,46 +501,46 @@ public class StubIndex {
     }
 
     /**
-     * install a loaded snapshot into a provider's registry, applying the same
+     * install a loaded snapshot into a catalog, applying the same
      * {@link VersionProvider#shouldSkip} filtering the reflective scan applies
      * at registration time (so {@code debugSkipJeps}/{@code debugSkipStub}
      * behave identically on both paths)
      */
-    public static void apply(Snapshot snapshot, VersionProvider vp) {
-        vp.stubRegistry.memberSince.putAll(snapshot.memberSince);
-        vp.stubRegistry.memberKind.putAll(snapshot.memberKind);
+    public static void apply(Snapshot snapshot, StubCatalog catalog) {
+        catalog.stubRegistry.memberSince.putAll(snapshot.memberSince);
+        catalog.stubRegistry.memberKind.putAll(snapshot.memberKind);
         for (Map.Entry<Type, ClassStubEntry> e : snapshot.classStubs.entrySet()) {
-            if (!vp.shouldSkip(e.getValue())) {
-                vp.classStubs.put(e.getKey(), e.getValue());
+            if (!catalog.provider.shouldSkip(e.getValue())) {
+                catalog.classStubs.put(e.getKey(), e.getValue());
             }
         }
         for (Map.Entry<String, StubRegistry.Owner> e : snapshot.owners.entrySet()) {
             StubRegistry.Owner target = null;
             for (Map.Entry<MemberNameAndDesc, StubEntry> m : e.getValue().methodStub.entrySet()) {
-                if (vp.shouldSkip(m.getValue().handler)) continue;
-                if (target == null) target = vp.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
+                if (catalog.provider.shouldSkip(m.getValue().handler)) continue;
+                if (target == null) target = catalog.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
                 target.methodStub.put(m.getKey(), m.getValue());
             }
             for (Map.Entry<MemberNameAndDesc, FieldStubEntry> m : e.getValue().fieldStub.entrySet()) {
-                StubEntry getter = m.getValue().getter != null && !vp.shouldSkip(m.getValue().getter.handler) ? m.getValue().getter : null;
-                StubEntry setter = m.getValue().setter != null && !vp.shouldSkip(m.getValue().setter.handler) ? m.getValue().setter : null;
+                StubEntry getter = m.getValue().getter != null && !catalog.provider.shouldSkip(m.getValue().getter.handler) ? m.getValue().getter : null;
+                StubEntry setter = m.getValue().setter != null && !catalog.provider.shouldSkip(m.getValue().setter.handler) ? m.getValue().setter : null;
                 if (getter == null && setter == null) continue;
-                if (target == null) target = vp.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
+                if (target == null) target = catalog.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
                 target.fieldStub.put(m.getKey(), new FieldStubEntry(getter, setter));
             }
             for (Map.Entry<MemberNameAndDesc, CtorEntry> m : e.getValue().ctor.entrySet()) {
-                if (ctorSkipped(m.getValue(), vp)) continue;
-                if (target == null) target = vp.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
+                if (ctorSkipped(m.getValue(), catalog.provider)) continue;
+                if (target == null) target = catalog.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
                 target.ctor.put(m.getKey(), m.getValue());
             }
             for (Map.Entry<MemberNameAndDesc, MethodRef> m : e.getValue().memberModify.entrySet()) {
-                if (vp.shouldSkip(m.getValue())) continue;
-                if (target == null) target = vp.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
+                if (catalog.provider.shouldSkip(m.getValue())) continue;
+                if (target == null) target = catalog.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
                 target.memberModify.put(m.getKey(), m.getValue());
             }
             for (Map.Entry<MemberNameAndDesc, MethodRef> m : e.getValue().indyDesugars.entrySet()) {
-                if (vp.shouldSkip(m.getValue())) continue;
-                if (target == null) target = vp.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
+                if (catalog.provider.shouldSkip(m.getValue())) continue;
+                if (target == null) target = catalog.stubRegistry.forOwner(Type.getObjectType(e.getKey()));
                 target.indyDesugars.put(m.getKey(), m.getValue());
             }
         }

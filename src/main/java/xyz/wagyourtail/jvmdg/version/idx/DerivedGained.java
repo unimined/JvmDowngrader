@@ -1,7 +1,7 @@
 package xyz.wagyourtail.jvmdg.version.idx;
 
 import xyz.wagyourtail.jvmdg.util.Utils;
-import xyz.wagyourtail.jvmdg.version.VersionProvider;
+import xyz.wagyourtail.jvmdg.version.StubCatalog;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -71,12 +71,12 @@ public final class DerivedGained {
      * keys of {@code gained-calls} (+manual), the dispatcher's method
      * universe.
      */
-    public static void apply(VersionProvider vp) throws IOException {
+    public static void apply(StubCatalog catalog) throws IOException {
         Map<String, Integer> imins = new HashMap<>();
         Map<String, Map<String, Integer>> rows = new TreeMap<>();
-        read(vp, RESOURCE, imins, rows);
-        read(vp, MANUAL_RESOURCE, imins, rows);
-        int target = vp.downgrader.flags.classVersion;
+        read(catalog, RESOURCE, imins, rows);
+        read(catalog, MANUAL_RESOURCE, imins, rows);
+        int target = catalog.provider.downgrader.flags.classVersion;
         for (Map.Entry<String, Map<String, Integer>> e : rows.entrySet()) {
             Integer imin = imins.get(e.getKey());
             if (imin != null && imin > target) {
@@ -84,13 +84,13 @@ public final class DerivedGained {
             }
             for (Map.Entry<String, Integer> t : e.getValue().entrySet()) {
                 int since = t.getValue();
-                if (since > vp.outputVersion && since <= vp.inputVersion) {
-                    vp.gained.computeIfAbsent(e.getKey(), k -> new HashSet<String>()).add(t.getKey());
+                if (since > catalog.provider.outputVersion && since <= catalog.provider.inputVersion) {
+                    catalog.gained.computeIfAbsent(e.getKey(), k -> new HashSet<String>()).add(t.getKey());
                 }
             }
         }
-        readCallMembers(vp, CALLS_RESOURCE);
-        readCallMembers(vp, CALLS_MANUAL_RESOURCE);
+        readCallMembers(catalog, CALLS_RESOURCE);
+        readCallMembers(catalog, CALLS_MANUAL_RESOURCE);
     }
 
     /**
@@ -103,8 +103,8 @@ public final class DerivedGained {
      * them for shading's closure. A missing resource just means no gained
      * calls (older api jar).
      */
-    private static void readCallMembers(VersionProvider vp, String resource) throws IOException {
-        ClassLoader cl = vp.getClass().getClassLoader();
+    private static void readCallMembers(StubCatalog catalog, String resource) throws IOException {
+        ClassLoader cl = catalog.provider.getClass().getClassLoader();
         Enumeration<URL> resources = cl == null
             ? ClassLoader.getSystemResources(resource)
             : cl.getResources(resource);
@@ -120,7 +120,7 @@ public final class DerivedGained {
                     if (parts.length < 2) {
                         continue;
                     }
-                    vp.gainedMembers.computeIfAbsent(parts[0], k -> new HashSet<String>()).add(parts[1]);
+                    catalog.gainedMembers.computeIfAbsent(parts[0], k -> new HashSet<String>()).add(parts[1]);
                     if (parts.length < 3) {
                         continue;
                     }
@@ -142,7 +142,7 @@ public final class DerivedGained {
                             if (site.startsWith("D:")) {
                                 site = site.substring(2);
                             }
-                            vp.gainedStubSites.computeIfAbsent(parts[0], k -> new HashMap<String, Set<String>>())
+                            catalog.gainedStubSites.computeIfAbsent(parts[0], k -> new HashMap<String, Set<String>>())
                                 .computeIfAbsent(parts[1], k -> new HashSet<String>()).add(site);
                         }
                     }
@@ -156,9 +156,9 @@ public final class DerivedGained {
      * across every copy on the provider's classloader — multi-api-jar
      * classpaths each contribute their own gained table.
      */
-    private static void read(VersionProvider vp, String resource,
+    private static void read(StubCatalog catalog, String resource,
                              Map<String, Integer> imins, Map<String, Map<String, Integer>> rows) throws IOException {
-        ClassLoader cl = vp.getClass().getClassLoader();
+        ClassLoader cl = catalog.provider.getClass().getClassLoader();
         Enumeration<URL> resources = cl == null
             ? ClassLoader.getSystemResources(resource)
             : cl.getResources(resource);

@@ -373,7 +373,7 @@ public class TestStubIndex {
             StubIndex.Snapshot snap = roundTrip(source);
             TestProvider loaded = new TestProvider();
             loaded.ensureInit(d); // binds downgrader for shouldSkip, as in the real load path
-            StubIndex.apply(snap, loaded);
+            StubIndex.apply(snap, loaded.catalog);
             assertEquals(source.classStubs.keySet(), loaded.classStubs.keySet());
             assertEquals(source.stubRegistry.owners().keySet(), loaded.stubRegistry.owners().keySet());
             StubIndex.Snapshot resnap = roundTrip(loaded);

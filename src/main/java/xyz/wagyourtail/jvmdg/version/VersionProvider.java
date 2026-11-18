@@ -42,45 +42,25 @@ import java.net.URL;
 import java.util.*;
 
 public abstract class VersionProvider implements TypeRemap {
-    public final Map<Type, ClassStubEntry> classStubs = new LinkedHashMap<>();
     /**
-     * {@code @Adapter(impls=…)} declared wrapper pairs per classStub source
-     * (internal name → ordered {@code [memberInternalName, implInternalName]}
-     * entries, member type ctor-derived). Build-time data for the
-     * {@code META-INF/jvmdg/wraps} writer — emitted checkcasts route through
-     * {@code RetroTypes.wrap} unconditionally, so nothing idx-serializes this
-     * and the runtime reads only the resource.
+     * This provider's stub registry data — the object both load paths
+     * (reflective {@link #init()} scan and {@code stubs.idx}) populate.
+     * The {@code public final} map fields below are aliases to its maps,
+     * kept for SPI compatibility; new code should go through the catalog.
      */
-    public final Map<String, List<String[]>> adapterImpls = new LinkedHashMap<>();
-    /**
-     * Gained-supertypes view from {@link DerivedGained}: interface internal
-     * name → member internal names whose binding crosses this provider's
-     * boundary ({@code output < since ≤ input}). Site routing only — the
-     * full {@code since} map stays in the resource; emitted dispatchers
-     * evaluate membership at the callsite class's own version ceiling.
-     */
-    public final Map<String, Set<String>> gained = new LinkedHashMap<>();
-    /**
-     * Member-call view from {@link DerivedGained}: interface internal name
-     * → every {@code "name desc"} key the interface's generated dispatcher
-     * declares — the {@code gained-calls} member universe, un-windowed
-     * (the dispatcher is one class serving all ceilings). An
-     * {@code invokeinterface} on a gained interface only routes when the
-     * site's member is in this set — inherited members like
-     * {@code SequencedCollection.size} stay on the member-stub/native
-     * path instead of calling a method the dispatcher never generated.
-     */
-    public final Map<String, Set<String>> gainedMembers = new LinkedHashMap<>();
-    /**
-     * {@code I → "name desc" → stub-site impls} every gained-calls row can
-     * resolve to at any ceiling ({@code owner.name(desc)} in registered
-     * vocabulary). Gained indy sites resolve these reflectively in
-     * {@code GainedRuntime}/{@code RetroTypes}, leaving no bytecode edge —
-     * emission declares them via {@code @ReflectionReferences} so the
-     * shade closure keeps the impl class.
-     */
-    public final Map<String, Map<String, Set<String>>> gainedStubSites = new LinkedHashMap<>();
-    public final Map<Type, ClassMapping> stubMappings = new LinkedHashMap<>();
+    public final StubCatalog catalog = new StubCatalog(this);
+    /** alias of {@link #catalog} — see {@link StubCatalog#classStubs} */
+    public final Map<Type, ClassStubEntry> classStubs = catalog.classStubs;
+    /** alias of {@link #catalog} — see {@link StubCatalog#adapterImpls} */
+    public final Map<String, List<String[]>> adapterImpls = catalog.adapterImpls;
+    /** alias of {@link #catalog} — see {@link StubCatalog#gained} */
+    public final Map<String, Set<String>> gained = catalog.gained;
+    /** alias of {@link #catalog} — see {@link StubCatalog#gainedMembers} */
+    public final Map<String, Set<String>> gainedMembers = catalog.gainedMembers;
+    /** alias of {@link #catalog} — see {@link StubCatalog#gainedStubSites} */
+    public final Map<String, Map<String, Set<String>>> gainedStubSites = catalog.gainedStubSites;
+    /** alias of {@link #catalog} — see {@link StubCatalog#stubMappings} */
+    public final Map<Type, ClassMapping> stubMappings = catalog.stubMappings;
     private final StructuralRemapTransform structuralRemap = new StructuralRemapTransform(this);
     /**
      * The run-scoped method-analysis store, injected by
@@ -93,8 +73,8 @@ public abstract class VersionProvider implements TypeRemap {
      * provider code.
      */
     public volatile MethodAnalyses methodAnalyses;
-    /** registered @Stub/@Modify entries for this provider's input version, keyed by stubbed owner */
-    public final StubRegistry stubRegistry = new StubRegistry();
+    /** alias of {@link #catalog} — see {@link StubCatalog#stubRegistry} */
+    public final StubRegistry stubRegistry = catalog.stubRegistry;
     public final int inputVersion;
     public final int outputVersion;
 
@@ -178,7 +158,7 @@ public abstract class VersionProvider implements TypeRemap {
 
     public abstract void init();
 
-    public synchronized ClassMapping getStubMapper(final Type type, final Set<String> warnings) throws IOException {
+    public ClassMapping getStubMapper(final Type type, final Set<String> warnings) throws IOException {
         return getStubMapper(type, new IOSupplier<Boolean>() {
             @Override
             public Boolean get() throws IOException {
@@ -187,7 +167,7 @@ public abstract class VersionProvider implements TypeRemap {
         }, warnings);
     }
 
-    public synchronized ClassMapping getStubMapper(Type type, final boolean isInterface, final Set<String> warnings) throws IOException {
+    public ClassMapping getStubMapper(Type type, final boolean isInterface, final Set<String> warnings) throws IOException {
         return getStubMapper(type, new IOSupplier<Boolean>() {
             @Override
             public Boolean get() {
@@ -196,7 +176,7 @@ public abstract class VersionProvider implements TypeRemap {
         }, warnings);
     }
 
-    public synchronized ClassMapping getStubMapper(Type type, IOSupplier<Boolean> isInterface, final Set<String> warnings) throws IOException {
+    public ClassMapping getStubMapper(Type type, IOSupplier<Boolean> isInterface, final Set<String> warnings) throws IOException {
         return getStubMapper(type, isInterface, new IOFunction<Type, Set<MemberNameAndDesc>>() {
 
             @Override
@@ -207,7 +187,7 @@ public abstract class VersionProvider implements TypeRemap {
         }, warnings);
     }
 
-    public synchronized ClassMapping getStubMapper(Type type, final IOSupplier<Boolean> isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final Set<String> warnings) throws IOException {
+    public ClassMapping getStubMapper(Type type, final IOSupplier<Boolean> isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final Set<String> warnings) throws IOException {
         return getStubMapper(type, isInterface, memberResolver, new IOFunction<Type, List<Pair<Type, Boolean>>>() {
 
             @Override
@@ -218,62 +198,13 @@ public abstract class VersionProvider implements TypeRemap {
         });
     }
 
-    public synchronized ClassMapping getStubMapper(final Type type, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
-        return getStubMapper(type, new IOSupplier<Boolean>() {
-            @Override
-            public Boolean get() {
-                return isInterface;
-            }
-        }, memberResolver, superTypeResolver);
+    public ClassMapping getStubMapper(final Type type, final boolean isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
+        return catalog.getStubMapper(type, isInterface, memberResolver, superTypeResolver);
     }
 
-    public synchronized ClassMapping getStubMapper(final Type type, final IOSupplier<Boolean> isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
-        if (stubMappings.containsKey(type)) {
-            return stubMappings.get(type);
-        }
-        if (type.getSort() == Type.ARRAY) {
-            return new ClassMapping(coverage, new Lazy<List<ClassMapping>>() {
-                @Override
-                public List<ClassMapping> init() {
-                    try {
-                        return Collections.singletonList(getStubMapper(Type.getObjectType("java/lang/Object"), false, memberResolver, superTypeResolver));
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }, type, isInterface.get(), memberResolver, this);
-        }
-        if (type.getInternalName().equals("java/lang/Object")) {
-            ClassMapping mapping = new ClassMapping(coverage, new Lazy<List<ClassMapping>>() {
-                @Override
-                public List<ClassMapping> init() {
-                    return Collections.emptyList();
-                }
-            }, type, false, memberResolver, this);
-            stubMappings.put(type, mapping);
-            return mapping;
-        }
-        ClassMapping mapping = new ClassMapping(coverage, new Lazy<List<ClassMapping>>() {
-            @Override
-            public List<ClassMapping> init() {
-                try {
-                    List<Pair<Type, Boolean>> types = superTypeResolver.apply(type);
-                    if (types == null) {
-                        logger.error("Could not find class " + type.getInternalName());
-                        types = Collections.emptyList();
-                    }
-                    List<ClassMapping> superTypes = new ArrayList<>();
-                    for (Pair<Type, Boolean> superType : types) {
-                        superTypes.add(getStubMapper(superType.getFirst(), superType.getSecond(), memberResolver, superTypeResolver));
-                    }
-                    return superTypes;
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }, type, isInterface.get(), memberResolver, this);
-        stubMappings.put(type, mapping);
-        return mapping;
+    /** resolver entry point — the registry walk lives on {@link StubCatalog#getStubMapper(Type, IOSupplier, IOFunction, IOFunction)} */
+    public ClassMapping getStubMapper(final Type type, final IOSupplier<Boolean> isInterface, final IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, final IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
+        return catalog.getStubMapper(type, isInterface, memberResolver, superTypeResolver);
     }
 
     public void stub(Class<?> clazz) {
@@ -664,15 +595,15 @@ public abstract class VersionProvider implements TypeRemap {
                             // excludeChild — union the derived set the idx
                             // path already has baked in (no resource = older
                             // api jar = nothing derived)
-                            DerivedExclusions.apply(this);
+                            DerivedExclusions.apply(catalog);
                             // memberSince feeds kind classification (BEHAVIOR
                             // vs MISSING_API) — the idx carries it inline, the
                             // scan path loads the flattened resource
-                            DerivedMemberSince.apply(this);
+                            DerivedMemberSince.apply(catalog);
                         }
                         // gained-supertypes rows are provider-level resource
                         // data — the same resource feeds both load paths
-                        DerivedGained.apply(this);
+                        DerivedGained.apply(catalog);
                         afterInit();
                         initialized = true;
                     } catch (Throwable t) {
@@ -715,7 +646,7 @@ public abstract class VersionProvider implements TypeRemap {
                 checkIndexVersion(header);
                 StubIndex.Snapshot snapshot = StubIndex.read(in, this::resolveStubClass).get(myName);
                 if (snapshot != null) {
-                    StubIndex.apply(snapshot, this);
+                    StubIndex.apply(snapshot, catalog);
                     // materialize ClassMapping resolver nodes exactly like the
                     // scan does — enumerators (coverage, corpus, debug dumps)
                     // read stubMappings, not stubRegistry
