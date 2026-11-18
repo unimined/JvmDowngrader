@@ -48,9 +48,14 @@ signature files.
 **Resolved as designed**: F17 `otherTransforms` arity chain — providers
 override at five different levels (Java7/25@7-arg, Java8@4-arg,
 Java11/15@3-arg, Java6/9/16/17@1-arg); the chain is the SPI hook
-mechanism, kept. F2/F5 flagged above. F20 partially covered by the now-
-extensive `TestReflectionTable`; `ShadeClosureBarrier` row parsing still
-untested (low risk — single writer+reader pair).
+mechanism, kept. F2/F5 flagged above. F20 done — `TestShadeClosureBarrier`
+covers T/M/C(F+R) rows, multi-spec pipes, `-` placeholders, malformed
+column counts/tags, unparseable specs, and the `split("\t",-1)` trailing-
+empty-column edge.
+
+**Full `:testing:test` matrix**: BUILD SUCCESSFUL (3m22s) — all
+downgrade/runtime/shade/parity suites green post-Phase-D. The earlier
+`TestDowngrade` TestKit flake did not recur.
 
 **Watch**: `TestDowngrade` (TestKit) fails on this mounted FS —
 `fileHashes.bin Invalid argument`, environmental, not a code failure.
@@ -67,8 +72,9 @@ Stray `gradlew-lf` add+remove pair sits in main history (`8b7da737` +
 - [x] Phase D2 downgrade() dual-path unify (F14)
 - [x] Phase D3 VersionProvider decomposition + shared-runtime dedup (F13/16/18)
 - [x] Backport to main check + apply (F4/F9/F11)
-- [ ] Full :testing:test + CI green after all phases (e2e matrix on next
-  full run — focused suites all green)
+- [x] F20 ShadeClosureBarrier row-parser coverage (`TestShadeClosureBarrier`)
+- [x] Full :testing:test matrix after all phases — BUILD SUCCESSFUL;
+  CI remains the remaining green signal
 - [ ] F13 tail (optional): registry-vs-engine split of VersionProvider is
   the deeper StubCatalog boundary — deferred to a dedicated architecture
   pass
