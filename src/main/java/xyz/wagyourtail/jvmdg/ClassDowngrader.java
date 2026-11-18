@@ -128,6 +128,16 @@ public class ClassDowngrader implements Closeable {
         return java.util.Collections.unmodifiableMap(downgraders);
     }
 
+    /**
+     * Registers an already-constructed provider into the boundary map —
+     * used at index-build time ({@code StubIndexWriter}) where providers
+     * are constructed programmatically from the version table rather than
+     * ServiceLoader-discovered off the api jar.
+     */
+    public void addProvider(VersionProvider provider) {
+        downgraders.put(provider.inputVersion, provider);
+    }
+
     public synchronized Map<Integer, VersionProvider> collectProviders() {
         Map<Integer, VersionProvider> downgraders = new HashMap<>();
         try {

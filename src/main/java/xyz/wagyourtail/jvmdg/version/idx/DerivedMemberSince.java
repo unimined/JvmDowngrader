@@ -41,7 +41,7 @@ public final class DerivedMemberSince {
      * {@link StubIndexWriter#populateMemberSince}).
      */
     public static void apply(StubCatalog catalog) throws IOException {
-        String provider = catalog.provider.getClass().getName();
+        String provider = catalog.provider.providerKey();
         ClassLoader cl = catalog.provider.getClass().getClassLoader();
         Enumeration<URL> resources = cl == null
             ? ClassLoader.getSystemResources(RESOURCE)

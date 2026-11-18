@@ -94,7 +94,7 @@ public final class DerivedExclusions {
      */
     private static Map<String, List<String>> read(StubCatalog catalog) throws IOException {
         Map<String, List<String>> rows = new HashMap<>();
-        String provider = catalog.provider.getClass().getName();
+        String provider = catalog.provider.providerKey();
         ClassLoader cl = catalog.provider.getClass().getClassLoader();
         Enumeration<URL> resources = cl == null
             ? ClassLoader.getSystemResources(RESOURCE)

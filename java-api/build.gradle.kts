@@ -204,7 +204,13 @@ val genStubIndex = tasks.register<JavaExec>("genStubIndex") {
         stubIndexDir.get().file("META-INF/jvmdg/gained").asFile.absolutePath,
         stubIndexDir.get().file("META-INF/jvmdg/gained-calls").asFile.absolutePath,
         stubIndexDir.get().file("xyz/wagyourtail/jvmdg/stub/reflection.idx").asFile.absolutePath,
-        stubIndexDir.get().file("META-INF/jvmdg/member-since").asFile.absolutePath
+        stubIndexDir.get().file("META-INF/jvmdg/member-since").asFile.absolutePath,
+        // the bundled provider boundaries as j<N> numbers (input class
+        // major - 44): fromVersion-1 .. stubToVersion — the extra boundary
+        // below the first stub source set is j6, whose classes live in the
+        // main source set. StubIndexWriter emits a Java<N>Downgrader per
+        // entry into the jar.
+        (fromVersion - 1).let { first -> (first..(toVersion - 1)).joinToString(",") { "${it.ordinal + 1}" } }
     )
     inputs.file(genCtSym.flatMap { it.ctSym })
     dependsOn(genCtSym)

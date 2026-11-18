@@ -157,19 +157,77 @@ public abstract class VersionProvider implements TypeRemap {
         }
     }
 
-    public abstract void preInit();
+    /**
+     * ServiceLoader-discovered {@link ReflectionContributor}s — the
+     * reflection-stub surface's single declaration point, applied at every
+     * provider boundary (registries are per-boundary by design). Sorted by
+     * class name for deterministic registration order.
+     */
+    private static final List<ReflectionContributor> CONTRIBUTORS = loadContributors();
+
+    private static List<ReflectionContributor> loadContributors() {
+        List<ReflectionContributor> out = new ArrayList<>();
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader == null) {
+            loader = VersionProvider.class.getClassLoader();
+        }
+        for (ReflectionContributor c : ServiceLoader.load(ReflectionContributor.class, loader)) {
+            out.add(c);
+        }
+        out.sort(Comparator.comparing(c -> c.getClass().getName()));
+        return Collections.unmodifiableList(out);
+    }
 
     /**
-     * Reflective stub registration — the SPI escape hatch for external
-     * providers. Bundled providers leave this empty: their registrations
-     * come from the generated {@code META-INF/jvmdg/stubs/j<N>} resource
-     * (classpath enumeration at api-jar build time), replayed by {@link
-     * #replayRegisteredStubs} when the api jar is on the classpath.
-     * {@code init()} only runs when the generated list is absent — e.g. a
-     * dev classpath without generated resources — or for providers that
-     * genuinely need programmatic registration.
+     * Contributes every discovered {@link ReflectionContributor} to this
+     * provider's registry — runs inside {@link #ensureInit}'s window,
+     * before {@link #init()}. Override to add (or skip) pre-registration
+     * work; call {@code super.preInit()} to keep the contributor surface.
+     */
+    public void preInit() {
+        for (ReflectionContributor contributor : CONTRIBUTORS) {
+            contributor.contribute(this);
+        }
+    }
+
+    /**
+     * Reflective stub registration. Bundled providers carry a generated
+     * {@code init()} body (emitted into the api jar by {@code
+     * StubIndexWriter}'s classpath enumeration — every marker-annotated
+     * class under {@code jvmdg/j<N>/}); external providers override this
+     * as the SPI registration point. Runs only on the scan path — when
+     * {@code stubs.idx} loads, registration comes from the index.
      */
     public void init() {
+    }
+
+    /**
+     * Instantiates this boundary's {@link BoundaryTransform}s into
+     * {@link #boundaryTransforms} — runs at the end of {@link
+     * #ensureInit}'s window on both load paths, after the registry is
+     * complete and before the {@code order()}-keyed sort. Instantiation
+     * is deliberately NOT in {@code <init>}: providers are constructed
+     * inside {@link ClassDowngrader#collectProviders}'s ServiceLoader
+     * pass, where loading a transform class would re-enter a half-built
+     * downgrader; and inside the init window the class transforms
+     * against the finished registry. External providers may still
+     * ctor-populate the field — the sort below normalizes both — but
+     * any class that loads through the {@link
+     * xyz.wagyourtail.jvmdg.classloader.DowngradingClassLoader}
+     * (i.e. jvmdg-bundled transforms) must instantiate here.
+     */
+    public void registerBoundaryTransforms() {
+    }
+
+    /**
+     * The identity this provider serializes under in {@code stubs.idx}
+     * and the flattened per-provider resources — the runtime class name
+     * for real providers ({@code xyz.wagyourtail.jvmdg.providers.Java<N>Downgrader}),
+     * overridden at index-build time when the writer stands in generic
+     * instances for the generated classes it is about to emit.
+     */
+    public String providerKey() {
+        return getClass().getName();
     }
 
     public ClassMapping getStubMapper(final Type type, final Set<String> warnings) throws IOException {
@@ -609,10 +667,11 @@ public abstract class VersionProvider implements TypeRemap {
                             stubIndexLoaded = true;
                         } else {
                             preInit();
-                            // genStubIndex overrides the whole registration
-                            // step with its classpath enumeration — the idx
-                            // must be built from the enumeration regardless
-                            // of which resources a stale classpath carries
+                            // StubIndexWriter's stand-in providers have no
+                            // compiled init() — they register the classpath
+                            // enumeration here so the idx is built from the
+                            // same list ProviderGenerator bakes into the
+                            // emitted init() bodies
                             if (genStubClasses != null) {
                                 for (String fqcn : genStubClasses) {
                                     try {
@@ -621,11 +680,10 @@ public abstract class VersionProvider implements TypeRemap {
                                         throw new IOException("enumerated stub class not on classpath: " + fqcn, e);
                                     }
                                 }
-                            } else if (!replayRegisteredStubs()) {
-                                // the generated stub list replaces init()
-                                // when it exists; init() is the SPI
-                                // fallback for providers without one
-                                warnMissingGeneratedList();
+                            } else {
+                                // bundled providers' init() bodies are
+                                // generated; external providers' are the
+                                // SPI registration point
                                 init();
                             }
                             // OWN_INTERFACE forwarder registrations need the
@@ -646,7 +704,13 @@ public abstract class VersionProvider implements TypeRemap {
                         // gained-supertypes rows are provider-level resource
                         // data — the same resource feeds both load paths
                         DerivedGained.apply(catalog);
-                        loadBoundaryTransforms();
+                        // transform instantiation is deferred past registry
+                        // completion (and past collectProviders — see the
+                        // hook's javadoc); the sort normalizes hook-added
+                        // and ctor-added transforms identically on both
+                        // load paths
+                        registerBoundaryTransforms();
+                        boundaryTransforms.sort(Comparator.comparingInt(BoundaryTransform::order).thenComparing(t -> t.getClass().getName()));
                         afterInit();
                         initialized = true;
                     } catch (Throwable t) {
@@ -682,7 +746,7 @@ public abstract class VersionProvider implements TypeRemap {
         Enumeration<URL> resources = cl == null
             ? ClassLoader.getSystemResources(StubIndex.RESOURCE)
             : cl.getResources(StubIndex.RESOURCE);
-        String myName = getClass().getName();
+        String myName = providerKey();
         while (resources.hasMoreElements()) {
             try (DataInputStream in = new DataInputStream(new BufferedInputStream(Utils.openUncached(resources.nextElement())))) {
                 StubIndex.Header header = StubIndex.readHeader(in);
@@ -990,60 +1054,14 @@ public abstract class VersionProvider implements TypeRemap {
     /**
      * Ordered boundary transform units run by the fullest
      * {@link #otherTransforms} arity after the legacy arity chain — populated
-     * by {@link #loadBoundaryTransforms()} (ServiceLoader discovery) or
-     * directly by subclass constructors. Overriding {@code otherTransforms}
-     * at any arity remains the SPI escape hatch; the chain still delegates
-     * to identity.
+     * in the provider constructor (bundled providers' generated {@code
+     * <init>} adds the {@code jvmdg/j<N>/transform/} impls the classpath
+     * enumeration found at api-jar build time) and sorted at the end of
+     * {@link #ensureInit} by {@link BoundaryTransform#order()} then class
+     * name. Overriding {@code otherTransforms} at any arity remains the
+     * SPI escape hatch; the chain still delegates to identity.
      */
     public List<BoundaryTransform> boundaryTransforms = new ArrayList<>();
-
-    /**
-     * Resource-driven discovery of {@link BoundaryTransform} units — each
-     * {@code java<N>} source set ships
-     * {@code META-INF/jvmdg/transforms/j<N>} naming its transform classes
-     * (one FQCN per line); the provider whose {@link #inputVersion} maps to
-     * {@code j<N>} ({@code major - 44}) reads exactly that resource off its
-     * own classloader. Entries already present (subclass-registered) are
-     * kept and the merged list is sorted by {@link BoundaryTransform#order()}
-     * then class name so ordering stays identical under resource discovery
-     * and direct registration. External providers keep the escape hatches:
-     * populate {@link #boundaryTransforms} in the constructor or override
-     * {@code otherTransforms}.
-     */
-    protected void loadBoundaryTransforms() {
-        String resource = "META-INF/jvmdg/transforms/" + versionTag();
-        try {
-            ClassLoader cl = getClass().getClassLoader();
-            Enumeration<URL> resources = cl == null
-                ? ClassLoader.getSystemResources(resource)
-                : cl.getResources(resource);
-            while (resources.hasMoreElements()) {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(Utils.openUncached(resources.nextElement()), StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        line = line.trim();
-                        if (line.isEmpty() || line.startsWith("#")) {
-                            continue;
-                        }
-                        Class<?> type = Class.forName(line, false, getClass().getClassLoader());
-                        boolean present = false;
-                        for (BoundaryTransform t : boundaryTransforms) {
-                            if (t.getClass() == type) {
-                                present = true;
-                                break;
-                            }
-                        }
-                        if (!present) {
-                            boundaryTransforms.add(type.asSubclass(BoundaryTransform.class).getDeclaredConstructor().newInstance());
-                        }
-                    }
-                }
-            }
-        } catch (IOException | ReflectiveOperationException e) {
-            throw new IllegalStateException("failed to load boundary transforms from " + resource, e);
-        }
-        boundaryTransforms.sort(Comparator.comparingInt(BoundaryTransform::order).thenComparing(t -> t.getClass().getName()));
-    }
 
     /**
      * The {@code j<N>} tag naming this provider's version-scope — {@code j}
@@ -1054,63 +1072,6 @@ public abstract class VersionProvider implements TypeRemap {
      */
     public String versionTag() {
         return "j" + (Utils.majorClassVersion(inputVersion) - 44);
-    }
-
-    /**
-     * Replays the generated {@code META-INF/jvmdg/stubs/j<N>} resource —
-     * one stub-class FQCN per line, emitted by {@code StubIndexWriter} from
-     * the recorded {@code init()} registration order. Returns {@code true}
-     * when at least one resource exists on this classloader (the generated
-     * file then replaces {@code init()} entirely); {@code false} when none
-     * does (dev classpath without the generated api resources) so the
-     * caller falls back to the reflective {@link #init()}.
-     */
-    private boolean replayRegisteredStubs() throws IOException {
-        String resource = "META-INF/jvmdg/stubs/" + versionTag();
-        ClassLoader cl = getClass().getClassLoader();
-        Enumeration<URL> resources = cl == null
-            ? ClassLoader.getSystemResources(resource)
-            : cl.getResources(resource);
-        boolean found = false;
-        while (resources.hasMoreElements()) {
-            found = true;
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(Utils.openUncached(resources.nextElement()), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    line = line.trim();
-                    if (line.isEmpty() || line.startsWith("#")) {
-                        continue;
-                    }
-                    try {
-                        stub(Class.forName(line, false, cl));
-                    } catch (ClassNotFoundException e) {
-                        throw new IOException("generated stub list " + resource + " references missing class " + line, e);
-                    }
-                }
-            }
-        }
-        return found;
-    }
-
-    /**
-     * A bundled provider on a classpath carrying the generated {@code
-     * META-INF/jvmdg/providers} index should always find its {@code
-     * stubs/j<N>} list — absence means an incomplete api jar. External
-     * providers legitimately have no generated list, and a classpath
-     * without the index is a dev/source-set run — both stay silent.
-     */
-    private void warnMissingGeneratedList() throws IOException {
-        if (!getClass().getName().startsWith("xyz.wagyourtail.jvmdg.providers.")) {
-            return;
-        }
-        ClassLoader cl = getClass().getClassLoader();
-        Enumeration<URL> res = cl == null
-            ? ClassLoader.getSystemResources("META-INF/jvmdg/providers")
-            : cl.getResources("META-INF/jvmdg/providers");
-        if (res.hasMoreElements()) {
-            logger.warn("bundled provider " + getClass().getName() + " found no META-INF/jvmdg/stubs/"
-                + versionTag() + " resource — the api jar is incomplete; registering nothing");
-        }
     }
 
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {

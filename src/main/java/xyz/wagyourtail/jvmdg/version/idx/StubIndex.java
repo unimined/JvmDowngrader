@@ -121,7 +121,7 @@ public class StubIndex {
     /** serialize the given providers' registries; providers are emitted sorted by class name */
     public static void write(Path out, String jvmdgVersion, List<VersionProvider> providers) throws IOException {
         List<VersionProvider> sorted = new ArrayList<>(providers);
-        sorted.sort(Comparator.comparing(p -> p.getClass().getName()));
+        sorted.sort(Comparator.comparing(VersionProvider::providerKey));
         if (out.getParent() != null) Files.createDirectories(out.getParent());
         DataOutputStream o = new DataOutputStream(new BufferedOutputStream(Files.newOutputStream(out)));
         try {
@@ -138,7 +138,7 @@ public class StubIndex {
     }
 
     private static void writeProvider(DataOutputStream o, VersionProvider vp) throws IOException {
-        o.writeUTF(vp.getClass().getName());
+        o.writeUTF(vp.providerKey());
         List<Map.Entry<Type, ClassStubEntry>> stubs = new ArrayList<>(vp.classStubs.entrySet());
         stubs.sort(Comparator.comparing(e -> e.getKey().getInternalName()));
         o.writeShort(stubs.size());

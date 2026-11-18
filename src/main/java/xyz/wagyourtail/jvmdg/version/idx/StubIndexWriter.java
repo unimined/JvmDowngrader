@@ -1,10 +1,7 @@
 package xyz.wagyourtail.jvmdg.version.idx;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,7 +20,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -40,6 +36,7 @@ import org.objectweb.asm.tree.MethodNode;
 
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
 import xyz.wagyourtail.jvmdg.cli.Flags;
+import xyz.wagyourtail.jvmdg.version.BoundaryTransform;
 import xyz.wagyourtail.jvmdg.version.StubScanner;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.gen.ApiGenerator;
@@ -47,6 +44,7 @@ import xyz.wagyourtail.jvmdg.version.gen.GainedDispatchGenerator;
 import xyz.wagyourtail.jvmdg.version.gen.GenContext;
 import xyz.wagyourtail.jvmdg.version.gen.MarkerGenerator;
 import xyz.wagyourtail.jvmdg.version.gen.MemberForwarderGenerator;
+import xyz.wagyourtail.jvmdg.version.gen.ProviderGenerator;
 import xyz.wagyourtail.jvmdg.version.gen.RetroDispatchGenerator;
 import xyz.wagyourtail.jvmdg.version.map.ClassStubEntry;
 import xyz.wagyourtail.jvmdg.version.map.CtorEntry;
@@ -62,11 +60,13 @@ import xyz.wagyourtail.jvmdg.version.map.StubRegistry;
 import xyz.wagyourtail.jvmdg.util.Utils;
 
 /**
- * Build-time entry point that writes {@code META-INF/jvmdg/stubs.idx}: runs
- * every {@link VersionProvider} found by {@link ServiceLoader} through
- * {@link VersionProvider#ensureInit} — the same reflective scan the runtime
- * uses, so the index is parity-by-construction — then serializes the
- * resulting registries via {@link StubIndex}.
+ * Build-time entry point that writes {@code META-INF/jvmdg/stubs.idx}:
+ * constructs the bundled provider boundaries from the {@code providers-csv}
+ * arg (the build's version table — the {@code Java<N>Downgrader} classes are
+ * emitted by {@link ProviderGenerator}, they don't exist on this classpath
+ * yet), runs each through {@link VersionProvider#ensureInit} — the same
+ * reflective scan the runtime uses, so the index is parity-by-construction —
+ * then serializes the resulting registries via {@link StubIndex}.
  *
  * <p>Usage: {@code StubIndexWriter <output-file> <jvmdg-version> <ct.sym> [<retrotypes-file>]}.
  * The output file should be packaged into the api jar at {@link StubIndex#RESOURCE}. The
@@ -86,23 +86,63 @@ import xyz.wagyourtail.jvmdg.util.Utils;
 public class StubIndexWriter {
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 3 || args.length > 12) {
-            throw new IllegalArgumentException("usage: StubIndexWriter <output-file> <jvmdg-version> <ct.sym> [<retrotypes-file> [<gen-classes-dir> [<excludes-file> [<wraps-file> [<gen-src-dir> [<gained-file> [<gained-calls-file> [<reflection-file> [<member-since-file>]]]]]]]]]");
+        if (args.length < 13 || args.length > 13) {
+            throw new IllegalArgumentException("usage: StubIndexWriter <output-file> <jvmdg-version> <ct.sym> [<retrotypes-file> [<gen-classes-dir> [<excludes-file> [<wraps-file> [<gen-src-dir> [<gained-file> [<gained-calls-file> [<reflection-file> [<member-since-file> [<providers-csv>]]]]]]]]]]");
         }
         Path out = Paths.get(args[0]);
         Path ctSym = Paths.get(args[2]);
+        // the bundled provider boundaries — args[12] is a CSV of the j<N>
+        // numbers (input class major - 44) the build supports providers
+        // for; each becomes a generated Java<N>Downgrader in the api jar
         List<VersionProvider> providers = new ArrayList<>();
-        for (VersionProvider vp : ServiceLoader.load(VersionProvider.class)) {
-            providers.add(vp);
+        for (String token : args[12].split(",")) {
+            int n = Integer.parseInt(token.trim());
+            providers.add(new GenProvider(44 + n, 43 + n, 0,
+                "xyz.wagyourtail.jvmdg.providers.Java" + n + "Downgrader"));
         }
         ClassDowngrader downgrader = ClassDowngrader.downgradeTo(new Flags());
-        StubClassEnumerator.Result scanned = StubClassEnumerator.enumerate(StubScanner.markerAnnotationDescriptors());
-        Map<String, Set<String>> dormant = readDormant();
         for (VersionProvider vp : providers) {
+            downgrader.addProvider(vp);
+        }
+        StubClassEnumerator.Result scanned = StubClassEnumerator.enumerate(StubScanner.markerAnnotationDescriptors());
+        ClassLoader cl = StubIndexWriter.class.getClassLoader();
+        // a discovered j<N> scope with no provider arg means the version
+        // table and the source sets disagree — fail rather than silently
+        // drop every stub in that scope from the emitted jar
+        Set<String> providerTags = new TreeSet<>();
+        for (VersionProvider vp : providers) {
+            providerTags.add(vp.versionTag());
+        }
+        for (String tag : scanned.stubClasses.keySet()) {
+            if (!providerTags.contains(tag)) {
+                throw new IllegalStateException("jvmdg/" + tag + "/ stub classes found but no provider boundary declares tag " + tag);
+            }
+        }
+        for (String tag : scanned.transforms.keySet()) {
+            if (!providerTags.contains(tag)) {
+                throw new IllegalStateException("jvmdg/" + tag + "/ transform classes found but no provider boundary declares tag " + tag);
+            }
+        }
+        for (VersionProvider vp : providers) {
+            String tag = vp.versionTag();
             // registration must happen inside ensureInit's window —
             // AdapterForwarders + the derived-resource loaders run on the
-            // completed registry before it returns
-            vp.genStubClasses = new ArrayList<>(emittedStubClasses(vp.versionTag(), scanned, dormant));
+            // completed registry before it returns. The enumerated list is
+            // also what the generated init() body replays — every marker
+            // class under jvmdg/j<N>/ registers, so authoring the marker
+            // IS opting in (keep a class dormant by not annotating it).
+            Set<String> discovered = scanned.stubClasses.get(tag);
+            vp.genStubClasses = new ArrayList<>(discovered == null ? Collections.<String>emptySet() : discovered);
+            Set<String> transforms = scanned.transforms.get(tag);
+            if (transforms != null) {
+                for (String fqcn : transforms) {
+                    try {
+                        vp.boundaryTransforms.add(Class.forName(fqcn, false, cl).asSubclass(BoundaryTransform.class).getDeclaredConstructor().newInstance());
+                    } catch (ReflectiveOperationException e) {
+                        throw new IllegalStateException("transform class " + fqcn + " is not instantiable — generated providers need a public no-arg ctor", e);
+                    }
+                }
+            }
             vp.ensureInit(downgrader);
         }
         populateMemberSince(ctSym, providers);
@@ -130,6 +170,8 @@ public class StubIndexWriter {
             new RetroDispatchGenerator().generate(gen);
             new GainedDispatchGenerator().generate(gen);
             new MemberForwarderGenerator().generate(gen);
+            new ProviderGenerator().generate(gen);
+            writeVersionProviderService(Paths.get(args[4]), providers);
         }
         if (args.length > 5) {
             writeExcludes(Paths.get(args[5]), derived);
@@ -149,148 +191,51 @@ public class StubIndexWriter {
         if (args.length > 11) {
             writeMemberSince(Paths.get(args[11]), providers);
         }
-        if (args.length > 4) {
-            writeProviderConfig(Paths.get(args[4]).resolve("META-INF/jvmdg"), providers, scanned, dormant);
-        }
     }
 
     /**
-     * {@code META-INF/jvmdg/providers} — {@code provider-fqcn<TAB>input-version
-     * <TAB>output-version<TAB>priority} rows (class-name sorted) — and
-     * {@code META-INF/jvmdg/stubs/j<N>} per provider: every marker-bearing
-     * class the classpath enumeration found under {@code jvmdg/j<N>/},
-     * minus the authored {@code dormant-stubs} exclusions, name-sorted.
-     * The stubs resource is what {@link VersionProvider}'s scan path
-     * replays instead of running {@code init()} reflectively;
-     * {@code providers} is the boundary metadata a generated provider
-     * class would consume.
-     *
-     * <p>The gate keeps registration drift impossible: a
-     * {@code dormant-stubs} row naming a class that no longer carries
-     * markers fails the build (stale exclusion), as does a
-     * {@code transforms/j<N>} resource out of sync with the discovered
-     * {@code BoundaryTransform} impls.</p>
+     * The index-build stand-in for the {@code Java<N>Downgrader} classes
+     * {@link ProviderGenerator} emits — carries the same version triple and
+     * reports the generated class's name as its {@link #providerKey()} so
+     * the idx and flattened resources key on the name the runtime class
+     * will actually have. Registration comes from {@link #genStubClasses}
+     * (the classpath enumeration), the same list the emitted {@code init()}
+     * replays.
      */
-    /**
-     * The class list {@code META-INF/jvmdg/stubs/j<N>} replays: every
-     * marker-bearing class the enumeration found under {@code jvmdg/j<N>/}
-     * minus the authored {@code dormant-stubs} exclusions. Nested marker
-     * classes are listed directly — {@code stub()} on a nested class
-     * registers the same members {@code init()}'s anchor recursion did.
-     */
-    private static Set<String> emittedStubClasses(String tag, StubClassEnumerator.Result scanned, Map<String, Set<String>> dormant) {
-        Set<String> emitted = new TreeSet<>();
-        Set<String> discovered = scanned.stubClasses.get(tag);
-        if (discovered != null) {
-            emitted.addAll(discovered);
+    private static final class GenProvider extends VersionProvider {
+
+        private final String key;
+
+        GenProvider(int inputVersion, int outputVersion, int priority, String key) {
+            super(inputVersion, outputVersion, priority);
+            this.key = key;
         }
-        Set<String> excluded = dormant.get(tag);
-        if (excluded != null) {
-            emitted.removeAll(excluded);
+
+        @Override
+        public String providerKey() {
+            return key;
         }
-        return emitted;
+
     }
 
     /**
-     * Reads the authored {@code META-INF/jvmdg/dormant-stubs} resource —
-     * {@code tag<TAB>fqcn} rows naming marker classes deliberately left
-     * unregistered (dormant stubs pending coverage). Deliberate exclusion
-     * is what keeps "add a class to j<N> and forget to register it"
-     * impossible: the enumeration emits every marker class not listed here.
+     * {@code META-INF/services/xyz.wagyourtail.jvmdg.version.VersionProvider}
+     * — the ServiceLoader list naming every generated provider class, one
+     * FQCN per line, class-name sorted.
      */
-    private static Map<String, Set<String>> readDormant() throws IOException {
-        Map<String, Set<String>> dormant = new TreeMap<>();
-        ClassLoader cl = StubIndexWriter.class.getClassLoader();
-        if (cl == null) {
-            cl = ClassLoader.getSystemClassLoader();
+    private static void writeVersionProviderService(Path jarRoot, List<VersionProvider> providers) throws IOException {
+        List<String> names = new ArrayList<>();
+        for (VersionProvider vp : providers) {
+            names.add(vp.providerKey());
         }
-        Enumeration<URL> resources = cl.getResources("META-INF/jvmdg/dormant-stubs");
-        while (resources.hasMoreElements()) {
-            URL url = resources.nextElement();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(Utils.openUncached(url), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    line = line.trim();
-                    if (line.isEmpty() || line.startsWith("#")) {
-                        continue;
-                    }
-                    String[] parts = line.split("\t");
-                    if (parts.length != 2) {
-                        throw new IllegalStateException("malformed dormant-stubs row in " + url + ": " + line);
-                    }
-                    dormant.computeIfAbsent(parts[0], k -> new TreeSet<>()).add(parts[1]);
-                }
-            }
+        Collections.sort(names);
+        StringBuilder sb = new StringBuilder();
+        for (String name : names) {
+            sb.append(name).append('\n');
         }
-        return dormant;
-    }
-
-    private static void writeProviderConfig(Path dir, List<VersionProvider> providers, StubClassEnumerator.Result scanned, Map<String, Set<String>> dormant) throws IOException {
-        List<String> parityErrors = new ArrayList<>();
-        List<VersionProvider> sorted = new ArrayList<>(providers);
-        sorted.sort(Comparator.comparing(p -> p.getClass().getName()));
-        StringBuilder providersSb = new StringBuilder();
-        providersSb.append("# provider-fqcn\tinput-version\toutput-version\tpriority\n");
-        Path stubsDir = dir.resolve("stubs");
-        for (VersionProvider vp : sorted) {
-            providersSb.append(vp.getClass().getName()).append('\t')
-                .append(vp.inputVersion).append('\t')
-                .append(vp.outputVersion).append('\t')
-                .append(vp.priotity).append('\n');
-            String tag = vp.versionTag();
-            Set<String> discovered = scanned.stubClasses.get(tag);
-            if (discovered == null) {
-                discovered = Collections.emptySet();
-            }
-            // authored exclusions must stay live — a dormant row naming a
-            // class that no longer carries markers silently re-activates
-            // the stub on the next rename/refactor without this check
-            for (String excluded : dormant.getOrDefault(tag, Collections.<String>emptySet())) {
-                if (!discovered.contains(excluded)) {
-                    parityErrors.add(tag + " dormant-stubs entry is not a marker-bearing class under jvmdg/" + tag + "/: " + excluded);
-                }
-            }
-            // transforms: the resource-loaded boundaryTransforms (populated
-            // by ensureInit → transforms/j<N>) must equal the classpath-
-            // discovered impls — a transform class missing from the
-            // resource silently never runs, a stale entry fails discovery
-            Set<String> loadedTransforms = new TreeSet<>();
-            for (xyz.wagyourtail.jvmdg.version.BoundaryTransform t : vp.boundaryTransforms) {
-                loadedTransforms.add(t.getClass().getName());
-            }
-            Set<String> discoveredTransforms = scanned.transforms.get(tag);
-            if (discoveredTransforms == null) {
-                discoveredTransforms = Collections.emptySet();
-            }
-            for (String name : loadedTransforms) {
-                if (!discoveredTransforms.contains(name)) {
-                    parityErrors.add(tag + " transform loaded but no class under jvmdg/" + tag + "/: " + name);
-                }
-            }
-            for (String name : discoveredTransforms) {
-                if (!loadedTransforms.contains(name)) {
-                    parityErrors.add(tag + " transform class not in transforms/" + tag + " resource: " + name);
-                }
-            }
-            Set<String> emitted = emittedStubClasses(tag, scanned, dormant);
-            StringBuilder sb = new StringBuilder();
-            for (String name : emitted) {
-                sb.append(name).append('\n');
-            }
-            Files.createDirectories(stubsDir);
-            // written even when empty — file presence is the "this
-            // provider's replay list is complete" signal the missing-
-            // resource warning keys on
-            Files.write(stubsDir.resolve(tag), sb.toString().getBytes(StandardCharsets.UTF_8));
-        }
-        if (!parityErrors.isEmpty()) {
-            StringBuilder sb = new StringBuilder("stub-class enumeration parity failed:\n");
-            for (String e : parityErrors) {
-                sb.append("  ").append(e).append('\n');
-            }
-            throw new IllegalStateException(sb.toString());
-        }
-        Files.write(dir.resolve("providers"), providersSb.toString().getBytes(StandardCharsets.UTF_8));
+        Path services = jarRoot.resolve("META-INF/services");
+        Files.createDirectories(services);
+        Files.write(services.resolve("xyz.wagyourtail.jvmdg.version.VersionProvider"), sb.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -303,7 +248,7 @@ public class StubIndexWriter {
         StringBuilder sb = new StringBuilder();
         for (VersionProvider vp : providers) {
             for (Map.Entry<FullyQualifiedMemberNameAndDesc, Integer> e : vp.stubRegistry.memberSince.entrySet()) {
-                sb.append(vp.getClass().getName()).append('\t')
+                sb.append(vp.providerKey()).append('\t')
                     .append(e.getKey().toString()).append('\t')
                     .append(e.getValue()).append('\n');
             }
@@ -812,7 +757,7 @@ public class StubIndexWriter {
             // union adds it back), or a stale annotation to revisit.
             for (Map.Entry<String, Set<String>> e : manualOnly.entrySet()) {
                 System.out.println("[StubIndexWriter] excludeChild not derivable on " +
-                    vp.getClass().getSimpleName() + " " + e.getKey() + ": " + e.getValue());
+                    vp.providerKey() + " " + e.getKey() + ": " + e.getValue());
             }
         }
         return derived;
@@ -1537,7 +1482,7 @@ public class StubIndexWriter {
     private static void writeExcludes(Path out, Map<VersionProvider, Map<String, Set<String>>> derived) throws IOException {
         Map<String, Map<String, Set<String>>> sorted = new TreeMap<>();
         for (Map.Entry<VersionProvider, Map<String, Set<String>>> e : derived.entrySet()) {
-            sorted.put(e.getKey().getClass().getName(), new TreeMap<>(e.getValue()));
+            sorted.put(e.getKey().providerKey(), new TreeMap<>(e.getValue()));
         }
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, Map<String, Set<String>>> p : sorted.entrySet()) {
