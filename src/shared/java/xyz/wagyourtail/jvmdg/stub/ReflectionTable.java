@@ -1360,7 +1360,8 @@ public final class ReflectionTable {
         return 'V';
     }
 
-    private static Class<?> primClass(char c) {
+    /** primitive letter → class; shared with {@link RetroTypes}' literal descriptor parser */
+    static Class<?> primClass(char c) {
         switch (c) {
             case 'Z': return boolean.class;
             case 'B': return byte.class;

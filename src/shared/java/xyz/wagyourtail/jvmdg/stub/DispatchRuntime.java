@@ -264,28 +264,8 @@ public final class DispatchRuntime {
         int sp = implSig.indexOf(' ');
         String name = implSig.substring(0, sp);
         String desc = implSig.substring(sp + 1);
-        ClassLoader cl = implOwner.getClassLoader();
-        java.lang.reflect.Method m = null;
-        try {
-            m = implOwner.getDeclaredMethod(name, RetroTypes.paramClasses(desc, cl));
-        } catch (Throwable ignore) {
-        }
-        if (m == null) {
-            String prefixed = RetroTypes.apiPrefixed(desc, implOwner);
-            if (!prefixed.equals(desc)) {
-                try {
-                    m = implOwner.getDeclaredMethod(name, RetroTypes.paramClasses(prefixed, cl));
-                } catch (Throwable ignore) {
-                }
-            }
-        }
-        if (m == null) {
-            try {
-                m = implOwner.getDeclaredMethod(name,
-                    ReflectionTable.paramClasses(desc, implOwner.getClassLoader()));
-            } catch (Throwable ignore) {
-            }
-        }
+        java.lang.reflect.Method m = RetroTypes.resolveDeclared(implOwner, name, desc,
+            implOwner.getClassLoader());
         if (m != null) {
             try {
                 m.setAccessible(true);

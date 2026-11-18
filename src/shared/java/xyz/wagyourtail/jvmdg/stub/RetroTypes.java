@@ -747,9 +747,44 @@ public final class RetroTypes {
     }
 
     /**
-     * {@code owner.name(desc)} → the declared impl {@link java.lang.reflect.Method}
-     * — literal descriptor first, shade-prefixed second, stand-in-mapped
-     * last (identical to {@link #invokeStub}'s resolution order).
+     * Resolve a declared member on {@code owner} across the api jar's
+     * packaging forms — literal descriptor first (unshaded jars keep api
+     * names verbatim), shade-prefixed second (api types relocated under the
+     * run's prefix, derived from {@code owner}'s loaded name), stand-in-mapped
+     * last (a downgraded jar rewrites types missing on this runtime).
+     * Null on no match — callers choose between surfacing the failure and
+     * falling through.
+     */
+    static java.lang.reflect.Method resolveDeclared(Class<?> owner, String name, String desc,
+                                                    ClassLoader cl) {
+        java.lang.reflect.Method m = null;
+        try {
+            m = owner.getDeclaredMethod(name, paramClasses(desc, cl));
+        } catch (Throwable literal) {
+        }
+        if (m == null) {
+            String prefixed = apiPrefixed(desc, owner);
+            if (!prefixed.equals(desc)) {
+                try {
+                    m = owner.getDeclaredMethod(name, paramClasses(prefixed, cl));
+                } catch (Throwable shaded) {
+                }
+            }
+        }
+        if (m == null) {
+            try {
+                m = owner.getDeclaredMethod(name,
+                    ReflectionTable.paramClasses(desc, owner.getClassLoader()));
+            } catch (Throwable standin) {
+            }
+        }
+        return m;
+    }
+
+    /**
+     * {@code owner.name(desc)} → the declared impl {@link java.lang.reflect.Method},
+     * resolved by {@link #resolveDeclared}; a total miss surfaces the stand-in
+     * form's own lookup failure.
      */
     private static java.lang.reflect.Method resolveStubMethod(String site, ClassLoader cl)
         throws ClassNotFoundException, NoSuchMethodException {
@@ -759,21 +794,9 @@ public final class RetroTypes {
         String name = site.substring(dot + 1, p);
         String desc = site.substring(p);
         Class<?> s = Class.forName(owner.replace('/', '.'), true, cl);
-        java.lang.reflect.Method m = null;
-        try {
-            m = s.getDeclaredMethod(name, paramClasses(desc, cl));
-        } catch (Throwable literal) {
-        }
+        java.lang.reflect.Method m = resolveDeclared(s, name, desc, cl);
         if (m == null) {
-            String prefixed = apiPrefixed(desc, s);
-            if (!prefixed.equals(desc)) {
-                try {
-                    m = s.getDeclaredMethod(name, paramClasses(prefixed, cl));
-                } catch (Throwable shaded) {
-                }
-            }
-        }
-        if (m == null) {
+            // re-run the stand-in form uncaught — its exception is the report
             m = s.getDeclaredMethod(name,
                 ReflectionTable.paramClasses(desc, s.getClassLoader()));
         }
@@ -886,38 +909,7 @@ public final class RetroTypes {
 
     /** invoke a self-first static stub site {@code owner.name(desc)} — api classes resolve in the caller's loader */
     static Object invokeStub(String site, Object self, Object[] args, ClassLoader cl) throws Throwable {
-        int p = site.indexOf('(');
-        int dot = site.lastIndexOf('.', p);
-        String owner = site.substring(0, dot);
-        String name = site.substring(dot + 1, p);
-        String desc = site.substring(p);
-        Class<?> s = Class.forName(owner.replace('/', '.'), true, cl);
-        // the api jar's declared signature differs per packaging: literal
-        // first (unshaded jars keep api names verbatim), then shade-prefixed
-        // (api types relocated under the run's prefix), then stand-in-mapped
-        // (a downgraded jar rewrites types missing on this runtime)
-        java.lang.reflect.Method m = null;
-        try {
-            m = s.getDeclaredMethod(name, paramClasses(desc, cl));
-        } catch (Throwable literal) {
-        }
-        if (m == null) {
-            String prefixed = apiPrefixed(desc, s);
-            if (!prefixed.equals(desc)) {
-                try {
-                    m = s.getDeclaredMethod(name, paramClasses(prefixed, cl));
-                } catch (Throwable shaded) {
-                }
-            }
-        }
-        if (m == null) {
-            m = s.getDeclaredMethod(name,
-                ReflectionTable.paramClasses(desc, s.getClassLoader()));
-        }
-        try {
-            m.setAccessible(true);
-        } catch (RuntimeException e) {
-        }
+        java.lang.reflect.Method m = resolveStubMethod(site, cl);
         Object[] callArgs = new Object[args.length + 1];
         callArgs[0] = self;
         System.arraycopy(args, 0, callArgs, 1, args.length);
@@ -929,14 +921,14 @@ public final class RetroTypes {
         List<Class<?>> out = new ArrayList<>();
         for (int i = 1; desc.charAt(i) != ')'; i++) {
             switch (desc.charAt(i)) {
-                case 'Z': out.add(boolean.class); break;
-                case 'B': out.add(byte.class); break;
-                case 'C': out.add(char.class); break;
-                case 'S': out.add(short.class); break;
-                case 'I': out.add(int.class); break;
-                case 'J': out.add(long.class); break;
-                case 'F': out.add(float.class); break;
-                case 'D': out.add(double.class); break;
+                case 'Z':
+                case 'B':
+                case 'C':
+                case 'S':
+                case 'I':
+                case 'J':
+                case 'F':
+                case 'D': out.add(ReflectionTable.primClass(desc.charAt(i))); break;
                 case '[': {
                     int j = i;
                     while (desc.charAt(j) == '[') j++;
