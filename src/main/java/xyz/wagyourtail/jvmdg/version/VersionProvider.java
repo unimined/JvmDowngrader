@@ -159,7 +159,18 @@ public abstract class VersionProvider implements TypeRemap {
 
     public abstract void preInit();
 
-    public abstract void init();
+    /**
+     * Reflective stub registration — the SPI escape hatch for external
+     * providers. Bundled providers leave this empty: their registrations
+     * come from the generated {@code META-INF/jvmdg/stubs/j<N>} resource
+     * (classpath enumeration at api-jar build time), replayed by {@link
+     * #replayRegisteredStubs} when the api jar is on the classpath.
+     * {@code init()} only runs when the generated list is absent — e.g. a
+     * dev classpath without generated resources — or for providers that
+     * genuinely need programmatic registration.
+     */
+    public void init() {
+    }
 
     public ClassMapping getStubMapper(final Type type, final Set<String> warnings) throws IOException {
         return getStubMapper(type, new IOSupplier<Boolean>() {
@@ -211,20 +222,16 @@ public abstract class VersionProvider implements TypeRemap {
     }
 
     /**
-     * True while the reflective {@code init()} body is running — {@link
-     * #stub(Class)} calls made inside it are journaled to {@link
-     * StubCatalog#initRegistrations} so the build can emit the exact class
-     * list {@code META-INF/jvmdg/stubs/j<N>} replays later. Calls outside
-     * {@code init()} ({@code preInit} contributors, adapters, SPI users) are
-     * intentionally not recorded — the generated list replaces {@code
-     * init()}, not the contributor layer.
+     * Gen-time registration seam — {@code StubIndexWriter} sets the
+     * enumerated stub-class list before {@link #ensureInit} so
+     * registration happens inside the init window, ahead of
+     * {@code AdapterForwarders.registerAll} and the derived-resource
+     * loaders that consume the completed registry. Null in every other
+     * context — not SPI.
      */
-    boolean recordingInit;
+    public List<String> genStubClasses;
 
     public void stub(Class<?> clazz) {
-        if (recordingInit) {
-            catalog.initRegistrations.add(clazz.getName());
-        }
         new StubScanner(this).scan(clazz);
     }
 
@@ -602,16 +609,24 @@ public abstract class VersionProvider implements TypeRemap {
                             stubIndexLoaded = true;
                         } else {
                             preInit();
-                            // the generated stub list replaces init() when
-                            // it exists; the recorded-registration journal
-                            // only runs on the fallback reflective path
-                            if (!replayRegisteredStubs()) {
-                                recordingInit = true;
-                                try {
-                                    init();
-                                } finally {
-                                    recordingInit = false;
+                            // genStubIndex overrides the whole registration
+                            // step with its classpath enumeration — the idx
+                            // must be built from the enumeration regardless
+                            // of which resources a stale classpath carries
+                            if (genStubClasses != null) {
+                                for (String fqcn : genStubClasses) {
+                                    try {
+                                        stub(Class.forName(fqcn, false, getClass().getClassLoader()));
+                                    } catch (ClassNotFoundException e) {
+                                        throw new IOException("enumerated stub class not on classpath: " + fqcn, e);
+                                    }
                                 }
+                            } else if (!replayRegisteredStubs()) {
+                                // the generated stub list replaces init()
+                                // when it exists; init() is the SPI
+                                // fallback for providers without one
+                                warnMissingGeneratedList();
+                                init();
                             }
                             // OWN_INTERFACE forwarder registrations need the
                             // complete adapterImpls picture — a descendant
@@ -1075,6 +1090,27 @@ public abstract class VersionProvider implements TypeRemap {
             }
         }
         return found;
+    }
+
+    /**
+     * A bundled provider on a classpath carrying the generated {@code
+     * META-INF/jvmdg/providers} index should always find its {@code
+     * stubs/j<N>} list — absence means an incomplete api jar. External
+     * providers legitimately have no generated list, and a classpath
+     * without the index is a dev/source-set run — both stay silent.
+     */
+    private void warnMissingGeneratedList() throws IOException {
+        if (!getClass().getName().startsWith("xyz.wagyourtail.jvmdg.providers.")) {
+            return;
+        }
+        ClassLoader cl = getClass().getClassLoader();
+        Enumeration<URL> res = cl == null
+            ? ClassLoader.getSystemResources("META-INF/jvmdg/providers")
+            : cl.getResources("META-INF/jvmdg/providers");
+        if (res.hasMoreElements()) {
+            logger.warn("bundled provider " + getClass().getName() + " found no META-INF/jvmdg/stubs/"
+                + versionTag() + " resource — the api jar is incomplete; registering nothing");
+        }
     }
 
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {

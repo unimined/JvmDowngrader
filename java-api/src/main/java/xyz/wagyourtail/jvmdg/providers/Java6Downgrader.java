@@ -17,9 +17,4 @@ public class Java6Downgrader extends AllVersionDowngrader {
         super.ensureInit(downgrader);
     }
 
-    @Override
-    public void init() {
-
-    }
-
 }

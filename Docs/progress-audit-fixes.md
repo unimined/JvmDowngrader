@@ -117,4 +117,22 @@ Stray `gradlew-lf` add+remove pair sits in main history (`8b7da737` +
   before registering; E5 datagen must decide anchors-only vs
   anchors+dormant replay); transforms/j<N> generation replacing the
   handwritten files still open.
-- [ ] E5 delete init() bodies; optional generated provider classes
+- [x] E5 enumeration-driven registration — all 22 provider `init()`
+  bodies deleted (providers are ctor-only classes now); `init()` is a
+  concrete no-op SPI fallback on VersionProvider. `stubs/j<N>` emits
+  `discovered markers − dormant-stubs` name-sorted (nested marker
+  classes listed directly — identical registry to anchor recursion;
+  marker-less anchors dropped). `dormant-stubs` flipped to an authored
+  input resource (java-api/src/main/resources) — exclusion is explicit,
+  a stale row fails the build, and adding a stub class to `j<N>`
+  auto-registers it (forgotten-registration bug class closed).
+  `genStubClasses` is the gen-time seam: the writer sets each provider's
+  enumerated list before ensureInit so registration lands INSIDE the
+  init window — a post-hoc `vp.stub()` top-up missed
+  AdapterForwarders/DerivedExclusions/DerivedMemberSince/DerivedGained
+  and produced a corrupt idx (StubParityTests caught it:
+  IncompatibleClassChangeError on j11 `Collections.shuffle` + stale
+  memberSince profiles). `replayRegisteredStubs`-false + bundled
+  provider + `providers` resource present → missing-list warn.
+  Registration-order note: emitted lists are name-sorted vs init()'s
+  call order — registry result verified identical by the matrix.

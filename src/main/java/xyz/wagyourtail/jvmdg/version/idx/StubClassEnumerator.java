@@ -3,7 +3,6 @@ package xyz.wagyourtail.jvmdg.version.idx;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.MethodNode;
 
 import java.io.File;
@@ -16,7 +15,6 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,17 +37,15 @@ import java.util.jar.JarFile;
  *   <li><b>boundary transform</b> — directly implements {@code
  *   BoundaryTransform}</li>
  * </ul>
- * Nested classes matter in both directions: {@link
- * xyz.wagyourtail.jvmdg.version.StubScanner#scan} recurses into
- * {@code getDeclaredClasses()}, so an {@code init()} anchor covers its
- * whole inner-class closure — {@link #outerOf} records each class's
- * enclosing class (its own {@code InnerClasses} entry) so callers can
- * walk a marker class's ancestor chain to its anchor.
+ * Nested marker classes are reported individually — registering each
+ * directly via {@code stub()} is equivalent to {@code init()}'s old
+ * anchor + {@code getDeclaredClasses()} recursion, minus the marker-less
+ * anchor entries that contributed nothing.
  * <p>
  * The {@code j<N>} path segment is the provider tag ({@link
- * xyz.wagyourtail.jvmdg.version.VersionProvider#versionTag}); provider
- * init() bodies never register cross-package classes, so the tag mapping
- * is complete. Shared {@code jvmdg.stub.all} contributor classes live
+ * xyz.wagyourtail.jvmdg.version.VersionProvider#versionTag}); providers
+ * never registered cross-package classes, so the tag mapping is
+ * complete. Shared {@code jvmdg.stub.all} contributor classes live
  * outside {@code j<N>} and are intentionally not tagged — {@code preInit}
  * still owns them on both load paths.
  */
@@ -63,8 +59,6 @@ public class StubClassEnumerator {
         public final Map<String, Set<String>> stubClasses = new TreeMap<>();
         /** tag ({@code j<N>}) -&gt; FQCNs of BoundaryTransform impls */
         public final Map<String, Set<String>> transforms = new TreeMap<>();
-        /** internal name -&gt; enclosing internal name (InnerClasses attribute) */
-        public final Map<String, String> outerOf = new HashMap<>();
     }
 
     public static Result enumerate(Set<String> markerDescriptors) throws IOException {
@@ -123,13 +117,6 @@ public class StubClassEnumerator {
         ClassNode node = new ClassNode();
         new ClassReader(in).accept(node, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
         String fqcn = internalName.replace('/', '.');
-        if (node.innerClasses != null) {
-            for (InnerClassNode inner : node.innerClasses) {
-                if (internalName.equals(inner.name) && inner.outerName != null) {
-                    result.outerOf.put(internalName, inner.outerName);
-                }
-            }
-        }
         if (node.interfaces != null && node.interfaces.contains(TRANSFORM)) {
             result.transforms.computeIfAbsent(tag, k -> new TreeSet<String>()).add(fqcn);
             return;
@@ -167,27 +154,6 @@ public class StubClassEnumerator {
             if (markerDescriptors.contains(a.desc)) {
                 return true;
             }
-        }
-        return false;
-    }
-
-    /**
-     * {@code marker} (a FQCN) is covered by {@code anchors} iff the marker
-     * itself or any enclosing class in its {@code InnerClasses} chain is an
-     * anchor — {@code StubScanner#scan}'s inner-class recursion means the
-     * anchor's registration reaches the marker.
-     */
-    public static boolean covered(Set<String> anchors, String marker, Map<String, String> outerOf) {
-        String cur = marker.replace('.', '/');
-        while (cur != null) {
-            if (anchors.contains(cur.replace('/', '.'))) {
-                return true;
-            }
-            String outer = outerOf.get(cur);
-            if (outer == null || outer.equals(cur)) {
-                break;
-            }
-            cur = outer;
         }
         return false;
     }
