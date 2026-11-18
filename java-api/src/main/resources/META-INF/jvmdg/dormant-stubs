@@ -4,15 +4,3 @@
 # it. Keep entries only while a stub's activation needs work (missing
 # test coverage, incomplete impl) — each row must still name a real
 # marker-bearing class under its tag or the build fails (stale entry).
-j15	xyz.wagyourtail.jvmdg.j15.stub.java_base.J_N_C_S_SelectorProvider
-j16	xyz.wagyourtail.jvmdg.j16.stub.java_logging.J_U_L_LogRecord
-j8	xyz.wagyourtail.jvmdg.j8.stub.J_L_ThreadLocal
-j8	xyz.wagyourtail.jvmdg.j8.stub.J_U_Comparator
-j8	xyz.wagyourtail.jvmdg.j8.stub.J_U_PrimitiveIterator
-j8	xyz.wagyourtail.jvmdg.j8.stub.J_U_PrimitiveIterator$OfDouble
-j8	xyz.wagyourtail.jvmdg.j8.stub.J_U_PrimitiveIterator$OfDouble$OfDoubleDefaults
-j8	xyz.wagyourtail.jvmdg.j8.stub.J_U_PrimitiveIterator$OfInt
-j8	xyz.wagyourtail.jvmdg.j8.stub.J_U_PrimitiveIterator$OfInt$OfIntDefaults
-j8	xyz.wagyourtail.jvmdg.j8.stub.J_U_PrimitiveIterator$OfLong
-j8	xyz.wagyourtail.jvmdg.j8.stub.J_U_PrimitiveIterator$OfLong$OfLongDefaults
-j9	xyz.wagyourtail.jvmdg.j9.stub.java_base.J_L_Long

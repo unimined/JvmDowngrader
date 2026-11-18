@@ -2,6 +2,18 @@
 
 ## RESUME
 
+**E-series complete** (E1–E5 landed on `feature/core-overhaul`, full
+matrix green): `VersionProvider` is decomposed — `StubCatalog` owns
+registry data, `BoundaryTransform`s own boundary transforms,
+registration is fully enumeration-driven. Providers are ctor-only
+classes; `init()` is an empty SPI fallback. Dormant-stub activation
+done too — `dormant-stubs` is header-only; all 12 classes register
+via enumeration with synthesized probe coverage (a bare-`@Stub`
+misregistration on `J_L_ThreadLocal.withInitial` was fixed in the
+process). **Next**: optional tails = generate `transforms/j<N>`
++ provider classes entirely, deeper catalog/engine boundary shims.
+Unpushed commits: f489faf2, 09ceafa8, 03fefa71, b511f6d2, fb1236c2.
+
 **Done + pushed**: all megaplan phases landed (A–D), backports pushed to
 `main`. All findings were re-verified against code before fixing; F6 was
 over-corrected (throw → back to log with cause chains — per-member
@@ -136,3 +148,28 @@ Stray `gradlew-lf` add+remove pair sits in main history (`8b7da737` +
   provider + `providers` resource present → missing-list warn.
   Registration-order note: emitted lists are name-sorted vs init()'s
   call order — registry result verified identical by the matrix.
+
+- [x] Dormant-stub activation — all 12 `dormant-stubs` rows removed
+  (file is header-only again): j8 `J_U_Comparator`, `J_U_PrimitiveIterator`
+  family ×7, `J_L_ThreadLocal`; j9 `J_L_Long`; j15
+  `J_N_C_S_SelectorProvider`; j16 `J_U_L_LogRecord` — every member got
+  synthesized parity probes, none needed manual claims or `DEFERRED`
+  entries (j8 impls activate only at the deferred 8→7 boundary, but the
+  probes compile/run on the host JDK so coverage registers). Activation
+  surfaced a real misregistration: `J_L_ThreadLocal.withInitial`'s bare
+  `@Stub` consumed the first param as `this` (per StubHandler's
+  first-param-is-receiver convention) and registered
+  `Supplier.withInitial()LThreadLocal;` — fixed with
+  `ref = @Ref("java/lang/ThreadLocal")` (static member stubs need an
+  explicit owner ref). Known pre-existing gap flagged:
+  j12 `J_L_C_ConstantDesc.describeConstable` resolved via manual claim
+  (`constantDescDefaultDescribeConstable` in MiscTests): the adapter's
+  default has no real counterpart (ConstantDesc never declared it in
+  any JDK — Constable/ConstantDesc are disjoint hierarchies), but
+  J_L_C_ClassDesc/J_L_C_MethodTypeDesc receivers inherit it and
+  MethodTypeConstable.describeConstable dispatches through it, so a
+  MethodType.methodType().describeConstable() probe covers the member
+  honestly. untestable.txt is now header-only. Caveat found en route:
+  J_L_C_ConstantDesc extends J_L_C_Constable models a hierarchy the
+  JDK never had — downgraded `instanceof Constable` on ConstantDesc
+  impls answers true where native says false; flagged, not fixed.

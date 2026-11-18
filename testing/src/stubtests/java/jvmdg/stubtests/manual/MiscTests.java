@@ -147,4 +147,24 @@ public final class MiscTests {
         MyLoader cl = new MyLoader("named", MiscTests.class.getClassLoader());
         Support.print(id, cl.getName());
     }
+
+    /** J_L_C_ConstantDesc.describeConstable is an interface default on the
+     * fake adapter owner — no real-type callsite can name it (ConstantDesc
+     * never declared it in any JDK; Constable and ConstantDesc are disjoint
+     * hierarchies). It is reachable only through jvmdg-internal dispatch:
+     * J_L_C_ClassDesc/J_L_C_MethodTypeDesc receivers inherit the default
+     * (Optional.of(this)), and MethodTypeConstable.describeConstable calls
+     * it on its param/return ClassDescs — so a MethodType.describeConstable
+     * call site exercises exactly that dispatch. */
+    @StubTest(member = @Ref(value = "xyz/wagyourtail/jvmdg/j12/stub/java_base/J_L_C_ConstantDesc",
+        member = "describeConstable", desc = "()Ljava/util/Optional;"))
+    public static void constantDescDefaultDescribeConstable(String id) {
+        java.util.Optional<?> o = java.lang.invoke.MethodType.methodType(
+            int.class, int.class).describeConstable();
+        java.lang.constant.MethodTypeDesc d =
+            (java.lang.constant.MethodTypeDesc) o.orElse(null);
+        Support.print(id, d == null ? "empty"
+            : d.returnType().descriptorString() + d.parameterCount()
+                + d.parameterType(0).descriptorString());
+    }
 }

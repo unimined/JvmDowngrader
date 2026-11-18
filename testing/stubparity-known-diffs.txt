@@ -250,3 +250,17 @@ all Ljava/time/format/DateTimeFormatter;localizedBy;(Ljava/util/Locale;)Ljava/ti
 61-shade Ljava/util/concurrent/Executors;newThreadPerTaskExecutor;(Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
 61-downgrade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
 61-shade Ljava/util/concurrent/Executors;newVirtualThreadPerTaskExecutor;()Ljava/util/concurrent/ExecutorService;@trivial ==> RESULT:java.util.concurrent.ThreadPerTaskExecutor@# ==> RESULT:IMPL@#
+
+# SelectorProvider.open*Channel(ProtocolFamily) boundary probe passes
+# StandardProtocolFamily.UNIX — a 16+ enum constant. On <16 runtimes the
+# probe's own getstatic fails before the stub can run (native on the
+# 27 JVM returns a real unix channel). Environmental impossibility, not
+# a stub defect: no java version can answer a unix channel call there.
+52-downgrade Ljava/nio/channels/spi/SelectorProvider;openServerSocketChannel;(Ljava/net/ProtocolFamily;)Ljava/nio/channels/ServerSocketChannel;@boundary ==> RESULT:*[unbound] ==> EXC:java.lang.NoSuchFieldError
+52-shade Ljava/nio/channels/spi/SelectorProvider;openServerSocketChannel;(Ljava/net/ProtocolFamily;)Ljava/nio/channels/ServerSocketChannel;@boundary ==> RESULT:*[unbound] ==> EXC:java.lang.NoSuchFieldError
+55-downgrade Ljava/nio/channels/spi/SelectorProvider;openServerSocketChannel;(Ljava/net/ProtocolFamily;)Ljava/nio/channels/ServerSocketChannel;@boundary ==> RESULT:*[unbound] ==> EXC:java.lang.NoSuchFieldError
+55-shade Ljava/nio/channels/spi/SelectorProvider;openServerSocketChannel;(Ljava/net/ProtocolFamily;)Ljava/nio/channels/ServerSocketChannel;@boundary ==> RESULT:*[unbound] ==> EXC:java.lang.NoSuchFieldError
+52-downgrade Ljava/nio/channels/spi/SelectorProvider;openSocketChannel;(Ljava/net/ProtocolFamily;)Ljava/nio/channels/SocketChannel;@boundary ==> RESULT:*[unconnected] ==> EXC:java.lang.NoSuchFieldError
+52-shade Ljava/nio/channels/spi/SelectorProvider;openSocketChannel;(Ljava/net/ProtocolFamily;)Ljava/nio/channels/SocketChannel;@boundary ==> RESULT:*[unconnected] ==> EXC:java.lang.NoSuchFieldError
+55-downgrade Ljava/nio/channels/spi/SelectorProvider;openSocketChannel;(Ljava/net/ProtocolFamily;)Ljava/nio/channels/SocketChannel;@boundary ==> RESULT:*[unconnected] ==> EXC:java.lang.NoSuchFieldError
+55-shade Ljava/nio/channels/spi/SelectorProvider;openSocketChannel;(Ljava/net/ProtocolFamily;)Ljava/nio/channels/SocketChannel;@boundary ==> RESULT:*[unconnected] ==> EXC:java.lang.NoSuchFieldError
