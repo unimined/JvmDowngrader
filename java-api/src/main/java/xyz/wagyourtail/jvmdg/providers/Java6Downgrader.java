@@ -1,13 +1,7 @@
 package xyz.wagyourtail.jvmdg.providers;
 
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
 import xyz.wagyourtail.jvmdg.ClassDowngrader;
-
-import java.io.IOException;
-import java.util.Iterator;
 
 public class Java6Downgrader extends AllVersionDowngrader {
 
@@ -26,22 +20,6 @@ public class Java6Downgrader extends AllVersionDowngrader {
     @Override
     public void init() {
 
-    }
-
-    @Override
-    public ClassNode otherTransforms(ClassNode clazz) throws IOException {
-        for (MethodNode method : clazz.methods) {
-            if (method.instructions != null) {
-                Iterator<AbstractInsnNode> it = method.instructions.iterator();
-                while (it.hasNext()) {
-                    AbstractInsnNode insn = it.next();
-                    if (insn.getType() == AbstractInsnNode.FRAME) {
-                        it.remove();
-                    }
-                }
-            }
-        }
-        return super.otherTransforms(clazz);
     }
 
 }

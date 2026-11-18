@@ -1,13 +1,8 @@
 package xyz.wagyourtail.jvmdg.providers;
 
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
-import xyz.wagyourtail.jvmdg.j17.PermittedSubClasses;
 import xyz.wagyourtail.jvmdg.j17.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.j17.stub.jdk_httpserver.C_S_N_H_Filter;
-import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java17Downgrader extends AllVersionDowngrader {
     public Java17Downgrader() {
@@ -75,27 +70,6 @@ public class Java17Downgrader extends AllVersionDowngrader {
 
         // -- jdk.management.jfr --
         // RemoteRecordingStream
-    }
-
-    @Override
-    public ClassNode otherTransforms(ClassNode clazz) {
-        unseal(clazz);
-        return clazz;
-    }
-
-    // TODO: add bytecode to check the seal and throw
-    public void unseal(ClassNode node) {
-        if (node.permittedSubclasses != null) {
-            AnnotationVisitor av = node.visitAnnotation(Type.getType(PermittedSubClasses.class).getDescriptor(), true);
-            AnnotationVisitor values = av.visitArray("value");
-            for (String s : node.permittedSubclasses) {
-                values.visit(null, Type.getObjectType(s));
-            }
-            values.visitEnd();
-            av.visitEnd();
-
-            node.permittedSubclasses = null;
-        }
     }
 
 }

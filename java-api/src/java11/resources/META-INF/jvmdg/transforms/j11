@@ -1,0 +1,3 @@
+xyz.wagyourtail.jvmdg.j11.transform.FixNests
+xyz.wagyourtail.jvmdg.j11.transform.ReplaceCondy
+xyz.wagyourtail.jvmdg.j11.transform.FixPrivateMethodsInInterfaces

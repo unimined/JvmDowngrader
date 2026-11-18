@@ -13,6 +13,7 @@ import xyz.wagyourtail.jvmdg.pipeline.TransformContext;
 import xyz.wagyourtail.jvmdg.version.DowngradeContext;
 import xyz.wagyourtail.jvmdg.version.ModifyContext;
 import xyz.wagyourtail.jvmdg.version.Ref;
+import xyz.wagyourtail.jvmdg.version.indy.IndyShapes;
 import xyz.wagyourtail.jvmdg.version.ReflectionReferences;
 import xyz.wagyourtail.jvmdg.version.VersionProvider;
 import xyz.wagyourtail.jvmdg.version.map.FullyQualifiedMemberNameAndDesc;
@@ -55,7 +56,6 @@ public class NoIndyTransform implements ClassTransform {
     private static final Type LOOKUP = Type.getObjectType("java/lang/invoke/MethodHandles$Lookup");
     private static final Type METHOD_TYPE = Type.getObjectType("java/lang/invoke/MethodType");
 
-    private final Java7Downgrader generic = new Java7Downgrader();
     private final Map<MemberNameAndDesc, List<MethodRef>> desugars;
     private final List<String> initFailures;
 
@@ -101,7 +101,7 @@ public class NoIndyTransform implements ClassTransform {
         InsnList addToClinit = new InsnList();
         List<FullyQualifiedMemberNameAndDesc> reflectionRefs = new ArrayList<>();
         Map<ConstantDynamic, FieldNode> condyFieldMap = new HashMap<>();
-        Map<Java7Downgrader.InvokeDynamicType, String> indyCache = new HashMap<>();
+        Map<IndyShapes.InvokeDynamicType, String> indyCache = new HashMap<>();
 
         // snapshot: handlers and the generic lowering append synthetic
         // methods (jvmdowngrader$* helpers, jvmdg$indy$ dispatchers) to
@@ -265,27 +265,27 @@ public class NoIndyTransform implements ClassTransform {
      */
     private String lowerIndy(MethodNode method, InvokeDynamicInsnNode indy, ClassNode node,
                              InsnList addToClinit, Map<ConstantDynamic, FieldNode> condyFieldMap,
-                             Map<Java7Downgrader.InvokeDynamicType, String> indyCache,
+                             Map<IndyShapes.InvokeDynamicType, String> indyCache,
                              List<FullyQualifiedMemberNameAndDesc> reflectionRefs) {
-        Java7Downgrader.InvokeDynamicType it = new Java7Downgrader.InvokeDynamicType(indy);
+        IndyShapes.InvokeDynamicType it = new IndyShapes.InvokeDynamicType(indy);
         String cached = indyCache.get(it);
         if (cached != null) {
             return cached;
         }
         int count = node.fields.size();
-        Java7Downgrader.IndyField indyField = new Java7Downgrader.IndyField(it, CALLSITE, count);
+        IndyShapes.IndyField indyField = new IndyShapes.IndyField(it, CALLSITE, count);
         node.fields.add(indyField);
 
         addToClinit.add(new FieldInsnNode(Opcodes.GETSTATIC, node.name, "jvmdg$lookup",
             LOOKUP.getDescriptor()));
         addToClinit.add(new LdcInsnNode(indy.name));
-        addToClinit.add(Java7Downgrader.methodDescToMethodType(Type.getMethodType(indy.desc), METHOD_TYPE));
+        addToClinit.add(IndyShapes.methodDescToMethodType(Type.getMethodType(indy.desc), METHOD_TYPE));
         pushBsmArgs(indy.bsm, indy.bsmArgs, node, addToClinit, condyFieldMap, reflectionRefs);
         addToClinit.add(new MethodInsnNode(Opcodes.INVOKESTATIC, indy.bsm.getOwner(),
             indy.bsm.getName(), indy.bsm.getDesc(), indy.bsm.isInterface()));
         addToClinit.add(new FieldInsnNode(Opcodes.PUTSTATIC, node.name, indyField.name, indyField.desc));
 
-        MethodNode indyMethod = new Java7Downgrader.IndyMethod(it, count);
+        MethodNode indyMethod = new IndyShapes.IndyMethod(it, count);
         node.methods.add(indyMethod);
         indyMethod.visitCode();
         indyMethod.visitFieldInsn(Opcodes.GETSTATIC, node.name, indyField.name, CALLSITE.getDescriptor());
@@ -396,9 +396,9 @@ public class NoIndyTransform implements ClassTransform {
                 reflectionRefs);
             addToClinit.add(new FieldInsnNode(Opcodes.GETSTATIC, node.name, field.name, field.desc));
         } else if (arg instanceof Type && ((Type) arg).getSort() == Type.METHOD) {
-            addToClinit.add(Java7Downgrader.methodDescToMethodType((Type) arg, METHOD_TYPE));
+            addToClinit.add(IndyShapes.methodDescToMethodType((Type) arg, METHOD_TYPE));
         } else if (arg instanceof Handle) {
-            addToClinit.add(generic.handleToLookupStack((Handle) arg, node, HANDLE, LOOKUP, METHOD_TYPE,
+            addToClinit.add(IndyShapes.handleToLookupStack((Handle) arg, node, HANDLE, LOOKUP, METHOD_TYPE,
                 reflectionRefs));
         } else {
             addToClinit.add(new LdcInsnNode(arg));

@@ -35,10 +35,13 @@ import xyz.wagyourtail.jvmdg.version.idx.DerivedMemberSince;
 import xyz.wagyourtail.jvmdg.version.idx.StubIndex;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public abstract class VersionProvider implements TypeRemap {
@@ -228,7 +231,7 @@ public abstract class VersionProvider implements TypeRemap {
     }
 
     /** handle rewriting into stub vocabulary — lives in {@link HandleStubber}; providers call this for custom handle sites */
-    protected Handle stubHandle(ClassNode owner, MethodNode method, Set<ClassNode> extra, Handle bsm, String indyDesc, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Set<String> warnings, Handle handle) throws IOException {
+    public Handle stubHandle(ClassNode owner, MethodNode method, Set<ClassNode> extra, Handle bsm, String indyDesc, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver, Set<String> warnings, Handle handle) throws IOException {
         return stubber().stubHandle(owner, method, extra, bsm, indyDesc, enableRuntime, memberResolver, superTypeResolver, warnings, handle);
     }
 
@@ -604,6 +607,7 @@ public abstract class VersionProvider implements TypeRemap {
                         // gained-supertypes rows are provider-level resource
                         // data — the same resource feeds both load paths
                         DerivedGained.apply(catalog);
+                        loadBoundaryTransforms();
                         afterInit();
                         initialized = true;
                     } catch (Throwable t) {
@@ -944,8 +948,69 @@ public abstract class VersionProvider implements TypeRemap {
         mv.visitEnd();
     }
 
+    /**
+     * Ordered boundary transform units run by the fullest
+     * {@link #otherTransforms} arity after the legacy arity chain — populated
+     * by {@link #loadBoundaryTransforms()} (ServiceLoader discovery) or
+     * directly by subclass constructors. Overriding {@code otherTransforms}
+     * at any arity remains the SPI escape hatch; the chain still delegates
+     * to identity.
+     */
+    public List<BoundaryTransform> boundaryTransforms = new ArrayList<>();
+
+    /**
+     * Resource-driven discovery of {@link BoundaryTransform} units — each
+     * {@code java<N>} source set ships
+     * {@code META-INF/jvmdg/transforms/j<N>} naming its transform classes
+     * (one FQCN per line); the provider whose {@link #inputVersion} maps to
+     * {@code j<N>} ({@code major - 44}) reads exactly that resource off its
+     * own classloader. Entries already present (subclass-registered) are
+     * kept and the merged list is sorted by {@link BoundaryTransform#order()}
+     * then class name so ordering stays identical under resource discovery
+     * and direct registration. External providers keep the escape hatches:
+     * populate {@link #boundaryTransforms} in the constructor or override
+     * {@code otherTransforms}.
+     */
+    protected void loadBoundaryTransforms() {
+        String resource = "META-INF/jvmdg/transforms/j" + (Utils.majorClassVersion(inputVersion) - 44);
+        try {
+            ClassLoader cl = getClass().getClassLoader();
+            Enumeration<URL> resources = cl == null
+                ? ClassLoader.getSystemResources(resource)
+                : cl.getResources(resource);
+            while (resources.hasMoreElements()) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(Utils.openUncached(resources.nextElement()), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        line = line.trim();
+                        if (line.isEmpty() || line.startsWith("#")) {
+                            continue;
+                        }
+                        Class<?> type = Class.forName(line, false, getClass().getClassLoader());
+                        boolean present = false;
+                        for (BoundaryTransform t : boundaryTransforms) {
+                            if (t.getClass() == type) {
+                                present = true;
+                                break;
+                            }
+                        }
+                        if (!present) {
+                            boundaryTransforms.add(type.asSubclass(BoundaryTransform.class).getDeclaredConstructor().newInstance());
+                        }
+                    }
+                }
+            }
+        } catch (IOException | ReflectiveOperationException e) {
+            throw new IllegalStateException("failed to load boundary transforms from " + resource, e);
+        }
+        boundaryTransforms.sort(Comparator.comparingInt(BoundaryTransform::order).thenComparing(t -> t.getClass().getName()));
+    }
+
     public ClassNode otherTransforms(ClassNode clazz, Set<ClassNode> extra, Function<String, ClassNode> getReadOnly, Set<String> warnings, boolean enableRuntime, IOFunction<Type, Set<MemberNameAndDesc>> memberResolver, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
         clazz = otherTransforms(clazz, extra, getReadOnly, warnings);
+        for (BoundaryTransform transform : boundaryTransforms) {
+            clazz = transform.apply(this, clazz, extra, getReadOnly, warnings, enableRuntime, memberResolver, superTypeResolver);
+        }
         return clazz;
     }
 

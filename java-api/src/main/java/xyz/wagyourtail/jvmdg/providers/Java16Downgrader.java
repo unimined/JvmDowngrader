@@ -1,15 +1,9 @@
 package xyz.wagyourtail.jvmdg.providers;
 
-import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.RecordComponentNode;
-import xyz.wagyourtail.jvmdg.j16.RecordComponents;
 import xyz.wagyourtail.jvmdg.j16.stub.J_U_L_LogRecord;
 import xyz.wagyourtail.jvmdg.j16.stub.java_base.*;
 import xyz.wagyourtail.jvmdg.j16.stub.java_net_http.J_N_H_HttpRequest;
-import xyz.wagyourtail.jvmdg.version.VersionProvider;
 
 public class Java16Downgrader extends AllVersionDowngrader {
     public Java16Downgrader() {
@@ -89,47 +83,6 @@ public class Java16Downgrader extends AllVersionDowngrader {
         // -- jdk.net --
         // ExtendedSocketOptions
         // UnixDomainPrincipal
-    }
-
-    @Override
-    public ClassNode otherTransforms(ClassNode clazz) {
-        recordRemover(clazz);
-        return clazz;
-    }
-
-    public void recordRemover(ClassNode node) {
-        if ((node.access & Opcodes.ACC_RECORD) != 0) {
-            node.access &= ~Opcodes.ACC_RECORD;
-//            StringBuilder value = new StringBuilder();
-//            for (int i = 0; i < node.recordComponents.size(); i++) {
-//                RecordComponentNode recordComponent = node.recordComponents.get(i);
-//                value.append(recordComponent.name).append(' ').append(recordComponent.signature).append(';');
-//            }
-//            value.deleteCharAt(value.length() - 1);
-//            node.recordComponents = null;
-//            node.visitField(
-//                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-//                "jvmdowngrader$recordComponents",
-//                "Ljava/lang/String;",
-//                null,
-//                value.toString()
-//            ).visitEnd();
-        }
-        if (node.recordComponents != null) {
-            AnnotationVisitor av = node.visitAnnotation(Type.getType(RecordComponents.class).getDescriptor(), true);
-            AnnotationVisitor values = av.visitArray("value");
-
-            for (RecordComponentNode rcn : node.recordComponents) {
-                AnnotationVisitor value = values.visitAnnotation(null, Type.getType(RecordComponents.Value.class).getDescriptor());
-                value.visit("name", rcn.name);
-                value.visit("type", Type.getType(rcn.descriptor));
-                value.visitEnd();
-            }
-            values.visitEnd();
-            av.visitEnd();
-
-            node.recordComponents = null;
-        }
     }
 
 }

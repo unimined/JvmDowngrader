@@ -509,9 +509,5 @@ public class Java9Downgrader extends AllVersionDowngrader {
         // Unsafe
     }
 
-    @Override
-    public ClassNode otherTransforms(ClassNode clazz) {
-        return clazz;
-    }
 
 }
