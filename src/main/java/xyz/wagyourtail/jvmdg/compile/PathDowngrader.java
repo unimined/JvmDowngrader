@@ -106,6 +106,11 @@ public class PathDowngrader {
                     @Override
                     public void accept(Path path) throws IOException {
                         Path relativized = in.relativize(path);
+                        // a file input root relativizes to "" — name the entry
+                        // by filename or the internal-name substring crashes
+                        if (relativized.toString().isEmpty()) {
+                            relativized = path.getFileName();
+                        }
                         if (path.getFileName().toString().endsWith(".class")) {
 
                             if (relativized.startsWith("META-INF/versions")) {

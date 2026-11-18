@@ -52,11 +52,17 @@ public class ZipDowngrader {
                 Files.createDirectories(parent);
             }
             Path tmp = parent != null ? Files.createTempFile(parent, output.getFileName().toString(), ".zip") : Files.createTempFile(output.getFileName().toString(), ".zip");
-            new ZipOutputStream(Files.newOutputStream(tmp, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)).close();
-            try (final FileSystem outputZipFs = Utils.openZipFileSystem(tmp, true)) {
-                PathDowngrader.downgradePaths(downgrader, Collections.singletonList(zipfs.getPath("/")), Collections.singletonList(outputZipFs.getPath("/")), classpath);
+            try {
+                new ZipOutputStream(Files.newOutputStream(tmp, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)).close();
+                try (final FileSystem outputZipFs = Utils.openZipFileSystem(tmp, true)) {
+                    PathDowngrader.downgradePaths(downgrader, Collections.singletonList(zipfs.getPath("/")), Collections.singletonList(outputZipFs.getPath("/")), classpath);
+                }
+                Files.move(tmp, output, StandardCopyOption.REPLACE_EXISTING);
+            } finally {
+                // a failed downgrade leaves the staging jar behind — delete it
+                // unless the move consumed it
+                Files.deleteIfExists(tmp);
             }
-            Files.move(tmp, output, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

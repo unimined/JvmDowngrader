@@ -25,6 +25,7 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -314,6 +315,9 @@ public class Main {
                         if (parent != null && !parent.exists() && !parent.mkdirs()) {
                             throw new IOException("Failed to create directory: " + parent);
                         }
+                    }
+                    if (output.exists() && Files.isSameFile(input.toPath(), output.toPath())) {
+                        throw new IOException("Input and output are the same file: " + input);
                     }
                     if (output.exists()) {
                         if (!output.delete()) {

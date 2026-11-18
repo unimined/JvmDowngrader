@@ -55,6 +55,9 @@ public class ApiShader {
     }
 
     public static void shadeApis(Flags flags, String prefix, File input, File output, Set<File> apiJars) throws IOException {
+        if (input.exists() && output.exists() && Files.isSameFile(input.toPath(), output.toPath())) {
+            throw new IOException("Input and output are the same file: " + input);
+        }
         if (output.exists()) {
             output.delete();
         }
