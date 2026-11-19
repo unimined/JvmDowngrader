@@ -18,7 +18,12 @@ import java.util.*;
 import org.objectweb.asm.ConstantDynamic;
 
 /** lowers {@code ldc <ConstantDynamic>} to a {@code jvmdg$condy$N} field
- * resolved once in {@code <clinit>} for targets without condy support */
+ * resolved once in {@code <clinit>} for targets without condy support.
+ * Name-sort places it after FixPrivateMethodsInInterfaces — required,
+ * since re-wrapping a LambdaMetafactory indy that carries condy bsmArgs
+ * swaps its bsm owner and would hide it from the private-interface
+ * handle fixup (exotic shape — javac never emits condy in lambda
+ * bsmArgs — but the ordering keeps even that safe) */
 public class ReplaceCondy implements BoundaryTransform {
 
     @Override
@@ -33,9 +38,6 @@ public class ReplaceCondy implements BoundaryTransform {
         replaceCondy(clazz);
         return clazz;
     }
-
-    @Override
-    public int order() { return 1; }
 
     public void replaceCondy(ClassNode clazz) {
         for (MethodNode method : clazz.methods) {

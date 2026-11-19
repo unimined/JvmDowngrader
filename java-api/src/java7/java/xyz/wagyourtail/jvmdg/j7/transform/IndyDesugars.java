@@ -136,7 +136,4 @@ public class IndyDesugars implements BoundaryTransform {
         return clazz;
     }
 
-    @Override
-    public int order() { return 0; }
-
 }

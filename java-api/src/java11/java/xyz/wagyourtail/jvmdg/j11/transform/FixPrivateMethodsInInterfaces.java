@@ -32,9 +32,6 @@ public class FixPrivateMethodsInInterfaces implements BoundaryTransform {
         return clazz;
     }
 
-    @Override
-    public int order() { return 2; }
-
     public void fixPrivateMethodsInInterfaces(ClassNode node) {
         if ((node.access & Opcodes.ACC_INTERFACE) == 0) return;
 

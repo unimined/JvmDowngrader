@@ -33,9 +33,6 @@ public class FixNests implements BoundaryTransform {
         return clazz;
     }
 
-    @Override
-    public int order() { return 0; }
-
     public void fixNests(VersionProvider provider, ClassNode clazz, Function<String, ClassNode> getReadOnly) {
         if (clazz.nestHostClass == null) {
             fixNestsForParent(provider, clazz, getReadOnly);

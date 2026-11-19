@@ -12,11 +12,16 @@ import xyz.wagyourtail.jvmdg.version.map.MemberNameAndDesc;
 import java.io.IOException;
 import java.util.*;
 
-/** Java-25 instance-main launch forms: synthesizes the missing
- * {@code public static main(String[])} bridge (or the renamed
- * {@code jvmdg$instanceMain} target) so pre-25 launchers can start the
- * class */
-public class AddMissingMains implements BoundaryTransform {
+/** Java-25 launch forms on pre-25 targets: {@link #addMissingMains}
+ * synthesizes the missing {@code public static main(String[])} bridge,
+ * then {@link #renameInstanceMains} renames instance {@code main(String[])}
+ * to {@code jvmdg$instanceMain} and re-points call sites. The two steps
+ * are sequenced inside {@link #apply} — same shape as FixNests'
+ * parent/child dispatch — because the launch-form scan keys on methods
+ * still named "main" while the INSTANCE_ARGS bridge it emits calls the
+ * post-rename name; separate units would need an order() pin for what a
+ * statement order makes unbreakable. */
+public class FixMains implements BoundaryTransform {
 
     @Override
     public ClassNode apply(VersionProvider provider, ClassNode clazz, Set<ClassNode> extra,
@@ -28,11 +33,9 @@ public class AddMissingMains implements BoundaryTransform {
             return clazz;
         }
         addMissingMains(provider, clazz, getReadOnly, superTypeResolver);
+        renameInstanceMains(clazz);
         return clazz;
     }
-
-    @Override
-    public int order() { return 0; }
 
     private void addMissingMains(VersionProvider provider, ClassNode clazz, Function<String, ClassNode> getReadOnly, IOFunction<Type, List<Pair<Type, Boolean>>> superTypeResolver) throws IOException {
 //        0. A public static void main(String[] args) method
@@ -126,6 +129,22 @@ public class AddMissingMains implements BoundaryTransform {
                 throw new IllegalArgumentException("No main method found");
         }
 
+    }
+
+    private void renameInstanceMains(ClassNode clazz) {
+        for (MethodNode method : clazz.methods) {
+            if (method.name.equals("main") && method.desc.equals("([Ljava/lang/String;)V") && (method.access & Opcodes.ACC_STATIC) == 0) {
+                method.name = "jvmdg$instanceMain";
+            }
+            for (AbstractInsnNode insn : method.instructions) {
+                if (insn.getType() == AbstractInsnNode.METHOD_INSN) {
+                    MethodInsnNode min = (MethodInsnNode) insn;
+                    if (min.getOpcode() != Opcodes.INVOKESTATIC && min.name.equals("main") && min.desc.equals("([Ljava/lang/String;)V")) {
+                        min.name = "jvmdg$instanceMain";
+                    }
+                }
+            }
+        }
     }
 
     public static enum MainType {

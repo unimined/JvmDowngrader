@@ -21,7 +21,12 @@ import java.util.Set;
  * <p>
  * {@link #order()} breaks ordering ties when the config is generated from a
  * classpath scan — lower runs earlier; equal orders fall back to class-name
- * sort so emission is deterministic.
+ * sort so emission is deterministic. Values only need to be right within
+ * one provider's list — each boundary's transforms run at their own
+ * version step, so numbers never compare across {@code j<N>} scopes.
+ * The sort at the end of {@code ensureInit} normalizes the list on both
+ * load paths, so the emitted {@code registerBoundaryTransforms} add order
+ * is cosmetic — {@code order()} + name is the sole authority.
  */
 public interface BoundaryTransform {
 
