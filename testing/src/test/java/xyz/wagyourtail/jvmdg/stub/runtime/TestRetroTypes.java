@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.stub;
+package xyz.wagyourtail.jvmdg.stub.runtime;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -70,7 +70,7 @@ public class TestRetroTypes {
             "java/util/LinkedHashMap$LinkedKeySet",
             "java/util/LinkedHashMap$LinkedValues"));
         RetroTypes.register(MARKER_RETRO,
-            Collections.singletonList("xyz/wagyourtail/jvmdg/stub/TestRetroTypes$TestMarker"));
+            Collections.singletonList("xyz/wagyourtail/jvmdg/stub/runtime/TestRetroTypes$TestMarker"));
     }
 
     @Test
@@ -135,8 +135,8 @@ public class TestRetroTypes {
     public void gainedMemberResolvesStandInReceivers() {
         RetroTypes.register("jvmdg/test/StubbedMember", Arrays.asList(
             "jvmdg/test/StubbedMember",
-            "xyz/wagyourtail/jvmdg/stub/TestRetroTypes$StubStandIn",
-            "xyz/wagyourtail/jvmdg/stub/TestRetroTypes$StubStandIn$Marker"));
+            "xyz/wagyourtail/jvmdg/stub/runtime/TestRetroTypes$StubStandIn",
+            "xyz/wagyourtail/jvmdg/stub/runtime/TestRetroTypes$StubStandIn$Marker"));
         RetroTypes.gainedRegister("jvmdg/test/GainedCloseable", "jvmdg/test/StubbedMember", 65);
         assertTrue(RetroTypes.gainedMember("jvmdg/test/GainedCloseable", new StubImpl(), 65));
         assertTrue(RetroTypes.gainedMember("jvmdg/test/GainedCloseable", new StubStandIn(), 65));
@@ -570,7 +570,7 @@ public class TestRetroTypes {
 
         // simulate a second shaded jar whose prefixed row lands FIRST —
         // member=Object would match everything, impl name unresolvable
-        Class<?> wrapRow = Class.forName("xyz.wagyourtail.jvmdg.stub.RetroTypes$WrapRow");
+        Class<?> wrapRow = Class.forName("xyz.wagyourtail.jvmdg.stub.runtime.RetroTypes$WrapRow");
         Constructor<?> ctor = wrapRow.getDeclaredConstructor(String.class, String[].class, String[].class);
         ctor.setAccessible(true);
         Object foreign = ctor.newInstance("otherprefix/stub/J_U_R_RandomGenerator",

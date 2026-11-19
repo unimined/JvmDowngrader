@@ -163,7 +163,7 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
                   (ClassMapping implements both — resolver graph only);
                   INVOKEVIRTUAL/INVOKEINTERFACE sites resolved to an
                   instance stub emit an invokedynamic bootstrapped by
-                  stub/DispatchRuntime (DispatchSites owns the contract):
+                  stub/runtime/DispatchRuntime (DispatchSites owns the contract):
                   bsmArgs carry the member MethodType + impl owner Class +
                   "name desc" String (lazy — no Handle constant); a
                   per-callsite ClassValue PIC resolves the receiver's own
@@ -268,7 +268,7 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
                   isArrayAssignableFrom structural methods, each carrying
                   a trailing int ceiling = the calling class's authored
                   version; member-CALL sites instead emit an
-                  invokedynamic bootstrapped by stub/GainedRuntime
+                  invokedynamic bootstrapped by stub/runtime/GainedRuntime
                   (bsmArgs = srcName, "name desc", ceiling — desc erases
                   ref types to Object + trailing checkcast) since the
                   generated dispatcher's catch(LinkageError)-per-call cost
@@ -317,7 +317,7 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
                   runtime downgrade treat them like any other api ref; V1_8,
                   hand-authored frames, deterministic, hand-declared-wins;
                   .java inspection dumps under build/generated/gen-src
-             └─ stub/RetroTypes (src/shared, ASM-free) — retro-supertype
+             └─ stub/runtime/RetroTypes (src/shared, ASM-free) — retro-supertype
                   runtime: name-keyed ClassValue membership over the
                   merged retrotypes resources — the fallback tier for the
                   bulk JDK-member name sets (hundreds-to-thousands can't be
@@ -354,7 +354,7 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
                   reflective sites resolve through the caller-dispatcher
                   class's loader (context param) like wrap/wrapImpl, so a
                   runtime-downgrading loader transforms them
-             └─ stub/ReflectionTable (src/shared, ASM-free) — the
+             └─ stub/reflection/ReflectionTable (src/shared, ASM-free) — the
                   Class.forName + getMethod runtime: T rows (source →
                   stand-in target, since) + M rows (owner, callsite name +
                   desc, i|s, impl owner/name/desc, since, JDK mods) from the
@@ -460,7 +460,7 @@ entry: PathDowngrader / ZipDowngrader / ApiShader / CLI Main / Gradle / javac
                   {from=authored major, to=flags.classVersion} annotation
                   at the first boundary (before node.version is rewritten);
                   callers without the stamp answer the runner's native view
-             └─ stub/OptionalDependency + RuntimeDowngrader (src/shared,
+             └─ stub/runtime/OptionalDependency + RuntimeDowngrader (src/shared,
                   ASM-free) — probe point for stub impls that optionally
                   need the heavy core: ServiceLoader discovers
                   CoreRuntimeDowngrader (src/main, registered via

@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.stub;
+package xyz.wagyourtail.jvmdg.stub.reflection;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

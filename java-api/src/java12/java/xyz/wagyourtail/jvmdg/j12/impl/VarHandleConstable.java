@@ -3,7 +3,7 @@ package xyz.wagyourtail.jvmdg.j12.impl;
 import xyz.wagyourtail.jvmdg.j12.stub.java_base.J_L_C_ClassDesc;
 import xyz.wagyourtail.jvmdg.j12.stub.java_base.J_L_C_Constable;
 import xyz.wagyourtail.jvmdg.j12.stub.java_base.J_L_I_VarHandle;
-import xyz.wagyourtail.jvmdg.stub.VarHandleInternals;
+import xyz.wagyourtail.jvmdg.stub.runtime.VarHandleInternals;
 
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;

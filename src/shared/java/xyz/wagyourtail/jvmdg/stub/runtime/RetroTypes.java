@@ -1,5 +1,6 @@
-package xyz.wagyourtail.jvmdg.stub;
+package xyz.wagyourtail.jvmdg.stub.runtime;
 
+import xyz.wagyourtail.jvmdg.stub.reflection.ReflectionTable;
 import xyz.wagyourtail.jvmdg.util.Lazy;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.RequiresResource;
@@ -662,13 +663,13 @@ public final class RetroTypes {
     @xyz.wagyourtail.jvmdg.version.ReflectionReferences({
         // HandlesHolder reaches these via findStatic — no bytecode edge
         // for the shade index, so declare them or pruning drops them
-        @xyz.wagyourtail.jvmdg.version.Ref(value = "Lxyz/wagyourtail/jvmdg/stub/RetroTypes;",
+        @xyz.wagyourtail.jvmdg.version.Ref(value = "Lxyz/wagyourtail/jvmdg/stub/runtime/RetroTypes;",
             member = "invokeResolved",
             desc = "(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"),
-        @xyz.wagyourtail.jvmdg.version.Ref(value = "Lxyz/wagyourtail/jvmdg/stub/RetroTypes;",
+        @xyz.wagyourtail.jvmdg.version.Ref(value = "Lxyz/wagyourtail/jvmdg/stub/runtime/RetroTypes;",
             member = "invokeSelfStub",
             desc = "(Ljava/lang/reflect/Method;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"),
-        @xyz.wagyourtail.jvmdg.version.Ref(value = "Lxyz/wagyourtail/jvmdg/stub/DispatchRuntime;",
+        @xyz.wagyourtail.jvmdg.version.Ref(value = "Lxyz/wagyourtail/jvmdg/stub/runtime/DispatchRuntime;",
             member = "dispatchStub",
             desc = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/ClassLoader;)Ljava/lang/Object;")
     })

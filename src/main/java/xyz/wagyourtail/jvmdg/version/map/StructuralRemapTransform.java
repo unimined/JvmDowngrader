@@ -277,7 +277,7 @@ public class StructuralRemapTransform {
      * {@code ldc} is remapped to the target class like any other use, so
      * the call would lose the retro identity — instead the receiver/arg
      * pair is rearranged ({@code swap;pop;ldc name;invokestatic}) to
-     * {@link xyz.wagyourtail.jvmdg.stub.RetroTypes}.
+     * {@link xyz.wagyourtail.jvmdg.stub.runtime.RetroTypes}.
      * <p>
      * Producer analysis is a {@link SourceValue} pass over the
      * <em>pre-remap</em> bytecode — run before the per-insn loop mutates

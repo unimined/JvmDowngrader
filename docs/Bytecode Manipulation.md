@@ -85,7 +85,7 @@ How a resolved stub member is emitted depends on the callsite opcode:
 
 * `INVOKESTATIC` / field access → straight `invokestatic` to the impl.
 * `INVOKEVIRTUAL` / `INVOKEINTERFACE` → an `invokedynamic` bootstrapped by
-  `xyz/wagyourtail/jvmdg/stub/DispatchRuntime.bootstrap`; bsmArgs carry the
+  `xyz/wagyourtail/jvmdg/stub/runtime/DispatchRuntime.bootstrap`; bsmArgs carry the
   member `MethodType` + the impl as an owner `Class` + `"name desc"` string
   (resolved lazily at link, so no `Handle` constant poisons `<clinit>` under
   `--noIndy`), and a per-callsite `ClassValue` PIC resolves the receiver's
@@ -118,7 +118,7 @@ to generated dispatchers:
 * Gained supertypes (a JDK class that acquired an interface after the
   target) → `xyz/wagyourtail/jvmdg/gen/gained/<I>` structural helpers for
   type tests; member calls go through `invokedynamic` bootstrapped by
-  `stub/GainedRuntime` with the calling class's authored version as a
+  `stub/runtime/GainedRuntime` with the calling class's authored version as a
   trailing ceiling arg.
 * `ldc`'d retro `Class.isInstance`/`cast`/`isAssignableFrom` receivers are
   routed through the same dispatchers by the `remapClassCalls`

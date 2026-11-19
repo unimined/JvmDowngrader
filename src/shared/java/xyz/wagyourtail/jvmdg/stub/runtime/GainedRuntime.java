@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.stub;
+package xyz.wagyourtail.jvmdg.stub.runtime;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;

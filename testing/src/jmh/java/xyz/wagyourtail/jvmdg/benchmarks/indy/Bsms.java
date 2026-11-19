@@ -6,7 +6,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Set;
-import xyz.wagyourtail.jvmdg.stub.DispatchRuntime;
+import xyz.wagyourtail.jvmdg.stub.runtime.DispatchRuntime;
 
 /**
  * Candidate bootstraps — faithful replicas of what M-2's

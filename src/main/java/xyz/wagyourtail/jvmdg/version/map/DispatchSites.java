@@ -37,7 +37,7 @@ import org.objectweb.asm.Type;
 public final class DispatchSites {
 
     /** internal name of the shared (ASM-free) dispatch runtime */
-    public static final String RUNTIME = "xyz/wagyourtail/jvmdg/stub/DispatchRuntime";
+    public static final String RUNTIME = "xyz/wagyourtail/jvmdg/stub/runtime/DispatchRuntime";
 
     /**
      * The bootstrap every instance-stub {@code invokedynamic} site names:

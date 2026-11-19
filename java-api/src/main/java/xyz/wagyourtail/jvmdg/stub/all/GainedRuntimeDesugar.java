@@ -39,7 +39,7 @@ public class GainedRuntimeDesugar {
      * {@code jvmdg$indy$invoke$N} frame out of stack-sensitive callers,
      * matching {@link DispatchRuntimeDesugar#desugarDispatch}.
      */
-    @IndyDesugar(ref = @Ref(value = "xyz/wagyourtail/jvmdg/stub/GainedRuntime",
+    @IndyDesugar(ref = @Ref(value = "xyz/wagyourtail/jvmdg/stub/runtime/GainedRuntime",
         member = "bootstrap",
         desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;" +
             "Ljava/lang/invoke/MethodType;Ljava/lang/String;Ljava/lang/String;I)" +
@@ -88,7 +88,7 @@ public class GainedRuntimeDesugar {
         out.add(new LdcInsnNode(indy.bsmArgs[2]));
         out.add(new LdcInsnNode(Type.getObjectType(cnode.name)));
         out.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-            "xyz/wagyourtail/jvmdg/stub/RetroTypes", "gainedCall",
+            "xyz/wagyourtail/jvmdg/stub/runtime/RetroTypes", "gainedCall",
             "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;I" +
                 "Ljava/lang/Class;)Ljava/lang/Object;", false));
         Type ret = Type.getReturnType(indy.desc);

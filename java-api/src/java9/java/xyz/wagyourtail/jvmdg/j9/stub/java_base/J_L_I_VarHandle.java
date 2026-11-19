@@ -36,7 +36,7 @@ import java.util.Map;
     "getAndBitwiseAndRelease", "getAndBitwiseAndAcquire", "getAndBitwiseXor",
     "getAndBitwiseXorRelease", "getAndBitwiseXorAcquire"
 })
-public abstract class J_L_I_VarHandle implements xyz.wagyourtail.jvmdg.stub.VarHandleInternals {
+public abstract class J_L_I_VarHandle implements xyz.wagyourtail.jvmdg.stub.runtime.VarHandleInternals {
     protected static final Unsafe unsafe = Utils.getUnsafe();
 
     /**

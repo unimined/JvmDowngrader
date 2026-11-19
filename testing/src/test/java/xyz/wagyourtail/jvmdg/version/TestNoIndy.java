@@ -55,7 +55,7 @@ public class TestNoIndy {
         "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)" +
             "Ljava/lang/Object;", false);
     private static final Handle GAINED_BSM = new Handle(Opcodes.H_INVOKESTATIC,
-        "xyz/wagyourtail/jvmdg/stub/GainedRuntime", "bootstrap",
+        "xyz/wagyourtail/jvmdg/stub/runtime/GainedRuntime", "bootstrap",
         "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;" +
             "Ljava/lang/invoke/MethodType;Ljava/lang/String;Ljava/lang/String;I)" +
             "Ljava/lang/invoke/CallSite;", false);
@@ -328,7 +328,7 @@ public class TestNoIndy {
             }
             if (i instanceof MethodInsnNode) {
                 MethodInsnNode mi = (MethodInsnNode) i;
-                if (mi.owner.equals("xyz/wagyourtail/jvmdg/stub/RetroTypes")
+                if (mi.owner.equals("xyz/wagyourtail/jvmdg/stub/runtime/RetroTypes")
                     && mi.name.equals("gainedCall")) callsGained = true;
                 if (mi.name.equals("intValue")) sawUnbox = true;
             }

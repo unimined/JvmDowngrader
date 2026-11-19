@@ -1,6 +1,6 @@
 package xyz.wagyourtail.jvmdg;
 
-import xyz.wagyourtail.jvmdg.stub.RuntimeDowngrader;
+import xyz.wagyourtail.jvmdg.stub.runtime.RuntimeDowngrader;
 import xyz.wagyourtail.jvmdg.util.Function;
 
 import java.lang.instrument.IllegalClassFormatException;
@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Core-jar backend for {@link OptionalDependency} — registered via
- * {@code META-INF/services/xyz.wagyourtail.jvmdg.stub.RuntimeDowngrader} so
+ * {@code META-INF/services/xyz.wagyourtail.jvmdg.stub.runtime.RuntimeDowngrader} so
  * api-jar stubs discover it only when the core jar shares their classpath.
  */
 public class CoreRuntimeDowngrader implements RuntimeDowngrader {

@@ -42,7 +42,7 @@ public class DispatchRuntimeDesugar {
      * under normal output would erase the receiver-class PIC the whole
      * design hangs on.
      */
-    @IndyDesugar(ref = @Ref(value = "xyz/wagyourtail/jvmdg/stub/DispatchRuntime",
+    @IndyDesugar(ref = @Ref(value = "xyz/wagyourtail/jvmdg/stub/runtime/DispatchRuntime",
         member = "bootstrap",
         desc = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;" +
             "Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;" +
@@ -92,7 +92,7 @@ public class DispatchRuntimeDesugar {
         out.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Class", "getClassLoader",
             "()Ljava/lang/ClassLoader;", false));
         out.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
-            "xyz/wagyourtail/jvmdg/stub/DispatchRuntime", "dispatchStub",
+            "xyz/wagyourtail/jvmdg/stub/runtime/DispatchRuntime", "dispatchStub",
             "(Ljava/lang/String;Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Object;" +
                 "[Ljava/lang/Object;Ljava/lang/ClassLoader;)Ljava/lang/Object;", false));
         Type ret = Type.getReturnType(indy.desc);

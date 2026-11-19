@@ -149,7 +149,7 @@ public class J_L_R_SwitchBootstraps {
             Class<?> cls = (Class<?>) label;
             boolean array = cls.isArray();
             String name = array ? cls.getComponentType().getName() : cls.getName();
-            return xyz.wagyourtail.jvmdg.stub.RetroTypes.isInstanceOrFallback(value,
+            return xyz.wagyourtail.jvmdg.stub.runtime.RetroTypes.isInstanceOrFallback(value,
                 name.replace('.', '/'), cls.getName(), lookup.lookupClass(), array);
         } else if (label instanceof String) {
             return label.equals(value);
@@ -467,7 +467,7 @@ public class J_L_R_SwitchBootstraps {
                     smnode.visitLdcInsn(fallbackName);
                     smnode.visitLdcInsn(Type.getObjectType(cnode.name));
                     smnode.visitInsn(array ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
-                    smnode.visitMethodInsn(Opcodes.INVOKESTATIC, "xyz/wagyourtail/jvmdg/stub/RetroTypes",
+                    smnode.visitMethodInsn(Opcodes.INVOKESTATIC, "xyz/wagyourtail/jvmdg/stub/runtime/RetroTypes",
                         "isInstanceOrFallback",
                         "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Class;Z)Z", false);
                     smnode.visitJumpInsn(Opcodes.IFEQ, caseLabels.end);

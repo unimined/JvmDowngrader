@@ -61,7 +61,7 @@ public @interface Adapter {
      * interface hierarchy: an impl declared on a child adapter also serves
      * ancestor adapters' casts (it is assignable to them), ordered
      * most-specific-adapter first. The generated
-     * {@link xyz.wagyourtail.jvmdg.stub.RetroTypes#wrap} emits for every
+     * {@link xyz.wagyourtail.jvmdg.stub.runtime.RetroTypes#wrap} emits for every
      * OWN_INTERFACE checkcast without a {@code jvmdg$checkcast} member or
      * {@link #wrap} factory; rows land in {@code META-INF/jvmdg/wraps}.
      */

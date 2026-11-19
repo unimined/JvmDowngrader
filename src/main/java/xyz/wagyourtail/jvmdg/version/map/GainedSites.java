@@ -41,7 +41,7 @@ public final class GainedSites {
     }
 
     /** internal name of the shared (ASM-free) gained-dispatch runtime */
-    public static final String RUNTIME = "xyz/wagyourtail/jvmdg/stub/GainedRuntime";
+    public static final String RUNTIME = "xyz/wagyourtail/jvmdg/stub/runtime/GainedRuntime";
 
     /**
      * Whether {@code owner} (the containing class) is dispatch machinery —

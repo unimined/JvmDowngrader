@@ -225,7 +225,7 @@ public class TestMemberStubTransform implements Opcodes {
      */
     @Test
     public void gainedSiteInMachineryStaysNative() {
-        gainedSiteCase("xyz/wagyourtail/jvmdg/stub/GainedRuntime", false);
+        gainedSiteCase("xyz/wagyourtail/jvmdg/stub/runtime/GainedRuntime", false);
     }
 
     private void gainedSiteCase(String callerName, boolean expectIndy) {

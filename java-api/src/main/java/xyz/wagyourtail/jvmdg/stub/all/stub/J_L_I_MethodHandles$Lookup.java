@@ -1,6 +1,6 @@
 package xyz.wagyourtail.jvmdg.stub.all.stub;
 
-import xyz.wagyourtail.jvmdg.stub.ReflectionTable;
+import xyz.wagyourtail.jvmdg.stub.reflection.ReflectionTable;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.invoke.MethodHandle;

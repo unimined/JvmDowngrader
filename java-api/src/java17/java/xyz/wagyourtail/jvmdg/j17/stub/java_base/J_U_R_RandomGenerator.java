@@ -3,7 +3,7 @@ package xyz.wagyourtail.jvmdg.j17.stub.java_base;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
 import xyz.wagyourtail.jvmdg.j17.impl.random.BasicRandomGeneratorImpl;
 import xyz.wagyourtail.jvmdg.j17.impl.random.SplittableRandomGeneratorImpl;
-import xyz.wagyourtail.jvmdg.stub.RetroTypes;
+import xyz.wagyourtail.jvmdg.stub.runtime.RetroTypes;
 import xyz.wagyourtail.jvmdg.version.Adapter;
 import xyz.wagyourtail.jvmdg.version.JEP;
 

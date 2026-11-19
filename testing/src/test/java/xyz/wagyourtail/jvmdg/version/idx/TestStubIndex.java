@@ -663,7 +663,7 @@ public class TestStubIndex {
             assertNotNull(gainedIndy, "the gained member call must emit an invokedynamic");
             assertEquals("close", gainedIndy.name);
             assertEquals("(Ljava/lang/Object;)V", gainedIndy.desc);
-            assertEquals("xyz/wagyourtail/jvmdg/stub/GainedRuntime",
+            assertEquals("xyz/wagyourtail/jvmdg/stub/runtime/GainedRuntime",
                 gainedIndy.bsm.getOwner());
             assertEquals("bootstrap", gainedIndy.bsm.getName());
             assertEquals("java/lang/AutoCloseable", gainedIndy.bsmArgs[0]);

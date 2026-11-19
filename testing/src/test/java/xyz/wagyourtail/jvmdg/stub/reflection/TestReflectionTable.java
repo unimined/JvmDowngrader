@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.stub;
+package xyz.wagyourtail.jvmdg.stub.reflection;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -39,8 +39,8 @@ public class TestReflectionTable {
     public static class FakeAdapter {
     }
 
-    private static final String ADAPTER = "xyz/wagyourtail/jvmdg/stub/TestReflectionTable$FakeAdapter";
-    private static final String ADAPTER_BIN = "xyz.wagyourtail.jvmdg.stub.TestReflectionTable$FakeAdapter";
+    private static final String ADAPTER = "xyz/wagyourtail/jvmdg/stub/reflection/TestReflectionTable$FakeAdapter";
+    private static final String ADAPTER_BIN = "xyz.wagyourtail.jvmdg.stub.reflection.TestReflectionTable$FakeAdapter";
 
     /** the JDK owner a member row hangs on — a real class, so the native fallback is reachable */
     public static class FakeSuper {
@@ -54,10 +54,10 @@ public class TestReflectionTable {
     public interface FakeItf {
     }
 
-    private static final String OWNER = "xyz/wagyourtail/jvmdg/stub/TestReflectionTable$FakeOwner";
-    private static final String ITF = "xyz/wagyourtail/jvmdg/stub/TestReflectionTable$FakeItf";
-    private static final String SUPER = "xyz/wagyourtail/jvmdg/stub/TestReflectionTable$FakeSuper";
-    private static final String IMPL = "xyz/wagyourtail/jvmdg/stub/TestReflectionTable";
+    private static final String OWNER = "xyz/wagyourtail/jvmdg/stub/reflection/TestReflectionTable$FakeOwner";
+    private static final String ITF = "xyz/wagyourtail/jvmdg/stub/reflection/TestReflectionTable$FakeItf";
+    private static final String SUPER = "xyz/wagyourtail/jvmdg/stub/reflection/TestReflectionTable$FakeSuper";
+    private static final String IMPL = "xyz/wagyourtail/jvmdg/stub/reflection/TestReflectionTable";
 
     /** receiver-in-arg0 impl, mirroring a generated instance handler */
     public static String fakeLines(Object self) {
@@ -140,7 +140,7 @@ public class TestReflectionTable {
         }
     }
 
-    private static final String CTOR = "xyz/wagyourtail/jvmdg/stub/TestReflectionTable$FakeCtor";
+    private static final String CTOR = "xyz/wagyourtail/jvmdg/stub/reflection/TestReflectionTable$FakeCtor";
 
     /** {@code @InitArg}-shaped converter — an orig arg produces a to-desc slot */
     public static String intToStr(int i) {
@@ -302,7 +302,7 @@ public class TestReflectionTable {
         assertSame(String.class,
             ReflectionTable.forName("java.lang.String", TestReflectionTable.class, CURRENT + 1));
         assertSame(TestReflectionTable.class,
-            ReflectionTable.forName("xyz.wagyourtail.jvmdg.stub.TestReflectionTable",
+            ReflectionTable.forName("xyz.wagyourtail.jvmdg.stub.reflection.TestReflectionTable",
                 TestReflectionTable.class, CURRENT + 1));
     }
 

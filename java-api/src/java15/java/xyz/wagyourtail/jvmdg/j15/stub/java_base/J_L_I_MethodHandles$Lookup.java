@@ -2,8 +2,8 @@ package xyz.wagyourtail.jvmdg.j15.stub.java_base;
 
 
 import sun.misc.Unsafe;
-import xyz.wagyourtail.jvmdg.stub.OptionalDependency;
-import xyz.wagyourtail.jvmdg.stub.RuntimeDowngrader;
+import xyz.wagyourtail.jvmdg.stub.runtime.OptionalDependency;
+import xyz.wagyourtail.jvmdg.stub.runtime.RuntimeDowngrader;
 import xyz.wagyourtail.jvmdg.util.Function;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.Adapter;

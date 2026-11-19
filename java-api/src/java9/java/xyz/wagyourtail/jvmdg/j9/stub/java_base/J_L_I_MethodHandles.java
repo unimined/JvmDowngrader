@@ -2,8 +2,8 @@ package xyz.wagyourtail.jvmdg.j9.stub.java_base;
 
 import org.objectweb.asm.Opcodes;
 import xyz.wagyourtail.jvmdg.exc.MissingStubError;
-import xyz.wagyourtail.jvmdg.stub.OptionalDependency;
-import xyz.wagyourtail.jvmdg.stub.RuntimeDowngrader;
+import xyz.wagyourtail.jvmdg.stub.runtime.OptionalDependency;
+import xyz.wagyourtail.jvmdg.stub.runtime.RuntimeDowngrader;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.JEP;
 import xyz.wagyourtail.jvmdg.version.Ref;

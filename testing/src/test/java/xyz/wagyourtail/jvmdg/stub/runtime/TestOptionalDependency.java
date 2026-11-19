@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.stub;
+package xyz.wagyourtail.jvmdg.stub.runtime;
 
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;

@@ -47,7 +47,7 @@ final class Weave implements Opcodes {
     static final String SITE = FIX + "Site";
     static final String BOOLSITE = FIX + "BoolSite";
     static final String BSMS = "xyz/wagyourtail/jvmdg/benchmarks/indy/Bsms";
-    static final String RETRO = "xyz/wagyourtail/jvmdg/stub/RetroTypes";
+    static final String RETRO = "xyz/wagyourtail/jvmdg/stub/runtime/RetroTypes";
     /** the gained interface for the old-JVM scenario — deliberately unresolvable */
     static final String PHANTOM = "java/util/bench/GainedIface";
     static final String RETRO_SRC = "bench/Retro";

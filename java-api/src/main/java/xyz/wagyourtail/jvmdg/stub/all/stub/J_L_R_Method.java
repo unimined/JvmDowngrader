@@ -1,6 +1,6 @@
 package xyz.wagyourtail.jvmdg.stub.all.stub;
 
-import xyz.wagyourtail.jvmdg.stub.StubMethodView;
+import xyz.wagyourtail.jvmdg.stub.reflection.StubMethodView;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.reflect.InvocationTargetException;

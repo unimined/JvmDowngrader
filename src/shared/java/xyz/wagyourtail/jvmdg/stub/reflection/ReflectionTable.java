@@ -1,7 +1,9 @@
-package xyz.wagyourtail.jvmdg.stub;
+package xyz.wagyourtail.jvmdg.stub.reflection;
 
 import xyz.wagyourtail.jvmdg.stub.all.GainedInterfaces;
 import xyz.wagyourtail.jvmdg.stub.all.JvmDowngraded;
+import xyz.wagyourtail.jvmdg.stub.runtime.DispatchRuntime;
+import xyz.wagyourtail.jvmdg.stub.runtime.RetroTypes;
 import xyz.wagyourtail.jvmdg.util.Lazy;
 import xyz.wagyourtail.jvmdg.util.Utils;
 import xyz.wagyourtail.jvmdg.version.RequiresResource;
@@ -1302,7 +1304,7 @@ public final class ReflectionTable {
     }
 
     /** same parse, resolved through a supplied loader — for impls that live in a different loader than this table */
-    static Class<?>[] paramClasses(String desc, ClassLoader loader) throws ClassNotFoundException {
+    public static Class<?>[] paramClasses(String desc, ClassLoader loader) throws ClassNotFoundException {
         List<Class<?>> out = new ArrayList<>();
         int i = desc.indexOf('(') + 1;
         while (desc.charAt(i) != ')') {
@@ -1361,7 +1363,7 @@ public final class ReflectionTable {
     }
 
     /** primitive letter → class; shared with {@link RetroTypes}' literal descriptor parser */
-    static Class<?> primClass(char c) {
+    public static Class<?> primClass(char c) {
         switch (c) {
             case 'Z': return boolean.class;
             case 'B': return byte.class;

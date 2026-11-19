@@ -45,7 +45,7 @@ import java.util.TreeMap;
  * {@code invokedynamic} bootstrapped by {@code GainedRuntime.bootstrap}
  * (guardWithTest native-I + per-receiver-class PIC); {@code $Wrap}'s member
  * methods tail-call {@link
- * xyz.wagyourtail.jvmdg.stub.RetroTypes#gainedCall} whose table resolves the
+ * xyz.wagyourtail.jvmdg.stub.runtime.RetroTypes#gainedCall} whose table resolves the
  * declarer — package-private members included, which a bytecode chain can't
  * reach — and falls back to the registered member stub on linkage failure.
  * <p>
@@ -56,7 +56,7 @@ import java.util.TreeMap;
  */
 public final class GainedDispatchGenerator implements ApiGenerator {
 
-    private static final String RETRO_TYPES = "xyz/wagyourtail/jvmdg/stub/RetroTypes";
+    private static final String RETRO_TYPES = "xyz/wagyourtail/jvmdg/stub/runtime/RetroTypes";
     private static final String OBJECT = "java/lang/Object";
 
     @Override

@@ -1,4 +1,4 @@
-package xyz.wagyourtail.jvmdg.stub;
+package xyz.wagyourtail.jvmdg.stub.runtime;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -56,10 +56,10 @@ public class TestGainedRuntime {
     public static class Stranger {
     }
 
-    private static final String MEMBER = "xyz/wagyourtail/jvmdg/stub/TestGainedRuntime$Member";
-    private static final String STUB_MEMBER = "xyz/wagyourtail/jvmdg/stub/TestGainedRuntime$StubMember";
-    private static final String DMEMBER = "xyz/wagyourtail/jvmdg/stub/TestGainedRuntime$DMember";
-    private static final String STUB_IMPL = "xyz/wagyourtail/jvmdg/stub/TestGainedRuntime$StubImpl";
+    private static final String MEMBER = "xyz/wagyourtail/jvmdg/stub/runtime/TestGainedRuntime$Member";
+    private static final String STUB_MEMBER = "xyz/wagyourtail/jvmdg/stub/runtime/TestGainedRuntime$StubMember";
+    private static final String DMEMBER = "xyz/wagyourtail/jvmdg/stub/runtime/TestGainedRuntime$DMember";
+    private static final String STUB_IMPL = "xyz/wagyourtail/jvmdg/stub/runtime/TestGainedRuntime$StubImpl";
 
     @BeforeAll
     public static void register() {
@@ -80,7 +80,7 @@ public class TestGainedRuntime {
         // native-I rows for the guard path — Comparator exists on this JVM
         RetroTypes.gainedCallRegister("java/util/Comparator",
             "compare (Ljava/lang/Object;Ljava/lang/Object;)I",
-            "xyz/wagyourtail/jvmdg/stub/TestGainedRuntime$Cmp",
+            "xyz/wagyourtail/jvmdg/stub/runtime/TestGainedRuntime$Cmp",
             new int[]{61}, new String[]{"java/util/Comparator"}, new String[]{null});
     }
 

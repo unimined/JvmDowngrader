@@ -46,7 +46,7 @@ import java.util.Set;
  */
 public final class RetroDispatchGenerator implements ApiGenerator {
 
-    private static final String RETRO_TYPES = "xyz/wagyourtail/jvmdg/stub/RetroTypes";
+    private static final String RETRO_TYPES = "xyz/wagyourtail/jvmdg/stub/runtime/RetroTypes";
     private static final String OBJECT = "java/lang/Object";
 
     @Override

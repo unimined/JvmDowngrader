@@ -279,7 +279,7 @@ This is the heart of behavioral parity: what actually happens at a callsite afte
 ### 5.1 Member stubs — invokedynamic + a per-callsite PIC
 
 `INVOKEVIRTUAL`/`INVOKEINTERFACE` sites resolved to an instance stub emit an `invokedynamic` bootstrapped by
-[`stub/DispatchRuntime`](/src/shared/java/xyz/wagyourtail/jvmdg/stub/DispatchRuntime.java);
+[`stub/runtime/DispatchRuntime`](/src/shared/java/xyz/wagyourtail/jvmdg/stub/runtime/DispatchRuntime.java);
 [`DispatchSites`](/src/main/java/xyz/wagyourtail/jvmdg/version/map/DispatchSites.java) owns the transform-side contract.
 Bootstrap args carry the member `MethodType` plus the impl as a `Class` constant + `"name desc"` string — resolved
 lazily because the api jar's declared signature differs per packaging (raw shaded vs. downgraded) and an eager `Handle`
@@ -311,7 +311,7 @@ against it into a single `invokestatic` on the generated `<stubType>$jvmdg$retro
 The dispatcher carries real bytecode for `wrap`, construction, `isInstance`, `checkcast`, array forms,
 `isAssignableFrom`: the wrap path is adapter `instanceof` → an ordered `instanceof`/`new` chain over registered impls
 (most-specific-first, the `flattenedWraps` ordering) under `catch (LinkageError)`, tail-calling
-[`RetroTypes.wrapImpl`](/src/shared/java/xyz/wagyourtail/jvmdg/stub/RetroTypes.java); query paths combine
+[`RetroTypes.wrapImpl`](/src/shared/java/xyz/wagyourtail/jvmdg/stub/runtime/RetroTypes.java); query paths combine
 adapter/marker/impl-member `instanceof`s with table tails. Real bytecode lets C2 inline and scalar-replace what
 reflection couldn't; impl-less OWN_INTERFACE adapters still get a fallback-only dispatcher. `$Marker` interfaces
 (generated when the adapter doesn't declare one) give `SUPERTYPE`-mode membership something concrete to test: the
@@ -334,7 +334,7 @@ so:
   `xyz/wagyourtail/jvmdg/gen/gained/<mangled-I>` helper's structural methods (`jvmdg$isInstance`, `jvmdg$cast`,
   `jvmdg$isAssignableFrom`, array forms), each carrying a **trailing `int` ceiling — the calling class's authored
   version** — so membership is answered against the version the source was written for.
-- **Member-call sites** on the gained interface emit `invokedynamic` bootstrapped by `stub/GainedRuntime` (bsmArgs:
+- **Member-call sites** on the gained interface emit `invokedynamic` bootstrapped by `stub/runtime/GainedRuntime` (bsmArgs:
   source owner, `"name desc"` member key, ceiling; the site desc erases refs to `Object` and re-narrows with a trailing
   `checkcast`). Routing through indy is a measured perf decision: a `catch (LinkageError)`-per-call dispatcher cost
   roughly **200–600×** the PIC path on targets missing the interface.
@@ -352,7 +352,7 @@ so:
 ### 5.4 Reflection stubs — `ReflectionTable`
 
 `Class.forName`, `getMethod`, `MethodHandle` lookups bypass bytecode rerouting, so reflective access gets a table-driven
-answer: [`ReflectionTable`](/src/shared/java/xyz/wagyourtail/jvmdg/stub/ReflectionTable.java) (ASM-free, lazy resource
+answer: [`ReflectionTable`](/src/shared/java/xyz/wagyourtail/jvmdg/stub/reflection/ReflectionTable.java) (ASM-free, lazy resource
 load) maps source JDK types to api stand-ins with `since` versions; member rows carry callsite + impl owner/name/desc,
 instance/static shape, and JDK modifiers. A row applies only when `since ∈ (target, authored]` — read off the
 callsite's `@JvmDowngraded`, so an untransformed class still sees the honest `ClassNotFoundException` /
@@ -364,8 +364,8 @@ Because reflection-only impl references leave no bytecode edge, stub impls (and 
 ### 5.5 `OptionalDependency` — the api jar stays ASM-free
 
 A few stub impls genuinely need runtime transformation (`Lookup.defineClass`/`defineHiddenClass` receiving too-new
-bytes). They probe [`stub/OptionalDependency`](/src/shared/java/xyz/wagyourtail/jvmdg/stub/OptionalDependency.java) for a
-[`RuntimeDowngrader`](/src/shared/java/xyz/wagyourtail/jvmdg/stub/RuntimeDowngrader.java) via `ServiceLoader` — the core
+bytes). They probe [`stub/runtime/OptionalDependency`](/src/shared/java/xyz/wagyourtail/jvmdg/stub/runtime/OptionalDependency.java) for a
+[`RuntimeDowngrader`](/src/shared/java/xyz/wagyourtail/jvmdg/stub/runtime/RuntimeDowngrader.java) via `ServiceLoader` — the core
 jar's `CoreRuntimeDowngrader` implements it — so api classes never carry a constant-pool edge to core types. Absent the
 core, impls fall back to as-is behavior, correct when input bytes are already at or below target.
 

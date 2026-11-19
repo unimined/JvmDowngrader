@@ -18,7 +18,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import xyz.wagyourtail.jvmdg.stub.RetroTypes;
+import xyz.wagyourtail.jvmdg.stub.runtime.RetroTypes;
 
 /**
  * Runtime-dispatch benchmark — each JVM mechanism a dispatch site could
@@ -314,7 +314,7 @@ public class IndyDispatchBenchmark {
     @Benchmark
     public Object member_dispatchStub() throws Throwable {
         Object self = next(recv);
-        return xyz.wagyourtail.jvmdg.stub.DispatchRuntime.dispatchStub("op (I)I",
+        return xyz.wagyourtail.jvmdg.stub.runtime.DispatchRuntime.dispatchStub("op (I)I",
             Fix.Impl.class, "op (Ljava/lang/Object;I)I", self, new Object[]{7},
             self.getClass().getClassLoader());
     }

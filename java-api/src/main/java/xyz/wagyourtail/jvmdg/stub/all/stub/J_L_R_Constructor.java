@@ -1,6 +1,6 @@
 package xyz.wagyourtail.jvmdg.stub.all.stub;
 
-import xyz.wagyourtail.jvmdg.stub.StubCtorView;
+import xyz.wagyourtail.jvmdg.stub.reflection.StubCtorView;
 import xyz.wagyourtail.jvmdg.version.Stub;
 
 import java.lang.reflect.Constructor;
